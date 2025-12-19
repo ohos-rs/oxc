@@ -4,7 +4,7 @@
 //! - Struct declarations (`struct ComponentName { ... }`)
 //! - ArkUI component expressions (`Column() { ... }`)
 
-use oxc_allocator::{Box, Vec};
+use oxc_allocator::{Box, CloneIn, Vec};
 use oxc_ast::{NONE, ast::*};
 use oxc_span::Span;
 
@@ -287,7 +287,8 @@ impl<'a> ParserImpl<'a> {
             self.ast.vec()
         };
 
-        // Create the component expression first
+        // Create the component expression first (without chain expressions)
+        // We'll add chain expressions after, and they'll reference this component expression
         let component_expr =
             Expression::ArkUIComponentExpression(self.ast.alloc_ark_ui_component_expression(
                 self.end_span(span),
@@ -299,17 +300,17 @@ impl<'a> ParserImpl<'a> {
             ));
 
         // Parse chain expressions (like .onClick(...))
-        // Chain expressions are built by nesting call expressions
-        let mut current_expr = component_expr;
+        // Chain expressions are stored in the component expression's chain_expressions field
+        let mut chain_expressions = self.ast.vec();
         while self.eat(Kind::Dot) {
             if self.cur_kind().is_identifier_or_keyword() {
                 let ident_span = self.start_span();
                 let ident = self.parse_identifier_name();
                 if self.at(Kind::LParen) {
-                    // Create member expression
+                    // Create member expression pointing to the component expression
                     let member_expr = self.ast.member_expression_static(
                         self.end_span(ident_span),
-                        current_expr,
+                        component_expr.clone_in(self.ast.allocator),
                         ident,
                         false,
                     );
@@ -329,13 +330,20 @@ impl<'a> ParserImpl<'a> {
                     }
                     self.expect(Kind::RParen);
                     // Create call expression
-                    current_expr = self.ast.expression_call(
+                    let call_expr_expr = self.ast.expression_call(
                         self.end_span(call_span),
                         Expression::from(member_expr),
                         NONE,
                         call_args,
                         false,
                     );
+                    // Extract CallExpression from Expression
+                    if let Expression::CallExpression(call_expr_box) = call_expr_expr {
+                        // Clone CallExpression from the box
+                        chain_expressions.push(call_expr_box.as_ref().clone_in(self.ast.allocator));
+                    } else {
+                        unreachable!("expression_call should return CallExpression");
+                    }
                 } else {
                     // Not a call expression, break
                     break;
@@ -345,7 +353,20 @@ impl<'a> ParserImpl<'a> {
             }
         }
 
-        current_expr
+        // Update the component expression to include chain expressions
+        // Extract fields from the existing component expression and create a new one with chain expressions
+        if let Expression::ArkUIComponentExpression(component) = component_expr {
+            Expression::ArkUIComponentExpression(self.ast.alloc_ark_ui_component_expression(
+                component.span,
+                component.callee.clone_in(self.ast.allocator),
+                component.type_arguments.clone_in(self.ast.allocator),
+                component.arguments.clone_in(self.ast.allocator),
+                component.children.clone_in(self.ast.allocator),
+                chain_expressions,
+            ))
+        } else {
+            unreachable!("component_expr should be ArkUIComponentExpression")
+        }
     }
 
     /// Parse an ArkUI component expression after arguments have been parsed
@@ -373,7 +394,8 @@ impl<'a> ParserImpl<'a> {
             self.ast.vec()
         };
 
-        // Create the component expression first
+        // Create the component expression first (without chain expressions)
+        // We'll add chain expressions after, and they'll reference this component expression
         let component_expr =
             Expression::ArkUIComponentExpression(self.ast.alloc_ark_ui_component_expression(
                 self.end_span(span),
@@ -385,17 +407,17 @@ impl<'a> ParserImpl<'a> {
             ));
 
         // Parse chain expressions (like .onClick(...))
-        // Chain expressions are built by nesting call expressions
-        let mut current_expr = component_expr;
+        // Chain expressions are stored in the component expression's chain_expressions field
+        let mut chain_expressions = self.ast.vec();
         while self.eat(Kind::Dot) {
             if self.cur_kind().is_identifier_or_keyword() {
                 let ident_span = self.start_span();
                 let ident = self.parse_identifier_name();
                 if self.at(Kind::LParen) {
-                    // Create member expression
+                    // Create member expression pointing to the component expression
                     let member_expr = self.ast.member_expression_static(
                         self.end_span(ident_span),
-                        current_expr,
+                        component_expr.clone_in(self.ast.allocator),
                         ident,
                         false,
                     );
@@ -415,13 +437,20 @@ impl<'a> ParserImpl<'a> {
                     }
                     self.expect(Kind::RParen);
                     // Create call expression
-                    current_expr = self.ast.expression_call(
+                    let call_expr_expr = self.ast.expression_call(
                         self.end_span(call_span),
                         Expression::from(member_expr),
                         NONE,
                         call_args,
                         false,
                     );
+                    // Extract CallExpression from Expression
+                    if let Expression::CallExpression(call_expr_box) = call_expr_expr {
+                        // Clone CallExpression from the box
+                        chain_expressions.push(call_expr_box.as_ref().clone_in(self.ast.allocator));
+                    } else {
+                        unreachable!("expression_call should return CallExpression");
+                    }
                 } else {
                     // Not a call expression, break
                     break;
@@ -431,7 +460,20 @@ impl<'a> ParserImpl<'a> {
             }
         }
 
-        current_expr
+        // Update the component expression to include chain expressions
+        // Extract fields from the existing component expression and create a new one with chain expressions
+        if let Expression::ArkUIComponentExpression(component) = component_expr {
+            Expression::ArkUIComponentExpression(self.ast.alloc_ark_ui_component_expression(
+                component.span,
+                component.callee.clone_in(self.ast.allocator),
+                component.type_arguments.clone_in(self.ast.allocator),
+                component.arguments.clone_in(self.ast.allocator),
+                component.children.clone_in(self.ast.allocator),
+                chain_expressions,
+            ))
+        } else {
+            unreachable!("component_expr should be ArkUIComponentExpression")
+        }
     }
 
     /// Parse an ArkUI child element
