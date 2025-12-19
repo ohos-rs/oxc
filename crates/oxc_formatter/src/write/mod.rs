@@ -1886,6 +1886,71 @@ impl<'a> Format<'a> for (&AstNode<'a, StructElement<'a>>, Option<&AstNode<'a, St
 }
 
 
+/// Helper to format ArkUI chain expressions (like `.onClick(...)`) without the object
+struct FormatArkUIChainExpression<'a, 'b>(&'b AstNode<'a, CallExpression<'a>>);
+
+impl<'a> Format<'a> for FormatArkUIChainExpression<'a, '_> {
+    fn fmt(&self, f: &mut Formatter<'_, 'a>) {
+        let chain_expr = self.0;
+        let callee = chain_expr.callee();
+
+        // Format the member access part (e.g., `.onClick`) and call arguments
+        match callee.as_ref() {
+            Expression::StaticMemberExpression(member) => {
+                // Format just the `.property` part without the object
+                // Access fields directly since member is a Box<StaticMemberExpression>
+                // Format the property name directly as text
+                let property_text = text_without_whitespace(member.property.name.as_str());
+                
+                write!(
+                    f,
+                    [
+                        FormatLeadingComments::Comments(
+                            f.context().comments().comments_before(member.property.span.start)
+                        ),
+                        member.optional.then_some("?"),
+                        ".",
+                        property_text
+                    ]
+                );
+                // Format trailing comments before the call arguments
+                // Check if we need to format trailing comments by checking the parent
+                if !matches!(
+                    chain_expr.parent,
+                    AstNodes::CallExpression(call) if call.type_arguments.is_none()
+                ) {
+                    // Format trailing comments manually
+                    let comments = f.context().comments().comments_after(member.span.end);
+                    if !comments.is_empty() {
+                        write!(f, [space(), FormatTrailingComments::Comments(comments)]);
+                    }
+                }
+                // Format call arguments
+                write!(
+                    f,
+                    [
+                        chain_expr.optional().then_some("?."),
+                        chain_expr.type_arguments(),
+                        chain_expr.arguments()
+                    ]
+                );
+            }
+            Expression::ComputedMemberExpression(_member) => {
+                // For computed member expressions, we can't easily format just the member part
+                // without the object due to lifetime constraints. Fall back to formatting
+                // the entire call expression, which may cause some duplication but is better
+                // than a compilation error. In practice, ArkUI chain expressions typically
+                // use static member expressions (like .onClick), so this case is rare.
+                write!(f, chain_expr);
+            }
+            _ => {
+                // Fallback: format the entire call expression
+                write!(f, chain_expr);
+            }
+        }
+    }
+}
+
 impl<'a> FormatWrite<'a> for AstNode<'a, ArkUIComponentExpression<'a>> {
     fn write(&self, f: &mut Formatter<'_, 'a>) {
         let callee = self.callee();
@@ -1903,7 +1968,8 @@ impl<'a> FormatWrite<'a> for AstNode<'a, ArkUIComponentExpression<'a>> {
         }
 
         // Format arguments
-        write!(f, ["(", arguments, ")"]);
+        // Note: arguments already formats itself with parentheses, so we don't add extra ones
+        write!(f, [arguments]);
 
         // Format children if present
         if !children.as_ref().is_empty() {
@@ -1911,9 +1977,11 @@ impl<'a> FormatWrite<'a> for AstNode<'a, ArkUIComponentExpression<'a>> {
         }
 
         // Format chain expressions
+        // Use a helper to format only the member and call parts, not the object
+        // Format on the same line (no line break) to keep the chain together
         if !chain_expressions.as_ref().is_empty() {
             for chain_expr_node in chain_expressions.iter() {
-                write!(f, [hard_line_break(), chain_expr_node]);
+                write!(f, [FormatArkUIChainExpression(chain_expr_node)]);
             }
         }
     }
