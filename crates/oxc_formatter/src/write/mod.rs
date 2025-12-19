@@ -1777,3 +1777,153 @@ impl<'a> FormatWrite<'a> for AstNode<'a, JSDocNonNullableType<'a>> {
 impl<'a> FormatWrite<'a> for AstNode<'a, JSDocUnknownType> {
     fn write(&self, _f: &mut Formatter<'_, 'a>) {}
 }
+
+impl<'a> FormatWrite<'a> for AstNode<'a, StructStatement<'a>> {
+    fn write(&self, f: &mut Formatter<'_, 'a>) {
+        let decorators = self.decorators();
+        let id = self.id();
+        let type_parameters = self.type_parameters();
+        let body = self.body();
+
+        // Format decorators
+        write!(f, decorators);
+
+        write!(f, "struct");
+        write!(f, [space(), id]);
+
+        if let Some(type_parameters) = type_parameters {
+            write!(f, type_parameters);
+        }
+
+        write!(f, [space(), body]);
+    }
+}
+
+impl<'a> FormatWrite<'a> for AstNode<'a, StructBody<'a>> {
+    fn write(&self, f: &mut Formatter<'_, 'a>) {
+        write!(f, ["{", block_indent(&self.body()), "}"]);
+    }
+}
+
+impl<'a> Format<'a> for AstNode<'a, Vec<'a, StructElement<'a>>> {
+    fn fmt(&self, f: &mut Formatter<'_, 'a>) {
+        // Join struct elements with hard line breaks between them
+        let mut join = f.join_nodes_with_hardline();
+        // Iterate through pairs of consecutive elements to handle semicolons properly
+        // Use the same pattern as ClassElement - iter.peek().copied() should work
+        let mut iter = self.iter().peekable();
+        while let Some(element) = iter.next() {
+            join.entry(element.span(), &(element, iter.peek().copied()));
+        }
+    }
+}
+
+// Helper struct for formatting StructElement with semicolon handling
+struct FormatStructElementWithSemicolon<'a, 'b> {
+    element: &'b AstNode<'a, StructElement<'a>>,
+    next_element: Option<&'b AstNode<'a, StructElement<'a>>>,
+}
+
+impl<'a, 'b> FormatStructElementWithSemicolon<'a, 'b> {
+    fn new(
+        element: &'b AstNode<'a, StructElement<'a>>,
+        next_element: Option<&'b AstNode<'a, StructElement<'a>>>,
+    ) -> Self {
+        Self { element, next_element }
+    }
+
+    fn needs_semicolon(&self) -> bool {
+        let Self { element, next_element, .. } = self;
+
+        if let StructElement::PropertyDefinition(def) = element.as_ref()
+            && def.value.is_none()
+            && def.type_annotation.is_none()
+        {
+            return true;
+        }
+
+        let Some(next_element) = next_element else { return false };
+        matches!(
+            (element.as_ref(), next_element.as_ref()),
+            (StructElement::PropertyDefinition(_), StructElement::PropertyDefinition(_))
+                | (StructElement::PropertyDefinition(_), StructElement::MethodDefinition(_))
+        )
+    }
+}
+
+impl<'a> Format<'a> for FormatStructElementWithSemicolon<'a, '_> {
+    fn fmt(&self, f: &mut Formatter<'_, 'a>) {
+        let needs_semi = matches!(
+            self.element.as_ref(),
+            StructElement::PropertyDefinition(_)
+        );
+
+        let needs_semi = needs_semi
+            && match f.options().semicolons {
+                Semicolons::Always => true,
+                Semicolons::AsNeeded => self.needs_semicolon(),
+            };
+
+        if needs_semi {
+            write!(f, [FormatNodeWithoutTrailingComments(self.element), ";"]);
+            // Print trailing comments after the semicolon
+            match self.element.as_ast_nodes() {
+                AstNodes::PropertyDefinition(prop) => {
+                    prop.format_trailing_comments(f);
+                }
+                _ => {}
+            }
+        } else {
+            self.element.fmt(f);
+        }
+    }
+}
+
+impl<'a> Format<'a> for (&AstNode<'a, StructElement<'a>>, Option<&AstNode<'a, StructElement<'a>>>) {
+    fn fmt(&self, f: &mut Formatter<'_, 'a>) {
+        FormatStructElementWithSemicolon::new(self.0, self.1).fmt(f);
+    }
+}
+
+
+impl<'a> FormatWrite<'a> for AstNode<'a, ArkUIComponentExpression<'a>> {
+    fn write(&self, f: &mut Formatter<'_, 'a>) {
+        let callee = self.callee();
+        let type_arguments = self.type_arguments();
+        let arguments = self.arguments();
+        let children = self.children();
+        let chain_expressions = self.chain_expressions();
+
+        // Format callee
+        write!(f, [FormatNodeWithoutTrailingComments(callee)]);
+
+        // Format type arguments if present
+        if let Some(type_arguments) = type_arguments {
+            write!(f, type_arguments);
+        }
+
+        // Format arguments
+        write!(f, ["(", arguments, ")"]);
+
+        // Format children if present
+        if !children.as_ref().is_empty() {
+            write!(f, [space(), "{", block_indent(&children), "}"]);
+        }
+
+        // Format chain expressions
+        if !chain_expressions.as_ref().is_empty() {
+            for chain_expr_node in chain_expressions.iter() {
+                write!(f, [hard_line_break(), chain_expr_node]);
+            }
+        }
+    }
+}
+
+impl<'a> Format<'a> for AstNode<'a, Vec<'a, ArkUIChild<'a>>> {
+    fn fmt(&self, f: &mut Formatter<'_, 'a>) {
+        let mut join = f.join_nodes_with_hardline();
+        for child in self.iter() {
+            join.entry(child.span(), child);
+        }
+    }
+}

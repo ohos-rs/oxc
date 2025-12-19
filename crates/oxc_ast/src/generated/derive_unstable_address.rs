@@ -3,6 +3,7 @@
 
 use oxc_allocator::UnstableAddress;
 
+use crate::ast::arkui::*;
 use crate::ast::js::*;
 use crate::ast::jsx::*;
 use crate::ast::literal::*;
@@ -383,3 +384,9 @@ impl UnstableAddress for JSDocNullableType<'_> {}
 impl UnstableAddress for JSDocNonNullableType<'_> {}
 
 impl UnstableAddress for JSDocUnknownType {}
+
+impl UnstableAddress for StructStatement<'_> {}
+
+impl UnstableAddress for StructBody<'_> {}
+
+impl UnstableAddress for ArkUIComponentExpression<'_> {}

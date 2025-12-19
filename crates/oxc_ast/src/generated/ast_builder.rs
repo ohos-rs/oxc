@@ -1217,6 +1217,40 @@ impl<'a> AstBuilder<'a> {
         )
     }
 
+    /// Build an [`Expression::ArkUIComponentExpression`].
+    ///
+    /// This node contains an [`ArkUIComponentExpression`] that will be stored in the memory arena.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `callee`: The component name/callee (e.g., `Column`, `Text`, `Button`)
+    /// * `type_arguments`: Type arguments for generic components (if supported)
+    /// * `arguments`: Arguments passed to the component constructor
+    /// * `children`: Children of the component (the content inside `{ ... }`)
+    /// * `chain_expressions`: Chain expressions (like `.onClick(...)`)
+    #[inline]
+    pub fn expression_ark_ui_component<T1>(
+        self,
+        span: Span,
+        callee: Expression<'a>,
+        type_arguments: T1,
+        arguments: Vec<'a, Argument<'a>>,
+        children: Vec<'a, ArkUIChild<'a>>,
+        chain_expressions: Vec<'a, CallExpression<'a>>,
+    ) -> Expression<'a>
+    where
+        T1: IntoIn<'a, Option<Box<'a, TSTypeParameterInstantiation<'a>>>>,
+    {
+        Expression::ArkUIComponentExpression(self.alloc_ark_ui_component_expression(
+            span,
+            callee,
+            type_arguments,
+            arguments,
+            children,
+            chain_expressions,
+        ))
+    }
+
     /// Build an [`IdentifierName`].
     ///
     /// If you want the built node to be allocated in the memory arena,
@@ -3762,6 +3796,73 @@ impl<'a> AstBuilder<'a> {
         Statement::WithStatement(
             self.alloc_with_statement_with_scope_id(span, object, body, scope_id),
         )
+    }
+
+    /// Build a [`Statement::StructStatement`].
+    ///
+    /// This node contains a [`StructStatement`] that will be stored in the memory arena.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `decorators`: Decorators applied to the struct.
+    /// * `id`: Struct identifier, AKA the name
+    /// * `type_parameters`: Type parameters (for generic structs, if supported)
+    /// * `body`: Struct body containing properties and methods
+    #[inline]
+    pub fn statement_struct<T1, T2>(
+        self,
+        span: Span,
+        decorators: Vec<'a, Decorator<'a>>,
+        id: BindingIdentifier<'a>,
+        type_parameters: T1,
+        body: T2,
+    ) -> Statement<'a>
+    where
+        T1: IntoIn<'a, Option<Box<'a, TSTypeParameterDeclaration<'a>>>>,
+        T2: IntoIn<'a, Box<'a, StructBody<'a>>>,
+    {
+        Statement::StructStatement(self.alloc_struct_statement(
+            span,
+            decorators,
+            id,
+            type_parameters,
+            body,
+        ))
+    }
+
+    /// Build a [`Statement::StructStatement`] with `scope_id`.
+    ///
+    /// This node contains a [`StructStatement`] that will be stored in the memory arena.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `decorators`: Decorators applied to the struct.
+    /// * `id`: Struct identifier, AKA the name
+    /// * `type_parameters`: Type parameters (for generic structs, if supported)
+    /// * `body`: Struct body containing properties and methods
+    /// * `scope_id`: Id of the scope created by the [`StructStatement`], including type parameters and
+    #[inline]
+    pub fn statement_struct_with_scope_id<T1, T2>(
+        self,
+        span: Span,
+        decorators: Vec<'a, Decorator<'a>>,
+        id: BindingIdentifier<'a>,
+        type_parameters: T1,
+        body: T2,
+        scope_id: ScopeId,
+    ) -> Statement<'a>
+    where
+        T1: IntoIn<'a, Option<Box<'a, TSTypeParameterDeclaration<'a>>>>,
+        T2: IntoIn<'a, Box<'a, StructBody<'a>>>,
+    {
+        Statement::StructStatement(self.alloc_struct_statement_with_scope_id(
+            span,
+            decorators,
+            id,
+            type_parameters,
+            body,
+            scope_id,
+        ))
     }
 
     /// Build a [`Directive`].
@@ -15135,5 +15236,247 @@ impl<'a> AstBuilder<'a> {
     #[inline]
     pub fn alloc_js_doc_unknown_type(self, span: Span) -> Box<'a, JSDocUnknownType> {
         Box::new_in(self.js_doc_unknown_type(span), self.allocator)
+    }
+
+    /// Build a [`StructStatement`].
+    ///
+    /// If you want the built node to be allocated in the memory arena,
+    /// use [`AstBuilder::alloc_struct_statement`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `decorators`: Decorators applied to the struct.
+    /// * `id`: Struct identifier, AKA the name
+    /// * `type_parameters`: Type parameters (for generic structs, if supported)
+    /// * `body`: Struct body containing properties and methods
+    #[inline]
+    pub fn struct_statement<T1, T2>(
+        self,
+        span: Span,
+        decorators: Vec<'a, Decorator<'a>>,
+        id: BindingIdentifier<'a>,
+        type_parameters: T1,
+        body: T2,
+    ) -> StructStatement<'a>
+    where
+        T1: IntoIn<'a, Option<Box<'a, TSTypeParameterDeclaration<'a>>>>,
+        T2: IntoIn<'a, Box<'a, StructBody<'a>>>,
+    {
+        StructStatement {
+            span,
+            decorators,
+            id,
+            type_parameters: type_parameters.into_in(self.allocator),
+            body: body.into_in(self.allocator),
+            scope_id: Default::default(),
+        }
+    }
+
+    /// Build a [`StructStatement`], and store it in the memory arena.
+    ///
+    /// Returns a [`Box`] containing the newly-allocated node.
+    /// If you want a stack-allocated node, use [`AstBuilder::struct_statement`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `decorators`: Decorators applied to the struct.
+    /// * `id`: Struct identifier, AKA the name
+    /// * `type_parameters`: Type parameters (for generic structs, if supported)
+    /// * `body`: Struct body containing properties and methods
+    #[inline]
+    pub fn alloc_struct_statement<T1, T2>(
+        self,
+        span: Span,
+        decorators: Vec<'a, Decorator<'a>>,
+        id: BindingIdentifier<'a>,
+        type_parameters: T1,
+        body: T2,
+    ) -> Box<'a, StructStatement<'a>>
+    where
+        T1: IntoIn<'a, Option<Box<'a, TSTypeParameterDeclaration<'a>>>>,
+        T2: IntoIn<'a, Box<'a, StructBody<'a>>>,
+    {
+        Box::new_in(
+            self.struct_statement(span, decorators, id, type_parameters, body),
+            self.allocator,
+        )
+    }
+
+    /// Build a [`StructStatement`] with `scope_id`.
+    ///
+    /// If you want the built node to be allocated in the memory arena,
+    /// use [`AstBuilder::alloc_struct_statement_with_scope_id`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `decorators`: Decorators applied to the struct.
+    /// * `id`: Struct identifier, AKA the name
+    /// * `type_parameters`: Type parameters (for generic structs, if supported)
+    /// * `body`: Struct body containing properties and methods
+    /// * `scope_id`: Id of the scope created by the [`StructStatement`], including type parameters and
+    #[inline]
+    pub fn struct_statement_with_scope_id<T1, T2>(
+        self,
+        span: Span,
+        decorators: Vec<'a, Decorator<'a>>,
+        id: BindingIdentifier<'a>,
+        type_parameters: T1,
+        body: T2,
+        scope_id: ScopeId,
+    ) -> StructStatement<'a>
+    where
+        T1: IntoIn<'a, Option<Box<'a, TSTypeParameterDeclaration<'a>>>>,
+        T2: IntoIn<'a, Box<'a, StructBody<'a>>>,
+    {
+        StructStatement {
+            span,
+            decorators,
+            id,
+            type_parameters: type_parameters.into_in(self.allocator),
+            body: body.into_in(self.allocator),
+            scope_id: Cell::new(Some(scope_id)),
+        }
+    }
+
+    /// Build a [`StructStatement`] with `scope_id`, and store it in the memory arena.
+    ///
+    /// Returns a [`Box`] containing the newly-allocated node.
+    /// If you want a stack-allocated node, use [`AstBuilder::struct_statement_with_scope_id`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `decorators`: Decorators applied to the struct.
+    /// * `id`: Struct identifier, AKA the name
+    /// * `type_parameters`: Type parameters (for generic structs, if supported)
+    /// * `body`: Struct body containing properties and methods
+    /// * `scope_id`: Id of the scope created by the [`StructStatement`], including type parameters and
+    #[inline]
+    pub fn alloc_struct_statement_with_scope_id<T1, T2>(
+        self,
+        span: Span,
+        decorators: Vec<'a, Decorator<'a>>,
+        id: BindingIdentifier<'a>,
+        type_parameters: T1,
+        body: T2,
+        scope_id: ScopeId,
+    ) -> Box<'a, StructStatement<'a>>
+    where
+        T1: IntoIn<'a, Option<Box<'a, TSTypeParameterDeclaration<'a>>>>,
+        T2: IntoIn<'a, Box<'a, StructBody<'a>>>,
+    {
+        Box::new_in(
+            self.struct_statement_with_scope_id(
+                span,
+                decorators,
+                id,
+                type_parameters,
+                body,
+                scope_id,
+            ),
+            self.allocator,
+        )
+    }
+
+    /// Build a [`StructBody`].
+    ///
+    /// If you want the built node to be allocated in the memory arena,
+    /// use [`AstBuilder::alloc_struct_body`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `body`
+    #[inline]
+    pub fn struct_body(self, span: Span, body: Vec<'a, StructElement<'a>>) -> StructBody<'a> {
+        StructBody { span, body }
+    }
+
+    /// Build a [`StructBody`], and store it in the memory arena.
+    ///
+    /// Returns a [`Box`] containing the newly-allocated node.
+    /// If you want a stack-allocated node, use [`AstBuilder::struct_body`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `body`
+    #[inline]
+    pub fn alloc_struct_body(
+        self,
+        span: Span,
+        body: Vec<'a, StructElement<'a>>,
+    ) -> Box<'a, StructBody<'a>> {
+        Box::new_in(self.struct_body(span, body), self.allocator)
+    }
+
+    /// Build an [`ArkUIComponentExpression`].
+    ///
+    /// If you want the built node to be allocated in the memory arena,
+    /// use [`AstBuilder::alloc_ark_ui_component_expression`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `callee`: The component name/callee (e.g., `Column`, `Text`, `Button`)
+    /// * `type_arguments`: Type arguments for generic components (if supported)
+    /// * `arguments`: Arguments passed to the component constructor
+    /// * `children`: Children of the component (the content inside `{ ... }`)
+    /// * `chain_expressions`: Chain expressions (like `.onClick(...)`)
+    #[inline]
+    pub fn ark_ui_component_expression<T1>(
+        self,
+        span: Span,
+        callee: Expression<'a>,
+        type_arguments: T1,
+        arguments: Vec<'a, Argument<'a>>,
+        children: Vec<'a, ArkUIChild<'a>>,
+        chain_expressions: Vec<'a, CallExpression<'a>>,
+    ) -> ArkUIComponentExpression<'a>
+    where
+        T1: IntoIn<'a, Option<Box<'a, TSTypeParameterInstantiation<'a>>>>,
+    {
+        ArkUIComponentExpression {
+            span,
+            callee,
+            type_arguments: type_arguments.into_in(self.allocator),
+            arguments,
+            children,
+            chain_expressions,
+        }
+    }
+
+    /// Build an [`ArkUIComponentExpression`], and store it in the memory arena.
+    ///
+    /// Returns a [`Box`] containing the newly-allocated node.
+    /// If you want a stack-allocated node, use [`AstBuilder::ark_ui_component_expression`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `callee`: The component name/callee (e.g., `Column`, `Text`, `Button`)
+    /// * `type_arguments`: Type arguments for generic components (if supported)
+    /// * `arguments`: Arguments passed to the component constructor
+    /// * `children`: Children of the component (the content inside `{ ... }`)
+    /// * `chain_expressions`: Chain expressions (like `.onClick(...)`)
+    #[inline]
+    pub fn alloc_ark_ui_component_expression<T1>(
+        self,
+        span: Span,
+        callee: Expression<'a>,
+        type_arguments: T1,
+        arguments: Vec<'a, Argument<'a>>,
+        children: Vec<'a, ArkUIChild<'a>>,
+        chain_expressions: Vec<'a, CallExpression<'a>>,
+    ) -> Box<'a, ArkUIComponentExpression<'a>>
+    where
+        T1: IntoIn<'a, Option<Box<'a, TSTypeParameterInstantiation<'a>>>>,
+    {
+        Box::new_in(
+            self.ark_ui_component_expression(
+                span,
+                callee,
+                type_arguments,
+                arguments,
+                children,
+                chain_expressions,
+            ),
+            self.allocator,
+        )
     }
 }

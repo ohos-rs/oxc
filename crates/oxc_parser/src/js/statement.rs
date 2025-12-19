@@ -104,6 +104,12 @@ impl<'a> ParserImpl<'a> {
                 &Modifiers::empty(),
                 self.ast.vec(),
             ),
+            Kind::Struct => self.parse_struct_statement(
+                self.start_span(),
+                stmt_ctx,
+                &Modifiers::empty(),
+                self.ast.vec(),
+            ),
             Kind::Export => {
                 self.parse_export_declaration(self.start_span(), self.ast.vec(), stmt_ctx)
             }
@@ -788,6 +794,10 @@ impl<'a> ParserImpl<'a> {
         if self.at(Kind::Class) {
             // Class span.start starts before decorators.
             return self.parse_class_statement(span, stmt_ctx, &modifiers, decorators);
+        }
+        if self.at(Kind::Struct) {
+            // Struct span.start starts before decorators.
+            return self.parse_struct_statement(span, stmt_ctx, &modifiers, decorators);
         }
         self.unexpected()
     }

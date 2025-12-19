@@ -173,6 +173,8 @@ macro_rules! inherit_variants {
                 TSInstantiationExpression(Box<'a, TSInstantiationExpression<'a>>) = 38,
                 /// Inherited from [`Expression`]
                 V8IntrinsicExpression(Box<'a, V8IntrinsicExpression<'a>>) = 39,
+                /// Inherited from [`Expression`]
+                ArkUIComponentExpression(Box<'a, $crate::ast::ArkUIComponentExpression<'a>>) = 40,
 
                 // Inherited from `MemberExpression`
                 @inherit MemberExpression
@@ -231,6 +233,7 @@ macro_rules! inherit_variants {
                 TSNonNullExpression,
                 TSInstantiationExpression,
                 V8IntrinsicExpression,
+                ArkUIComponentExpression,
                 ComputedMemberExpression,
                 StaticMemberExpression,
                 PrivateFieldExpression,

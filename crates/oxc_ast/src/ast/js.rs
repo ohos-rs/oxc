@@ -35,7 +35,7 @@ use oxc_syntax::{
     symbol::SymbolId,
 };
 
-use super::{macros::inherit_variants, *};
+use super::{arkui::*, macros::inherit_variants, *};
 
 /// Represents the root of a JavaScript abstract syntax tree (AST), containing metadata about the source,
 /// directives, top-level statements, and scope information.
@@ -160,6 +160,8 @@ pub enum Expression<'a> {
     TSInstantiationExpression(Box<'a, TSInstantiationExpression<'a>>) = 38,
     /// See [`V8IntrinsicExpression`] for AST node details.
     V8IntrinsicExpression(Box<'a, V8IntrinsicExpression<'a>>) = 39,
+    /// See [`ArkUIComponentExpression`] for AST node details.
+    ArkUIComponentExpression(Box<'a, ArkUIComponentExpression<'a>>) = 40,
 
     // `MemberExpression` variants added here by `inherit_variants!` macro
     @inherit MemberExpression
@@ -214,6 +216,7 @@ macro_rules! match_expression {
             | $ty::StaticMemberExpression(_)
             | $ty::PrivateFieldExpression(_)
             | $ty::V8IntrinsicExpression(_)
+            | $ty::ArkUIComponentExpression(_)
     };
 }
 pub use match_expression;
@@ -1105,8 +1108,10 @@ pub enum Statement<'a> {
     SwitchStatement(Box<'a, SwitchStatement<'a>>) = 13,
     ThrowStatement(Box<'a, ThrowStatement<'a>>) = 14,
     TryStatement(Box<'a, TryStatement<'a>>) = 15,
-    WhileStatement(Box<'a, WhileStatement<'a>>) = 16,
-    WithStatement(Box<'a, WithStatement<'a>>) = 17,
+    WhileStatement(Box<'a, WhileStatement<'a>>) = 17,
+    WithStatement(Box<'a, WithStatement<'a>>) = 18,
+    /// See [`StructStatement`] for AST node details.
+    StructStatement(Box<'a, StructStatement<'a>>) = 19,
     // `Declaration` variants added here by `inherit_variants!` macro
     @inherit Declaration
     // `ModuleDeclaration` variants added here by `inherit_variants!` macro

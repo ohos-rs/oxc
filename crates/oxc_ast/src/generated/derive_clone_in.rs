@@ -5,6 +5,7 @@
 
 use oxc_allocator::{Allocator, CloneIn};
 
+use crate::ast::arkui::*;
 use crate::ast::comment::*;
 use crate::ast::js::*;
 use crate::ast::jsx::*;
@@ -146,6 +147,9 @@ impl<'new_alloc> CloneIn<'new_alloc> for Expression<'_> {
             Self::V8IntrinsicExpression(it) => {
                 Expression::V8IntrinsicExpression(CloneIn::clone_in(it, allocator))
             }
+            Self::ArkUIComponentExpression(it) => {
+                Expression::ArkUIComponentExpression(CloneIn::clone_in(it, allocator))
+            }
             Self::ComputedMemberExpression(it) => {
                 Expression::ComputedMemberExpression(CloneIn::clone_in(it, allocator))
             }
@@ -278,6 +282,9 @@ impl<'new_alloc> CloneIn<'new_alloc> for Expression<'_> {
                 CloneIn::clone_in_with_semantic_ids(it, allocator),
             ),
             Self::V8IntrinsicExpression(it) => Expression::V8IntrinsicExpression(
+                CloneIn::clone_in_with_semantic_ids(it, allocator),
+            ),
+            Self::ArkUIComponentExpression(it) => Expression::ArkUIComponentExpression(
                 CloneIn::clone_in_with_semantic_ids(it, allocator),
             ),
             Self::ComputedMemberExpression(it) => Expression::ComputedMemberExpression(
@@ -526,6 +533,9 @@ impl<'new_alloc> CloneIn<'new_alloc> for ArrayExpressionElement<'_> {
             Self::V8IntrinsicExpression(it) => {
                 ArrayExpressionElement::V8IntrinsicExpression(CloneIn::clone_in(it, allocator))
             }
+            Self::ArkUIComponentExpression(it) => {
+                ArrayExpressionElement::ArkUIComponentExpression(CloneIn::clone_in(it, allocator))
+            }
             Self::ComputedMemberExpression(it) => {
                 ArrayExpressionElement::ComputedMemberExpression(CloneIn::clone_in(it, allocator))
             }
@@ -666,6 +676,9 @@ impl<'new_alloc> CloneIn<'new_alloc> for ArrayExpressionElement<'_> {
                 )
             }
             Self::V8IntrinsicExpression(it) => ArrayExpressionElement::V8IntrinsicExpression(
+                CloneIn::clone_in_with_semantic_ids(it, allocator),
+            ),
+            Self::ArkUIComponentExpression(it) => ArrayExpressionElement::ArkUIComponentExpression(
                 CloneIn::clone_in_with_semantic_ids(it, allocator),
             ),
             Self::ComputedMemberExpression(it) => ArrayExpressionElement::ComputedMemberExpression(
@@ -876,6 +889,9 @@ impl<'new_alloc> CloneIn<'new_alloc> for PropertyKey<'_> {
             Self::V8IntrinsicExpression(it) => {
                 PropertyKey::V8IntrinsicExpression(CloneIn::clone_in(it, allocator))
             }
+            Self::ArkUIComponentExpression(it) => {
+                PropertyKey::ArkUIComponentExpression(CloneIn::clone_in(it, allocator))
+            }
             Self::ComputedMemberExpression(it) => {
                 PropertyKey::ComputedMemberExpression(CloneIn::clone_in(it, allocator))
             }
@@ -1014,6 +1030,9 @@ impl<'new_alloc> CloneIn<'new_alloc> for PropertyKey<'_> {
                 CloneIn::clone_in_with_semantic_ids(it, allocator),
             ),
             Self::V8IntrinsicExpression(it) => PropertyKey::V8IntrinsicExpression(
+                CloneIn::clone_in_with_semantic_ids(it, allocator),
+            ),
+            Self::ArkUIComponentExpression(it) => PropertyKey::ArkUIComponentExpression(
                 CloneIn::clone_in_with_semantic_ids(it, allocator),
             ),
             Self::ComputedMemberExpression(it) => PropertyKey::ComputedMemberExpression(
@@ -1407,6 +1426,9 @@ impl<'new_alloc> CloneIn<'new_alloc> for Argument<'_> {
             Self::V8IntrinsicExpression(it) => {
                 Argument::V8IntrinsicExpression(CloneIn::clone_in(it, allocator))
             }
+            Self::ArkUIComponentExpression(it) => {
+                Argument::ArkUIComponentExpression(CloneIn::clone_in(it, allocator))
+            }
             Self::ComputedMemberExpression(it) => {
                 Argument::ComputedMemberExpression(CloneIn::clone_in(it, allocator))
             }
@@ -1542,6 +1564,9 @@ impl<'new_alloc> CloneIn<'new_alloc> for Argument<'_> {
             Self::V8IntrinsicExpression(it) => {
                 Argument::V8IntrinsicExpression(CloneIn::clone_in_with_semantic_ids(it, allocator))
             }
+            Self::ArkUIComponentExpression(it) => Argument::ArkUIComponentExpression(
+                CloneIn::clone_in_with_semantic_ids(it, allocator),
+            ),
             Self::ComputedMemberExpression(it) => Argument::ComputedMemberExpression(
                 CloneIn::clone_in_with_semantic_ids(it, allocator),
             ),
@@ -2292,6 +2317,9 @@ impl<'new_alloc> CloneIn<'new_alloc> for Statement<'_> {
             Self::TryStatement(it) => Statement::TryStatement(CloneIn::clone_in(it, allocator)),
             Self::WhileStatement(it) => Statement::WhileStatement(CloneIn::clone_in(it, allocator)),
             Self::WithStatement(it) => Statement::WithStatement(CloneIn::clone_in(it, allocator)),
+            Self::StructStatement(it) => {
+                Statement::StructStatement(CloneIn::clone_in(it, allocator))
+            }
             Self::VariableDeclaration(it) => {
                 Statement::VariableDeclaration(CloneIn::clone_in(it, allocator))
             }
@@ -2395,6 +2423,9 @@ impl<'new_alloc> CloneIn<'new_alloc> for Statement<'_> {
             }
             Self::WithStatement(it) => {
                 Statement::WithStatement(CloneIn::clone_in_with_semantic_ids(it, allocator))
+            }
+            Self::StructStatement(it) => {
+                Statement::StructStatement(CloneIn::clone_in_with_semantic_ids(it, allocator))
             }
             Self::VariableDeclaration(it) => {
                 Statement::VariableDeclaration(CloneIn::clone_in_with_semantic_ids(it, allocator))
@@ -2871,6 +2902,9 @@ impl<'new_alloc> CloneIn<'new_alloc> for ForStatementInit<'_> {
             Self::V8IntrinsicExpression(it) => {
                 ForStatementInit::V8IntrinsicExpression(CloneIn::clone_in(it, allocator))
             }
+            Self::ArkUIComponentExpression(it) => {
+                ForStatementInit::ArkUIComponentExpression(CloneIn::clone_in(it, allocator))
+            }
             Self::ComputedMemberExpression(it) => {
                 ForStatementInit::ComputedMemberExpression(CloneIn::clone_in(it, allocator))
             }
@@ -3006,6 +3040,9 @@ impl<'new_alloc> CloneIn<'new_alloc> for ForStatementInit<'_> {
                 CloneIn::clone_in_with_semantic_ids(it, allocator),
             ),
             Self::V8IntrinsicExpression(it) => ForStatementInit::V8IntrinsicExpression(
+                CloneIn::clone_in_with_semantic_ids(it, allocator),
+            ),
+            Self::ArkUIComponentExpression(it) => ForStatementInit::ArkUIComponentExpression(
                 CloneIn::clone_in_with_semantic_ids(it, allocator),
             ),
             Self::ComputedMemberExpression(it) => ForStatementInit::ComputedMemberExpression(
@@ -4578,6 +4615,11 @@ impl<'new_alloc> CloneIn<'new_alloc> for ExportDefaultDeclarationKind<'_> {
             Self::V8IntrinsicExpression(it) => ExportDefaultDeclarationKind::V8IntrinsicExpression(
                 CloneIn::clone_in(it, allocator),
             ),
+            Self::ArkUIComponentExpression(it) => {
+                ExportDefaultDeclarationKind::ArkUIComponentExpression(CloneIn::clone_in(
+                    it, allocator,
+                ))
+            }
             Self::ComputedMemberExpression(it) => {
                 ExportDefaultDeclarationKind::ComputedMemberExpression(CloneIn::clone_in(
                     it, allocator,
@@ -4737,6 +4779,11 @@ impl<'new_alloc> CloneIn<'new_alloc> for ExportDefaultDeclarationKind<'_> {
             Self::V8IntrinsicExpression(it) => ExportDefaultDeclarationKind::V8IntrinsicExpression(
                 CloneIn::clone_in_with_semantic_ids(it, allocator),
             ),
+            Self::ArkUIComponentExpression(it) => {
+                ExportDefaultDeclarationKind::ArkUIComponentExpression(
+                    CloneIn::clone_in_with_semantic_ids(it, allocator),
+                )
+            }
             Self::ComputedMemberExpression(it) => {
                 ExportDefaultDeclarationKind::ComputedMemberExpression(
                     CloneIn::clone_in_with_semantic_ids(it, allocator),
@@ -5322,6 +5369,9 @@ impl<'new_alloc> CloneIn<'new_alloc> for JSXExpression<'_> {
             Self::V8IntrinsicExpression(it) => {
                 JSXExpression::V8IntrinsicExpression(CloneIn::clone_in(it, allocator))
             }
+            Self::ArkUIComponentExpression(it) => {
+                JSXExpression::ArkUIComponentExpression(CloneIn::clone_in(it, allocator))
+            }
             Self::ComputedMemberExpression(it) => {
                 JSXExpression::ComputedMemberExpression(CloneIn::clone_in(it, allocator))
             }
@@ -5457,6 +5507,9 @@ impl<'new_alloc> CloneIn<'new_alloc> for JSXExpression<'_> {
                 CloneIn::clone_in_with_semantic_ids(it, allocator),
             ),
             Self::V8IntrinsicExpression(it) => JSXExpression::V8IntrinsicExpression(
+                CloneIn::clone_in_with_semantic_ids(it, allocator),
+            ),
+            Self::ArkUIComponentExpression(it) => JSXExpression::ArkUIComponentExpression(
                 CloneIn::clone_in_with_semantic_ids(it, allocator),
             ),
             Self::ComputedMemberExpression(it) => JSXExpression::ComputedMemberExpression(
@@ -7942,6 +7995,127 @@ impl<'new_alloc> CloneIn<'new_alloc> for JSDocUnknownType {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         JSDocUnknownType { span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator) }
+    }
+}
+
+impl<'new_alloc> CloneIn<'new_alloc> for StructStatement<'_> {
+    type Cloned = StructStatement<'new_alloc>;
+
+    fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
+        StructStatement {
+            span: CloneIn::clone_in(&self.span, allocator),
+            decorators: CloneIn::clone_in(&self.decorators, allocator),
+            id: CloneIn::clone_in(&self.id, allocator),
+            type_parameters: CloneIn::clone_in(&self.type_parameters, allocator),
+            body: CloneIn::clone_in(&self.body, allocator),
+            scope_id: Default::default(),
+        }
+    }
+
+    fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
+        StructStatement {
+            span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
+            decorators: CloneIn::clone_in_with_semantic_ids(&self.decorators, allocator),
+            id: CloneIn::clone_in_with_semantic_ids(&self.id, allocator),
+            type_parameters: CloneIn::clone_in_with_semantic_ids(&self.type_parameters, allocator),
+            body: CloneIn::clone_in_with_semantic_ids(&self.body, allocator),
+            scope_id: CloneIn::clone_in_with_semantic_ids(&self.scope_id, allocator),
+        }
+    }
+}
+
+impl<'new_alloc> CloneIn<'new_alloc> for StructBody<'_> {
+    type Cloned = StructBody<'new_alloc>;
+
+    fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
+        StructBody {
+            span: CloneIn::clone_in(&self.span, allocator),
+            body: CloneIn::clone_in(&self.body, allocator),
+        }
+    }
+
+    fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
+        StructBody {
+            span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
+            body: CloneIn::clone_in_with_semantic_ids(&self.body, allocator),
+        }
+    }
+}
+
+impl<'new_alloc> CloneIn<'new_alloc> for StructElement<'_> {
+    type Cloned = StructElement<'new_alloc>;
+
+    fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
+        match self {
+            Self::PropertyDefinition(it) => {
+                StructElement::PropertyDefinition(CloneIn::clone_in(it, allocator))
+            }
+            Self::MethodDefinition(it) => {
+                StructElement::MethodDefinition(CloneIn::clone_in(it, allocator))
+            }
+        }
+    }
+
+    fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
+        match self {
+            Self::PropertyDefinition(it) => StructElement::PropertyDefinition(
+                CloneIn::clone_in_with_semantic_ids(it, allocator),
+            ),
+            Self::MethodDefinition(it) => {
+                StructElement::MethodDefinition(CloneIn::clone_in_with_semantic_ids(it, allocator))
+            }
+        }
+    }
+}
+
+impl<'new_alloc> CloneIn<'new_alloc> for ArkUIComponentExpression<'_> {
+    type Cloned = ArkUIComponentExpression<'new_alloc>;
+
+    fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
+        ArkUIComponentExpression {
+            span: CloneIn::clone_in(&self.span, allocator),
+            callee: CloneIn::clone_in(&self.callee, allocator),
+            type_arguments: CloneIn::clone_in(&self.type_arguments, allocator),
+            arguments: CloneIn::clone_in(&self.arguments, allocator),
+            children: CloneIn::clone_in(&self.children, allocator),
+            chain_expressions: CloneIn::clone_in(&self.chain_expressions, allocator),
+        }
+    }
+
+    fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
+        ArkUIComponentExpression {
+            span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
+            callee: CloneIn::clone_in_with_semantic_ids(&self.callee, allocator),
+            type_arguments: CloneIn::clone_in_with_semantic_ids(&self.type_arguments, allocator),
+            arguments: CloneIn::clone_in_with_semantic_ids(&self.arguments, allocator),
+            children: CloneIn::clone_in_with_semantic_ids(&self.children, allocator),
+            chain_expressions: CloneIn::clone_in_with_semantic_ids(
+                &self.chain_expressions,
+                allocator,
+            ),
+        }
+    }
+}
+
+impl<'new_alloc> CloneIn<'new_alloc> for ArkUIChild<'_> {
+    type Cloned = ArkUIChild<'new_alloc>;
+
+    fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
+        match self {
+            Self::Component(it) => ArkUIChild::Component(CloneIn::clone_in(it, allocator)),
+            Self::Expression(it) => ArkUIChild::Expression(CloneIn::clone_in(it, allocator)),
+        }
+    }
+
+    fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
+        match self {
+            Self::Component(it) => {
+                ArkUIChild::Component(CloneIn::clone_in_with_semantic_ids(it, allocator))
+            }
+            Self::Expression(it) => {
+                ArkUIChild::Expression(CloneIn::clone_in_with_semantic_ids(it, allocator))
+            }
+        }
     }
 }
 

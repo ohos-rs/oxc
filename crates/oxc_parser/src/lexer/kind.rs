@@ -104,6 +104,7 @@ pub enum Kind {
     Protected,
     Public,
     Static,
+    Struct, // ArkUI struct keyword
     Yield,
     // 12.9.1 Null Literals
     // 12.9.2 Boolean Literals
@@ -386,14 +387,14 @@ impl Kind {
             Async | From | Get | Meta | Of | Set | Target | Accessor | Abstract | As | Asserts | Assert
             | Any | Boolean | Constructor | Declare | Infer | Intrinsic | Is | KeyOf | Module | Namespace
             | Never | Out | Readonly | Require | Number | Object | Satisfies | String | Symbol | Type
-            | Undefined | Unique | Unknown | Using | Global | BigInt | Override | Source | Defer
+            | Undefined | Unique | Unknown | Using | Global | BigInt | Override | Source | Defer | Struct
         )
     }
 
     #[rustfmt::skip]
     #[inline]
     pub fn is_future_reserved_keyword(self) -> bool {
-        matches!(self, Implements | Interface | Package | Private | Protected | Public | Static)
+        matches!(self, Implements | Interface | Package | Private | Protected | Public | Static | Struct)
     }
 
     #[inline]
@@ -525,6 +526,7 @@ impl Kind {
             "instanceof" => Instanceof,
 
             "constructor" => Constructor,
+            "struct" => Struct,
             _ => Ident,
         }
     }
@@ -596,6 +598,7 @@ impl Kind {
             Protected => "protected",
             Public => "public",
             Static => "static",
+            Struct => "struct",
             Let => "let",
             Yield => "yield",
             Amp => "&",

@@ -197,6 +197,9 @@ unsafe fn walk_expression<'a, State, Tr: Traverse<'a, State>>(
         Expression::V8IntrinsicExpression(node) => {
             walk_v8_intrinsic_expression(traverser, (&mut **node) as *mut _, ctx)
         }
+        Expression::ArkUIComponentExpression(node) => {
+            walk_ark_u_i_component_expression(traverser, (&mut **node) as *mut _, ctx)
+        }
         Expression::ComputedMemberExpression(_)
         | Expression::StaticMemberExpression(_)
         | Expression::PrivateFieldExpression(_) => {
@@ -320,6 +323,7 @@ unsafe fn walk_array_expression_element<'a, State, Tr: Traverse<'a, State>>(
         | ArrayExpressionElement::TSNonNullExpression(_)
         | ArrayExpressionElement::TSInstantiationExpression(_)
         | ArrayExpressionElement::V8IntrinsicExpression(_)
+        | ArrayExpressionElement::ArkUIComponentExpression(_)
         | ArrayExpressionElement::ComputedMemberExpression(_)
         | ArrayExpressionElement::StaticMemberExpression(_)
         | ArrayExpressionElement::PrivateFieldExpression(_) => {
@@ -450,6 +454,7 @@ unsafe fn walk_property_key<'a, State, Tr: Traverse<'a, State>>(
         | PropertyKey::TSNonNullExpression(_)
         | PropertyKey::TSInstantiationExpression(_)
         | PropertyKey::V8IntrinsicExpression(_)
+        | PropertyKey::ArkUIComponentExpression(_)
         | PropertyKey::ComputedMemberExpression(_)
         | PropertyKey::StaticMemberExpression(_)
         | PropertyKey::PrivateFieldExpression(_) => walk_expression(traverser, node as *mut _, ctx),
@@ -773,6 +778,7 @@ unsafe fn walk_argument<'a, State, Tr: Traverse<'a, State>>(
         | Argument::TSNonNullExpression(_)
         | Argument::TSInstantiationExpression(_)
         | Argument::V8IntrinsicExpression(_)
+        | Argument::ArkUIComponentExpression(_)
         | Argument::ComputedMemberExpression(_)
         | Argument::StaticMemberExpression(_)
         | Argument::PrivateFieldExpression(_) => walk_expression(traverser, node as *mut _, ctx),
@@ -1372,6 +1378,9 @@ unsafe fn walk_statement<'a, State, Tr: Traverse<'a, State>>(
         Statement::WithStatement(node) => {
             walk_with_statement(traverser, (&mut **node) as *mut _, ctx)
         }
+        Statement::StructStatement(node) => {
+            walk_struct_statement(traverser, (&mut **node) as *mut _, ctx)
+        }
         Statement::VariableDeclaration(_)
         | Statement::FunctionDeclaration(_)
         | Statement::ClassDeclaration(_)
@@ -1726,6 +1735,7 @@ unsafe fn walk_for_statement_init<'a, State, Tr: Traverse<'a, State>>(
         | ForStatementInit::TSNonNullExpression(_)
         | ForStatementInit::TSInstantiationExpression(_)
         | ForStatementInit::V8IntrinsicExpression(_)
+        | ForStatementInit::ArkUIComponentExpression(_)
         | ForStatementInit::ComputedMemberExpression(_)
         | ForStatementInit::StaticMemberExpression(_)
         | ForStatementInit::PrivateFieldExpression(_) => {
@@ -3123,6 +3133,7 @@ unsafe fn walk_export_default_declaration_kind<'a, State, Tr: Traverse<'a, State
         | ExportDefaultDeclarationKind::TSNonNullExpression(_)
         | ExportDefaultDeclarationKind::TSInstantiationExpression(_)
         | ExportDefaultDeclarationKind::V8IntrinsicExpression(_)
+        | ExportDefaultDeclarationKind::ArkUIComponentExpression(_)
         | ExportDefaultDeclarationKind::ComputedMemberExpression(_)
         | ExportDefaultDeclarationKind::StaticMemberExpression(_)
         | ExportDefaultDeclarationKind::PrivateFieldExpression(_) => {
@@ -3471,6 +3482,7 @@ unsafe fn walk_jsx_expression<'a, State, Tr: Traverse<'a, State>>(
         | JSXExpression::TSNonNullExpression(_)
         | JSXExpression::TSInstantiationExpression(_)
         | JSXExpression::V8IntrinsicExpression(_)
+        | JSXExpression::ArkUIComponentExpression(_)
         | JSXExpression::ComputedMemberExpression(_)
         | JSXExpression::StaticMemberExpression(_)
         | JSXExpression::PrivateFieldExpression(_) => {
@@ -5686,6 +5698,146 @@ unsafe fn walk_js_doc_unknown_type<'a, State, Tr: Traverse<'a, State>>(
 ) {
     traverser.enter_js_doc_unknown_type(&mut *node, ctx);
     traverser.exit_js_doc_unknown_type(&mut *node, ctx);
+}
+
+unsafe fn walk_struct_statement<'a, State, Tr: Traverse<'a, State>>(
+    traverser: &mut Tr,
+    node: *mut StructStatement<'a>,
+    ctx: &mut TraverseCtx<'a, State>,
+) {
+    traverser.enter_struct_statement(&mut *node, ctx);
+    let previous_scope_id = ctx.current_scope_id();
+    let current_scope_id = (*((node as *mut u8).add(ancestor::OFFSET_STRUCT_STATEMENT_SCOPE_ID)
+        as *mut Cell<Option<ScopeId>>))
+        .get()
+        .unwrap();
+    ctx.set_current_scope_id(current_scope_id);
+    let pop_token = ctx.push_stack(Ancestor::StructStatementDecorators(
+        ancestor::StructStatementWithoutDecorators(node, PhantomData),
+    ));
+    for item in &mut *((node as *mut u8).add(ancestor::OFFSET_STRUCT_STATEMENT_DECORATORS)
+        as *mut Vec<Decorator>)
+    {
+        walk_decorator(traverser, item as *mut _, ctx);
+    }
+    ctx.retag_stack(AncestorType::StructStatementId);
+    walk_binding_identifier(
+        traverser,
+        (node as *mut u8).add(ancestor::OFFSET_STRUCT_STATEMENT_ID) as *mut BindingIdentifier,
+        ctx,
+    );
+    if let Some(field) = &mut *((node as *mut u8)
+        .add(ancestor::OFFSET_STRUCT_STATEMENT_TYPE_PARAMETERS)
+        as *mut Option<Box<TSTypeParameterDeclaration>>)
+    {
+        ctx.retag_stack(AncestorType::StructStatementTypeParameters);
+        walk_ts_type_parameter_declaration(traverser, (&mut **field) as *mut _, ctx);
+    }
+    ctx.retag_stack(AncestorType::StructStatementBody);
+    walk_struct_body(
+        traverser,
+        (&mut **((node as *mut u8).add(ancestor::OFFSET_STRUCT_STATEMENT_BODY)
+            as *mut Box<StructBody>)) as *mut _,
+        ctx,
+    );
+    ctx.pop_stack(pop_token);
+    ctx.set_current_scope_id(previous_scope_id);
+    traverser.exit_struct_statement(&mut *node, ctx);
+}
+
+unsafe fn walk_struct_body<'a, State, Tr: Traverse<'a, State>>(
+    traverser: &mut Tr,
+    node: *mut StructBody<'a>,
+    ctx: &mut TraverseCtx<'a, State>,
+) {
+    traverser.enter_struct_body(&mut *node, ctx);
+    let pop_token = ctx
+        .push_stack(Ancestor::StructBodyBody(ancestor::StructBodyWithoutBody(node, PhantomData)));
+    for item in
+        &mut *((node as *mut u8).add(ancestor::OFFSET_STRUCT_BODY_BODY) as *mut Vec<StructElement>)
+    {
+        walk_struct_element(traverser, item as *mut _, ctx);
+    }
+    ctx.pop_stack(pop_token);
+    traverser.exit_struct_body(&mut *node, ctx);
+}
+
+unsafe fn walk_struct_element<'a, State, Tr: Traverse<'a, State>>(
+    traverser: &mut Tr,
+    node: *mut StructElement<'a>,
+    ctx: &mut TraverseCtx<'a, State>,
+) {
+    traverser.enter_struct_element(&mut *node, ctx);
+    match &mut *node {
+        StructElement::PropertyDefinition(node) => {
+            walk_property_definition(traverser, (&mut **node) as *mut _, ctx)
+        }
+        StructElement::MethodDefinition(node) => {
+            walk_method_definition(traverser, (&mut **node) as *mut _, ctx)
+        }
+    }
+    traverser.exit_struct_element(&mut *node, ctx);
+}
+
+unsafe fn walk_ark_u_i_component_expression<'a, State, Tr: Traverse<'a, State>>(
+    traverser: &mut Tr,
+    node: *mut ArkUIComponentExpression<'a>,
+    ctx: &mut TraverseCtx<'a, State>,
+) {
+    traverser.enter_ark_u_i_component_expression(&mut *node, ctx);
+    let pop_token = ctx.push_stack(Ancestor::ArkUIComponentExpressionCallee(
+        ancestor::ArkUIComponentExpressionWithoutCallee(node, PhantomData),
+    ));
+    walk_expression(
+        traverser,
+        (node as *mut u8).add(ancestor::OFFSET_ARK_U_I_COMPONENT_EXPRESSION_CALLEE)
+            as *mut Expression,
+        ctx,
+    );
+    if let Some(field) = &mut *((node as *mut u8)
+        .add(ancestor::OFFSET_ARK_U_I_COMPONENT_EXPRESSION_TYPE_ARGUMENTS)
+        as *mut Option<Box<TSTypeParameterInstantiation>>)
+    {
+        ctx.retag_stack(AncestorType::ArkUIComponentExpressionTypeArguments);
+        walk_ts_type_parameter_instantiation(traverser, (&mut **field) as *mut _, ctx);
+    }
+    ctx.retag_stack(AncestorType::ArkUIComponentExpressionArguments);
+    for item in &mut *((node as *mut u8)
+        .add(ancestor::OFFSET_ARK_U_I_COMPONENT_EXPRESSION_ARGUMENTS)
+        as *mut Vec<Argument>)
+    {
+        walk_argument(traverser, item as *mut _, ctx);
+    }
+    ctx.retag_stack(AncestorType::ArkUIComponentExpressionChildren);
+    for item in &mut *((node as *mut u8).add(ancestor::OFFSET_ARK_U_I_COMPONENT_EXPRESSION_CHILDREN)
+        as *mut Vec<ArkUIChild>)
+    {
+        walk_ark_u_i_child(traverser, item as *mut _, ctx);
+    }
+    ctx.retag_stack(AncestorType::ArkUIComponentExpressionChainExpressions);
+    for item in &mut *((node as *mut u8)
+        .add(ancestor::OFFSET_ARK_U_I_COMPONENT_EXPRESSION_CHAIN_EXPRESSIONS)
+        as *mut Vec<CallExpression>)
+    {
+        walk_call_expression(traverser, item as *mut _, ctx);
+    }
+    ctx.pop_stack(pop_token);
+    traverser.exit_ark_u_i_component_expression(&mut *node, ctx);
+}
+
+unsafe fn walk_ark_u_i_child<'a, State, Tr: Traverse<'a, State>>(
+    traverser: &mut Tr,
+    node: *mut ArkUIChild<'a>,
+    ctx: &mut TraverseCtx<'a, State>,
+) {
+    traverser.enter_ark_u_i_child(&mut *node, ctx);
+    match &mut *node {
+        ArkUIChild::Component(node) => {
+            walk_ark_u_i_component_expression(traverser, (&mut **node) as *mut _, ctx)
+        }
+        ArkUIChild::Expression(node) => walk_expression(traverser, (&mut **node) as *mut _, ctx),
+    }
+    traverser.exit_ark_u_i_child(&mut *node, ctx);
 }
 
 unsafe fn walk_statements<'a, State, Tr: Traverse<'a, State>>(

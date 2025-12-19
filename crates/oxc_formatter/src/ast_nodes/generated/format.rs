@@ -425,6 +425,16 @@ impl<'a> Format<'a> for AstNode<'a, Expression<'a>> {
                     })
                     .fmt(f);
             }
+            Expression::ArkUIComponentExpression(inner) => {
+                allocator
+                    .alloc(AstNode::<ArkUIComponentExpression> {
+                        inner,
+                        parent,
+                        allocator,
+                        following_span: self.following_span,
+                    })
+                    .fmt(f);
+            }
             it @ match_member_expression!(Expression) => {
                 let inner = it.to_member_expression();
                 allocator
@@ -1758,6 +1768,16 @@ impl<'a> Format<'a> for AstNode<'a, Statement<'a>> {
             Statement::WithStatement(inner) => {
                 allocator
                     .alloc(AstNode::<WithStatement> {
+                        inner,
+                        parent,
+                        allocator,
+                        following_span: self.following_span,
+                    })
+                    .fmt(f);
+            }
+            Statement::StructStatement(inner) => {
+                allocator
+                    .alloc(AstNode::<StructStatement> {
                         inner,
                         parent,
                         allocator,
@@ -5658,5 +5678,114 @@ impl<'a> Format<'a> for AstNode<'a, JSDocUnknownType> {
             self.write(f);
         }
         self.format_trailing_comments(f);
+    }
+}
+
+impl<'a> Format<'a> for AstNode<'a, StructStatement<'a>> {
+    fn fmt(&self, f: &mut Formatter<'_, 'a>) {
+        let is_suppressed = f.comments().is_suppressed(self.span().start);
+        self.format_leading_comments(f);
+        if is_suppressed {
+            FormatSuppressedNode(self.span()).fmt(f);
+        } else {
+            self.write(f);
+        }
+        self.format_trailing_comments(f);
+    }
+}
+
+impl<'a> Format<'a> for AstNode<'a, StructBody<'a>> {
+    fn fmt(&self, f: &mut Formatter<'_, 'a>) {
+        let is_suppressed = f.comments().is_suppressed(self.span().start);
+        self.format_leading_comments(f);
+        if is_suppressed {
+            FormatSuppressedNode(self.span()).fmt(f);
+        } else {
+            self.write(f);
+        }
+        self.format_trailing_comments(f);
+    }
+}
+
+impl<'a> Format<'a> for AstNode<'a, StructElement<'a>> {
+    #[inline]
+    fn fmt(&self, f: &mut Formatter<'_, 'a>) {
+        let allocator = self.allocator;
+        let parent = self.parent;
+        match self.inner {
+            StructElement::PropertyDefinition(inner) => {
+                allocator
+                    .alloc(AstNode::<PropertyDefinition> {
+                        inner,
+                        parent,
+                        allocator,
+                        following_span: self.following_span,
+                    })
+                    .fmt(f);
+            }
+            StructElement::MethodDefinition(inner) => {
+                allocator
+                    .alloc(AstNode::<MethodDefinition> {
+                        inner,
+                        parent,
+                        allocator,
+                        following_span: self.following_span,
+                    })
+                    .fmt(f);
+            }
+        }
+    }
+}
+
+impl<'a> Format<'a> for AstNode<'a, ArkUIComponentExpression<'a>> {
+    fn fmt(&self, f: &mut Formatter<'_, 'a>) {
+        let is_suppressed = f.comments().is_suppressed(self.span().start);
+        if !is_suppressed && format_type_cast_comment_node(self, false, f) {
+            return;
+        }
+        self.format_leading_comments(f);
+        let needs_parentheses = self.needs_parentheses(f);
+        if needs_parentheses {
+            "(".fmt(f);
+        }
+        if is_suppressed {
+            FormatSuppressedNode(self.span()).fmt(f);
+        } else {
+            self.write(f);
+        }
+        if needs_parentheses {
+            ")".fmt(f);
+        }
+        self.format_trailing_comments(f);
+    }
+}
+
+impl<'a> Format<'a> for AstNode<'a, ArkUIChild<'a>> {
+    #[inline]
+    fn fmt(&self, f: &mut Formatter<'_, 'a>) {
+        let allocator = self.allocator;
+        let parent = self.parent;
+        match self.inner {
+            ArkUIChild::Component(inner) => {
+                allocator
+                    .alloc(AstNode::<ArkUIComponentExpression> {
+                        inner,
+                        parent,
+                        allocator,
+                        following_span: self.following_span,
+                    })
+                    .fmt(f);
+            }
+            ArkUIChild::Expression(inner) => {
+                allocator
+                    .alloc(AstNode::<Expression> {
+                        inner,
+                        parent,
+                        allocator,
+                        following_span: self.following_span,
+                    })
+                    .fmt(f);
+            }
+        }
     }
 }

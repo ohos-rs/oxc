@@ -210,6 +210,9 @@ pub enum AstNodes<'a> {
     JSDocNullableType(&'a AstNode<'a, JSDocNullableType<'a>>),
     JSDocNonNullableType(&'a AstNode<'a, JSDocNonNullableType<'a>>),
     JSDocUnknownType(&'a AstNode<'a, JSDocUnknownType>),
+    StructStatement(&'a AstNode<'a, StructStatement<'a>>),
+    StructBody(&'a AstNode<'a, StructBody<'a>>),
+    ArkUIComponentExpression(&'a AstNode<'a, ArkUIComponentExpression<'a>>),
 }
 impl<'a> AstNodes<'a> {
     #[inline]
@@ -403,6 +406,9 @@ impl<'a> AstNodes<'a> {
             Self::JSDocNullableType(n) => n.span(),
             Self::JSDocNonNullableType(n) => n.span(),
             Self::JSDocUnknownType(n) => n.span(),
+            Self::StructStatement(n) => n.span(),
+            Self::StructBody(n) => n.span(),
+            Self::ArkUIComponentExpression(n) => n.span(),
         }
     }
     #[inline]
@@ -596,6 +602,9 @@ impl<'a> AstNodes<'a> {
             Self::JSDocNullableType(n) => n.parent,
             Self::JSDocNonNullableType(n) => n.parent,
             Self::JSDocUnknownType(n) => n.parent,
+            Self::StructStatement(n) => n.parent,
+            Self::StructBody(n) => n.parent,
+            Self::ArkUIComponentExpression(n) => n.parent,
         }
     }
     #[inline]
@@ -789,6 +798,9 @@ impl<'a> AstNodes<'a> {
             Self::JSDocNullableType(_) => "JSDocNullableType",
             Self::JSDocNonNullableType(_) => "JSDocNonNullableType",
             Self::JSDocUnknownType(_) => "JSDocUnknownType",
+            Self::StructStatement(_) => "StructStatement",
+            Self::StructBody(_) => "StructBody",
+            Self::ArkUIComponentExpression(_) => "ArkUIComponentExpression",
         }
     }
 }
@@ -1166,6 +1178,14 @@ impl<'a> AstNode<'a, Expression<'a>> {
             }
             Expression::V8IntrinsicExpression(s) => {
                 AstNodes::V8IntrinsicExpression(self.allocator.alloc(AstNode {
+                    inner: s.as_ref(),
+                    parent,
+                    allocator: self.allocator,
+                    following_span: self.following_span,
+                }))
+            }
+            Expression::ArkUIComponentExpression(s) => {
+                AstNodes::ArkUIComponentExpression(self.allocator.alloc(AstNode {
                     inner: s.as_ref(),
                     parent,
                     allocator: self.allocator,
@@ -2811,6 +2831,14 @@ impl<'a> AstNode<'a, Statement<'a>> {
                 allocator: self.allocator,
                 following_span: self.following_span,
             })),
+            Statement::StructStatement(s) => {
+                AstNodes::StructStatement(self.allocator.alloc(AstNode {
+                    inner: s.as_ref(),
+                    parent,
+                    allocator: self.allocator,
+                    following_span: self.following_span,
+                }))
+            }
             it @ match_declaration!(Statement) => {
                 return self
                     .allocator
@@ -9182,5 +9210,226 @@ impl<'a> AstNode<'a, JSDocUnknownType> {
 
     pub fn format_trailing_comments(&self, f: &mut Formatter<'_, 'a>) {
         format_trailing_comments(self.parent.span(), self.inner.span(), self.following_span).fmt(f);
+    }
+}
+
+impl<'a> AstNode<'a, StructStatement<'a>> {
+    #[inline]
+    pub fn decorators(&self) -> &AstNode<'a, Vec<'a, Decorator<'a>>> {
+        let following_span = Some(self.inner.id.span());
+        self.allocator.alloc(AstNode {
+            inner: &self.inner.decorators,
+            allocator: self.allocator,
+            parent: self.allocator.alloc(AstNodes::StructStatement(transmute_self(self))),
+            following_span,
+        })
+    }
+
+    #[inline]
+    pub fn id(&self) -> &AstNode<'a, BindingIdentifier<'a>> {
+        let following_span = self
+            .inner
+            .type_parameters
+            .as_deref()
+            .map(GetSpan::span)
+            .or_else(|| Some(self.inner.body.span()));
+        self.allocator.alloc(AstNode {
+            inner: &self.inner.id,
+            allocator: self.allocator,
+            parent: self.allocator.alloc(AstNodes::StructStatement(transmute_self(self))),
+            following_span,
+        })
+    }
+
+    #[inline]
+    pub fn type_parameters(&self) -> Option<&AstNode<'a, TSTypeParameterDeclaration<'a>>> {
+        let following_span = Some(self.inner.body.span());
+        self.allocator
+            .alloc(self.inner.type_parameters.as_ref().map(|inner| AstNode {
+                inner: inner.as_ref(),
+                allocator: self.allocator,
+                parent: self.allocator.alloc(AstNodes::StructStatement(transmute_self(self))),
+                following_span,
+            }))
+            .as_ref()
+    }
+
+    #[inline]
+    pub fn body(&self) -> &AstNode<'a, StructBody<'a>> {
+        let following_span = None;
+        self.allocator.alloc(AstNode {
+            inner: self.inner.body.as_ref(),
+            allocator: self.allocator,
+            parent: self.allocator.alloc(AstNodes::StructStatement(transmute_self(self))),
+            following_span,
+        })
+    }
+
+    pub fn format_leading_comments(&self, f: &mut Formatter<'_, 'a>) {
+        format_leading_comments(self.span()).fmt(f);
+    }
+
+    pub fn format_trailing_comments(&self, f: &mut Formatter<'_, 'a>) {
+        format_trailing_comments(self.parent.span(), self.inner.span(), self.following_span).fmt(f);
+    }
+}
+
+impl<'a> AstNode<'a, StructBody<'a>> {
+    #[inline]
+    pub fn body(&self) -> &AstNode<'a, Vec<'a, StructElement<'a>>> {
+        let following_span = self.following_span;
+        self.allocator.alloc(AstNode {
+            inner: &self.inner.body,
+            allocator: self.allocator,
+            parent: self.allocator.alloc(AstNodes::StructBody(transmute_self(self))),
+            following_span,
+        })
+    }
+
+    pub fn format_leading_comments(&self, f: &mut Formatter<'_, 'a>) {
+        format_leading_comments(self.span()).fmt(f);
+    }
+
+    pub fn format_trailing_comments(&self, f: &mut Formatter<'_, 'a>) {
+        format_trailing_comments(self.parent.span(), self.inner.span(), self.following_span).fmt(f);
+    }
+}
+
+impl<'a> AstNode<'a, StructElement<'a>> {
+    #[inline]
+    pub fn as_ast_nodes(&self) -> &AstNodes<'a> {
+        let parent = self.parent;
+        let node = match self.inner {
+            StructElement::PropertyDefinition(s) => {
+                AstNodes::PropertyDefinition(self.allocator.alloc(AstNode {
+                    inner: s.as_ref(),
+                    parent,
+                    allocator: self.allocator,
+                    following_span: self.following_span,
+                }))
+            }
+            StructElement::MethodDefinition(s) => {
+                AstNodes::MethodDefinition(self.allocator.alloc(AstNode {
+                    inner: s.as_ref(),
+                    parent,
+                    allocator: self.allocator,
+                    following_span: self.following_span,
+                }))
+            }
+        };
+        self.allocator.alloc(node)
+    }
+}
+
+impl<'a> AstNode<'a, ArkUIComponentExpression<'a>> {
+    #[inline]
+    pub fn callee(&self) -> &AstNode<'a, Expression<'a>> {
+        let following_span = self
+            .inner
+            .type_arguments
+            .as_deref()
+            .map(GetSpan::span)
+            .or_else(|| self.inner.arguments.first().map(GetSpan::span))
+            .or_else(|| self.inner.children.first().map(GetSpan::span))
+            .or_else(|| self.inner.chain_expressions.first().map(GetSpan::span))
+            .or(self.following_span);
+        self.allocator.alloc(AstNode {
+            inner: &self.inner.callee,
+            allocator: self.allocator,
+            parent: self.allocator.alloc(AstNodes::ArkUIComponentExpression(transmute_self(self))),
+            following_span,
+        })
+    }
+
+    #[inline]
+    pub fn type_arguments(&self) -> Option<&AstNode<'a, TSTypeParameterInstantiation<'a>>> {
+        let following_span = self
+            .inner
+            .arguments
+            .first()
+            .map(GetSpan::span)
+            .or_else(|| self.inner.children.first().map(GetSpan::span))
+            .or_else(|| self.inner.chain_expressions.first().map(GetSpan::span))
+            .or(self.following_span);
+        self.allocator
+            .alloc(self.inner.type_arguments.as_ref().map(|inner| AstNode {
+                inner: inner.as_ref(),
+                allocator: self.allocator,
+                parent:
+                    self.allocator.alloc(AstNodes::ArkUIComponentExpression(transmute_self(self))),
+                following_span,
+            }))
+            .as_ref()
+    }
+
+    #[inline]
+    pub fn arguments(&self) -> &AstNode<'a, Vec<'a, Argument<'a>>> {
+        let following_span = self
+            .inner
+            .children
+            .first()
+            .map(GetSpan::span)
+            .or_else(|| self.inner.chain_expressions.first().map(GetSpan::span))
+            .or(self.following_span);
+        self.allocator.alloc(AstNode {
+            inner: &self.inner.arguments,
+            allocator: self.allocator,
+            parent: self.allocator.alloc(AstNodes::ArkUIComponentExpression(transmute_self(self))),
+            following_span,
+        })
+    }
+
+    #[inline]
+    pub fn children(&self) -> &AstNode<'a, Vec<'a, ArkUIChild<'a>>> {
+        let following_span =
+            self.inner.chain_expressions.first().map(GetSpan::span).or(self.following_span);
+        self.allocator.alloc(AstNode {
+            inner: &self.inner.children,
+            allocator: self.allocator,
+            parent: self.allocator.alloc(AstNodes::ArkUIComponentExpression(transmute_self(self))),
+            following_span,
+        })
+    }
+
+    #[inline]
+    pub fn chain_expressions(&self) -> &AstNode<'a, Vec<'a, CallExpression<'a>>> {
+        let following_span = self.following_span;
+        self.allocator.alloc(AstNode {
+            inner: &self.inner.chain_expressions,
+            allocator: self.allocator,
+            parent: self.allocator.alloc(AstNodes::ArkUIComponentExpression(transmute_self(self))),
+            following_span,
+        })
+    }
+
+    pub fn format_leading_comments(&self, f: &mut Formatter<'_, 'a>) {
+        format_leading_comments(self.span()).fmt(f);
+    }
+
+    pub fn format_trailing_comments(&self, f: &mut Formatter<'_, 'a>) {
+        format_trailing_comments(self.parent.span(), self.inner.span(), self.following_span).fmt(f);
+    }
+}
+
+impl<'a> AstNode<'a, ArkUIChild<'a>> {
+    #[inline]
+    pub fn as_ast_nodes(&self) -> &AstNodes<'a> {
+        let parent = self.parent;
+        let node = match self.inner {
+            ArkUIChild::Component(s) => {
+                AstNodes::ArkUIComponentExpression(self.allocator.alloc(AstNode {
+                    inner: s.as_ref(),
+                    parent,
+                    allocator: self.allocator,
+                    following_span: self.following_span,
+                }))
+            }
+            ArkUIChild::Expression(_s) => {
+                panic!(
+                    "No kind for current enum variant yet, please see `tasks/ast_tools/src/generators/ast_kind.rs`"
+                )
+            }
+        };
+        self.allocator.alloc(node)
     }
 }

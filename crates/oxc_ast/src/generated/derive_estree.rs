@@ -7,6 +7,7 @@ use oxc_estree::{
     Concat2, Concat3, ESTree, FlatStructSerializer, JsonSafeString, Serializer, StructSerializer,
 };
 
+use crate::ast::arkui::*;
 use crate::ast::comment::*;
 use crate::ast::js::*;
 use crate::ast::jsx::*;
@@ -62,6 +63,7 @@ impl ESTree for Expression<'_> {
             Self::TSNonNullExpression(it) => it.serialize(serializer),
             Self::TSInstantiationExpression(it) => it.serialize(serializer),
             Self::V8IntrinsicExpression(it) => it.serialize(serializer),
+            Self::ArkUIComponentExpression(it) => it.serialize(serializer),
             Self::ComputedMemberExpression(it) => it.serialize(serializer),
             Self::StaticMemberExpression(it) => it.serialize(serializer),
             Self::PrivateFieldExpression(it) => it.serialize(serializer),
@@ -185,6 +187,7 @@ impl ESTree for ArrayExpressionElement<'_> {
             Self::TSNonNullExpression(it) => it.serialize(serializer),
             Self::TSInstantiationExpression(it) => it.serialize(serializer),
             Self::V8IntrinsicExpression(it) => it.serialize(serializer),
+            Self::ArkUIComponentExpression(it) => it.serialize(serializer),
             Self::ComputedMemberExpression(it) => it.serialize(serializer),
             Self::StaticMemberExpression(it) => it.serialize(serializer),
             Self::PrivateFieldExpression(it) => it.serialize(serializer),
@@ -278,6 +281,7 @@ impl ESTree for PropertyKey<'_> {
             Self::TSNonNullExpression(it) => it.serialize(serializer),
             Self::TSInstantiationExpression(it) => it.serialize(serializer),
             Self::V8IntrinsicExpression(it) => it.serialize(serializer),
+            Self::ArkUIComponentExpression(it) => it.serialize(serializer),
             Self::ComputedMemberExpression(it) => it.serialize(serializer),
             Self::StaticMemberExpression(it) => it.serialize(serializer),
             Self::PrivateFieldExpression(it) => it.serialize(serializer),
@@ -472,6 +476,7 @@ impl ESTree for Argument<'_> {
             Self::TSNonNullExpression(it) => it.serialize(serializer),
             Self::TSInstantiationExpression(it) => it.serialize(serializer),
             Self::V8IntrinsicExpression(it) => it.serialize(serializer),
+            Self::ArkUIComponentExpression(it) => it.serialize(serializer),
             Self::ComputedMemberExpression(it) => it.serialize(serializer),
             Self::StaticMemberExpression(it) => it.serialize(serializer),
             Self::PrivateFieldExpression(it) => it.serialize(serializer),
@@ -798,6 +803,7 @@ impl ESTree for Statement<'_> {
             Self::TryStatement(it) => it.serialize(serializer),
             Self::WhileStatement(it) => it.serialize(serializer),
             Self::WithStatement(it) => it.serialize(serializer),
+            Self::StructStatement(it) => it.serialize(serializer),
             Self::VariableDeclaration(it) => it.serialize(serializer),
             Self::FunctionDeclaration(it) => it.serialize(serializer),
             Self::ClassDeclaration(it) => it.serialize(serializer),
@@ -1014,6 +1020,7 @@ impl ESTree for ForStatementInit<'_> {
             Self::TSNonNullExpression(it) => it.serialize(serializer),
             Self::TSInstantiationExpression(it) => it.serialize(serializer),
             Self::V8IntrinsicExpression(it) => it.serialize(serializer),
+            Self::ArkUIComponentExpression(it) => it.serialize(serializer),
             Self::ComputedMemberExpression(it) => it.serialize(serializer),
             Self::StaticMemberExpression(it) => it.serialize(serializer),
             Self::PrivateFieldExpression(it) => it.serialize(serializer),
@@ -1770,6 +1777,7 @@ impl ESTree for ExportDefaultDeclarationKind<'_> {
             Self::TSNonNullExpression(it) => it.serialize(serializer),
             Self::TSInstantiationExpression(it) => it.serialize(serializer),
             Self::V8IntrinsicExpression(it) => it.serialize(serializer),
+            Self::ArkUIComponentExpression(it) => it.serialize(serializer),
             Self::ComputedMemberExpression(it) => it.serialize(serializer),
             Self::StaticMemberExpression(it) => it.serialize(serializer),
             Self::PrivateFieldExpression(it) => it.serialize(serializer),
@@ -2068,6 +2076,7 @@ impl ESTree for JSXExpression<'_> {
             Self::TSNonNullExpression(it) => it.serialize(serializer),
             Self::TSInstantiationExpression(it) => it.serialize(serializer),
             Self::V8IntrinsicExpression(it) => it.serialize(serializer),
+            Self::ArkUIComponentExpression(it) => it.serialize(serializer),
             Self::ComputedMemberExpression(it) => it.serialize(serializer),
             Self::StaticMemberExpression(it) => it.serialize(serializer),
             Self::PrivateFieldExpression(it) => it.serialize(serializer),
@@ -3226,6 +3235,61 @@ impl ESTree for JSDocUnknownType {
         state.serialize_field("type", &JsonSafeString("TSJSDocUnknownType"));
         state.serialize_span(self.span);
         state.end();
+    }
+}
+
+impl ESTree for StructStatement<'_> {
+    fn serialize<S: Serializer>(&self, serializer: S) {
+        let mut state = serializer.serialize_struct();
+        state.serialize_field("type", &JsonSafeString("StructStatement"));
+        state.serialize_field("decorators", &self.decorators);
+        state.serialize_field("id", &self.id);
+        state.serialize_ts_field("typeParameters", &self.type_parameters);
+        state.serialize_field("body", &self.body);
+        state.serialize_span(self.span);
+        state.end();
+    }
+}
+
+impl ESTree for StructBody<'_> {
+    fn serialize<S: Serializer>(&self, serializer: S) {
+        let mut state = serializer.serialize_struct();
+        state.serialize_field("type", &JsonSafeString("StructBody"));
+        state.serialize_field("body", &self.body);
+        state.serialize_span(self.span);
+        state.end();
+    }
+}
+
+impl ESTree for StructElement<'_> {
+    fn serialize<S: Serializer>(&self, serializer: S) {
+        match self {
+            Self::PropertyDefinition(it) => it.serialize(serializer),
+            Self::MethodDefinition(it) => it.serialize(serializer),
+        }
+    }
+}
+
+impl ESTree for ArkUIComponentExpression<'_> {
+    fn serialize<S: Serializer>(&self, serializer: S) {
+        let mut state = serializer.serialize_struct();
+        state.serialize_field("type", &JsonSafeString("ArkUIComponentExpression"));
+        state.serialize_field("callee", &self.callee);
+        state.serialize_ts_field("typeArguments", &self.type_arguments);
+        state.serialize_field("arguments", &self.arguments);
+        state.serialize_field("children", &self.children);
+        state.serialize_field("chainExpressions", &self.chain_expressions);
+        state.serialize_span(self.span);
+        state.end();
+    }
+}
+
+impl ESTree for ArkUIChild<'_> {
+    fn serialize<S: Serializer>(&self, serializer: S) {
+        match self {
+            Self::Component(it) => it.serialize(serializer),
+            Self::Expression(it) => it.serialize(serializer),
+        }
     }
 }
 

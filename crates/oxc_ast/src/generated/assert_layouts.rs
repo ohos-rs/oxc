@@ -1599,6 +1599,38 @@ const _: () = {
     assert!(align_of::<JSDocUnknownType>() == 8);
     assert!(offset_of!(JSDocUnknownType, span) == 0);
 
+    // Padding: 4 bytes
+    assert!(size_of::<StructStatement>() == 88);
+    assert!(align_of::<StructStatement>() == 8);
+    assert!(offset_of!(StructStatement, span) == 0);
+    assert!(offset_of!(StructStatement, decorators) == 8);
+    assert!(offset_of!(StructStatement, id) == 32);
+    assert!(offset_of!(StructStatement, type_parameters) == 64);
+    assert!(offset_of!(StructStatement, body) == 72);
+    assert!(offset_of!(StructStatement, scope_id) == 80);
+
+    // Padding: 0 bytes
+    assert!(size_of::<StructBody>() == 32);
+    assert!(align_of::<StructBody>() == 8);
+    assert!(offset_of!(StructBody, span) == 0);
+    assert!(offset_of!(StructBody, body) == 8);
+
+    assert!(size_of::<StructElement>() == 16);
+    assert!(align_of::<StructElement>() == 8);
+
+    // Padding: 0 bytes
+    assert!(size_of::<ArkUIComponentExpression>() == 104);
+    assert!(align_of::<ArkUIComponentExpression>() == 8);
+    assert!(offset_of!(ArkUIComponentExpression, span) == 0);
+    assert!(offset_of!(ArkUIComponentExpression, callee) == 8);
+    assert!(offset_of!(ArkUIComponentExpression, type_arguments) == 24);
+    assert!(offset_of!(ArkUIComponentExpression, arguments) == 32);
+    assert!(offset_of!(ArkUIComponentExpression, children) == 56);
+    assert!(offset_of!(ArkUIComponentExpression, chain_expressions) == 80);
+
+    assert!(size_of::<ArkUIChild>() == 16);
+    assert!(align_of::<ArkUIChild>() == 8);
+
     assert!(size_of::<CommentKind>() == 1);
     assert!(align_of::<CommentKind>() == 1);
 
@@ -3214,6 +3246,38 @@ const _: () = if cfg!(target_family = "wasm") || align_of::<u64>() == 8 {
     assert!(size_of::<JSDocUnknownType>() == 8);
     assert!(align_of::<JSDocUnknownType>() == 4);
     assert!(offset_of!(JSDocUnknownType, span) == 0);
+
+    // Padding: 0 bytes
+    assert!(size_of::<StructStatement>() == 56);
+    assert!(align_of::<StructStatement>() == 4);
+    assert!(offset_of!(StructStatement, span) == 0);
+    assert!(offset_of!(StructStatement, decorators) == 8);
+    assert!(offset_of!(StructStatement, id) == 24);
+    assert!(offset_of!(StructStatement, type_parameters) == 44);
+    assert!(offset_of!(StructStatement, body) == 48);
+    assert!(offset_of!(StructStatement, scope_id) == 52);
+
+    // Padding: 0 bytes
+    assert!(size_of::<StructBody>() == 24);
+    assert!(align_of::<StructBody>() == 4);
+    assert!(offset_of!(StructBody, span) == 0);
+    assert!(offset_of!(StructBody, body) == 8);
+
+    assert!(size_of::<StructElement>() == 8);
+    assert!(align_of::<StructElement>() == 4);
+
+    // Padding: 0 bytes
+    assert!(size_of::<ArkUIComponentExpression>() == 68);
+    assert!(align_of::<ArkUIComponentExpression>() == 4);
+    assert!(offset_of!(ArkUIComponentExpression, span) == 0);
+    assert!(offset_of!(ArkUIComponentExpression, callee) == 8);
+    assert!(offset_of!(ArkUIComponentExpression, type_arguments) == 16);
+    assert!(offset_of!(ArkUIComponentExpression, arguments) == 20);
+    assert!(offset_of!(ArkUIComponentExpression, children) == 36);
+    assert!(offset_of!(ArkUIComponentExpression, chain_expressions) == 52);
+
+    assert!(size_of::<ArkUIChild>() == 8);
+    assert!(align_of::<ArkUIChild>() == 4);
 
     assert!(size_of::<CommentKind>() == 1);
     assert!(align_of::<CommentKind>() == 1);

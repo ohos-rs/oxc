@@ -1192,6 +1192,31 @@ pub trait VisitMut<'a>: Sized {
     }
 
     #[inline]
+    fn visit_struct_statement(&mut self, it: &mut StructStatement<'a>) {
+        walk_struct_statement(self, it);
+    }
+
+    #[inline]
+    fn visit_struct_body(&mut self, it: &mut StructBody<'a>) {
+        walk_struct_body(self, it);
+    }
+
+    #[inline]
+    fn visit_struct_element(&mut self, it: &mut StructElement<'a>) {
+        walk_struct_element(self, it);
+    }
+
+    #[inline]
+    fn visit_ark_ui_component_expression(&mut self, it: &mut ArkUIComponentExpression<'a>) {
+        walk_ark_ui_component_expression(self, it);
+    }
+
+    #[inline]
+    fn visit_ark_ui_child(&mut self, it: &mut ArkUIChild<'a>) {
+        walk_ark_ui_child(self, it);
+    }
+
+    #[inline]
     fn visit_span(&mut self, it: &mut Span) {
         walk_span(self, it);
     }
@@ -1338,6 +1363,21 @@ pub trait VisitMut<'a>: Sized {
     }
 
     #[inline]
+    fn visit_struct_elements(&mut self, it: &mut Vec<'a, StructElement<'a>>) {
+        walk_struct_elements(self, it);
+    }
+
+    #[inline]
+    fn visit_ark_ui_children(&mut self, it: &mut Vec<'a, ArkUIChild<'a>>) {
+        walk_ark_ui_children(self, it);
+    }
+
+    #[inline]
+    fn visit_call_expressions(&mut self, it: &mut Vec<'a, CallExpression<'a>>) {
+        walk_call_expressions(self, it);
+    }
+
+    #[inline]
     fn visit_spans(&mut self, it: &mut Vec<'a, Span>) {
         walk_spans(self, it);
     }
@@ -1420,6 +1460,9 @@ pub mod walk_mut {
                 visitor.visit_ts_instantiation_expression(it)
             }
             Expression::V8IntrinsicExpression(it) => visitor.visit_v_8_intrinsic_expression(it),
+            Expression::ArkUIComponentExpression(it) => {
+                visitor.visit_ark_ui_component_expression(it)
+            }
             match_member_expression!(Expression) => {
                 visitor.visit_member_expression(it.to_member_expression_mut())
             }
@@ -2057,6 +2100,7 @@ pub mod walk_mut {
             Statement::TryStatement(it) => visitor.visit_try_statement(it),
             Statement::WhileStatement(it) => visitor.visit_while_statement(it),
             Statement::WithStatement(it) => visitor.visit_with_statement(it),
+            Statement::StructStatement(it) => visitor.visit_struct_statement(it),
             match_declaration!(Statement) => visitor.visit_declaration(it.to_declaration_mut()),
             match_module_declaration!(Statement) => {
                 visitor.visit_module_declaration(it.to_module_declaration_mut())
@@ -4447,6 +4491,69 @@ pub mod walk_mut {
     }
 
     #[inline]
+    pub fn walk_struct_statement<'a, V: VisitMut<'a>>(
+        visitor: &mut V,
+        it: &mut StructStatement<'a>,
+    ) {
+        let kind = AstType::StructStatement;
+        visitor.enter_node(kind);
+        visitor.enter_scope(ScopeFlags::StrictMode, &it.scope_id);
+        visitor.visit_span(&mut it.span);
+        visitor.visit_decorators(&mut it.decorators);
+        visitor.visit_binding_identifier(&mut it.id);
+        if let Some(type_parameters) = &mut it.type_parameters {
+            visitor.visit_ts_type_parameter_declaration(type_parameters);
+        }
+        visitor.visit_struct_body(&mut it.body);
+        visitor.leave_scope();
+        visitor.leave_node(kind);
+    }
+
+    #[inline]
+    pub fn walk_struct_body<'a, V: VisitMut<'a>>(visitor: &mut V, it: &mut StructBody<'a>) {
+        let kind = AstType::StructBody;
+        visitor.enter_node(kind);
+        visitor.visit_span(&mut it.span);
+        visitor.visit_struct_elements(&mut it.body);
+        visitor.leave_node(kind);
+    }
+
+    #[inline]
+    pub fn walk_struct_element<'a, V: VisitMut<'a>>(visitor: &mut V, it: &mut StructElement<'a>) {
+        // No `AstType` for this type
+        match it {
+            StructElement::PropertyDefinition(it) => visitor.visit_property_definition(it),
+            StructElement::MethodDefinition(it) => visitor.visit_method_definition(it),
+        }
+    }
+
+    pub fn walk_ark_ui_component_expression<'a, V: VisitMut<'a>>(
+        visitor: &mut V,
+        it: &mut ArkUIComponentExpression<'a>,
+    ) {
+        let kind = AstType::ArkUIComponentExpression;
+        visitor.enter_node(kind);
+        visitor.visit_span(&mut it.span);
+        visitor.visit_expression(&mut it.callee);
+        if let Some(type_arguments) = &mut it.type_arguments {
+            visitor.visit_ts_type_parameter_instantiation(type_arguments);
+        }
+        visitor.visit_arguments(&mut it.arguments);
+        visitor.visit_ark_ui_children(&mut it.children);
+        visitor.visit_call_expressions(&mut it.chain_expressions);
+        visitor.leave_node(kind);
+    }
+
+    #[inline]
+    pub fn walk_ark_ui_child<'a, V: VisitMut<'a>>(visitor: &mut V, it: &mut ArkUIChild<'a>) {
+        // No `AstType` for this type
+        match it {
+            ArkUIChild::Component(it) => visitor.visit_ark_ui_component_expression(it),
+            ArkUIChild::Expression(it) => visitor.visit_expression(it),
+        }
+    }
+
+    #[inline]
     pub fn walk_span<'a, V: VisitMut<'a>>(visitor: &mut V, it: &mut Span) {
         // No `AstType` for this type
     }
@@ -4707,6 +4814,36 @@ pub mod walk_mut {
     ) {
         for el in it {
             visitor.visit_ts_index_signature_name(el);
+        }
+    }
+
+    #[inline]
+    pub fn walk_struct_elements<'a, V: VisitMut<'a>>(
+        visitor: &mut V,
+        it: &mut Vec<'a, StructElement<'a>>,
+    ) {
+        for el in it {
+            visitor.visit_struct_element(el);
+        }
+    }
+
+    #[inline]
+    pub fn walk_ark_ui_children<'a, V: VisitMut<'a>>(
+        visitor: &mut V,
+        it: &mut Vec<'a, ArkUIChild<'a>>,
+    ) {
+        for el in it {
+            visitor.visit_ark_ui_child(el);
+        }
+    }
+
+    #[inline]
+    pub fn walk_call_expressions<'a, V: VisitMut<'a>>(
+        visitor: &mut V,
+        it: &mut Vec<'a, CallExpression<'a>>,
+    ) {
+        for el in it {
+            visitor.visit_call_expression(el);
         }
     }
 

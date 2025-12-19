@@ -283,6 +283,7 @@ impl<'a> AstKind<'a> {
             Expression::TSNonNullExpression(e) => Self::TSNonNullExpression(e),
             Expression::TSInstantiationExpression(e) => Self::TSInstantiationExpression(e),
             Expression::V8IntrinsicExpression(e) => Self::V8IntrinsicExpression(e),
+            Expression::ArkUIComponentExpression(e) => Self::ArkUIComponentExpression(e),
         }
     }
 
@@ -603,6 +604,9 @@ impl AstKind<'_> {
             }
             Self::AssignmentTargetPropertyProperty(_) => "AssignmentTargetPropertyProperty".into(),
             Self::TSImportTypeQualifiedName(_) => "TSImportTypeQualifiedName".into(),
+            Self::StructStatement(_) => "StructStatement".into(),
+            Self::StructBody(_) => "StructBody".into(),
+            Self::ArkUIComponentExpression(_) => "ArkUIComponentExpression".into(),
         }
     }
 }

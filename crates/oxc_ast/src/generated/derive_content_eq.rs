@@ -5,6 +5,7 @@
 
 use oxc_span::ContentEq;
 
+use crate::ast::arkui::*;
 use crate::ast::comment::*;
 use crate::ast::js::*;
 use crate::ast::jsx::*;
@@ -67,6 +68,9 @@ impl ContentEq for Expression<'_> {
                 a.content_eq(b)
             }
             (Self::V8IntrinsicExpression(a), Self::V8IntrinsicExpression(b)) => a.content_eq(b),
+            (Self::ArkUIComponentExpression(a), Self::ArkUIComponentExpression(b)) => {
+                a.content_eq(b)
+            }
             (Self::ComputedMemberExpression(a), Self::ComputedMemberExpression(b)) => {
                 a.content_eq(b)
             }
@@ -162,6 +166,9 @@ impl ContentEq for ArrayExpressionElement<'_> {
                 a.content_eq(b)
             }
             (Self::V8IntrinsicExpression(a), Self::V8IntrinsicExpression(b)) => a.content_eq(b),
+            (Self::ArkUIComponentExpression(a), Self::ArkUIComponentExpression(b)) => {
+                a.content_eq(b)
+            }
             (Self::ComputedMemberExpression(a), Self::ComputedMemberExpression(b)) => {
                 a.content_eq(b)
             }
@@ -254,6 +261,9 @@ impl ContentEq for PropertyKey<'_> {
                 a.content_eq(b)
             }
             (Self::V8IntrinsicExpression(a), Self::V8IntrinsicExpression(b)) => a.content_eq(b),
+            (Self::ArkUIComponentExpression(a), Self::ArkUIComponentExpression(b)) => {
+                a.content_eq(b)
+            }
             (Self::ComputedMemberExpression(a), Self::ComputedMemberExpression(b)) => {
                 a.content_eq(b)
             }
@@ -417,6 +427,9 @@ impl ContentEq for Argument<'_> {
                 a.content_eq(b)
             }
             (Self::V8IntrinsicExpression(a), Self::V8IntrinsicExpression(b)) => a.content_eq(b),
+            (Self::ArkUIComponentExpression(a), Self::ArkUIComponentExpression(b)) => {
+                a.content_eq(b)
+            }
             (Self::ComputedMemberExpression(a), Self::ComputedMemberExpression(b)) => {
                 a.content_eq(b)
             }
@@ -682,6 +695,7 @@ impl ContentEq for Statement<'_> {
             (Self::TryStatement(a), Self::TryStatement(b)) => a.content_eq(b),
             (Self::WhileStatement(a), Self::WhileStatement(b)) => a.content_eq(b),
             (Self::WithStatement(a), Self::WithStatement(b)) => a.content_eq(b),
+            (Self::StructStatement(a), Self::StructStatement(b)) => a.content_eq(b),
             (Self::VariableDeclaration(a), Self::VariableDeclaration(b)) => a.content_eq(b),
             (Self::FunctionDeclaration(a), Self::FunctionDeclaration(b)) => a.content_eq(b),
             (Self::ClassDeclaration(a), Self::ClassDeclaration(b)) => a.content_eq(b),
@@ -860,6 +874,9 @@ impl ContentEq for ForStatementInit<'_> {
                 a.content_eq(b)
             }
             (Self::V8IntrinsicExpression(a), Self::V8IntrinsicExpression(b)) => a.content_eq(b),
+            (Self::ArkUIComponentExpression(a), Self::ArkUIComponentExpression(b)) => {
+                a.content_eq(b)
+            }
             (Self::ComputedMemberExpression(a), Self::ComputedMemberExpression(b)) => {
                 a.content_eq(b)
             }
@@ -1431,6 +1448,9 @@ impl ContentEq for ExportDefaultDeclarationKind<'_> {
                 a.content_eq(b)
             }
             (Self::V8IntrinsicExpression(a), Self::V8IntrinsicExpression(b)) => a.content_eq(b),
+            (Self::ArkUIComponentExpression(a), Self::ArkUIComponentExpression(b)) => {
+                a.content_eq(b)
+            }
             (Self::ComputedMemberExpression(a), Self::ComputedMemberExpression(b)) => {
                 a.content_eq(b)
             }
@@ -1643,6 +1663,9 @@ impl ContentEq for JSXExpression<'_> {
                 a.content_eq(b)
             }
             (Self::V8IntrinsicExpression(a), Self::V8IntrinsicExpression(b)) => a.content_eq(b),
+            (Self::ArkUIComponentExpression(a), Self::ArkUIComponentExpression(b)) => {
+                a.content_eq(b)
+            }
             (Self::ComputedMemberExpression(a), Self::ComputedMemberExpression(b)) => {
                 a.content_eq(b)
             }
@@ -2495,6 +2518,51 @@ impl ContentEq for JSDocNonNullableType<'_> {
 impl ContentEq for JSDocUnknownType {
     fn content_eq(&self, _: &Self) -> bool {
         true
+    }
+}
+
+impl ContentEq for StructStatement<'_> {
+    fn content_eq(&self, other: &Self) -> bool {
+        ContentEq::content_eq(&self.decorators, &other.decorators)
+            && ContentEq::content_eq(&self.id, &other.id)
+            && ContentEq::content_eq(&self.type_parameters, &other.type_parameters)
+            && ContentEq::content_eq(&self.body, &other.body)
+    }
+}
+
+impl ContentEq for StructBody<'_> {
+    fn content_eq(&self, other: &Self) -> bool {
+        ContentEq::content_eq(&self.body, &other.body)
+    }
+}
+
+impl ContentEq for StructElement<'_> {
+    fn content_eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::PropertyDefinition(a), Self::PropertyDefinition(b)) => a.content_eq(b),
+            (Self::MethodDefinition(a), Self::MethodDefinition(b)) => a.content_eq(b),
+            _ => false,
+        }
+    }
+}
+
+impl ContentEq for ArkUIComponentExpression<'_> {
+    fn content_eq(&self, other: &Self) -> bool {
+        ContentEq::content_eq(&self.callee, &other.callee)
+            && ContentEq::content_eq(&self.type_arguments, &other.type_arguments)
+            && ContentEq::content_eq(&self.arguments, &other.arguments)
+            && ContentEq::content_eq(&self.children, &other.children)
+            && ContentEq::content_eq(&self.chain_expressions, &other.chain_expressions)
+    }
+}
+
+impl ContentEq for ArkUIChild<'_> {
+    fn content_eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::Component(a), Self::Component(b)) => a.content_eq(b),
+            (Self::Expression(a), Self::Expression(b)) => a.content_eq(b),
+            _ => false,
+        }
     }
 }
 

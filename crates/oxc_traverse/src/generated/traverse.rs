@@ -3118,6 +3118,62 @@ pub trait Traverse<'a, State> {
     }
 
     #[inline]
+    fn enter_struct_statement(
+        &mut self,
+        node: &mut StructStatement<'a>,
+        ctx: &mut TraverseCtx<'a, State>,
+    ) {
+    }
+    #[inline]
+    fn exit_struct_statement(
+        &mut self,
+        node: &mut StructStatement<'a>,
+        ctx: &mut TraverseCtx<'a, State>,
+    ) {
+    }
+
+    #[inline]
+    fn enter_struct_body(&mut self, node: &mut StructBody<'a>, ctx: &mut TraverseCtx<'a, State>) {}
+    #[inline]
+    fn exit_struct_body(&mut self, node: &mut StructBody<'a>, ctx: &mut TraverseCtx<'a, State>) {}
+
+    #[inline]
+    fn enter_struct_element(
+        &mut self,
+        node: &mut StructElement<'a>,
+        ctx: &mut TraverseCtx<'a, State>,
+    ) {
+    }
+    #[inline]
+    fn exit_struct_element(
+        &mut self,
+        node: &mut StructElement<'a>,
+        ctx: &mut TraverseCtx<'a, State>,
+    ) {
+    }
+
+    #[inline]
+    fn enter_ark_u_i_component_expression(
+        &mut self,
+        node: &mut ArkUIComponentExpression<'a>,
+        ctx: &mut TraverseCtx<'a, State>,
+    ) {
+    }
+    #[inline]
+    fn exit_ark_u_i_component_expression(
+        &mut self,
+        node: &mut ArkUIComponentExpression<'a>,
+        ctx: &mut TraverseCtx<'a, State>,
+    ) {
+    }
+
+    #[inline]
+    fn enter_ark_u_i_child(&mut self, node: &mut ArkUIChild<'a>, ctx: &mut TraverseCtx<'a, State>) {
+    }
+    #[inline]
+    fn exit_ark_u_i_child(&mut self, node: &mut ArkUIChild<'a>, ctx: &mut TraverseCtx<'a, State>) {}
+
+    #[inline]
     fn enter_statements(
         &mut self,
         node: &mut Vec<'a, Statement<'a>>,

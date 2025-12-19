@@ -606,6 +606,7 @@ ascii_identifier_handler!(L_S(id_without_first_char) match id_without_first_char
     "uper" => Kind::Super,
     "witch" => Kind::Switch,
     "tatic" => Kind::Static,
+    "truct" => Kind::Struct,
     "ymbol" => Kind::Symbol,
     "tring" => Kind::String,
     "atisfies" => Kind::Satisfies,

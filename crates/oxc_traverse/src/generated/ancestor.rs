@@ -317,6 +317,16 @@ pub(crate) enum AncestorType {
     TSInstantiationExpressionTypeArguments = 293,
     JSDocNullableTypeTypeAnnotation = 294,
     JSDocNonNullableTypeTypeAnnotation = 295,
+    StructStatementDecorators = 296,
+    StructStatementId = 297,
+    StructStatementTypeParameters = 298,
+    StructStatementBody = 299,
+    StructBodyBody = 300,
+    ArkUIComponentExpressionCallee = 301,
+    ArkUIComponentExpressionTypeArguments = 302,
+    ArkUIComponentExpressionArguments = 303,
+    ArkUIComponentExpressionChildren = 304,
+    ArkUIComponentExpressionChainExpressions = 305,
 }
 
 /// Ancestor type used in AST traversal.
@@ -889,6 +899,25 @@ pub enum Ancestor<'a, 't> {
         AncestorType::JSDocNullableTypeTypeAnnotation as u16,
     JSDocNonNullableTypeTypeAnnotation(JSDocNonNullableTypeWithoutTypeAnnotation<'a, 't>) =
         AncestorType::JSDocNonNullableTypeTypeAnnotation as u16,
+    StructStatementDecorators(StructStatementWithoutDecorators<'a, 't>) =
+        AncestorType::StructStatementDecorators as u16,
+    StructStatementId(StructStatementWithoutId<'a, 't>) = AncestorType::StructStatementId as u16,
+    StructStatementTypeParameters(StructStatementWithoutTypeParameters<'a, 't>) =
+        AncestorType::StructStatementTypeParameters as u16,
+    StructStatementBody(StructStatementWithoutBody<'a, 't>) =
+        AncestorType::StructStatementBody as u16,
+    StructBodyBody(StructBodyWithoutBody<'a, 't>) = AncestorType::StructBodyBody as u16,
+    ArkUIComponentExpressionCallee(ArkUIComponentExpressionWithoutCallee<'a, 't>) =
+        AncestorType::ArkUIComponentExpressionCallee as u16,
+    ArkUIComponentExpressionTypeArguments(ArkUIComponentExpressionWithoutTypeArguments<'a, 't>) =
+        AncestorType::ArkUIComponentExpressionTypeArguments as u16,
+    ArkUIComponentExpressionArguments(ArkUIComponentExpressionWithoutArguments<'a, 't>) =
+        AncestorType::ArkUIComponentExpressionArguments as u16,
+    ArkUIComponentExpressionChildren(ArkUIComponentExpressionWithoutChildren<'a, 't>) =
+        AncestorType::ArkUIComponentExpressionChildren as u16,
+    ArkUIComponentExpressionChainExpressions(
+        ArkUIComponentExpressionWithoutChainExpressions<'a, 't>,
+    ) = AncestorType::ArkUIComponentExpressionChainExpressions as u16,
 }
 
 impl<'a, 't> Ancestor<'a, 't> {
@@ -1871,6 +1900,34 @@ impl<'a, 't> Ancestor<'a, 't> {
     }
 
     #[inline]
+    pub fn is_struct_statement(self) -> bool {
+        matches!(
+            self,
+            Self::StructStatementDecorators(_)
+                | Self::StructStatementId(_)
+                | Self::StructStatementTypeParameters(_)
+                | Self::StructStatementBody(_)
+        )
+    }
+
+    #[inline]
+    pub fn is_struct_body(self) -> bool {
+        matches!(self, Self::StructBodyBody(_))
+    }
+
+    #[inline]
+    pub fn is_ark_u_i_component_expression(self) -> bool {
+        matches!(
+            self,
+            Self::ArkUIComponentExpressionCallee(_)
+                | Self::ArkUIComponentExpressionTypeArguments(_)
+                | Self::ArkUIComponentExpressionArguments(_)
+                | Self::ArkUIComponentExpressionChildren(_)
+                | Self::ArkUIComponentExpressionChainExpressions(_)
+        )
+    }
+
+    #[inline]
     pub fn is_parent_of_statement(self) -> bool {
         matches!(
             self,
@@ -1978,6 +2035,7 @@ impl<'a, 't> Ancestor<'a, 't> {
                 | Self::DecoratorExpression(_)
                 | Self::TSExportAssignmentExpression(_)
                 | Self::TSInstantiationExpressionExpression(_)
+                | Self::ArkUIComponentExpressionCallee(_)
         )
     }
 
@@ -1988,6 +2046,7 @@ impl<'a, 't> Ancestor<'a, 't> {
             Self::CallExpressionArguments(_)
                 | Self::NewExpressionArguments(_)
                 | Self::V8IntrinsicExpressionArguments(_)
+                | Self::ArkUIComponentExpressionArguments(_)
         )
     }
 
@@ -2202,6 +2261,16 @@ impl<'a, 't> Ancestor<'a, 't> {
     #[inline]
     pub fn is_parent_of_ts_module_reference(self) -> bool {
         matches!(self, Self::TSImportEqualsDeclarationModuleReference(_))
+    }
+
+    #[inline]
+    pub fn is_parent_of_struct_element(self) -> bool {
+        matches!(self, Self::StructBodyBody(_))
+    }
+
+    #[inline]
+    pub fn is_parent_of_ark_u_i_child(self) -> bool {
+        matches!(self, Self::ArkUIComponentExpressionChildren(_))
     }
 }
 
@@ -2507,6 +2576,16 @@ impl<'a, 't> GetAddress for Ancestor<'a, 't> {
             Self::TSInstantiationExpressionTypeArguments(a) => a.address(),
             Self::JSDocNullableTypeTypeAnnotation(a) => a.address(),
             Self::JSDocNonNullableTypeTypeAnnotation(a) => a.address(),
+            Self::StructStatementDecorators(a) => a.address(),
+            Self::StructStatementId(a) => a.address(),
+            Self::StructStatementTypeParameters(a) => a.address(),
+            Self::StructStatementBody(a) => a.address(),
+            Self::StructBodyBody(a) => a.address(),
+            Self::ArkUIComponentExpressionCallee(a) => a.address(),
+            Self::ArkUIComponentExpressionTypeArguments(a) => a.address(),
+            Self::ArkUIComponentExpressionArguments(a) => a.address(),
+            Self::ArkUIComponentExpressionChildren(a) => a.address(),
+            Self::ArkUIComponentExpressionChainExpressions(a) => a.address(),
         }
     }
 }
@@ -15747,6 +15826,539 @@ impl<'a, 't> JSDocNonNullableTypeWithoutTypeAnnotation<'a, 't> {
 }
 
 impl<'a, 't> GetAddress for JSDocNonNullableTypeWithoutTypeAnnotation<'a, 't> {
+    #[inline]
+    fn address(&self) -> Address {
+        unsafe { Address::from_ptr(self.0) }
+    }
+}
+
+pub(crate) const OFFSET_STRUCT_STATEMENT_SPAN: usize = offset_of!(StructStatement, span);
+pub(crate) const OFFSET_STRUCT_STATEMENT_DECORATORS: usize =
+    offset_of!(StructStatement, decorators);
+pub(crate) const OFFSET_STRUCT_STATEMENT_ID: usize = offset_of!(StructStatement, id);
+pub(crate) const OFFSET_STRUCT_STATEMENT_TYPE_PARAMETERS: usize =
+    offset_of!(StructStatement, type_parameters);
+pub(crate) const OFFSET_STRUCT_STATEMENT_BODY: usize = offset_of!(StructStatement, body);
+pub(crate) const OFFSET_STRUCT_STATEMENT_SCOPE_ID: usize = offset_of!(StructStatement, scope_id);
+
+#[repr(transparent)]
+#[derive(Clone, Copy, Debug)]
+pub struct StructStatementWithoutDecorators<'a, 't>(
+    pub(crate) *const StructStatement<'a>,
+    pub(crate) PhantomData<&'t ()>,
+);
+
+impl<'a, 't> StructStatementWithoutDecorators<'a, 't> {
+    #[inline]
+    pub fn span(self) -> &'t Span {
+        unsafe { &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_SPAN) as *const Span) }
+    }
+
+    #[inline]
+    pub fn id(self) -> &'t BindingIdentifier<'a> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_ID)
+                as *const BindingIdentifier<'a>)
+        }
+    }
+
+    #[inline]
+    pub fn type_parameters(self) -> &'t Option<Box<'a, TSTypeParameterDeclaration<'a>>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_TYPE_PARAMETERS)
+                as *const Option<Box<'a, TSTypeParameterDeclaration<'a>>>)
+        }
+    }
+
+    #[inline]
+    pub fn body(self) -> &'t Box<'a, StructBody<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_BODY)
+                as *const Box<'a, StructBody<'a>>)
+        }
+    }
+
+    #[inline]
+    pub fn scope_id(self) -> &'t Cell<Option<ScopeId>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_SCOPE_ID)
+                as *const Cell<Option<ScopeId>>)
+        }
+    }
+}
+
+impl<'a, 't> GetAddress for StructStatementWithoutDecorators<'a, 't> {
+    #[inline]
+    fn address(&self) -> Address {
+        unsafe { Address::from_ptr(self.0) }
+    }
+}
+
+#[repr(transparent)]
+#[derive(Clone, Copy, Debug)]
+pub struct StructStatementWithoutId<'a, 't>(
+    pub(crate) *const StructStatement<'a>,
+    pub(crate) PhantomData<&'t ()>,
+);
+
+impl<'a, 't> StructStatementWithoutId<'a, 't> {
+    #[inline]
+    pub fn span(self) -> &'t Span {
+        unsafe { &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_SPAN) as *const Span) }
+    }
+
+    #[inline]
+    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_DECORATORS)
+                as *const Vec<'a, Decorator<'a>>)
+        }
+    }
+
+    #[inline]
+    pub fn type_parameters(self) -> &'t Option<Box<'a, TSTypeParameterDeclaration<'a>>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_TYPE_PARAMETERS)
+                as *const Option<Box<'a, TSTypeParameterDeclaration<'a>>>)
+        }
+    }
+
+    #[inline]
+    pub fn body(self) -> &'t Box<'a, StructBody<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_BODY)
+                as *const Box<'a, StructBody<'a>>)
+        }
+    }
+
+    #[inline]
+    pub fn scope_id(self) -> &'t Cell<Option<ScopeId>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_SCOPE_ID)
+                as *const Cell<Option<ScopeId>>)
+        }
+    }
+}
+
+impl<'a, 't> GetAddress for StructStatementWithoutId<'a, 't> {
+    #[inline]
+    fn address(&self) -> Address {
+        unsafe { Address::from_ptr(self.0) }
+    }
+}
+
+#[repr(transparent)]
+#[derive(Clone, Copy, Debug)]
+pub struct StructStatementWithoutTypeParameters<'a, 't>(
+    pub(crate) *const StructStatement<'a>,
+    pub(crate) PhantomData<&'t ()>,
+);
+
+impl<'a, 't> StructStatementWithoutTypeParameters<'a, 't> {
+    #[inline]
+    pub fn span(self) -> &'t Span {
+        unsafe { &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_SPAN) as *const Span) }
+    }
+
+    #[inline]
+    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_DECORATORS)
+                as *const Vec<'a, Decorator<'a>>)
+        }
+    }
+
+    #[inline]
+    pub fn id(self) -> &'t BindingIdentifier<'a> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_ID)
+                as *const BindingIdentifier<'a>)
+        }
+    }
+
+    #[inline]
+    pub fn body(self) -> &'t Box<'a, StructBody<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_BODY)
+                as *const Box<'a, StructBody<'a>>)
+        }
+    }
+
+    #[inline]
+    pub fn scope_id(self) -> &'t Cell<Option<ScopeId>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_SCOPE_ID)
+                as *const Cell<Option<ScopeId>>)
+        }
+    }
+}
+
+impl<'a, 't> GetAddress for StructStatementWithoutTypeParameters<'a, 't> {
+    #[inline]
+    fn address(&self) -> Address {
+        unsafe { Address::from_ptr(self.0) }
+    }
+}
+
+#[repr(transparent)]
+#[derive(Clone, Copy, Debug)]
+pub struct StructStatementWithoutBody<'a, 't>(
+    pub(crate) *const StructStatement<'a>,
+    pub(crate) PhantomData<&'t ()>,
+);
+
+impl<'a, 't> StructStatementWithoutBody<'a, 't> {
+    #[inline]
+    pub fn span(self) -> &'t Span {
+        unsafe { &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_SPAN) as *const Span) }
+    }
+
+    #[inline]
+    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_DECORATORS)
+                as *const Vec<'a, Decorator<'a>>)
+        }
+    }
+
+    #[inline]
+    pub fn id(self) -> &'t BindingIdentifier<'a> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_ID)
+                as *const BindingIdentifier<'a>)
+        }
+    }
+
+    #[inline]
+    pub fn type_parameters(self) -> &'t Option<Box<'a, TSTypeParameterDeclaration<'a>>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_TYPE_PARAMETERS)
+                as *const Option<Box<'a, TSTypeParameterDeclaration<'a>>>)
+        }
+    }
+
+    #[inline]
+    pub fn scope_id(self) -> &'t Cell<Option<ScopeId>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_SCOPE_ID)
+                as *const Cell<Option<ScopeId>>)
+        }
+    }
+}
+
+impl<'a, 't> GetAddress for StructStatementWithoutBody<'a, 't> {
+    #[inline]
+    fn address(&self) -> Address {
+        unsafe { Address::from_ptr(self.0) }
+    }
+}
+
+pub(crate) const OFFSET_STRUCT_BODY_SPAN: usize = offset_of!(StructBody, span);
+pub(crate) const OFFSET_STRUCT_BODY_BODY: usize = offset_of!(StructBody, body);
+
+#[repr(transparent)]
+#[derive(Clone, Copy, Debug)]
+pub struct StructBodyWithoutBody<'a, 't>(
+    pub(crate) *const StructBody<'a>,
+    pub(crate) PhantomData<&'t ()>,
+);
+
+impl<'a, 't> StructBodyWithoutBody<'a, 't> {
+    #[inline]
+    pub fn span(self) -> &'t Span {
+        unsafe { &*((self.0 as *const u8).add(OFFSET_STRUCT_BODY_SPAN) as *const Span) }
+    }
+}
+
+impl<'a, 't> GetAddress for StructBodyWithoutBody<'a, 't> {
+    #[inline]
+    fn address(&self) -> Address {
+        unsafe { Address::from_ptr(self.0) }
+    }
+}
+
+pub(crate) const OFFSET_ARK_U_I_COMPONENT_EXPRESSION_SPAN: usize =
+    offset_of!(ArkUIComponentExpression, span);
+pub(crate) const OFFSET_ARK_U_I_COMPONENT_EXPRESSION_CALLEE: usize =
+    offset_of!(ArkUIComponentExpression, callee);
+pub(crate) const OFFSET_ARK_U_I_COMPONENT_EXPRESSION_TYPE_ARGUMENTS: usize =
+    offset_of!(ArkUIComponentExpression, type_arguments);
+pub(crate) const OFFSET_ARK_U_I_COMPONENT_EXPRESSION_ARGUMENTS: usize =
+    offset_of!(ArkUIComponentExpression, arguments);
+pub(crate) const OFFSET_ARK_U_I_COMPONENT_EXPRESSION_CHILDREN: usize =
+    offset_of!(ArkUIComponentExpression, children);
+pub(crate) const OFFSET_ARK_U_I_COMPONENT_EXPRESSION_CHAIN_EXPRESSIONS: usize =
+    offset_of!(ArkUIComponentExpression, chain_expressions);
+
+#[repr(transparent)]
+#[derive(Clone, Copy, Debug)]
+pub struct ArkUIComponentExpressionWithoutCallee<'a, 't>(
+    pub(crate) *const ArkUIComponentExpression<'a>,
+    pub(crate) PhantomData<&'t ()>,
+);
+
+impl<'a, 't> ArkUIComponentExpressionWithoutCallee<'a, 't> {
+    #[inline]
+    pub fn span(self) -> &'t Span {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_ARK_U_I_COMPONENT_EXPRESSION_SPAN) as *const Span)
+        }
+    }
+
+    #[inline]
+    pub fn type_arguments(self) -> &'t Option<Box<'a, TSTypeParameterInstantiation<'a>>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_ARK_U_I_COMPONENT_EXPRESSION_TYPE_ARGUMENTS)
+                as *const Option<Box<'a, TSTypeParameterInstantiation<'a>>>)
+        }
+    }
+
+    #[inline]
+    pub fn arguments(self) -> &'t Vec<'a, Argument<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_ARK_U_I_COMPONENT_EXPRESSION_ARGUMENTS)
+                as *const Vec<'a, Argument<'a>>)
+        }
+    }
+
+    #[inline]
+    pub fn children(self) -> &'t Vec<'a, ArkUIChild<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_ARK_U_I_COMPONENT_EXPRESSION_CHILDREN)
+                as *const Vec<'a, ArkUIChild<'a>>)
+        }
+    }
+
+    #[inline]
+    pub fn chain_expressions(self) -> &'t Vec<'a, CallExpression<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_ARK_U_I_COMPONENT_EXPRESSION_CHAIN_EXPRESSIONS)
+                as *const Vec<'a, CallExpression<'a>>)
+        }
+    }
+}
+
+impl<'a, 't> GetAddress for ArkUIComponentExpressionWithoutCallee<'a, 't> {
+    #[inline]
+    fn address(&self) -> Address {
+        unsafe { Address::from_ptr(self.0) }
+    }
+}
+
+#[repr(transparent)]
+#[derive(Clone, Copy, Debug)]
+pub struct ArkUIComponentExpressionWithoutTypeArguments<'a, 't>(
+    pub(crate) *const ArkUIComponentExpression<'a>,
+    pub(crate) PhantomData<&'t ()>,
+);
+
+impl<'a, 't> ArkUIComponentExpressionWithoutTypeArguments<'a, 't> {
+    #[inline]
+    pub fn span(self) -> &'t Span {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_ARK_U_I_COMPONENT_EXPRESSION_SPAN) as *const Span)
+        }
+    }
+
+    #[inline]
+    pub fn callee(self) -> &'t Expression<'a> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_ARK_U_I_COMPONENT_EXPRESSION_CALLEE)
+                as *const Expression<'a>)
+        }
+    }
+
+    #[inline]
+    pub fn arguments(self) -> &'t Vec<'a, Argument<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_ARK_U_I_COMPONENT_EXPRESSION_ARGUMENTS)
+                as *const Vec<'a, Argument<'a>>)
+        }
+    }
+
+    #[inline]
+    pub fn children(self) -> &'t Vec<'a, ArkUIChild<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_ARK_U_I_COMPONENT_EXPRESSION_CHILDREN)
+                as *const Vec<'a, ArkUIChild<'a>>)
+        }
+    }
+
+    #[inline]
+    pub fn chain_expressions(self) -> &'t Vec<'a, CallExpression<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_ARK_U_I_COMPONENT_EXPRESSION_CHAIN_EXPRESSIONS)
+                as *const Vec<'a, CallExpression<'a>>)
+        }
+    }
+}
+
+impl<'a, 't> GetAddress for ArkUIComponentExpressionWithoutTypeArguments<'a, 't> {
+    #[inline]
+    fn address(&self) -> Address {
+        unsafe { Address::from_ptr(self.0) }
+    }
+}
+
+#[repr(transparent)]
+#[derive(Clone, Copy, Debug)]
+pub struct ArkUIComponentExpressionWithoutArguments<'a, 't>(
+    pub(crate) *const ArkUIComponentExpression<'a>,
+    pub(crate) PhantomData<&'t ()>,
+);
+
+impl<'a, 't> ArkUIComponentExpressionWithoutArguments<'a, 't> {
+    #[inline]
+    pub fn span(self) -> &'t Span {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_ARK_U_I_COMPONENT_EXPRESSION_SPAN) as *const Span)
+        }
+    }
+
+    #[inline]
+    pub fn callee(self) -> &'t Expression<'a> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_ARK_U_I_COMPONENT_EXPRESSION_CALLEE)
+                as *const Expression<'a>)
+        }
+    }
+
+    #[inline]
+    pub fn type_arguments(self) -> &'t Option<Box<'a, TSTypeParameterInstantiation<'a>>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_ARK_U_I_COMPONENT_EXPRESSION_TYPE_ARGUMENTS)
+                as *const Option<Box<'a, TSTypeParameterInstantiation<'a>>>)
+        }
+    }
+
+    #[inline]
+    pub fn children(self) -> &'t Vec<'a, ArkUIChild<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_ARK_U_I_COMPONENT_EXPRESSION_CHILDREN)
+                as *const Vec<'a, ArkUIChild<'a>>)
+        }
+    }
+
+    #[inline]
+    pub fn chain_expressions(self) -> &'t Vec<'a, CallExpression<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_ARK_U_I_COMPONENT_EXPRESSION_CHAIN_EXPRESSIONS)
+                as *const Vec<'a, CallExpression<'a>>)
+        }
+    }
+}
+
+impl<'a, 't> GetAddress for ArkUIComponentExpressionWithoutArguments<'a, 't> {
+    #[inline]
+    fn address(&self) -> Address {
+        unsafe { Address::from_ptr(self.0) }
+    }
+}
+
+#[repr(transparent)]
+#[derive(Clone, Copy, Debug)]
+pub struct ArkUIComponentExpressionWithoutChildren<'a, 't>(
+    pub(crate) *const ArkUIComponentExpression<'a>,
+    pub(crate) PhantomData<&'t ()>,
+);
+
+impl<'a, 't> ArkUIComponentExpressionWithoutChildren<'a, 't> {
+    #[inline]
+    pub fn span(self) -> &'t Span {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_ARK_U_I_COMPONENT_EXPRESSION_SPAN) as *const Span)
+        }
+    }
+
+    #[inline]
+    pub fn callee(self) -> &'t Expression<'a> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_ARK_U_I_COMPONENT_EXPRESSION_CALLEE)
+                as *const Expression<'a>)
+        }
+    }
+
+    #[inline]
+    pub fn type_arguments(self) -> &'t Option<Box<'a, TSTypeParameterInstantiation<'a>>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_ARK_U_I_COMPONENT_EXPRESSION_TYPE_ARGUMENTS)
+                as *const Option<Box<'a, TSTypeParameterInstantiation<'a>>>)
+        }
+    }
+
+    #[inline]
+    pub fn arguments(self) -> &'t Vec<'a, Argument<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_ARK_U_I_COMPONENT_EXPRESSION_ARGUMENTS)
+                as *const Vec<'a, Argument<'a>>)
+        }
+    }
+
+    #[inline]
+    pub fn chain_expressions(self) -> &'t Vec<'a, CallExpression<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_ARK_U_I_COMPONENT_EXPRESSION_CHAIN_EXPRESSIONS)
+                as *const Vec<'a, CallExpression<'a>>)
+        }
+    }
+}
+
+impl<'a, 't> GetAddress for ArkUIComponentExpressionWithoutChildren<'a, 't> {
+    #[inline]
+    fn address(&self) -> Address {
+        unsafe { Address::from_ptr(self.0) }
+    }
+}
+
+#[repr(transparent)]
+#[derive(Clone, Copy, Debug)]
+pub struct ArkUIComponentExpressionWithoutChainExpressions<'a, 't>(
+    pub(crate) *const ArkUIComponentExpression<'a>,
+    pub(crate) PhantomData<&'t ()>,
+);
+
+impl<'a, 't> ArkUIComponentExpressionWithoutChainExpressions<'a, 't> {
+    #[inline]
+    pub fn span(self) -> &'t Span {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_ARK_U_I_COMPONENT_EXPRESSION_SPAN) as *const Span)
+        }
+    }
+
+    #[inline]
+    pub fn callee(self) -> &'t Expression<'a> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_ARK_U_I_COMPONENT_EXPRESSION_CALLEE)
+                as *const Expression<'a>)
+        }
+    }
+
+    #[inline]
+    pub fn type_arguments(self) -> &'t Option<Box<'a, TSTypeParameterInstantiation<'a>>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_ARK_U_I_COMPONENT_EXPRESSION_TYPE_ARGUMENTS)
+                as *const Option<Box<'a, TSTypeParameterInstantiation<'a>>>)
+        }
+    }
+
+    #[inline]
+    pub fn arguments(self) -> &'t Vec<'a, Argument<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_ARK_U_I_COMPONENT_EXPRESSION_ARGUMENTS)
+                as *const Vec<'a, Argument<'a>>)
+        }
+    }
+
+    #[inline]
+    pub fn children(self) -> &'t Vec<'a, ArkUIChild<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_ARK_U_I_COMPONENT_EXPRESSION_CHILDREN)
+                as *const Vec<'a, ArkUIChild<'a>>)
+        }
+    }
+}
+
+impl<'a, 't> GetAddress for ArkUIComponentExpressionWithoutChainExpressions<'a, 't> {
     #[inline]
     fn address(&self) -> Address {
         unsafe { Address::from_ptr(self.0) }

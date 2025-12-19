@@ -74,6 +74,7 @@ impl<'a> Visit<'a> for ChildScopeCollector {
             Expression::TSNonNullExpression(it) => self.visit_ts_non_null_expression(it),
             Expression::TSInstantiationExpression(it) => self.visit_ts_instantiation_expression(it),
             Expression::V8IntrinsicExpression(it) => self.visit_v_8_intrinsic_expression(it),
+            Expression::ArkUIComponentExpression(it) => self.visit_ark_ui_component_expression(it),
             Expression::ComputedMemberExpression(it) => self.visit_computed_member_expression(it),
             Expression::StaticMemberExpression(it) => self.visit_static_member_expression(it),
             Expression::PrivateFieldExpression(it) => self.visit_private_field_expression(it),
@@ -177,6 +178,9 @@ impl<'a> Visit<'a> for ChildScopeCollector {
             ArrayExpressionElement::V8IntrinsicExpression(it) => {
                 self.visit_v_8_intrinsic_expression(it)
             }
+            ArrayExpressionElement::ArkUIComponentExpression(it) => {
+                self.visit_ark_ui_component_expression(it)
+            }
             ArrayExpressionElement::ComputedMemberExpression(it) => {
                 self.visit_computed_member_expression(it)
             }
@@ -256,6 +260,7 @@ impl<'a> Visit<'a> for ChildScopeCollector {
                 self.visit_ts_instantiation_expression(it)
             }
             PropertyKey::V8IntrinsicExpression(it) => self.visit_v_8_intrinsic_expression(it),
+            PropertyKey::ArkUIComponentExpression(it) => self.visit_ark_ui_component_expression(it),
             PropertyKey::ComputedMemberExpression(it) => self.visit_computed_member_expression(it),
             PropertyKey::StaticMemberExpression(it) => self.visit_static_member_expression(it),
             PropertyKey::PrivateFieldExpression(it) => self.visit_private_field_expression(it),
@@ -376,6 +381,7 @@ impl<'a> Visit<'a> for ChildScopeCollector {
             Argument::TSNonNullExpression(it) => self.visit_ts_non_null_expression(it),
             Argument::TSInstantiationExpression(it) => self.visit_ts_instantiation_expression(it),
             Argument::V8IntrinsicExpression(it) => self.visit_v_8_intrinsic_expression(it),
+            Argument::ArkUIComponentExpression(it) => self.visit_ark_ui_component_expression(it),
             Argument::ComputedMemberExpression(it) => self.visit_computed_member_expression(it),
             Argument::StaticMemberExpression(it) => self.visit_static_member_expression(it),
             Argument::PrivateFieldExpression(it) => self.visit_private_field_expression(it),
@@ -605,6 +611,7 @@ impl<'a> Visit<'a> for ChildScopeCollector {
             Statement::TryStatement(it) => self.visit_try_statement(it),
             Statement::WhileStatement(it) => self.visit_while_statement(it),
             Statement::WithStatement(it) => self.visit_with_statement(it),
+            Statement::StructStatement(it) => self.visit_struct_statement(it),
             Statement::VariableDeclaration(it) => self.visit_variable_declaration(it),
             Statement::FunctionDeclaration(it) => {
                 let flags = ScopeFlags::Function;
@@ -761,6 +768,9 @@ impl<'a> Visit<'a> for ChildScopeCollector {
                 self.visit_ts_instantiation_expression(it)
             }
             ForStatementInit::V8IntrinsicExpression(it) => self.visit_v_8_intrinsic_expression(it),
+            ForStatementInit::ArkUIComponentExpression(it) => {
+                self.visit_ark_ui_component_expression(it)
+            }
             ForStatementInit::ComputedMemberExpression(it) => {
                 self.visit_computed_member_expression(it)
             }
@@ -1194,6 +1204,9 @@ impl<'a> Visit<'a> for ChildScopeCollector {
             ExportDefaultDeclarationKind::V8IntrinsicExpression(it) => {
                 self.visit_v_8_intrinsic_expression(it)
             }
+            ExportDefaultDeclarationKind::ArkUIComponentExpression(it) => {
+                self.visit_ark_ui_component_expression(it)
+            }
             ExportDefaultDeclarationKind::ComputedMemberExpression(it) => {
                 self.visit_computed_member_expression(it)
             }
@@ -1357,6 +1370,9 @@ impl<'a> Visit<'a> for ChildScopeCollector {
                 self.visit_ts_instantiation_expression(it)
             }
             JSXExpression::V8IntrinsicExpression(it) => self.visit_v_8_intrinsic_expression(it),
+            JSXExpression::ArkUIComponentExpression(it) => {
+                self.visit_ark_ui_component_expression(it)
+            }
             JSXExpression::ComputedMemberExpression(it) => {
                 self.visit_computed_member_expression(it)
             }
@@ -2005,6 +2021,27 @@ impl<'a> Visit<'a> for ChildScopeCollector {
     #[inline(always)]
     fn visit_js_doc_unknown_type(&mut self, it: &JSDocUnknownType) {
         // Struct does not contain a scope. Halt traversal.
+    }
+
+    #[inline]
+    fn visit_struct_statement(&mut self, it: &StructStatement<'a>) {
+        self.add_scope(&it.scope_id);
+    }
+
+    #[inline]
+    fn visit_struct_body(&mut self, it: &StructBody<'a>) {
+        self.visit_struct_elements(&it.body);
+    }
+
+    #[inline]
+    fn visit_ark_ui_component_expression(&mut self, it: &ArkUIComponentExpression<'a>) {
+        self.visit_expression(&it.callee);
+        if let Some(type_arguments) = &it.type_arguments {
+            self.visit_ts_type_parameter_instantiation(type_arguments);
+        }
+        self.visit_arguments(&it.arguments);
+        self.visit_ark_ui_children(&it.children);
+        self.visit_call_expressions(&it.chain_expressions);
     }
 
     #[inline(always)]

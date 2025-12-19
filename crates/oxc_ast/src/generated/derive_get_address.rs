@@ -5,6 +5,7 @@
 
 use oxc_allocator::{Address, GetAddress};
 
+use crate::ast::arkui::*;
 use crate::ast::js::*;
 use crate::ast::jsx::*;
 use crate::ast::ts::*;
@@ -54,6 +55,7 @@ impl GetAddress for Expression<'_> {
             Self::TSNonNullExpression(it) => GetAddress::address(it),
             Self::TSInstantiationExpression(it) => GetAddress::address(it),
             Self::V8IntrinsicExpression(it) => GetAddress::address(it),
+            Self::ArkUIComponentExpression(it) => GetAddress::address(it),
             Self::ComputedMemberExpression(it) => GetAddress::address(it),
             Self::StaticMemberExpression(it) => GetAddress::address(it),
             Self::PrivateFieldExpression(it) => GetAddress::address(it),
@@ -119,6 +121,7 @@ impl GetAddress for PropertyKey<'_> {
             Self::TSNonNullExpression(it) => GetAddress::address(it),
             Self::TSInstantiationExpression(it) => GetAddress::address(it),
             Self::V8IntrinsicExpression(it) => GetAddress::address(it),
+            Self::ArkUIComponentExpression(it) => GetAddress::address(it),
             Self::ComputedMemberExpression(it) => GetAddress::address(it),
             Self::StaticMemberExpression(it) => GetAddress::address(it),
             Self::PrivateFieldExpression(it) => GetAddress::address(it),
@@ -184,6 +187,7 @@ impl GetAddress for Argument<'_> {
             Self::TSNonNullExpression(it) => GetAddress::address(it),
             Self::TSInstantiationExpression(it) => GetAddress::address(it),
             Self::V8IntrinsicExpression(it) => GetAddress::address(it),
+            Self::ArkUIComponentExpression(it) => GetAddress::address(it),
             Self::ComputedMemberExpression(it) => GetAddress::address(it),
             Self::StaticMemberExpression(it) => GetAddress::address(it),
             Self::PrivateFieldExpression(it) => GetAddress::address(it),
@@ -306,6 +310,7 @@ impl GetAddress for Statement<'_> {
             Self::TryStatement(it) => GetAddress::address(it),
             Self::WhileStatement(it) => GetAddress::address(it),
             Self::WithStatement(it) => GetAddress::address(it),
+            Self::StructStatement(it) => GetAddress::address(it),
             Self::VariableDeclaration(it) => GetAddress::address(it),
             Self::FunctionDeclaration(it) => GetAddress::address(it),
             Self::ClassDeclaration(it) => GetAddress::address(it),
@@ -389,6 +394,7 @@ impl GetAddress for ForStatementInit<'_> {
             Self::TSNonNullExpression(it) => GetAddress::address(it),
             Self::TSInstantiationExpression(it) => GetAddress::address(it),
             Self::V8IntrinsicExpression(it) => GetAddress::address(it),
+            Self::ArkUIComponentExpression(it) => GetAddress::address(it),
             Self::ComputedMemberExpression(it) => GetAddress::address(it),
             Self::StaticMemberExpression(it) => GetAddress::address(it),
             Self::PrivateFieldExpression(it) => GetAddress::address(it),
@@ -518,6 +524,7 @@ impl GetAddress for ExportDefaultDeclarationKind<'_> {
             Self::TSNonNullExpression(it) => GetAddress::address(it),
             Self::TSInstantiationExpression(it) => GetAddress::address(it),
             Self::V8IntrinsicExpression(it) => GetAddress::address(it),
+            Self::ArkUIComponentExpression(it) => GetAddress::address(it),
             Self::ComputedMemberExpression(it) => GetAddress::address(it),
             Self::StaticMemberExpression(it) => GetAddress::address(it),
             Self::PrivateFieldExpression(it) => GetAddress::address(it),
@@ -792,6 +799,28 @@ impl GetAddress for TSModuleReference<'_> {
             Self::IdentifierReference(it) => GetAddress::address(it),
             Self::QualifiedName(it) => GetAddress::address(it),
             Self::ThisExpression(it) => GetAddress::address(it),
+        }
+    }
+}
+
+impl GetAddress for StructElement<'_> {
+    // `#[inline]` because compiler should boil this down to a single assembly instruction
+    #[inline]
+    fn address(&self) -> Address {
+        match self {
+            Self::PropertyDefinition(it) => GetAddress::address(it),
+            Self::MethodDefinition(it) => GetAddress::address(it),
+        }
+    }
+}
+
+impl GetAddress for ArkUIChild<'_> {
+    // `#[inline]` because compiler should boil this down to a single assembly instruction
+    #[inline]
+    fn address(&self) -> Address {
+        match self {
+            Self::Component(it) => GetAddress::address(it),
+            Self::Expression(it) => GetAddress::address(it),
         }
     }
 }

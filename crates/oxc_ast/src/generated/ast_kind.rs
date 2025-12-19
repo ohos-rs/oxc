@@ -12,7 +12,7 @@ use oxc_span::{GetSpan, Span};
 use crate::ast::*;
 
 /// The largest integer value that can be mapped to an `AstType`/`AstKind` enum variant.
-pub const AST_TYPE_MAX: u8 = 186;
+pub const AST_TYPE_MAX: u8 = 189;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(u8)]
@@ -204,6 +204,9 @@ pub enum AstType {
     JSDocNullableType = 184,
     JSDocNonNullableType = 185,
     JSDocUnknownType = 186,
+    StructStatement = 187,
+    StructBody = 188,
+    ArkUIComponentExpression = 189,
 }
 
 /// Untyped AST Node Kind
@@ -415,6 +418,10 @@ pub enum AstKind<'a> {
     JSDocNullableType(&'a JSDocNullableType<'a>) = AstType::JSDocNullableType as u8,
     JSDocNonNullableType(&'a JSDocNonNullableType<'a>) = AstType::JSDocNonNullableType as u8,
     JSDocUnknownType(&'a JSDocUnknownType) = AstType::JSDocUnknownType as u8,
+    StructStatement(&'a StructStatement<'a>) = AstType::StructStatement as u8,
+    StructBody(&'a StructBody<'a>) = AstType::StructBody as u8,
+    ArkUIComponentExpression(&'a ArkUIComponentExpression<'a>) =
+        AstType::ArkUIComponentExpression as u8,
 }
 
 impl AstKind<'_> {
@@ -619,6 +626,9 @@ impl GetSpan for AstKind<'_> {
             Self::JSDocNullableType(it) => it.span(),
             Self::JSDocNonNullableType(it) => it.span(),
             Self::JSDocUnknownType(it) => it.span(),
+            Self::StructStatement(it) => it.span(),
+            Self::StructBody(it) => it.span(),
+            Self::ArkUIComponentExpression(it) => it.span(),
         }
     }
 }
@@ -813,6 +823,9 @@ impl GetAddress for AstKind<'_> {
             Self::JSDocNullableType(it) => it.unstable_address(),
             Self::JSDocNonNullableType(it) => it.unstable_address(),
             Self::JSDocUnknownType(it) => it.unstable_address(),
+            Self::StructStatement(it) => it.unstable_address(),
+            Self::StructBody(it) => it.unstable_address(),
+            Self::ArkUIComponentExpression(it) => it.unstable_address(),
         }
     }
 }
@@ -1761,5 +1774,20 @@ impl<'a> AstKind<'a> {
     #[inline]
     pub fn as_js_doc_unknown_type(self) -> Option<&'a JSDocUnknownType> {
         if let Self::JSDocUnknownType(v) = self { Some(v) } else { None }
+    }
+
+    #[inline]
+    pub fn as_struct_statement(self) -> Option<&'a StructStatement<'a>> {
+        if let Self::StructStatement(v) = self { Some(v) } else { None }
+    }
+
+    #[inline]
+    pub fn as_struct_body(self) -> Option<&'a StructBody<'a>> {
+        if let Self::StructBody(v) = self { Some(v) } else { None }
+    }
+
+    #[inline]
+    pub fn as_ark_ui_component_expression(self) -> Option<&'a ArkUIComponentExpression<'a>> {
+        if let Self::ArkUIComponentExpression(v) = self { Some(v) } else { None }
     }
 }

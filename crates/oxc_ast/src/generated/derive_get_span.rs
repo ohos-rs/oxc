@@ -5,6 +5,7 @@
 
 use oxc_span::{GetSpan, Span};
 
+use crate::ast::arkui::*;
 use crate::ast::js::*;
 use crate::ast::jsx::*;
 use crate::ast::literal::*;
@@ -60,6 +61,7 @@ impl GetSpan for Expression<'_> {
             Self::TSNonNullExpression(it) => GetSpan::span(&**it),
             Self::TSInstantiationExpression(it) => GetSpan::span(&**it),
             Self::V8IntrinsicExpression(it) => GetSpan::span(&**it),
+            Self::ArkUIComponentExpression(it) => GetSpan::span(&**it),
             Self::ComputedMemberExpression(it) => GetSpan::span(&**it),
             Self::StaticMemberExpression(it) => GetSpan::span(&**it),
             Self::PrivateFieldExpression(it) => GetSpan::span(&**it),
@@ -154,6 +156,7 @@ impl GetSpan for ArrayExpressionElement<'_> {
             Self::TSNonNullExpression(it) => GetSpan::span(&**it),
             Self::TSInstantiationExpression(it) => GetSpan::span(&**it),
             Self::V8IntrinsicExpression(it) => GetSpan::span(&**it),
+            Self::ArkUIComponentExpression(it) => GetSpan::span(&**it),
             Self::ComputedMemberExpression(it) => GetSpan::span(&**it),
             Self::StaticMemberExpression(it) => GetSpan::span(&**it),
             Self::PrivateFieldExpression(it) => GetSpan::span(&**it),
@@ -236,6 +239,7 @@ impl GetSpan for PropertyKey<'_> {
             Self::TSNonNullExpression(it) => GetSpan::span(&**it),
             Self::TSInstantiationExpression(it) => GetSpan::span(&**it),
             Self::V8IntrinsicExpression(it) => GetSpan::span(&**it),
+            Self::ArkUIComponentExpression(it) => GetSpan::span(&**it),
             Self::ComputedMemberExpression(it) => GetSpan::span(&**it),
             Self::StaticMemberExpression(it) => GetSpan::span(&**it),
             Self::PrivateFieldExpression(it) => GetSpan::span(&**it),
@@ -367,6 +371,7 @@ impl GetSpan for Argument<'_> {
             Self::TSNonNullExpression(it) => GetSpan::span(&**it),
             Self::TSInstantiationExpression(it) => GetSpan::span(&**it),
             Self::V8IntrinsicExpression(it) => GetSpan::span(&**it),
+            Self::ArkUIComponentExpression(it) => GetSpan::span(&**it),
             Self::ComputedMemberExpression(it) => GetSpan::span(&**it),
             Self::StaticMemberExpression(it) => GetSpan::span(&**it),
             Self::PrivateFieldExpression(it) => GetSpan::span(&**it),
@@ -601,6 +606,7 @@ impl GetSpan for Statement<'_> {
             Self::TryStatement(it) => GetSpan::span(&**it),
             Self::WhileStatement(it) => GetSpan::span(&**it),
             Self::WithStatement(it) => GetSpan::span(&**it),
+            Self::StructStatement(it) => GetSpan::span(&**it),
             Self::VariableDeclaration(it) => GetSpan::span(&**it),
             Self::FunctionDeclaration(it) => GetSpan::span(&**it),
             Self::ClassDeclaration(it) => GetSpan::span(&**it),
@@ -757,6 +763,7 @@ impl GetSpan for ForStatementInit<'_> {
             Self::TSNonNullExpression(it) => GetSpan::span(&**it),
             Self::TSInstantiationExpression(it) => GetSpan::span(&**it),
             Self::V8IntrinsicExpression(it) => GetSpan::span(&**it),
+            Self::ArkUIComponentExpression(it) => GetSpan::span(&**it),
             Self::ComputedMemberExpression(it) => GetSpan::span(&**it),
             Self::StaticMemberExpression(it) => GetSpan::span(&**it),
             Self::PrivateFieldExpression(it) => GetSpan::span(&**it),
@@ -1191,6 +1198,7 @@ impl GetSpan for ExportDefaultDeclarationKind<'_> {
             Self::TSNonNullExpression(it) => GetSpan::span(&**it),
             Self::TSInstantiationExpression(it) => GetSpan::span(&**it),
             Self::V8IntrinsicExpression(it) => GetSpan::span(&**it),
+            Self::ArkUIComponentExpression(it) => GetSpan::span(&**it),
             Self::ComputedMemberExpression(it) => GetSpan::span(&**it),
             Self::StaticMemberExpression(it) => GetSpan::span(&**it),
             Self::PrivateFieldExpression(it) => GetSpan::span(&**it),
@@ -1386,6 +1394,7 @@ impl GetSpan for JSXExpression<'_> {
             Self::TSNonNullExpression(it) => GetSpan::span(&**it),
             Self::TSInstantiationExpression(it) => GetSpan::span(&**it),
             Self::V8IntrinsicExpression(it) => GetSpan::span(&**it),
+            Self::ArkUIComponentExpression(it) => GetSpan::span(&**it),
             Self::ComputedMemberExpression(it) => GetSpan::span(&**it),
             Self::StaticMemberExpression(it) => GetSpan::span(&**it),
             Self::PrivateFieldExpression(it) => GetSpan::span(&**it),
@@ -2178,5 +2187,44 @@ impl GetSpan for JSDocUnknownType {
     #[inline]
     fn span(&self) -> Span {
         self.span
+    }
+}
+
+impl GetSpan for StructStatement<'_> {
+    #[inline]
+    fn span(&self) -> Span {
+        self.span
+    }
+}
+
+impl GetSpan for StructBody<'_> {
+    #[inline]
+    fn span(&self) -> Span {
+        self.span
+    }
+}
+
+impl GetSpan for StructElement<'_> {
+    fn span(&self) -> Span {
+        match self {
+            Self::PropertyDefinition(it) => GetSpan::span(&**it),
+            Self::MethodDefinition(it) => GetSpan::span(&**it),
+        }
+    }
+}
+
+impl GetSpan for ArkUIComponentExpression<'_> {
+    #[inline]
+    fn span(&self) -> Span {
+        self.span
+    }
+}
+
+impl GetSpan for ArkUIChild<'_> {
+    fn span(&self) -> Span {
+        match self {
+            Self::Component(it) => GetSpan::span(&**it),
+            Self::Expression(it) => GetSpan::span(&**it),
+        }
     }
 }

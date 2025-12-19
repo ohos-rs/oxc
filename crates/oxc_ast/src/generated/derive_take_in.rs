@@ -5,6 +5,7 @@
 
 use oxc_allocator::TakeIn;
 
+use crate::ast::arkui::*;
 use crate::ast::js::*;
 use crate::ast::jsx::*;
 use crate::ast::literal::*;
@@ -475,3 +476,13 @@ impl<'a> TakeIn<'a> for JSDocNullableType<'a> {}
 impl<'a> TakeIn<'a> for JSDocNonNullableType<'a> {}
 
 impl<'a> TakeIn<'a> for JSDocUnknownType {}
+
+impl<'a> TakeIn<'a> for StructStatement<'a> {}
+
+impl<'a> TakeIn<'a> for StructBody<'a> {}
+
+impl<'a> TakeIn<'a> for StructElement<'a> {}
+
+impl<'a> TakeIn<'a> for ArkUIComponentExpression<'a> {}
+
+impl<'a> TakeIn<'a> for ArkUIChild<'a> {}

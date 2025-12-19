@@ -2,6 +2,7 @@
 
 mod grammar;
 
+mod arkui;
 mod arrow;
 mod binding;
 mod class;

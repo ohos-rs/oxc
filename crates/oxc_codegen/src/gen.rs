@@ -192,6 +192,12 @@ impl Gen for Statement<'_> {
                 decl.print(p, ctx);
                 p.print_semicolon_after_statement();
             }
+            Self::StructStatement(decl) => {
+                p.print_comments_at(decl.span.start);
+                p.print_indent();
+                decl.print(p, ctx);
+                p.print_soft_newline();
+            }
         }
     }
 }
@@ -1228,6 +1234,8 @@ impl GenExpr for Expression<'_> {
             Self::TSInstantiationExpression(e) => e.print_expr(p, precedence, ctx),
             // V8 intrinsics (rare)
             Self::V8IntrinsicExpression(e) => e.print_expr(p, precedence, ctx),
+            // ArkUI component expressions
+            Self::ArkUIComponentExpression(e) => e.print_expr(p, precedence, ctx),
         }
     }
 }
@@ -2458,6 +2466,101 @@ impl Gen for JSXAttribute<'_> {
 impl Gen for JSXEmptyExpression {
     fn r#gen(&self, p: &mut Codegen, _ctx: Context) {
         p.print_comments_at(self.span.end);
+    }
+}
+
+impl Gen for StructStatement<'_> {
+    fn r#gen(&self, p: &mut Codegen, ctx: Context) {
+        p.print_decorators(&self.decorators, ctx);
+        p.print_space_before_identifier();
+        p.add_source_mapping(self.span);
+        p.print_str("struct");
+        p.print_hard_space();
+        self.id.print(p, ctx);
+        if let Some(type_parameters) = self.type_parameters.as_ref() {
+            type_parameters.print(p, ctx);
+        }
+        p.print_soft_space();
+        self.body.print(p, ctx);
+    }
+}
+
+impl Gen for StructBody<'_> {
+    fn r#gen(&self, p: &mut Codegen, ctx: Context) {
+        p.print_curly_braces(self.span, self.body.is_empty(), |p| {
+            for item in &self.body {
+                p.print_semicolon_if_needed();
+                p.print_leading_comments(item.span().start);
+                p.print_indent();
+                item.print(p, ctx);
+            }
+        });
+    }
+}
+
+impl Gen for StructElement<'_> {
+    fn r#gen(&self, p: &mut Codegen, ctx: Context) {
+        match self {
+            Self::MethodDefinition(elem) => {
+                elem.print(p, ctx);
+                p.print_soft_newline();
+            }
+            Self::PropertyDefinition(elem) => {
+                elem.print(p, ctx);
+                p.print_semicolon_after_statement();
+            }
+        }
+    }
+}
+
+impl GenExpr for ArkUIComponentExpression<'_> {
+    fn gen_expr(&self, p: &mut Codegen, precedence: Precedence, ctx: Context) {
+        let is_statement = p.start_of_stmt == p.code_len();
+        let is_export_default = p.start_of_default_export == p.code_len();
+        let wrap = precedence >= Precedence::New || ctx.intersects(Context::FORBID_CALL);
+
+        p.wrap(wrap, |p| {
+            if is_export_default {
+                p.start_of_default_export = p.code_len();
+            } else if is_statement {
+                p.start_of_stmt = p.code_len();
+            }
+            self.callee.print_expr(p, Precedence::Postfix, Context::empty());
+            if let Some(type_arguments) = &self.type_arguments {
+                type_arguments.print(p, ctx);
+            }
+            p.print_arguments(self.span, &self.arguments, ctx);
+            if !self.children.is_empty() {
+                p.print_soft_space();
+                p.print_ascii_byte(b'{');
+                p.print_soft_newline();
+                p.indent += 1;
+                for child in &self.children {
+                    p.print_indent();
+                    child.print(p, ctx);
+                }
+                p.indent -= 1;
+                p.print_indent();
+                p.print_ascii_byte(b'}');
+            }
+            for chain_expr in &self.chain_expressions {
+                p.print_soft_newline();
+                p.print_indent();
+                p.print_ascii_byte(b'.');
+                chain_expr.callee.print_expr(p, Precedence::Postfix, Context::empty());
+                p.print_arguments(chain_expr.span, &chain_expr.arguments, ctx);
+            }
+        });
+    }
+}
+
+impl Gen for ArkUIChild<'_> {
+    fn r#gen(&self, p: &mut Codegen, ctx: Context) {
+        match self {
+            Self::Component(expr) => expr.print_expr(p, Precedence::Comma, ctx),
+            Self::Expression(expr) => expr.print_expr(p, Precedence::Comma, ctx),
+        }
+        p.print_soft_newline();
     }
 }
 

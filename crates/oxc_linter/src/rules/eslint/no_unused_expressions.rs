@@ -176,6 +176,7 @@ impl NoUnusedExpressions {
             Expression::TSInstantiationExpression(ts_instantiation_expression) => {
                 self.is_disallowed(&ts_instantiation_expression.expression)
             }
+            Expression::ArkUIComponentExpression(_) => false,
         }
     }
 }

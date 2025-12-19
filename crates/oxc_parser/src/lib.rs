@@ -821,4 +821,47 @@ mod test {
         assert!(ret.errors.is_empty());
         assert_eq!(ret.program.body.len(), 2);
     }
+
+    #[test]
+    fn arkui_struct_statement() {
+        let allocator = Allocator::default();
+        let source_type = SourceType::default().with_typescript(true);
+        let source = "@Component\nstruct MyComponent {\n  @State message: string = 'Hello';\n  build() {\n    Column() {}\n  }\n}";
+        let ret = Parser::new(&allocator, source, source_type).parse();
+        assert!(ret.errors.is_empty(), "Errors: {:?}", ret.errors);
+        assert_eq!(ret.program.body.len(), 1);
+        if let Statement::StructStatement(struct_stmt) = &ret.program.body[0] {
+            assert_eq!(struct_stmt.id.name.as_str(), "MyComponent");
+            assert_eq!(struct_stmt.body.body.len(), 2); // property and method
+        } else {
+            panic!("Expected StructStatement");
+        }
+    }
+
+    #[test]
+    fn arkui_component_expression() {
+        let allocator = Allocator::default();
+        let source_type = SourceType::default().with_typescript(true);
+        let source = "Column() { Text('Hello') }";
+        let expr = Parser::new(&allocator, source, source_type).parse_expression().unwrap();
+        if let Expression::ArkUIComponentExpression(component) = expr {
+            assert_eq!(component.children.len(), 1);
+        } else {
+            panic!("Expected ArkUIComponentExpression");
+        }
+    }
+
+    #[test]
+    fn arkui_component_with_chain() {
+        let allocator = Allocator::default();
+        let source_type = SourceType::default().with_typescript(true);
+        let source = "Button('Click').onClick(() => {})";
+        let expr = Parser::new(&allocator, source, source_type).parse_expression().unwrap();
+        // The chain expression should be parsed as a CallExpression wrapping the ArkUIComponentExpression
+        if let Expression::CallExpression(_) = expr {
+            // This is expected - the chain creates a CallExpression
+        } else {
+            panic!("Expected CallExpression with chain");
+        }
+    }
 }

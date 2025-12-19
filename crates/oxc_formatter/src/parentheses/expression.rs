@@ -55,6 +55,7 @@ impl NeedsParentheses<'_> for AstNode<'_, Expression<'_>> {
             AstNodes::TSNonNullExpression(it) => it.needs_parentheses(f),
             AstNodes::TSInstantiationExpression(it) => it.needs_parentheses(f),
             AstNodes::V8IntrinsicExpression(it) => it.needs_parentheses(f),
+            AstNodes::ArkUIComponentExpression(it) => it.needs_parentheses(f),
             AstNodes::StaticMemberExpression(it) => it.needs_parentheses(f),
             AstNodes::ComputedMemberExpression(it) => it.needs_parentheses(f),
             AstNodes::PrivateFieldExpression(it) => it.needs_parentheses(f),
@@ -271,6 +272,25 @@ impl NeedsParentheses<'_> for AstNode<'_, PrivateFieldExpression<'_>> {
     #[inline]
     fn needs_parentheses(&self, _f: &Formatter<'_, '_>) -> bool {
         self.is_new_callee() && (self.optional || member_chain_callee_needs_parens(&self.object))
+    }
+}
+
+impl NeedsParentheses<'_> for AstNode<'_, ArkUIComponentExpression<'_>> {
+    fn needs_parentheses(&self, f: &Formatter<'_, '_>) -> bool {
+        if f.comments().is_type_cast_node(self) {
+            return false;
+        }
+
+        // Similar to CallExpression, ArkUIComponentExpression needs parentheses
+        // when it's used as a callee in another call expression
+        match self.parent {
+            AstNodes::CallExpression(call) => call.is_callee_span(self.span),
+            AstNodes::StaticMemberExpression(member) => !member.optional,
+            AstNodes::ComputedMemberExpression(member) => {
+                !member.optional && member.object.span() == self.span
+            }
+            _ => false,
+        }
     }
 }
 

@@ -5,6 +5,7 @@
 
 use oxc_allocator::{Allocator, Dummy};
 
+use crate::ast::arkui::*;
 use crate::ast::js::*;
 use crate::ast::jsx::*;
 use crate::ast::literal::*;
@@ -2906,5 +2907,64 @@ impl<'a> Dummy<'a> for JSDocUnknownType {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self { span: Dummy::dummy(allocator) }
+    }
+}
+
+impl<'a> Dummy<'a> for StructStatement<'a> {
+    /// Create a dummy [`StructStatement`].
+    ///
+    /// Has cost of making 1 allocation (32 bytes).
+    fn dummy(allocator: &'a Allocator) -> Self {
+        Self {
+            span: Dummy::dummy(allocator),
+            decorators: Dummy::dummy(allocator),
+            id: Dummy::dummy(allocator),
+            type_parameters: Dummy::dummy(allocator),
+            body: Dummy::dummy(allocator),
+            scope_id: Dummy::dummy(allocator),
+        }
+    }
+}
+
+impl<'a> Dummy<'a> for StructBody<'a> {
+    /// Create a dummy [`StructBody`].
+    ///
+    /// Does not allocate any data into arena.
+    fn dummy(allocator: &'a Allocator) -> Self {
+        Self { span: Dummy::dummy(allocator), body: Dummy::dummy(allocator) }
+    }
+}
+
+impl<'a> Dummy<'a> for StructElement<'a> {
+    /// Create a dummy [`StructElement`].
+    ///
+    /// Has cost of making 2 allocations (96 bytes).
+    fn dummy(allocator: &'a Allocator) -> Self {
+        Self::PropertyDefinition(Dummy::dummy(allocator))
+    }
+}
+
+impl<'a> Dummy<'a> for ArkUIComponentExpression<'a> {
+    /// Create a dummy [`ArkUIComponentExpression`].
+    ///
+    /// Has cost of making 1 allocation (8 bytes).
+    fn dummy(allocator: &'a Allocator) -> Self {
+        Self {
+            span: Dummy::dummy(allocator),
+            callee: Dummy::dummy(allocator),
+            type_arguments: Dummy::dummy(allocator),
+            arguments: Dummy::dummy(allocator),
+            children: Dummy::dummy(allocator),
+            chain_expressions: Dummy::dummy(allocator),
+        }
+    }
+}
+
+impl<'a> Dummy<'a> for ArkUIChild<'a> {
+    /// Create a dummy [`ArkUIChild`].
+    ///
+    /// Has cost of making 2 allocations (24 bytes).
+    fn dummy(allocator: &'a Allocator) -> Self {
+        Self::Expression(Dummy::dummy(allocator))
     }
 }
