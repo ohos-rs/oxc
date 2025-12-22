@@ -159,6 +159,9 @@ impl<'new_alloc> CloneIn<'new_alloc> for Expression<'_> {
             Self::PrivateFieldExpression(it) => {
                 Expression::PrivateFieldExpression(CloneIn::clone_in(it, allocator))
             }
+            Self::LeadingDotMemberExpression(it) => {
+                Expression::LeadingDotMemberExpression(CloneIn::clone_in(it, allocator))
+            }
         }
     }
 
@@ -294,6 +297,9 @@ impl<'new_alloc> CloneIn<'new_alloc> for Expression<'_> {
                 CloneIn::clone_in_with_semantic_ids(it, allocator),
             ),
             Self::PrivateFieldExpression(it) => Expression::PrivateFieldExpression(
+                CloneIn::clone_in_with_semantic_ids(it, allocator),
+            ),
+            Self::LeadingDotMemberExpression(it) => Expression::LeadingDotMemberExpression(
                 CloneIn::clone_in_with_semantic_ids(it, allocator),
             ),
         }
@@ -545,6 +551,9 @@ impl<'new_alloc> CloneIn<'new_alloc> for ArrayExpressionElement<'_> {
             Self::PrivateFieldExpression(it) => {
                 ArrayExpressionElement::PrivateFieldExpression(CloneIn::clone_in(it, allocator))
             }
+            Self::LeadingDotMemberExpression(it) => {
+                ArrayExpressionElement::LeadingDotMemberExpression(CloneIn::clone_in(it, allocator))
+            }
         }
     }
 
@@ -690,6 +699,11 @@ impl<'new_alloc> CloneIn<'new_alloc> for ArrayExpressionElement<'_> {
             Self::PrivateFieldExpression(it) => ArrayExpressionElement::PrivateFieldExpression(
                 CloneIn::clone_in_with_semantic_ids(it, allocator),
             ),
+            Self::LeadingDotMemberExpression(it) => {
+                ArrayExpressionElement::LeadingDotMemberExpression(
+                    CloneIn::clone_in_with_semantic_ids(it, allocator),
+                )
+            }
         }
     }
 }
@@ -901,6 +915,9 @@ impl<'new_alloc> CloneIn<'new_alloc> for PropertyKey<'_> {
             Self::PrivateFieldExpression(it) => {
                 PropertyKey::PrivateFieldExpression(CloneIn::clone_in(it, allocator))
             }
+            Self::LeadingDotMemberExpression(it) => {
+                PropertyKey::LeadingDotMemberExpression(CloneIn::clone_in(it, allocator))
+            }
         }
     }
 
@@ -1044,6 +1061,9 @@ impl<'new_alloc> CloneIn<'new_alloc> for PropertyKey<'_> {
             Self::PrivateFieldExpression(it) => PropertyKey::PrivateFieldExpression(
                 CloneIn::clone_in_with_semantic_ids(it, allocator),
             ),
+            Self::LeadingDotMemberExpression(it) => PropertyKey::LeadingDotMemberExpression(
+                CloneIn::clone_in_with_semantic_ids(it, allocator),
+            ),
         }
     }
 }
@@ -1158,6 +1178,9 @@ impl<'new_alloc> CloneIn<'new_alloc> for MemberExpression<'_> {
             Self::PrivateFieldExpression(it) => {
                 MemberExpression::PrivateFieldExpression(CloneIn::clone_in(it, allocator))
             }
+            Self::LeadingDotMemberExpression(it) => {
+                MemberExpression::LeadingDotMemberExpression(CloneIn::clone_in(it, allocator))
+            }
         }
     }
 
@@ -1170,6 +1193,9 @@ impl<'new_alloc> CloneIn<'new_alloc> for MemberExpression<'_> {
                 CloneIn::clone_in_with_semantic_ids(it, allocator),
             ),
             Self::PrivateFieldExpression(it) => MemberExpression::PrivateFieldExpression(
+                CloneIn::clone_in_with_semantic_ids(it, allocator),
+            ),
+            Self::LeadingDotMemberExpression(it) => MemberExpression::LeadingDotMemberExpression(
                 CloneIn::clone_in_with_semantic_ids(it, allocator),
             ),
         }
@@ -1238,6 +1264,28 @@ impl<'new_alloc> CloneIn<'new_alloc> for PrivateFieldExpression<'_> {
             object: CloneIn::clone_in_with_semantic_ids(&self.object, allocator),
             field: CloneIn::clone_in_with_semantic_ids(&self.field, allocator),
             optional: CloneIn::clone_in_with_semantic_ids(&self.optional, allocator),
+        }
+    }
+}
+
+impl<'new_alloc> CloneIn<'new_alloc> for LeadingDotMemberExpression<'_> {
+    type Cloned = LeadingDotMemberExpression<'new_alloc>;
+
+    fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
+        LeadingDotMemberExpression {
+            span: CloneIn::clone_in(&self.span, allocator),
+            property: CloneIn::clone_in(&self.property, allocator),
+            optional: CloneIn::clone_in(&self.optional, allocator),
+            rest: CloneIn::clone_in(&self.rest, allocator),
+        }
+    }
+
+    fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
+        LeadingDotMemberExpression {
+            span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
+            property: CloneIn::clone_in_with_semantic_ids(&self.property, allocator),
+            optional: CloneIn::clone_in_with_semantic_ids(&self.optional, allocator),
+            rest: CloneIn::clone_in_with_semantic_ids(&self.rest, allocator),
         }
     }
 }
@@ -1438,6 +1486,9 @@ impl<'new_alloc> CloneIn<'new_alloc> for Argument<'_> {
             Self::PrivateFieldExpression(it) => {
                 Argument::PrivateFieldExpression(CloneIn::clone_in(it, allocator))
             }
+            Self::LeadingDotMemberExpression(it) => {
+                Argument::LeadingDotMemberExpression(CloneIn::clone_in(it, allocator))
+            }
         }
     }
 
@@ -1576,6 +1627,9 @@ impl<'new_alloc> CloneIn<'new_alloc> for Argument<'_> {
             Self::PrivateFieldExpression(it) => {
                 Argument::PrivateFieldExpression(CloneIn::clone_in_with_semantic_ids(it, allocator))
             }
+            Self::LeadingDotMemberExpression(it) => Argument::LeadingDotMemberExpression(
+                CloneIn::clone_in_with_semantic_ids(it, allocator),
+            ),
         }
     }
 }
@@ -1759,6 +1813,9 @@ impl<'new_alloc> CloneIn<'new_alloc> for AssignmentTarget<'_> {
             Self::PrivateFieldExpression(it) => {
                 AssignmentTarget::PrivateFieldExpression(CloneIn::clone_in(it, allocator))
             }
+            Self::LeadingDotMemberExpression(it) => {
+                AssignmentTarget::LeadingDotMemberExpression(CloneIn::clone_in(it, allocator))
+            }
             Self::ArrayAssignmentTarget(it) => {
                 AssignmentTarget::ArrayAssignmentTarget(CloneIn::clone_in(it, allocator))
             }
@@ -1792,6 +1849,9 @@ impl<'new_alloc> CloneIn<'new_alloc> for AssignmentTarget<'_> {
                 CloneIn::clone_in_with_semantic_ids(it, allocator),
             ),
             Self::PrivateFieldExpression(it) => AssignmentTarget::PrivateFieldExpression(
+                CloneIn::clone_in_with_semantic_ids(it, allocator),
+            ),
+            Self::LeadingDotMemberExpression(it) => AssignmentTarget::LeadingDotMemberExpression(
                 CloneIn::clone_in_with_semantic_ids(it, allocator),
             ),
             Self::ArrayAssignmentTarget(it) => AssignmentTarget::ArrayAssignmentTarget(
@@ -1833,6 +1893,9 @@ impl<'new_alloc> CloneIn<'new_alloc> for SimpleAssignmentTarget<'_> {
             Self::PrivateFieldExpression(it) => {
                 SimpleAssignmentTarget::PrivateFieldExpression(CloneIn::clone_in(it, allocator))
             }
+            Self::LeadingDotMemberExpression(it) => {
+                SimpleAssignmentTarget::LeadingDotMemberExpression(CloneIn::clone_in(it, allocator))
+            }
         }
     }
 
@@ -1864,6 +1927,11 @@ impl<'new_alloc> CloneIn<'new_alloc> for SimpleAssignmentTarget<'_> {
             Self::PrivateFieldExpression(it) => SimpleAssignmentTarget::PrivateFieldExpression(
                 CloneIn::clone_in_with_semantic_ids(it, allocator),
             ),
+            Self::LeadingDotMemberExpression(it) => {
+                SimpleAssignmentTarget::LeadingDotMemberExpression(
+                    CloneIn::clone_in_with_semantic_ids(it, allocator),
+                )
+            }
         }
     }
 }
@@ -1994,6 +2062,11 @@ impl<'new_alloc> CloneIn<'new_alloc> for AssignmentTargetMaybeDefault<'_> {
                     it, allocator,
                 ))
             }
+            Self::LeadingDotMemberExpression(it) => {
+                AssignmentTargetMaybeDefault::LeadingDotMemberExpression(CloneIn::clone_in(
+                    it, allocator,
+                ))
+            }
             Self::ArrayAssignmentTarget(it) => AssignmentTargetMaybeDefault::ArrayAssignmentTarget(
                 CloneIn::clone_in(it, allocator),
             ),
@@ -2041,6 +2114,11 @@ impl<'new_alloc> CloneIn<'new_alloc> for AssignmentTargetMaybeDefault<'_> {
             }
             Self::PrivateFieldExpression(it) => {
                 AssignmentTargetMaybeDefault::PrivateFieldExpression(
+                    CloneIn::clone_in_with_semantic_ids(it, allocator),
+                )
+            }
+            Self::LeadingDotMemberExpression(it) => {
+                AssignmentTargetMaybeDefault::LeadingDotMemberExpression(
                     CloneIn::clone_in_with_semantic_ids(it, allocator),
                 )
             }
@@ -2238,6 +2316,9 @@ impl<'new_alloc> CloneIn<'new_alloc> for ChainElement<'_> {
             Self::PrivateFieldExpression(it) => {
                 ChainElement::PrivateFieldExpression(CloneIn::clone_in(it, allocator))
             }
+            Self::LeadingDotMemberExpression(it) => {
+                ChainElement::LeadingDotMemberExpression(CloneIn::clone_in(it, allocator))
+            }
         }
     }
 
@@ -2256,6 +2337,9 @@ impl<'new_alloc> CloneIn<'new_alloc> for ChainElement<'_> {
                 CloneIn::clone_in_with_semantic_ids(it, allocator),
             ),
             Self::PrivateFieldExpression(it) => ChainElement::PrivateFieldExpression(
+                CloneIn::clone_in_with_semantic_ids(it, allocator),
+            ),
+            Self::LeadingDotMemberExpression(it) => ChainElement::LeadingDotMemberExpression(
                 CloneIn::clone_in_with_semantic_ids(it, allocator),
             ),
         }
@@ -2914,6 +2998,9 @@ impl<'new_alloc> CloneIn<'new_alloc> for ForStatementInit<'_> {
             Self::PrivateFieldExpression(it) => {
                 ForStatementInit::PrivateFieldExpression(CloneIn::clone_in(it, allocator))
             }
+            Self::LeadingDotMemberExpression(it) => {
+                ForStatementInit::LeadingDotMemberExpression(CloneIn::clone_in(it, allocator))
+            }
         }
     }
 
@@ -3054,6 +3141,9 @@ impl<'new_alloc> CloneIn<'new_alloc> for ForStatementInit<'_> {
             Self::PrivateFieldExpression(it) => ForStatementInit::PrivateFieldExpression(
                 CloneIn::clone_in_with_semantic_ids(it, allocator),
             ),
+            Self::LeadingDotMemberExpression(it) => ForStatementInit::LeadingDotMemberExpression(
+                CloneIn::clone_in_with_semantic_ids(it, allocator),
+            ),
         }
     }
 }
@@ -3114,6 +3204,9 @@ impl<'new_alloc> CloneIn<'new_alloc> for ForStatementLeft<'_> {
             Self::PrivateFieldExpression(it) => {
                 ForStatementLeft::PrivateFieldExpression(CloneIn::clone_in(it, allocator))
             }
+            Self::LeadingDotMemberExpression(it) => {
+                ForStatementLeft::LeadingDotMemberExpression(CloneIn::clone_in(it, allocator))
+            }
             Self::ArrayAssignmentTarget(it) => {
                 ForStatementLeft::ArrayAssignmentTarget(CloneIn::clone_in(it, allocator))
             }
@@ -3150,6 +3243,9 @@ impl<'new_alloc> CloneIn<'new_alloc> for ForStatementLeft<'_> {
                 CloneIn::clone_in_with_semantic_ids(it, allocator),
             ),
             Self::PrivateFieldExpression(it) => ForStatementLeft::PrivateFieldExpression(
+                CloneIn::clone_in_with_semantic_ids(it, allocator),
+            ),
+            Self::LeadingDotMemberExpression(it) => ForStatementLeft::LeadingDotMemberExpression(
                 CloneIn::clone_in_with_semantic_ids(it, allocator),
             ),
             Self::ArrayAssignmentTarget(it) => ForStatementLeft::ArrayAssignmentTarget(
@@ -4642,6 +4738,11 @@ impl<'new_alloc> CloneIn<'new_alloc> for ExportDefaultDeclarationKind<'_> {
                     it, allocator,
                 ))
             }
+            Self::LeadingDotMemberExpression(it) => {
+                ExportDefaultDeclarationKind::LeadingDotMemberExpression(CloneIn::clone_in(
+                    it, allocator,
+                ))
+            }
         }
     }
 
@@ -4806,6 +4907,11 @@ impl<'new_alloc> CloneIn<'new_alloc> for ExportDefaultDeclarationKind<'_> {
             }
             Self::PrivateFieldExpression(it) => {
                 ExportDefaultDeclarationKind::PrivateFieldExpression(
+                    CloneIn::clone_in_with_semantic_ids(it, allocator),
+                )
+            }
+            Self::LeadingDotMemberExpression(it) => {
+                ExportDefaultDeclarationKind::LeadingDotMemberExpression(
                     CloneIn::clone_in_with_semantic_ids(it, allocator),
                 )
             }
@@ -5391,6 +5497,9 @@ impl<'new_alloc> CloneIn<'new_alloc> for JSXExpression<'_> {
             Self::PrivateFieldExpression(it) => {
                 JSXExpression::PrivateFieldExpression(CloneIn::clone_in(it, allocator))
             }
+            Self::LeadingDotMemberExpression(it) => {
+                JSXExpression::LeadingDotMemberExpression(CloneIn::clone_in(it, allocator))
+            }
         }
     }
 
@@ -5529,6 +5638,9 @@ impl<'new_alloc> CloneIn<'new_alloc> for JSXExpression<'_> {
                 CloneIn::clone_in_with_semantic_ids(it, allocator),
             ),
             Self::PrivateFieldExpression(it) => JSXExpression::PrivateFieldExpression(
+                CloneIn::clone_in_with_semantic_ids(it, allocator),
+            ),
+            Self::LeadingDotMemberExpression(it) => JSXExpression::LeadingDotMemberExpression(
                 CloneIn::clone_in_with_semantic_ids(it, allocator),
             ),
         }

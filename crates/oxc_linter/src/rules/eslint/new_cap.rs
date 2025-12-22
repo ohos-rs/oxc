@@ -569,6 +569,10 @@ fn extract_name_deep_from_expression(expression: &Expression) -> Option<CompactS
 
                 Some(prop_name)
             }
+            ChainElement::LeadingDotMemberExpression(_) => {
+                // LeadingDotMemberExpression has implicit `this`, cannot extract name
+                None
+            }
             ChainElement::ComputedMemberExpression(expression) => {
                 let prop_name = get_computed_member_name(expression)?;
                 let obj_name =
@@ -626,6 +630,10 @@ fn extract_name_from_expression(expression: &Expression) -> Option<CompactStr> {
                 get_computed_member_name(expression)
             }
             ChainElement::PrivateFieldExpression(_) => None,
+            ChainElement::LeadingDotMemberExpression(_) => {
+                // LeadingDotMemberExpression has implicit `this`, cannot extract name
+                None
+            }
         },
         _ => None,
     }

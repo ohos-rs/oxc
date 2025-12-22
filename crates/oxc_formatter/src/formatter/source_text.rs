@@ -46,6 +46,9 @@ impl<'a> SourceText<'a> {
 
     /// Get text between two positions
     pub fn slice_range(&self, start: u32, end: u32) -> &'a str {
+        if start > end {
+            return "";
+        }
         &self.text[start as usize..end as usize]
     }
 
@@ -62,6 +65,9 @@ impl<'a> SourceText<'a> {
 
     /// Get bytes between two positions
     pub fn bytes_range(&self, start: u32, end: u32) -> &'a [u8] {
+        if start > end {
+            return &[];
+        }
         &self.text.as_bytes()[start as usize..end as usize]
     }
 

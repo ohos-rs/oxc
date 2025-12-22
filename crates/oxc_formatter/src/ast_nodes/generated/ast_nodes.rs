@@ -39,6 +39,7 @@ pub enum AstNodes<'a> {
     ComputedMemberExpression(&'a AstNode<'a, ComputedMemberExpression<'a>>),
     StaticMemberExpression(&'a AstNode<'a, StaticMemberExpression<'a>>),
     PrivateFieldExpression(&'a AstNode<'a, PrivateFieldExpression<'a>>),
+    LeadingDotMemberExpression(&'a AstNode<'a, LeadingDotMemberExpression<'a>>),
     CallExpression(&'a AstNode<'a, CallExpression<'a>>),
     NewExpression(&'a AstNode<'a, NewExpression<'a>>),
     MetaProperty(&'a AstNode<'a, MetaProperty<'a>>),
@@ -235,6 +236,7 @@ impl<'a> AstNodes<'a> {
             Self::ComputedMemberExpression(n) => n.span(),
             Self::StaticMemberExpression(n) => n.span(),
             Self::PrivateFieldExpression(n) => n.span(),
+            Self::LeadingDotMemberExpression(n) => n.span(),
             Self::CallExpression(n) => n.span(),
             Self::NewExpression(n) => n.span(),
             Self::MetaProperty(n) => n.span(),
@@ -431,6 +433,7 @@ impl<'a> AstNodes<'a> {
             Self::ComputedMemberExpression(n) => n.parent,
             Self::StaticMemberExpression(n) => n.parent,
             Self::PrivateFieldExpression(n) => n.parent,
+            Self::LeadingDotMemberExpression(n) => n.parent,
             Self::CallExpression(n) => n.parent,
             Self::NewExpression(n) => n.parent,
             Self::MetaProperty(n) => n.parent,
@@ -627,6 +630,7 @@ impl<'a> AstNodes<'a> {
             Self::ComputedMemberExpression(_) => "ComputedMemberExpression",
             Self::StaticMemberExpression(_) => "StaticMemberExpression",
             Self::PrivateFieldExpression(_) => "PrivateFieldExpression",
+            Self::LeadingDotMemberExpression(_) => "LeadingDotMemberExpression",
             Self::CallExpression(_) => "CallExpression",
             Self::NewExpression(_) => "NewExpression",
             Self::MetaProperty(_) => "MetaProperty",
@@ -1620,6 +1624,14 @@ impl<'a> AstNode<'a, MemberExpression<'a>> {
                     following_span: self.following_span,
                 }))
             }
+            MemberExpression::LeadingDotMemberExpression(s) => {
+                AstNodes::LeadingDotMemberExpression(self.allocator.alloc(AstNode {
+                    inner: s.as_ref(),
+                    parent,
+                    allocator: self.allocator,
+                    following_span: self.following_span,
+                }))
+            }
         };
         self.allocator.alloc(node)
     }
@@ -1725,6 +1737,51 @@ impl<'a> AstNode<'a, PrivateFieldExpression<'a>> {
     #[inline]
     pub fn optional(&self) -> bool {
         self.inner.optional
+    }
+
+    pub fn format_leading_comments(&self, f: &mut Formatter<'_, 'a>) {
+        format_leading_comments(self.span()).fmt(f);
+    }
+
+    pub fn format_trailing_comments(&self, f: &mut Formatter<'_, 'a>) {
+        format_trailing_comments(self.parent.span(), self.inner.span(), self.following_span).fmt(f);
+    }
+}
+
+impl<'a> AstNode<'a, LeadingDotMemberExpression<'a>> {
+    #[inline]
+    pub fn property(&self) -> &AstNode<'a, IdentifierName<'a>> {
+        let following_span = self.inner.rest.as_ref().map(GetSpan::span).or(self.following_span);
+        self.allocator.alloc(AstNode {
+            inner: &self.inner.property,
+            allocator: self.allocator,
+            parent: self
+                .allocator
+                .alloc(AstNodes::LeadingDotMemberExpression(transmute_self(self))),
+            following_span,
+        })
+    }
+
+    #[inline]
+    pub fn optional(&self) -> bool {
+        self.inner.optional
+    }
+
+    #[inline]
+    pub fn rest(&self) -> Option<&AstNode<'a, Expression<'a>>> {
+        let following_span = self.following_span;
+        self.allocator
+            .alloc(
+                self.inner.rest.as_ref().map(|inner| AstNode {
+                    inner,
+                    allocator: self.allocator,
+                    parent: self
+                        .allocator
+                        .alloc(AstNodes::LeadingDotMemberExpression(transmute_self(self))),
+                    following_span,
+                }),
+            )
+            .as_ref()
     }
 
     pub fn format_leading_comments(&self, f: &mut Formatter<'_, 'a>) {

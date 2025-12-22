@@ -55,6 +55,8 @@ impl<'a> TakeIn<'a> for StaticMemberExpression<'a> {}
 
 impl<'a> TakeIn<'a> for PrivateFieldExpression<'a> {}
 
+impl<'a> TakeIn<'a> for LeadingDotMemberExpression<'a> {}
+
 impl<'a> TakeIn<'a> for CallExpression<'a> {}
 
 impl<'a> TakeIn<'a> for NewExpression<'a> {}

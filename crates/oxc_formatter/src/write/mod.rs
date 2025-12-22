@@ -226,8 +226,36 @@ impl<'a> FormatWrite<'a> for AstNode<'a, ObjectProperty<'a>> {
                 write!(f, [space(), body]);
             }
         } else {
-            write!(f, AssignmentLike::ObjectProperty(self));
+            // Check if this is an ArkUI leading-dot expression property
+            // (value is LeadingDotMemberExpression or CallExpression/StaticMemberExpression chain starting with LeadingDotMemberExpression)
+            let value = self.value();
+            let is_leading_dot_expression = is_arkui_leading_dot_expression(value);
+            
+            if is_leading_dot_expression {
+                // For ArkUI leading-dot expressions, skip key and ":", just format the value
+                write!(f, value);
+            } else {
+                // Use normal object property formatting
+                write!(f, AssignmentLike::ObjectProperty(self));
+            }
         }
+    }
+}
+
+/// Check if an expression is an ArkUI leading-dot expression (recursively)
+/// This handles chained calls like .method1().method2()
+fn is_arkui_leading_dot_expression<'a>(expr: &AstNode<'a, Expression<'a>>) -> bool {
+    match expr.as_ast_nodes() {
+        AstNodes::LeadingDotMemberExpression(_) => true,
+        AstNodes::CallExpression(call) => {
+            // Check if the callee is a leading-dot expression or a chain starting with one
+            is_arkui_leading_dot_expression(&call.callee())
+        }
+        AstNodes::StaticMemberExpression(member) => {
+            // Check if the object is a leading-dot expression or a chain starting with one
+            is_arkui_leading_dot_expression(&member.object())
+        }
+        _ => false,
     }
 }
 

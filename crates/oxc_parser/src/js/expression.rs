@@ -171,12 +171,9 @@ impl<'a> ParserImpl<'a> {
     fn parse_primary_expression(&mut self) -> Expression<'a> {
         // Handle ArkUI expressions starting with dots (e.g., in object literals or function bodies)
         // Example: { focused: { .backgroundColor('#ffffeef0') } }
+        // In primary expression context, allow chaining (e.g., .method1().method2())
         if self.source_type.is_arkui() && self.at(Kind::Dot) {
-            let span = self.start_span();
-            // Parse as method chaining expression starting from 'this'
-            let this_span = self.start_span();
-            let this_expr = self.ast.expression_this(self.end_span(this_span));
-            return self.parse_member_expression_rest_from_lhs_for_primary(span, this_expr);
+            return self.parse_leading_dot_expression(true);
         }
 
         // FunctionExpression, GeneratorExpression
@@ -222,6 +219,109 @@ impl<'a> ParserImpl<'a> {
         }
     }
 
+    /// Parse ArkUI leading-dot expression (e.g., `.backgroundColor('#ffffeef0')`)
+    /// Creates a LeadingDotMemberExpression instead of converting to this.property
+    /// 
+    /// `allow_chaining`: If true, continue parsing chain expressions (e.g., .method1().method2())
+    ///                   If false, stop after the first expression (used in object literal contexts)
+    pub(crate) fn parse_leading_dot_expression(&mut self, allow_chaining: bool) -> Expression<'a> {
+        use crate::lexer::Kind;
+        let span = self.start_span();
+        
+        // Consume the leading dot
+        self.expect(Kind::Dot);
+        
+        // Check for optional chaining
+        let optional = self.eat(Kind::QuestionDot);
+        
+        if !self.cur_kind().is_identifier_or_keyword() {
+            // Invalid syntax, should have an identifier after the dot
+            let error = diagnostics::identifier_expected(self.cur_token().span());
+            return self.fatal_error(error);
+        }
+        
+        let property_span = self.start_span();
+        let property = self.parse_identifier_name();
+        let property_end_span = self.end_span(property_span);
+        
+        // Check if this is followed by a call expression or more member access
+        if self.at(Kind::LParen) {
+            // Method call: .methodName(...)
+            let call_span = self.start_span();
+            let opening_span = self.cur_token().span();
+            self.expect(Kind::LParen);
+            let (exprs, _) = self.parse_delimited_list(
+                Kind::RParen,
+                Kind::Comma,
+                opening_span,
+                Self::parse_assignment_expression_or_higher,
+            );
+            let mut call_args = self.ast.vec();
+            for expr in exprs {
+                call_args.push(Argument::from(expr));
+            }
+            self.expect(Kind::RParen);
+            
+            // Create a call expression with the leading-dot member expression as callee
+            let leading_dot_member = self.ast.member_expression_leading_dot(
+                property_end_span,
+                property,
+                optional,
+                None,
+            );
+            let call_expr = self.ast.expression_call(
+                self.end_span(call_span),
+                Expression::from(leading_dot_member),
+                oxc_ast::NONE,
+                call_args,
+                false,
+            );
+            
+            // Continue parsing chain expressions only if allowed
+            // In object literal contexts, we stop here so each dot expression is a separate property
+            if allow_chaining {
+                return self.parse_member_expression_rest_from_lhs_for_primary(
+                    span,
+                    Expression::from(call_expr),
+                );
+            } else {
+                return Expression::from(call_expr);
+            }
+        } else if self.at(Kind::Dot) {
+            // More member access: .property.method()
+            // Only continue if chaining is allowed
+            if allow_chaining {
+                // Parse the rest as a regular member expression chain
+                // Create a temporary this expression to use as the base
+                let this_span = self.start_span();
+                let this_expr = self.ast.expression_this(self.end_span(this_span));
+                
+                // Create the first member access as StaticMemberExpression for now
+                let first_member = self.ast.member_expression_static(
+                    property_end_span,
+                    this_expr,
+                    property,
+                    optional,
+                );
+                
+                // Parse the rest of the chain
+                return self.parse_member_expression_rest_from_lhs_for_primary(
+                    span,
+                    Expression::from(first_member),
+                );
+            }
+            // If chaining is not allowed, stop here
+        }
+        
+        // Just a property access: .property
+        Expression::from(self.ast.member_expression_leading_dot(
+            self.end_span(span),
+            property,
+            optional,
+            None,
+        ))
+    }
+
     /// Parse member expression rest starting from a given LHS for primary expressions
     /// Used for ArkUI expressions starting with dots in object literals and other contexts
     pub(crate) fn parse_member_expression_rest_from_lhs_for_primary(
@@ -235,6 +335,14 @@ impl<'a> ParserImpl<'a> {
         loop {
             if self.fatal_error.is_some() {
                 return lhs;
+            }
+
+            // Check if we should stop parsing the chain
+            // Stop if we encounter semicolon, comma, or closing brace
+            // Comma stops the chain in object literal contexts (indicates next property)
+            // Note: comma inside function arguments won't reach here as it's handled by parse_delimited_list
+            if matches!(self.cur_kind(), Kind::Semicolon | Kind::Comma | Kind::RCurly) {
+                break;
             }
 
             let is_property_access = self.eat(Kind::Dot);
@@ -277,6 +385,10 @@ impl<'a> ParserImpl<'a> {
                         false,
                     );
                     // Continue parsing more chain expressions
+                    // Check if next token is a dot (chain continues) or semicolon/comma/brace (chain ends)
+                    if !self.at(Kind::Dot) || matches!(self.cur_kind(), Kind::Semicolon | Kind::Comma | Kind::RCurly) {
+                        break;
+                    }
                     continue;
                 } else {
                     // Property access: .propertyName
@@ -287,7 +399,8 @@ impl<'a> ParserImpl<'a> {
                         false,
                     ));
                     // Check if there are more chain expressions
-                    if !self.at(Kind::Dot) {
+                    // Stop if next token is not a dot, or if it's semicolon/comma/brace
+                    if !self.at(Kind::Dot) || matches!(self.cur_kind(), Kind::Semicolon | Kind::Comma | Kind::RCurly) {
                         break;
                     }
                     continue;

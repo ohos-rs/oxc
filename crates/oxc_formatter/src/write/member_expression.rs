@@ -21,33 +21,8 @@ impl<'a> FormatWrite<'a> for AstNode<'a, ComputedMemberExpression<'a>> {
 
 impl<'a> FormatWrite<'a> for AstNode<'a, StaticMemberExpression<'a>> {
     fn write(&self, f: &mut Formatter<'_, 'a>) {
-        // ArkUI: allow leading-dot style by omitting the base when it ultimately starts with `this`.
-        if f.context().source_type().is_arkui() {
-            fn base_is_this(expr: &Expression) -> bool {
-                match expr {
-                    Expression::ThisExpression(_) => true,
-                    Expression::StaticMemberExpression(m) => base_is_this(&m.object),
-                    Expression::ComputedMemberExpression(m) => base_is_this(&m.object),
-                    Expression::PrivateFieldExpression(m) => base_is_this(&m.object),
-                    Expression::CallExpression(call) => base_is_this(&call.callee),
-                    _ => false,
-                }
-            }
-
-            if base_is_this(&self.object) {
-                // Print only the leading dot and property, with optional `?.`.
-                // For ArkUI leading-dot expressions, don't indent on line breaks (align with first dot)
-                write!(
-                    f,
-                    [group(&format_args!(
-                        soft_line_break_or_space(),
-                        operator_token(self.optional()),
-                        self.property()
-                    ))]
-                );
-                return;
-            }
-        }
+        // Note: LeadingDotMemberExpression is now handled separately, so we don't need
+        // the base_is_this check here anymore
 
         let is_member_chain = {
             let mut recording = f.start_recording();
@@ -183,5 +158,24 @@ fn layout<'a>(
 impl<'a> FormatWrite<'a> for AstNode<'a, PrivateFieldExpression<'a>> {
     fn write(&self, f: &mut Formatter<'_, 'a>) {
         write!(f, [self.object(), self.optional().then_some("?"), ".", self.field()]);
+    }
+}
+
+impl<'a> FormatWrite<'a> for AstNode<'a, LeadingDotMemberExpression<'a>> {
+    fn write(&self, f: &mut Formatter<'_, 'a>) {
+        // Print only the leading dot and property, with optional `?.`.
+        // For ArkUI leading-dot expressions, don't indent on line breaks (align with first dot)
+        write!(
+            f,
+            [group(&format_args!(
+                soft_line_break_or_space(),
+                operator_token(self.optional()),
+                self.property()
+            ))]
+        );
+        
+        // Note: The `rest` field is currently not used in formatting.
+        // Chain expressions like `.property.method()` are handled by the parser
+        // creating separate CallExpression nodes, so we don't need to format `rest` here.
     }
 }

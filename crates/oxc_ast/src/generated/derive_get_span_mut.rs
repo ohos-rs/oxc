@@ -65,6 +65,7 @@ impl GetSpanMut for Expression<'_> {
             Self::ComputedMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::StaticMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::PrivateFieldExpression(it) => GetSpanMut::span_mut(&mut **it),
+            Self::LeadingDotMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
         }
     }
 }
@@ -160,6 +161,7 @@ impl GetSpanMut for ArrayExpressionElement<'_> {
             Self::ComputedMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::StaticMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::PrivateFieldExpression(it) => GetSpanMut::span_mut(&mut **it),
+            Self::LeadingDotMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
         }
     }
 }
@@ -243,6 +245,7 @@ impl GetSpanMut for PropertyKey<'_> {
             Self::ComputedMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::StaticMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::PrivateFieldExpression(it) => GetSpanMut::span_mut(&mut **it),
+            Self::LeadingDotMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
         }
     }
 }
@@ -274,6 +277,7 @@ impl GetSpanMut for MemberExpression<'_> {
             Self::ComputedMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::StaticMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::PrivateFieldExpression(it) => GetSpanMut::span_mut(&mut **it),
+            Self::LeadingDotMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
         }
     }
 }
@@ -293,6 +297,13 @@ impl GetSpanMut for StaticMemberExpression<'_> {
 }
 
 impl GetSpanMut for PrivateFieldExpression<'_> {
+    #[inline]
+    fn span_mut(&mut self) -> &mut Span {
+        &mut self.span
+    }
+}
+
+impl GetSpanMut for LeadingDotMemberExpression<'_> {
     #[inline]
     fn span_mut(&mut self) -> &mut Span {
         &mut self.span
@@ -375,6 +386,7 @@ impl GetSpanMut for Argument<'_> {
             Self::ComputedMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::StaticMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::PrivateFieldExpression(it) => GetSpanMut::span_mut(&mut **it),
+            Self::LeadingDotMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
         }
     }
 }
@@ -439,6 +451,7 @@ impl GetSpanMut for AssignmentTarget<'_> {
             Self::ComputedMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::StaticMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::PrivateFieldExpression(it) => GetSpanMut::span_mut(&mut **it),
+            Self::LeadingDotMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::ArrayAssignmentTarget(it) => GetSpanMut::span_mut(&mut **it),
             Self::ObjectAssignmentTarget(it) => GetSpanMut::span_mut(&mut **it),
         }
@@ -456,6 +469,7 @@ impl GetSpanMut for SimpleAssignmentTarget<'_> {
             Self::ComputedMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::StaticMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::PrivateFieldExpression(it) => GetSpanMut::span_mut(&mut **it),
+            Self::LeadingDotMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
         }
     }
 }
@@ -502,6 +516,7 @@ impl GetSpanMut for AssignmentTargetMaybeDefault<'_> {
             Self::ComputedMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::StaticMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::PrivateFieldExpression(it) => GetSpanMut::span_mut(&mut **it),
+            Self::LeadingDotMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::ArrayAssignmentTarget(it) => GetSpanMut::span_mut(&mut **it),
             Self::ObjectAssignmentTarget(it) => GetSpanMut::span_mut(&mut **it),
         }
@@ -574,6 +589,7 @@ impl GetSpanMut for ChainElement<'_> {
             Self::ComputedMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::StaticMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::PrivateFieldExpression(it) => GetSpanMut::span_mut(&mut **it),
+            Self::LeadingDotMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
         }
     }
 }
@@ -767,6 +783,7 @@ impl GetSpanMut for ForStatementInit<'_> {
             Self::ComputedMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::StaticMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::PrivateFieldExpression(it) => GetSpanMut::span_mut(&mut **it),
+            Self::LeadingDotMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
         }
     }
 }
@@ -790,6 +807,7 @@ impl GetSpanMut for ForStatementLeft<'_> {
             Self::ComputedMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::StaticMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::PrivateFieldExpression(it) => GetSpanMut::span_mut(&mut **it),
+            Self::LeadingDotMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::ArrayAssignmentTarget(it) => GetSpanMut::span_mut(&mut **it),
             Self::ObjectAssignmentTarget(it) => GetSpanMut::span_mut(&mut **it),
         }
@@ -1203,6 +1221,7 @@ impl GetSpanMut for ExportDefaultDeclarationKind<'_> {
             Self::ComputedMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::StaticMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::PrivateFieldExpression(it) => GetSpanMut::span_mut(&mut **it),
+            Self::LeadingDotMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
         }
     }
 }
@@ -1399,6 +1418,7 @@ impl GetSpanMut for JSXExpression<'_> {
             Self::ComputedMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::StaticMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::PrivateFieldExpression(it) => GetSpanMut::span_mut(&mut **it),
+            Self::LeadingDotMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
         }
     }
 }

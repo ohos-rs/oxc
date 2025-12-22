@@ -59,6 +59,7 @@ impl NeedsParentheses<'_> for AstNode<'_, Expression<'_>> {
             AstNodes::StaticMemberExpression(it) => it.needs_parentheses(f),
             AstNodes::ComputedMemberExpression(it) => it.needs_parentheses(f),
             AstNodes::PrivateFieldExpression(it) => it.needs_parentheses(f),
+            AstNodes::LeadingDotMemberExpression(it) => it.needs_parentheses(f),
             _ => {
                 // TODO: incomplete
                 false
@@ -272,6 +273,15 @@ impl NeedsParentheses<'_> for AstNode<'_, PrivateFieldExpression<'_>> {
     #[inline]
     fn needs_parentheses(&self, _f: &Formatter<'_, '_>) -> bool {
         self.is_new_callee() && (self.optional || member_chain_callee_needs_parens(&self.object))
+    }
+}
+
+impl NeedsParentheses<'_> for AstNode<'_, LeadingDotMemberExpression<'_>> {
+    #[inline]
+    fn needs_parentheses(&self, _f: &Formatter<'_, '_>) -> bool {
+        // LeadingDotMemberExpression has implicit `this`, so it behaves like StaticMemberExpression
+        // but without an object to check. It typically doesn't need parentheses.
+        false
     }
 }
 

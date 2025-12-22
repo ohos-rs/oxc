@@ -1948,6 +1948,14 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
             }
             MemberExpression::StaticMemberExpression(it) => self.visit_static_member_expression(it),
             MemberExpression::PrivateFieldExpression(it) => self.visit_private_field_expression(it),
+            MemberExpression::LeadingDotMemberExpression(it) => {
+                // LeadingDotMemberExpression has implicit `this` object
+                // Visit the property and rest chain if present
+                self.visit_identifier_name(&it.property);
+                if let Some(rest) = &it.rest {
+                    self.visit_expression(rest);
+                }
+            }
         }
     }
 

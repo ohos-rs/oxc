@@ -115,8 +115,9 @@ impl NoUnusedExpressions {
             | Expression::ComputedMemberExpression(_)
             | Expression::MetaProperty(_)
             | Expression::ObjectExpression(_)
-            | Expression::PrivateFieldExpression(_)
+            |             Expression::PrivateFieldExpression(_)
             | Expression::StaticMemberExpression(_)
+            | Expression::LeadingDotMemberExpression(_)
             | Expression::TemplateLiteral(_)
             | Expression::ArrowFunctionExpression(_)
             | Expression::ClassExpression(_)
@@ -131,7 +132,8 @@ impl NoUnusedExpressions {
                 }
                 ChainElement::ComputedMemberExpression(_)
                 | ChainElement::StaticMemberExpression(_)
-                | ChainElement::PrivateFieldExpression(_) => true,
+                | ChainElement::PrivateFieldExpression(_)
+                | ChainElement::LeadingDotMemberExpression(_) => true,
             },
             Expression::AssignmentExpression(_)
             | Expression::AwaitExpression(_)

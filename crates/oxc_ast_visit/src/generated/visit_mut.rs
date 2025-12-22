@@ -138,6 +138,11 @@ pub trait VisitMut<'a>: Sized {
     }
 
     #[inline]
+    fn visit_leading_dot_member_expression(&mut self, it: &mut LeadingDotMemberExpression<'a>) {
+        walk_leading_dot_member_expression(self, it);
+    }
+
+    #[inline]
     fn visit_call_expression(&mut self, it: &mut CallExpression<'a>) {
         walk_call_expression(self, it);
     }
@@ -1653,6 +1658,9 @@ pub mod walk_mut {
             MemberExpression::PrivateFieldExpression(it) => {
                 visitor.visit_private_field_expression(it)
             }
+            MemberExpression::LeadingDotMemberExpression(it) => {
+                visitor.visit_leading_dot_member_expression(it)
+            }
         }
     }
 
@@ -1692,6 +1700,21 @@ pub mod walk_mut {
         visitor.visit_span(&mut it.span);
         visitor.visit_expression(&mut it.object);
         visitor.visit_private_identifier(&mut it.field);
+        visitor.leave_node(kind);
+    }
+
+    #[inline]
+    pub fn walk_leading_dot_member_expression<'a, V: VisitMut<'a>>(
+        visitor: &mut V,
+        it: &mut LeadingDotMemberExpression<'a>,
+    ) {
+        let kind = AstType::LeadingDotMemberExpression;
+        visitor.enter_node(kind);
+        visitor.visit_span(&mut it.span);
+        visitor.visit_identifier_name(&mut it.property);
+        if let Some(rest) = &mut it.rest {
+            visitor.visit_expression(rest);
+        }
         visitor.leave_node(kind);
     }
 

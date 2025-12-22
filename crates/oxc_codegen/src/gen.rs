@@ -1196,6 +1196,7 @@ impl GenExpr for Expression<'_> {
             Self::Identifier(ident) => ident.print(p, ctx),
             Self::StaticMemberExpression(expr) => expr.print_expr(p, precedence, ctx),
             Self::ComputedMemberExpression(expr) => expr.print_expr(p, precedence, ctx),
+            Self::LeadingDotMemberExpression(expr) => expr.print_expr(p, precedence, ctx),
             Self::CallExpression(expr) => expr.print_expr(p, precedence, ctx),
             // Literals (very common)
             Self::NumericLiteral(lit) => lit.print_expr(p, precedence, ctx),
@@ -1252,6 +1253,7 @@ impl GenExpr for Expression<'_> {
             Self::ChainExpression(expr) => expr.print_expr(p, precedence, ctx),
             // Private field
             Self::PrivateFieldExpression(expr) => expr.print_expr(p, precedence, ctx),
+            Self::LeadingDotMemberExpression(expr) => expr.print_expr(p, precedence, ctx),
             Self::PrivateInExpression(expr) => expr.print_expr(p, precedence, ctx),
             // Parenthesized
             Self::ParenthesizedExpression(e) => e.print_expr(p, precedence, ctx),
@@ -1428,6 +1430,7 @@ impl GenExpr for MemberExpression<'_> {
             Self::ComputedMemberExpression(expr) => expr.print_expr(p, precedence, ctx),
             Self::StaticMemberExpression(expr) => expr.print_expr(p, precedence, ctx),
             Self::PrivateFieldExpression(expr) => expr.print_expr(p, precedence, ctx),
+            Self::LeadingDotMemberExpression(expr) => expr.print_expr(p, precedence, ctx),
         }
     }
 }
@@ -1450,63 +1453,8 @@ impl GenExpr for ComputedMemberExpression<'_> {
 
 impl GenExpr for StaticMemberExpression<'_> {
     fn gen_expr(&self, p: &mut Codegen, _precedence: Precedence, ctx: Context) {
-        // ArkUI: keep leading-dot chains with their original dotted formatting.
-        if p.is_arkui {
-            fn base_is_this(expr: &Expression) -> bool {
-                match expr {
-                    Expression::ThisExpression(_) => true,
-                    Expression::StaticMemberExpression(m) => base_is_this(&m.object),
-                    Expression::ComputedMemberExpression(m) => base_is_this(&m.object),
-                    Expression::PrivateFieldExpression(m) => base_is_this(&m.object),
-                    Expression::CallExpression(call) => base_is_this(&call.callee),
-                    _ => false,
-                }
-            }
-            fn print_leading_dot_expr(expr: &Expression, p: &mut Codegen, ctx: Context) {
-                match expr {
-                    Expression::StaticMemberExpression(m) => {
-                        // omit object, print leading dot + property
-                        if m.optional {
-                            p.print_ascii_byte(b'?');
-                        }
-                        p.print_soft_newline();
-                        p.print_indent();
-                        p.print_ascii_byte(b'.');
-                        m.property.print(p, ctx);
-                    }
-                    Expression::CallExpression(call) => {
-                        print_leading_dot_expr(
-                            &call.callee,
-                            p,
-                            ctx.intersection(Context::FORBID_CALL),
-                        );
-                        p.print_ascii_byte(b'(');
-                        p.print_arguments(call.span, &call.arguments, ctx);
-                        p.print_ascii_byte(b')');
-                    }
-                    Expression::ThisExpression(_) => {
-                        // purely `this` -> nothing
-                    }
-                    _ => {
-                        // fallback: print normally
-                        expr.print_expr(p, Precedence::Postfix, ctx);
-                    }
-                }
-            }
-
-            if base_is_this(&self.object) {
-                // Print object chain with leading-dot style, then current property.
-                print_leading_dot_expr(&self.object, p, ctx.intersection(Context::FORBID_CALL));
-                if self.optional {
-                    p.print_ascii_byte(b'?');
-                }
-                p.print_soft_newline();
-                p.print_indent();
-                p.print_ascii_byte(b'.');
-                self.property.print(p, ctx);
-                return;
-            }
-        }
+        // Note: LeadingDotMemberExpression is now handled separately, so we don't need
+        // the base_is_this check here anymore. StaticMemberExpression always prints the object.
 
         // Default JS/TS printing.
         self.object.print_expr(p, Precedence::Postfix, ctx.intersection(Context::FORBID_CALL));
@@ -1518,6 +1466,26 @@ impl GenExpr for StaticMemberExpression<'_> {
         }
         p.print_ascii_byte(b'.');
         self.property.print(p, ctx);
+    }
+}
+
+impl GenExpr for LeadingDotMemberExpression<'_> {
+    fn gen_expr(&self, p: &mut Codegen, _precedence: Precedence, ctx: Context) {
+        // Print only the leading dot and property, with optional `?.`.
+        // For ArkUI leading-dot expressions, align with first dot on line breaks
+        if self.optional {
+            p.print_str("?.");
+        } else {
+            p.print_soft_newline();
+            p.print_indent();
+            p.print_ascii_byte(b'.');
+        }
+        self.property.print(p, ctx);
+        
+        // Format the rest of the chain if present
+        if let Some(rest) = &self.rest {
+            rest.print_expr(p, Precedence::Postfix, ctx);
+        }
     }
 }
 
@@ -2009,6 +1977,11 @@ impl GenExpr for SimpleAssignmentTarget<'_> {
             Self::ComputedMemberExpression(expr) => expr.print_expr(p, precedence, ctx),
             Self::StaticMemberExpression(expr) => expr.print_expr(p, precedence, ctx),
             Self::PrivateFieldExpression(expr) => expr.print_expr(p, precedence, ctx),
+            Self::LeadingDotMemberExpression(_) => {
+                // LeadingDotMemberExpression cannot be assigned to (syntax error)
+                // This should never happen, but handle it gracefully
+                unreachable!("LeadingDotMemberExpression cannot be an assignment target")
+            }
             Self::TSAsExpression(e) => e.print_expr(p, precedence, ctx),
             Self::TSSatisfiesExpression(e) => e.print_expr(p, precedence, ctx),
             Self::TSNonNullExpression(e) => e.print_expr(p, precedence, ctx),
@@ -2295,6 +2268,7 @@ impl GenExpr for ChainExpression<'_> {
             ChainElement::ComputedMemberExpression(expr) => expr.print_expr(p, precedence, ctx),
             ChainElement::StaticMemberExpression(expr) => expr.print_expr(p, precedence, ctx),
             ChainElement::PrivateFieldExpression(expr) => expr.print_expr(p, precedence, ctx),
+            ChainElement::LeadingDotMemberExpression(expr) => expr.print_expr(p, precedence, ctx),
         });
     }
 }

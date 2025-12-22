@@ -237,6 +237,7 @@ macro_rules! inherit_variants {
                 ComputedMemberExpression,
                 StaticMemberExpression,
                 PrivateFieldExpression,
+                LeadingDotMemberExpression,
             ]
         );
     };
@@ -267,6 +268,10 @@ macro_rules! inherit_variants {
                 ///
                 /// `MemberExpression[?Yield, ?Await] . PrivateIdentifier`
                 PrivateFieldExpression(Box<'a, PrivateFieldExpression<'a>>) = 50,
+                /// Inherited from [`MemberExpression`].
+                ///
+                /// `.property` in ArkUI leading-dot expressions
+                LeadingDotMemberExpression(Box<'a, LeadingDotMemberExpression<'a>>) = 51,
 
                 $($rest)*
             }
@@ -281,7 +286,7 @@ macro_rules! inherit_variants {
             as_member_expression_mut,
             to_member_expression,
             to_member_expression_mut,
-            [ComputedMemberExpression, StaticMemberExpression, PrivateFieldExpression]
+            [ComputedMemberExpression, StaticMemberExpression, PrivateFieldExpression, LeadingDotMemberExpression]
         );
     };
 
@@ -320,6 +325,7 @@ macro_rules! inherit_variants {
                 ComputedMemberExpression,
                 StaticMemberExpression,
                 PrivateFieldExpression,
+                LeadingDotMemberExpression,
                 TSAsExpression,
                 TSSatisfiesExpression,
                 TSNonNullExpression,
@@ -377,6 +383,7 @@ macro_rules! inherit_variants {
                 ComputedMemberExpression,
                 StaticMemberExpression,
                 PrivateFieldExpression,
+                LeadingDotMemberExpression,
                 TSAsExpression,
                 TSSatisfiesExpression,
                 TSNonNullExpression,

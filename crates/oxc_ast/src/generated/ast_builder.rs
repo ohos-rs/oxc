@@ -1916,6 +1916,28 @@ impl<'a> AstBuilder<'a> {
         )
     }
 
+    /// Build a [`MemberExpression::LeadingDotMemberExpression`].
+    ///
+    /// This node contains a [`LeadingDotMemberExpression`] that will be stored in the memory arena.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `property`
+    /// * `optional`
+    /// * `rest`: The rest of the member chain (e.g., `.property.method()`)
+    #[inline]
+    pub fn member_expression_leading_dot(
+        self,
+        span: Span,
+        property: IdentifierName<'a>,
+        optional: bool,
+        rest: Option<Expression<'a>>,
+    ) -> MemberExpression<'a> {
+        MemberExpression::LeadingDotMemberExpression(
+            self.alloc_leading_dot_member_expression(span, property, optional, rest),
+        )
+    }
+
     /// Build a [`ComputedMemberExpression`].
     ///
     /// If you want the built node to be allocated in the memory arena,
@@ -2043,6 +2065,51 @@ impl<'a> AstBuilder<'a> {
         optional: bool,
     ) -> Box<'a, PrivateFieldExpression<'a>> {
         Box::new_in(self.private_field_expression(span, object, field, optional), self.allocator)
+    }
+
+    /// Build a [`LeadingDotMemberExpression`].
+    ///
+    /// If you want the built node to be allocated in the memory arena,
+    /// use [`AstBuilder::alloc_leading_dot_member_expression`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `property`
+    /// * `optional`
+    /// * `rest`: The rest of the member chain (e.g., `.property.method()`)
+    #[inline]
+    pub fn leading_dot_member_expression(
+        self,
+        span: Span,
+        property: IdentifierName<'a>,
+        optional: bool,
+        rest: Option<Expression<'a>>,
+    ) -> LeadingDotMemberExpression<'a> {
+        LeadingDotMemberExpression { span, property, optional, rest }
+    }
+
+    /// Build a [`LeadingDotMemberExpression`], and store it in the memory arena.
+    ///
+    /// Returns a [`Box`] containing the newly-allocated node.
+    /// If you want a stack-allocated node, use [`AstBuilder::leading_dot_member_expression`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `property`
+    /// * `optional`
+    /// * `rest`: The rest of the member chain (e.g., `.property.method()`)
+    #[inline]
+    pub fn alloc_leading_dot_member_expression(
+        self,
+        span: Span,
+        property: IdentifierName<'a>,
+        optional: bool,
+        rest: Option<Expression<'a>>,
+    ) -> Box<'a, LeadingDotMemberExpression<'a>> {
+        Box::new_in(
+            self.leading_dot_member_expression(span, property, optional, rest),
+            self.allocator,
+        )
     }
 
     /// Build a [`CallExpression`].

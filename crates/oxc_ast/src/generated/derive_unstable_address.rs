@@ -41,6 +41,8 @@ impl UnstableAddress for StaticMemberExpression<'_> {}
 
 impl UnstableAddress for PrivateFieldExpression<'_> {}
 
+impl UnstableAddress for LeadingDotMemberExpression<'_> {}
+
 impl UnstableAddress for CallExpression<'_> {}
 
 impl UnstableAddress for NewExpression<'_> {}

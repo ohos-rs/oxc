@@ -209,10 +209,13 @@ impl<'a, 'b> MemberChainGroup<'a, 'b> {
         }
 
         // Count the number of continuous new lines
-        for (idx, &b) in source.bytes_range(start, end).iter().enumerate() {
-            #[expect(clippy::cast_possible_truncation)]
-            if matches!(b, b'\n' | b'\r') && source.lines_after(start + idx as u32) > 1 {
-                return true;
+        // Ensure start <= end to avoid panic
+        if start <= end {
+            for (idx, &b) in source.bytes_range(start, end).iter().enumerate() {
+                #[expect(clippy::cast_possible_truncation)]
+                if matches!(b, b'\n' | b'\r') && source.lines_after(start + idx as u32) > 1 {
+                    return true;
+                }
             }
         }
 

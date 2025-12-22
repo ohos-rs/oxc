@@ -151,6 +151,14 @@ const _: () = {
     assert!(offset_of!(PrivateFieldExpression, field) == 24);
     assert!(offset_of!(PrivateFieldExpression, optional) == 48);
 
+    // Padding: 7 bytes
+    assert!(size_of::<LeadingDotMemberExpression>() == 56);
+    assert!(align_of::<LeadingDotMemberExpression>() == 8);
+    assert!(offset_of!(LeadingDotMemberExpression, span) == 0);
+    assert!(offset_of!(LeadingDotMemberExpression, property) == 8);
+    assert!(offset_of!(LeadingDotMemberExpression, optional) == 48);
+    assert!(offset_of!(LeadingDotMemberExpression, rest) == 32);
+
     // Padding: 6 bytes
     assert!(size_of::<CallExpression>() == 64);
     assert!(align_of::<CallExpression>() == 8);
@@ -1800,6 +1808,14 @@ const _: () = if cfg!(target_family = "wasm") || align_of::<u64>() == 8 {
     assert!(offset_of!(PrivateFieldExpression, object) == 8);
     assert!(offset_of!(PrivateFieldExpression, field) == 16);
     assert!(offset_of!(PrivateFieldExpression, optional) == 32);
+
+    // Padding: 3 bytes
+    assert!(size_of::<LeadingDotMemberExpression>() == 36);
+    assert!(align_of::<LeadingDotMemberExpression>() == 4);
+    assert!(offset_of!(LeadingDotMemberExpression, span) == 0);
+    assert!(offset_of!(LeadingDotMemberExpression, property) == 8);
+    assert!(offset_of!(LeadingDotMemberExpression, optional) == 32);
+    assert!(offset_of!(LeadingDotMemberExpression, rest) == 24);
 
     // Padding: 2 bytes
     assert!(size_of::<CallExpression>() == 40);

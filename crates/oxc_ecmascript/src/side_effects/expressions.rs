@@ -452,6 +452,11 @@ impl<'a> MayHaveSideEffects<'a> for MemberExpression<'a> {
             MemberExpression::PrivateFieldExpression(_) => {
                 ctx.property_read_side_effects() != PropertyReadSideEffects::None
             }
+            MemberExpression::LeadingDotMemberExpression(_) => {
+                // LeadingDotMemberExpression has implicit `this`, which may have side effects
+                // if accessing properties, but the property access itself is side-effect-free
+                ctx.property_read_side_effects() != PropertyReadSideEffects::None
+            }
         }
     }
 }
@@ -671,6 +676,11 @@ impl<'a> MayHaveSideEffects<'a> for SimpleAssignmentTarget<'a> {
             }
             SimpleAssignmentTarget::PrivateFieldExpression(member_expr) => {
                 member_expr.object.may_have_side_effects(ctx)
+            }
+            SimpleAssignmentTarget::LeadingDotMemberExpression(_) => {
+                // LeadingDotMemberExpression cannot be assigned to (syntax error)
+                // But if it were, it would have side effects due to implicit `this`
+                true
             }
             SimpleAssignmentTarget::TSAsExpression(_)
             | SimpleAssignmentTarget::TSNonNullExpression(_)

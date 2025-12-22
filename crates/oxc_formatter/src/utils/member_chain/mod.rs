@@ -216,11 +216,54 @@ impl<'a> Format<'a> for MemberChain<'a, '_> {
             };
         }
 
-        // Check if this is an ArkUI leading-dot expression (starts with `this`)
+        // Check if this is an ArkUI leading-dot expression (contains `LeadingDotMemberExpression`)
+        // Only LeadingDotMemberExpression should be treated as leading-dot, not regular `this.property`
+        // We check all members, not just the first one, because in chained calls like
+        // .borderRadius(20).borderWidth(1), the first member is a CallExpression
         let is_arkui_leading_dot = f.context().source_type().is_arkui()
-            && self.head.members().first().is_some_and(|member| {
-                matches!(member, ChainMember::Node(node) if matches!(node.as_ref(), Expression::ThisExpression(_)))
+            && self.members().any(|member| {
+                matches!(
+                    member,
+                    ChainMember::Node(node) if matches!(
+                        node.as_ref(),
+                        Expression::LeadingDotMemberExpression(_)
+                    )
+                )
             });
+
+        // For ArkUI leading-dot expressions, use the same break logic as ArkUI components
+        let should_break_arkui_style = if is_arkui_leading_dot {
+            // Count call expressions in the chain
+            let call_count = self.members()
+                .filter(|member| matches!(member, ChainMember::CallExpression { .. }))
+                .count();
+            
+            // Break if there are multiple calls (like ArkUI components)
+            if call_count > 1 {
+                true
+            } else {
+                // Check if any call has complex arguments (arrow functions, function expressions, objects, arrays)
+                self.members()
+                    .filter_map(|member| match member {
+                        ChainMember::CallExpression { expression, .. } => Some(expression),
+                        _ => None,
+                    })
+                    .any(|call| {
+                        // Access arguments directly from CallExpression
+                        let arguments = &call.as_ref().arguments;
+                        arguments.iter().any(|arg| {
+                            // Check for arrow functions or function expressions
+                            matches!(arg, Argument::ArrowFunctionExpression(_) | Argument::FunctionExpression(_)) ||
+                            // Check for complex expressions (objects, arrays)
+                            arg.as_expression().map_or(false, |expr| {
+                                matches!(expr, Expression::ObjectExpression(_) | Expression::ArrayExpression(_))
+                            })
+                        })
+                    })
+            }
+        } else {
+            false
+        };
 
         let format_tail = format_with(|f| {
             for group in self.tail.iter() {
@@ -242,7 +285,14 @@ impl<'a> Format<'a> for MemberChain<'a, '_> {
         });
 
         let format_content = format_with(|f| {
-            if has_comment || has_new_line_or_comment_between || self.groups_should_break(f) {
+            // For ArkUI leading-dot expressions, use ArkUI-style break logic
+            let should_break = if is_arkui_leading_dot {
+                should_break_arkui_style
+            } else {
+                has_comment || has_new_line_or_comment_between || self.groups_should_break(f)
+            };
+
+            if should_break {
                 write!(f, [group(&format_expanded)]);
             } else {
                 let has_empty_line_before_tail =
@@ -319,7 +369,8 @@ fn compute_remaining_groups<'a, 'b>(
         let span = member.span();
         let has_trailing_comment =
             f.comments().comments_after(span.end).first().is_some_and(|comment| {
-                f.source_text().bytes_range(span.end, comment.span.start).trim_ascii().is_empty()
+                span.end <= comment.span.start
+                    && f.source_text().bytes_range(span.end, comment.span.start).trim_ascii().is_empty()
             });
 
         match member {
@@ -427,6 +478,7 @@ fn chain_members_iter<'a, 'b>(
                     Expression::StaticMemberExpression(_)
                         | Expression::ComputedMemberExpression(_)
                         | Expression::CallExpression(_)
+                        | Expression::LeadingDotMemberExpression(_)
                 );
 
                 if is_chain {
@@ -455,6 +507,7 @@ fn chain_members_iter<'a, 'b>(
                     Expression::StaticMemberExpression(_)
                         | Expression::ComputedMemberExpression(_)
                         | Expression::CallExpression(_)
+                        | Expression::LeadingDotMemberExpression(_)
                 );
                 let position = if is_chain {
                     CallExpressionPosition::Middle
@@ -470,6 +523,12 @@ fn chain_members_iter<'a, 'b>(
             AstNodes::ComputedMemberExpression(expr) => {
                 next = Some(expr.object());
                 ChainMember::ComputedMember(expr)
+            }
+            AstNodes::LeadingDotMemberExpression(_expr) => {
+                // LeadingDotMemberExpression has no object, so we stop here
+                // Chain expressions like .method1().method2() are parsed as separate CallExpression nodes
+                // by the parser, so we don't need to handle rest here
+                ChainMember::Node(expression)
             }
             AstNodes::TSNonNullExpression(expr) => {
                 next = Some(expr.expression());

@@ -101,6 +101,12 @@ impl<'a> VisitMut<'a> for Utf8ToUtf16Converter<'_> {
         self.convert_offset(&mut it.span.end);
     }
 
+    fn visit_leading_dot_member_expression(&mut self, it: &mut LeadingDotMemberExpression<'a>) {
+        self.convert_offset(&mut it.span.start);
+        walk_mut::walk_leading_dot_member_expression(self, it);
+        self.convert_offset(&mut it.span.end);
+    }
+
     fn visit_call_expression(&mut self, it: &mut CallExpression<'a>) {
         self.convert_offset(&mut it.span.start);
         walk_mut::walk_call_expression(self, it);

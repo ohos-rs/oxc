@@ -57,20 +57,18 @@ impl<'a> ParserImpl<'a> {
         // Parse expression statements until closing brace
         while !self.at(Kind::RCurly) && !self.has_fatal_error() {
             if self.at(Kind::Dot) {
-                // Parse expression statement starting with dot
+                // Parse expression statement starting with dot as LeadingDotMemberExpression
+                // Allow chaining (e.g., .borderRadius(20).borderWidth(1)) - it will stop at comma/semicolon/brace
                 let expr_span = self.start_span();
-                let this_span = self.start_span();
-                let this_expr = self.ast.expression_this(self.end_span(this_span));
-                let expr =
-                    self.parse_member_expression_rest_from_lhs_for_primary(expr_span, this_expr);
+                let expr = self.parse_leading_dot_expression(true);
+                let expr_end_span = self.end_span(expr_span);
 
                 // Create a property with the expression as value
                 // Use a synthetic key for the expression statement
-                let key_span = self.end_span(expr_span);
-                let key_name = self.ast.identifier_name(key_span, oxc_span::Atom::from(""));
+                let key_name = self.ast.identifier_name(expr_end_span, oxc_span::Atom::from(""));
                 let key = PropertyKey::StaticIdentifier(self.alloc(key_name));
                 let property = self.ast.alloc_object_property(
-                    self.end_span(expr_span),
+                    expr_end_span,
                     PropertyKind::Init,
                     key,
                     expr,
@@ -80,8 +78,14 @@ impl<'a> ParserImpl<'a> {
                 );
                 properties.push(ObjectPropertyKind::ObjectProperty(property));
 
-                // Optional semicolon
-                let _ = self.eat(Kind::Semicolon);
+                // Optional semicolon or comma (both are allowed after expression statements)
+                if self.eat(Kind::Semicolon) {
+                    // Semicolon consumed
+                } else if self.at(Kind::Comma) {
+                    // Comma after expression statement (e.g., .method1().method2(),)
+                    self.expect(Kind::Comma);
+                }
+                // If neither semicolon nor comma, continue to next token (could be closing brace or next property)
             } else {
                 // Parse as normal object property
                 let property = self.parse_object_expression_property();
@@ -213,7 +217,89 @@ impl<'a> ParserImpl<'a> {
         computed: bool,
     ) -> Box<'a, ObjectProperty<'a>> {
         self.expect(Kind::Colon);
-        let value = self.parse_assignment_expression_or_higher();
+        
+        // Check if the value is an ArkUI object literal with leading-dot expressions
+        // Example: normal: { .borderRadius(20) .borderWidth(1) }
+        let value = if self.source_type.is_arkui() && self.at(Kind::LCurly) {
+            // Check if after the opening brace, there's a dot
+            // We'll parse the opening brace and then check
+            let obj_span = self.start_span();
+            let opening_span = self.cur_token().span();
+            self.expect(Kind::LCurly);
+            
+            // Check if next token is Dot (after consuming whitespace)
+            if self.at(Kind::Dot) {
+                // Parse as ArkUI object literal with expression statements
+                // We've already consumed the opening brace, so we need to handle it differently
+                let mut properties = self.ast.vec();
+                
+                // Parse expression statements until closing brace
+                while !self.at(Kind::RCurly) && !self.has_fatal_error() {
+                    if self.at(Kind::Dot) {
+                        // Parse expression statement starting with dot as LeadingDotMemberExpression
+                        // Allow chaining (e.g., .borderRadius(20).borderWidth(1)) - it will stop at comma/semicolon/brace
+                        let expr_span = self.start_span();
+                        let expr = self.parse_leading_dot_expression(true);
+                        let expr_end_span = self.end_span(expr_span);
+
+                        // Create a property with the expression as value
+                        // Use a synthetic key for the expression statement
+                        let key_name = self.ast.identifier_name(expr_end_span, oxc_span::Atom::from(""));
+                        let key = PropertyKey::StaticIdentifier(self.alloc(key_name));
+                        let property = self.ast.alloc_object_property(
+                            expr_end_span,
+                            PropertyKind::Init,
+                            key,
+                            expr,
+                            false, // not a method
+                            false, // not shorthand
+                            false, // not computed
+                        );
+                        properties.push(ObjectPropertyKind::ObjectProperty(property));
+
+                        // Optional semicolon or comma (both are allowed after expression statements)
+                        if self.eat(Kind::Semicolon) {
+                            // Semicolon consumed
+                        } else if self.at(Kind::Comma) {
+                            // Comma after expression statement (e.g., .method1().method2(),)
+                            self.expect(Kind::Comma);
+                        }
+                        // If neither semicolon nor comma, continue to next token (could be closing brace or next property)
+                    } else {
+                        // Parse as normal object property
+                        let property = self.parse_object_expression_property();
+                        properties.push(property);
+
+                        // Expect comma or closing brace
+                        if !self.at(Kind::RCurly) {
+                            self.expect(Kind::Comma);
+                        }
+                    }
+                }
+                
+                self.expect(Kind::RCurly);
+                Expression::ObjectExpression(self.ast.alloc_object_expression(self.end_span(obj_span), properties))
+            } else {
+                // Not a leading-dot expression, parse as normal object expression
+                // We've already consumed the opening brace, so we need to parse the rest
+                let (object_expression_properties, comma_span) = self.context_add(Context::In, |p| {
+                    p.parse_delimited_list(
+                        Kind::RCurly,
+                        Kind::Comma,
+                        opening_span,
+                        Self::parse_object_expression_property,
+                    )
+                });
+                if let Some(comma_span) = comma_span {
+                    self.state.trailing_commas.insert(obj_span, self.end_span(comma_span));
+                }
+                self.expect(Kind::RCurly);
+                Expression::ObjectExpression(self.ast.alloc_object_expression(self.end_span(obj_span), object_expression_properties))
+            }
+        } else {
+            self.parse_assignment_expression_or_higher()
+        };
+        
         self.ast.alloc_object_property(
             self.end_span(span),
             PropertyKind::Init,

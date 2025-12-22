@@ -183,6 +183,17 @@ impl PreferSpyOn {
                 formatter.print_expression(&static_mem_expr.object);
                 formatter.print_ascii_byte(b',');
                 formatter.print_ascii_byte(b' ');
+                formatter.print_str(name.as_str());
+            }
+            MemberExpression::LeadingDotMemberExpression(leading_dot_expr) => {
+                // LeadingDotMemberExpression has implicit `this`, print property name directly
+                formatter.print_str("this");
+                formatter.print_ascii_byte(b',');
+                formatter.print_ascii_byte(b' ');
+                let name = leading_dot_expr.property.name.as_str();
+                formatter.print_str(name);
+                formatter.print_ascii_byte(b',');
+                formatter.print_ascii_byte(b' ');
                 formatter.print_str(format!("\'{name}\'").as_str());
             }
             MemberExpression::PrivateFieldExpression(_) => (),

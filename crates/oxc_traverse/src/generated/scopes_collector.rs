@@ -78,6 +78,9 @@ impl<'a> Visit<'a> for ChildScopeCollector {
             Expression::ComputedMemberExpression(it) => self.visit_computed_member_expression(it),
             Expression::StaticMemberExpression(it) => self.visit_static_member_expression(it),
             Expression::PrivateFieldExpression(it) => self.visit_private_field_expression(it),
+            Expression::LeadingDotMemberExpression(it) => {
+                self.visit_leading_dot_member_expression(it)
+            }
             _ => {
                 // Remaining variants do not contain scopes:
                 // `BooleanLiteral`
@@ -190,6 +193,9 @@ impl<'a> Visit<'a> for ChildScopeCollector {
             ArrayExpressionElement::PrivateFieldExpression(it) => {
                 self.visit_private_field_expression(it)
             }
+            ArrayExpressionElement::LeadingDotMemberExpression(it) => {
+                self.visit_leading_dot_member_expression(it)
+            }
             _ => {
                 // Remaining variants do not contain scopes:
                 // `Elision`
@@ -264,6 +270,9 @@ impl<'a> Visit<'a> for ChildScopeCollector {
             PropertyKey::ComputedMemberExpression(it) => self.visit_computed_member_expression(it),
             PropertyKey::StaticMemberExpression(it) => self.visit_static_member_expression(it),
             PropertyKey::PrivateFieldExpression(it) => self.visit_private_field_expression(it),
+            PropertyKey::LeadingDotMemberExpression(it) => {
+                self.visit_leading_dot_member_expression(it)
+            }
             _ => {
                 // Remaining variants do not contain scopes:
                 // `StaticIdentifier`
@@ -315,6 +324,13 @@ impl<'a> Visit<'a> for ChildScopeCollector {
     #[inline]
     fn visit_private_field_expression(&mut self, it: &PrivateFieldExpression<'a>) {
         self.visit_expression(&it.object);
+    }
+
+    #[inline]
+    fn visit_leading_dot_member_expression(&mut self, it: &LeadingDotMemberExpression<'a>) {
+        if let Some(rest) = &it.rest {
+            self.visit_expression(rest);
+        }
     }
 
     #[inline]
@@ -385,6 +401,9 @@ impl<'a> Visit<'a> for ChildScopeCollector {
             Argument::ComputedMemberExpression(it) => self.visit_computed_member_expression(it),
             Argument::StaticMemberExpression(it) => self.visit_static_member_expression(it),
             Argument::PrivateFieldExpression(it) => self.visit_private_field_expression(it),
+            Argument::LeadingDotMemberExpression(it) => {
+                self.visit_leading_dot_member_expression(it)
+            }
             _ => {
                 // Remaining variants do not contain scopes:
                 // `BooleanLiteral`
@@ -452,6 +471,9 @@ impl<'a> Visit<'a> for ChildScopeCollector {
             }
             AssignmentTarget::StaticMemberExpression(it) => self.visit_static_member_expression(it),
             AssignmentTarget::PrivateFieldExpression(it) => self.visit_private_field_expression(it),
+            AssignmentTarget::LeadingDotMemberExpression(it) => {
+                self.visit_leading_dot_member_expression(it)
+            }
             AssignmentTarget::ArrayAssignmentTarget(it) => self.visit_array_assignment_target(it),
             AssignmentTarget::ObjectAssignmentTarget(it) => self.visit_object_assignment_target(it),
             _ => {
@@ -479,6 +501,9 @@ impl<'a> Visit<'a> for ChildScopeCollector {
             }
             SimpleAssignmentTarget::PrivateFieldExpression(it) => {
                 self.visit_private_field_expression(it)
+            }
+            SimpleAssignmentTarget::LeadingDotMemberExpression(it) => {
+                self.visit_leading_dot_member_expression(it)
             }
             _ => {
                 // Remaining variants do not contain scopes:
@@ -531,6 +556,9 @@ impl<'a> Visit<'a> for ChildScopeCollector {
             }
             AssignmentTargetMaybeDefault::PrivateFieldExpression(it) => {
                 self.visit_private_field_expression(it)
+            }
+            AssignmentTargetMaybeDefault::LeadingDotMemberExpression(it) => {
+                self.visit_leading_dot_member_expression(it)
             }
             AssignmentTargetMaybeDefault::ArrayAssignmentTarget(it) => {
                 self.visit_array_assignment_target(it)
@@ -776,6 +804,9 @@ impl<'a> Visit<'a> for ChildScopeCollector {
             }
             ForStatementInit::StaticMemberExpression(it) => self.visit_static_member_expression(it),
             ForStatementInit::PrivateFieldExpression(it) => self.visit_private_field_expression(it),
+            ForStatementInit::LeadingDotMemberExpression(it) => {
+                self.visit_leading_dot_member_expression(it)
+            }
             _ => {
                 // Remaining variants do not contain scopes:
                 // `BooleanLiteral`
@@ -809,6 +840,9 @@ impl<'a> Visit<'a> for ChildScopeCollector {
             }
             ForStatementLeft::StaticMemberExpression(it) => self.visit_static_member_expression(it),
             ForStatementLeft::PrivateFieldExpression(it) => self.visit_private_field_expression(it),
+            ForStatementLeft::LeadingDotMemberExpression(it) => {
+                self.visit_leading_dot_member_expression(it)
+            }
             ForStatementLeft::ArrayAssignmentTarget(it) => self.visit_array_assignment_target(it),
             ForStatementLeft::ObjectAssignmentTarget(it) => self.visit_object_assignment_target(it),
             _ => {
@@ -1218,6 +1252,9 @@ impl<'a> Visit<'a> for ChildScopeCollector {
             ExportDefaultDeclarationKind::PrivateFieldExpression(it) => {
                 self.visit_private_field_expression(it)
             }
+            ExportDefaultDeclarationKind::LeadingDotMemberExpression(it) => {
+                self.visit_leading_dot_member_expression(it)
+            }
             _ => {
                 // Remaining variants do not contain scopes:
                 // `BooleanLiteral`
@@ -1380,6 +1417,9 @@ impl<'a> Visit<'a> for ChildScopeCollector {
             }
             JSXExpression::StaticMemberExpression(it) => self.visit_static_member_expression(it),
             JSXExpression::PrivateFieldExpression(it) => self.visit_private_field_expression(it),
+            JSXExpression::LeadingDotMemberExpression(it) => {
+                self.visit_leading_dot_member_expression(it)
+            }
             _ => {
                 // Remaining variants do not contain scopes:
                 // `EmptyExpression`

@@ -403,6 +403,10 @@ impl<'a> ReplaceGlobalDefines<'a> {
                         MemberExpression::StaticMemberExpression(member) => {
                             self.replace_dot_static_member_expr(member, ctx)
                         }
+                        MemberExpression::LeadingDotMemberExpression(_) => {
+                            // LeadingDotMemberExpression has implicit `this`, cannot replace
+                            None
+                        }
                         MemberExpression::PrivateFieldExpression(_) => None,
                     })
                 else {

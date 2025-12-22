@@ -225,9 +225,9 @@ impl<'a> Dummy<'a> for TemplateElementValue<'a> {
 impl<'a> Dummy<'a> for MemberExpression<'a> {
     /// Create a dummy [`MemberExpression`].
     ///
-    /// Has cost of making 2 allocations (64 bytes).
+    /// Has cost of making 1 allocation (56 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
-        Self::StaticMemberExpression(Dummy::dummy(allocator))
+        Self::LeadingDotMemberExpression(Dummy::dummy(allocator))
     }
 }
 
@@ -269,6 +269,20 @@ impl<'a> Dummy<'a> for PrivateFieldExpression<'a> {
             object: Dummy::dummy(allocator),
             field: Dummy::dummy(allocator),
             optional: Dummy::dummy(allocator),
+        }
+    }
+}
+
+impl<'a> Dummy<'a> for LeadingDotMemberExpression<'a> {
+    /// Create a dummy [`LeadingDotMemberExpression`].
+    ///
+    /// Does not allocate any data into arena.
+    fn dummy(allocator: &'a Allocator) -> Self {
+        Self {
+            span: Dummy::dummy(allocator),
+            property: Dummy::dummy(allocator),
+            optional: Dummy::dummy(allocator),
+            rest: Dummy::dummy(allocator),
         }
     }
 }
@@ -581,7 +595,7 @@ impl<'a> Dummy<'a> for AwaitExpression<'a> {
 impl<'a> Dummy<'a> for ChainExpression<'a> {
     /// Create a dummy [`ChainExpression`].
     ///
-    /// Has cost of making 2 allocations (32 bytes).
+    /// Has cost of making 1 allocation (56 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self { span: Dummy::dummy(allocator), expression: Dummy::dummy(allocator) }
     }
@@ -590,9 +604,9 @@ impl<'a> Dummy<'a> for ChainExpression<'a> {
 impl<'a> Dummy<'a> for ChainElement<'a> {
     /// Create a dummy [`ChainElement`].
     ///
-    /// Has cost of making 2 allocations (32 bytes).
+    /// Has cost of making 1 allocation (56 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
-        Self::TSNonNullExpression(Dummy::dummy(allocator))
+        Self::LeadingDotMemberExpression(Dummy::dummy(allocator))
     }
 }
 

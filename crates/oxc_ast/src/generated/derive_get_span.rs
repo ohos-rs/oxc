@@ -65,6 +65,7 @@ impl GetSpan for Expression<'_> {
             Self::ComputedMemberExpression(it) => GetSpan::span(&**it),
             Self::StaticMemberExpression(it) => GetSpan::span(&**it),
             Self::PrivateFieldExpression(it) => GetSpan::span(&**it),
+            Self::LeadingDotMemberExpression(it) => GetSpan::span(&**it),
         }
     }
 }
@@ -160,6 +161,7 @@ impl GetSpan for ArrayExpressionElement<'_> {
             Self::ComputedMemberExpression(it) => GetSpan::span(&**it),
             Self::StaticMemberExpression(it) => GetSpan::span(&**it),
             Self::PrivateFieldExpression(it) => GetSpan::span(&**it),
+            Self::LeadingDotMemberExpression(it) => GetSpan::span(&**it),
         }
     }
 }
@@ -243,6 +245,7 @@ impl GetSpan for PropertyKey<'_> {
             Self::ComputedMemberExpression(it) => GetSpan::span(&**it),
             Self::StaticMemberExpression(it) => GetSpan::span(&**it),
             Self::PrivateFieldExpression(it) => GetSpan::span(&**it),
+            Self::LeadingDotMemberExpression(it) => GetSpan::span(&**it),
         }
     }
 }
@@ -274,6 +277,7 @@ impl GetSpan for MemberExpression<'_> {
             Self::ComputedMemberExpression(it) => GetSpan::span(&**it),
             Self::StaticMemberExpression(it) => GetSpan::span(&**it),
             Self::PrivateFieldExpression(it) => GetSpan::span(&**it),
+            Self::LeadingDotMemberExpression(it) => GetSpan::span(&**it),
         }
     }
 }
@@ -293,6 +297,13 @@ impl GetSpan for StaticMemberExpression<'_> {
 }
 
 impl GetSpan for PrivateFieldExpression<'_> {
+    #[inline]
+    fn span(&self) -> Span {
+        self.span
+    }
+}
+
+impl GetSpan for LeadingDotMemberExpression<'_> {
     #[inline]
     fn span(&self) -> Span {
         self.span
@@ -375,6 +386,7 @@ impl GetSpan for Argument<'_> {
             Self::ComputedMemberExpression(it) => GetSpan::span(&**it),
             Self::StaticMemberExpression(it) => GetSpan::span(&**it),
             Self::PrivateFieldExpression(it) => GetSpan::span(&**it),
+            Self::LeadingDotMemberExpression(it) => GetSpan::span(&**it),
         }
     }
 }
@@ -439,6 +451,7 @@ impl GetSpan for AssignmentTarget<'_> {
             Self::ComputedMemberExpression(it) => GetSpan::span(&**it),
             Self::StaticMemberExpression(it) => GetSpan::span(&**it),
             Self::PrivateFieldExpression(it) => GetSpan::span(&**it),
+            Self::LeadingDotMemberExpression(it) => GetSpan::span(&**it),
             Self::ArrayAssignmentTarget(it) => GetSpan::span(&**it),
             Self::ObjectAssignmentTarget(it) => GetSpan::span(&**it),
         }
@@ -456,6 +469,7 @@ impl GetSpan for SimpleAssignmentTarget<'_> {
             Self::ComputedMemberExpression(it) => GetSpan::span(&**it),
             Self::StaticMemberExpression(it) => GetSpan::span(&**it),
             Self::PrivateFieldExpression(it) => GetSpan::span(&**it),
+            Self::LeadingDotMemberExpression(it) => GetSpan::span(&**it),
         }
     }
 }
@@ -502,6 +516,7 @@ impl GetSpan for AssignmentTargetMaybeDefault<'_> {
             Self::ComputedMemberExpression(it) => GetSpan::span(&**it),
             Self::StaticMemberExpression(it) => GetSpan::span(&**it),
             Self::PrivateFieldExpression(it) => GetSpan::span(&**it),
+            Self::LeadingDotMemberExpression(it) => GetSpan::span(&**it),
             Self::ArrayAssignmentTarget(it) => GetSpan::span(&**it),
             Self::ObjectAssignmentTarget(it) => GetSpan::span(&**it),
         }
@@ -574,6 +589,7 @@ impl GetSpan for ChainElement<'_> {
             Self::ComputedMemberExpression(it) => GetSpan::span(&**it),
             Self::StaticMemberExpression(it) => GetSpan::span(&**it),
             Self::PrivateFieldExpression(it) => GetSpan::span(&**it),
+            Self::LeadingDotMemberExpression(it) => GetSpan::span(&**it),
         }
     }
 }
@@ -767,6 +783,7 @@ impl GetSpan for ForStatementInit<'_> {
             Self::ComputedMemberExpression(it) => GetSpan::span(&**it),
             Self::StaticMemberExpression(it) => GetSpan::span(&**it),
             Self::PrivateFieldExpression(it) => GetSpan::span(&**it),
+            Self::LeadingDotMemberExpression(it) => GetSpan::span(&**it),
         }
     }
 }
@@ -790,6 +807,7 @@ impl GetSpan for ForStatementLeft<'_> {
             Self::ComputedMemberExpression(it) => GetSpan::span(&**it),
             Self::StaticMemberExpression(it) => GetSpan::span(&**it),
             Self::PrivateFieldExpression(it) => GetSpan::span(&**it),
+            Self::LeadingDotMemberExpression(it) => GetSpan::span(&**it),
             Self::ArrayAssignmentTarget(it) => GetSpan::span(&**it),
             Self::ObjectAssignmentTarget(it) => GetSpan::span(&**it),
         }
@@ -1203,6 +1221,7 @@ impl GetSpan for ExportDefaultDeclarationKind<'_> {
             Self::ComputedMemberExpression(it) => GetSpan::span(&**it),
             Self::StaticMemberExpression(it) => GetSpan::span(&**it),
             Self::PrivateFieldExpression(it) => GetSpan::span(&**it),
+            Self::LeadingDotMemberExpression(it) => GetSpan::span(&**it),
         }
     }
 }
@@ -1399,6 +1418,7 @@ impl GetSpan for JSXExpression<'_> {
             Self::ComputedMemberExpression(it) => GetSpan::span(&**it),
             Self::StaticMemberExpression(it) => GetSpan::span(&**it),
             Self::PrivateFieldExpression(it) => GetSpan::span(&**it),
+            Self::LeadingDotMemberExpression(it) => GetSpan::span(&**it),
         }
     }
 }
