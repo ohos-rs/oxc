@@ -216,6 +216,12 @@ impl<'a> Format<'a> for MemberChain<'a, '_> {
             };
         }
 
+        // Check if this is an ArkUI leading-dot expression (starts with `this`)
+        let is_arkui_leading_dot = f.context().source_type().is_arkui()
+            && self.head.members().first().is_some_and(|member| {
+                matches!(member, ChainMember::Node(node) if matches!(node.as_ref(), Expression::ThisExpression(_)))
+            });
+
         let format_tail = format_with(|f| {
             for group in self.tail.iter() {
                 if group.needs_empty_line() {
@@ -226,7 +232,14 @@ impl<'a> Format<'a> for MemberChain<'a, '_> {
                 write!(f, [group]);
             }
         });
-        let format_expanded = format_with(|f| write!(f, [self.head, indent(&format_tail)]));
+        // For ArkUI leading-dot expressions, don't indent on line breaks (align with first dot)
+        let format_expanded = format_with(|f| {
+            if is_arkui_leading_dot {
+                write!(f, [self.head, &format_tail])
+            } else {
+                write!(f, [self.head, indent(&format_tail)])
+            }
+        });
 
         let format_content = format_with(|f| {
             if has_comment || has_new_line_or_comment_between || self.groups_should_break(f) {

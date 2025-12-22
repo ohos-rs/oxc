@@ -221,7 +221,7 @@ impl<'a> ParserImpl<'a> {
             _ => self.parse_identifier_expression(),
         }
     }
-    
+
     /// Parse member expression rest starting from a given LHS for primary expressions
     /// Used for ArkUI expressions starting with dots in object literals and other contexts
     pub(crate) fn parse_member_expression_rest_from_lhs_for_primary(
@@ -231,17 +231,17 @@ impl<'a> ParserImpl<'a> {
     ) -> Expression<'a> {
         use crate::lexer::Kind;
         let mut lhs = lhs;
-        
+
         loop {
             if self.fatal_error.is_some() {
                 return lhs;
             }
-            
+
             let is_property_access = self.eat(Kind::Dot);
             if !is_property_access {
                 break;
             }
-            
+
             if self.cur_kind().is_identifier_or_keyword() {
                 let ident_span = self.start_span();
                 let ident = self.parse_identifier_name();
@@ -293,10 +293,10 @@ impl<'a> ParserImpl<'a> {
                     continue;
                 }
             }
-            
+
             break;
         }
-        
+
         lhs
     }
 

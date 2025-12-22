@@ -45,6 +45,7 @@ pub trait GenExpr: GetSpan {
 impl Gen for Program<'_> {
     fn r#gen(&self, p: &mut Codegen, ctx: Context) {
         p.is_jsx = self.source_type.is_jsx();
+        p.is_arkui = self.source_type.is_arkui();
 
         // Allow for inserting comments to the top of the file.
         p.print_comments_at(0);
@@ -984,11 +985,12 @@ impl Gen for ExportNamedDeclaration<'_> {
         p.add_source_mapping(self.span);
         p.print_indent();
         // Print function decorators before export keyword (e.g., @Builder export function ...)
-        let has_function_decorators = if let Some(Declaration::FunctionDeclaration(func)) = &self.declaration {
-            !func.decorators.is_empty()
-        } else {
-            false
-        };
+        let has_function_decorators =
+            if let Some(Declaration::FunctionDeclaration(func)) = &self.declaration {
+                !func.decorators.is_empty()
+            } else {
+                false
+            };
         if has_function_decorators {
             if let Some(Declaration::FunctionDeclaration(func)) = &self.declaration {
                 p.print_decorators(&func.decorators, ctx);
@@ -1448,6 +1450,65 @@ impl GenExpr for ComputedMemberExpression<'_> {
 
 impl GenExpr for StaticMemberExpression<'_> {
     fn gen_expr(&self, p: &mut Codegen, _precedence: Precedence, ctx: Context) {
+        // ArkUI: keep leading-dot chains with their original dotted formatting.
+        if p.is_arkui {
+            fn base_is_this(expr: &Expression) -> bool {
+                match expr {
+                    Expression::ThisExpression(_) => true,
+                    Expression::StaticMemberExpression(m) => base_is_this(&m.object),
+                    Expression::ComputedMemberExpression(m) => base_is_this(&m.object),
+                    Expression::PrivateFieldExpression(m) => base_is_this(&m.object),
+                    Expression::CallExpression(call) => base_is_this(&call.callee),
+                    _ => false,
+                }
+            }
+            fn print_leading_dot_expr(expr: &Expression, p: &mut Codegen, ctx: Context) {
+                match expr {
+                    Expression::StaticMemberExpression(m) => {
+                        // omit object, print leading dot + property
+                        if m.optional {
+                            p.print_ascii_byte(b'?');
+                        }
+                        p.print_soft_newline();
+                        p.print_indent();
+                        p.print_ascii_byte(b'.');
+                        m.property.print(p, ctx);
+                    }
+                    Expression::CallExpression(call) => {
+                        print_leading_dot_expr(
+                            &call.callee,
+                            p,
+                            ctx.intersection(Context::FORBID_CALL),
+                        );
+                        p.print_ascii_byte(b'(');
+                        p.print_arguments(call.span, &call.arguments, ctx);
+                        p.print_ascii_byte(b')');
+                    }
+                    Expression::ThisExpression(_) => {
+                        // purely `this` -> nothing
+                    }
+                    _ => {
+                        // fallback: print normally
+                        expr.print_expr(p, Precedence::Postfix, ctx);
+                    }
+                }
+            }
+
+            if base_is_this(&self.object) {
+                // Print object chain with leading-dot style, then current property.
+                print_leading_dot_expr(&self.object, p, ctx.intersection(Context::FORBID_CALL));
+                if self.optional {
+                    p.print_ascii_byte(b'?');
+                }
+                p.print_soft_newline();
+                p.print_indent();
+                p.print_ascii_byte(b'.');
+                self.property.print(p, ctx);
+                return;
+            }
+        }
+
+        // Default JS/TS printing.
         self.object.print_expr(p, Precedence::Postfix, ctx.intersection(Context::FORBID_CALL));
         if self.optional {
             p.print_ascii_byte(b'?');

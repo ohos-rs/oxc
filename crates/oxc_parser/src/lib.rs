@@ -959,11 +959,7 @@ mod test {
         assert_eq!(ret.program.body.len(), 1);
         // Verify it's an export statement
         let stmt = &ret.program.body[0];
-        assert!(
-            stmt.is_module_declaration(),
-            "Expected ModuleDeclaration, got: {:?}",
-            stmt
-        );
+        assert!(stmt.is_module_declaration(), "Expected ModuleDeclaration, got: {:?}", stmt);
     }
 
     #[test]

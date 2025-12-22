@@ -126,27 +126,23 @@ impl<'a> ParserImpl<'a> {
         };
 
         if self.parse_contextual_modifier(Kind::Get) {
-            return StructElement::MethodDefinition(
-                self.parse_struct_accessor_declaration(
-                    span,
-                    r#type,
-                    MethodDefinitionKind::Get,
-                    &modifiers,
-                    decorators,
-                ),
-            );
+            return StructElement::MethodDefinition(self.parse_struct_accessor_declaration(
+                span,
+                r#type,
+                MethodDefinitionKind::Get,
+                &modifiers,
+                decorators,
+            ));
         }
 
         if self.parse_contextual_modifier(Kind::Set) {
-            return StructElement::MethodDefinition(
-                self.parse_struct_accessor_declaration(
-                    span,
-                    r#type,
-                    MethodDefinitionKind::Set,
-                    &modifiers,
-                    decorators,
-                ),
-            );
+            return StructElement::MethodDefinition(self.parse_struct_accessor_declaration(
+                span,
+                r#type,
+                MethodDefinitionKind::Set,
+                &modifiers,
+                decorators,
+            ));
         }
 
         // Check if this is a method definition
@@ -156,7 +152,7 @@ impl<'a> ParserImpl<'a> {
             let checkpoint = self.checkpoint();
             let (_name, _computed) = self.parse_property_name();
             let has_lparen = self.at(Kind::LParen);
-            
+
             // Check for methods with return type annotations: methodName(): ReturnType {
             // Pattern: identifier, optional (), colon, type, opening brace
             let is_method_with_return_type = if self.is_ts && self.at(Kind::Colon) {
@@ -166,25 +162,24 @@ impl<'a> ParserImpl<'a> {
                 self.bump_any(); // consume colon
                 // Try to parse a type (this is a best-effort check)
                 // If we see an identifier/keyword followed by {, it's likely a method
-                let looks_like_method = self.cur_kind().is_identifier_or_keyword()
-                    && {
-                        // Peek further to see if next is { (method) vs = or ; (property)
-                        let checkpoint3 = self.checkpoint();
-                        self.bump_any(); // consume type identifier
-                        // Skip any dots (qualified names like Some.Type)
-                        while self.eat(Kind::Dot) && self.cur_kind().is_identifier_or_keyword() {
-                            self.bump_any();
-                        }
-                        let is_method_pattern = self.at(Kind::LCurly);
-                        self.rewind(checkpoint3);
-                        is_method_pattern
-                    };
+                let looks_like_method = self.cur_kind().is_identifier_or_keyword() && {
+                    // Peek further to see if next is { (method) vs = or ; (property)
+                    let checkpoint3 = self.checkpoint();
+                    self.bump_any(); // consume type identifier
+                    // Skip any dots (qualified names like Some.Type)
+                    while self.eat(Kind::Dot) && self.cur_kind().is_identifier_or_keyword() {
+                        self.bump_any();
+                    }
+                    let is_method_pattern = self.at(Kind::LCurly);
+                    self.rewind(checkpoint3);
+                    is_method_pattern
+                };
                 self.rewind(checkpoint2);
                 looks_like_method
             } else {
                 false
             };
-            
+
             // Also check if we have () followed by : ReturnType {
             let is_method_with_parens_and_return_type = if has_lparen && self.is_ts {
                 let checkpoint2 = self.checkpoint();
@@ -194,17 +189,17 @@ impl<'a> ParserImpl<'a> {
                     // Now check for return type annotation
                     if self.at(Kind::Colon) {
                         self.bump_any(); // consume :
-                        let looks_like_method = self.cur_kind().is_identifier_or_keyword()
-                            && {
-                                let checkpoint3 = self.checkpoint();
-                                self.bump_any(); // consume type identifier
-                                while self.eat(Kind::Dot) && self.cur_kind().is_identifier_or_keyword() {
-                                    self.bump_any();
-                                }
-                                let is_method_pattern = self.at(Kind::LCurly);
-                                self.rewind(checkpoint3);
-                                is_method_pattern
-                            };
+                        let looks_like_method = self.cur_kind().is_identifier_or_keyword() && {
+                            let checkpoint3 = self.checkpoint();
+                            self.bump_any(); // consume type identifier
+                            while self.eat(Kind::Dot) && self.cur_kind().is_identifier_or_keyword()
+                            {
+                                self.bump_any();
+                            }
+                            let is_method_pattern = self.at(Kind::LCurly);
+                            self.rewind(checkpoint3);
+                            is_method_pattern
+                        };
                         self.rewind(checkpoint2);
                         looks_like_method
                     } else {
@@ -218,8 +213,9 @@ impl<'a> ParserImpl<'a> {
             } else {
                 false
             };
-            
-            let is_method = has_lparen || is_method_with_return_type || is_method_with_parens_and_return_type;
+
+            let is_method =
+                has_lparen || is_method_with_return_type || is_method_with_parens_and_return_type;
             self.rewind(checkpoint);
 
             if is_method {

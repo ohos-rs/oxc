@@ -125,7 +125,16 @@ impl<'a> Format<'a> for ChainMember<'a, '_> {
                 FormatComputedMemberExpressionWithoutObject(member).fmt(f);
                 member.format_trailing_comments(f);
             }
-            Self::Node(node) => write!(f, node),
+            Self::Node(node) => {
+                // ArkUI: skip printing `this` for leading-dot expressions
+                if f.context().source_type().is_arkui()
+                    && matches!(node.as_ref(), Expression::ThisExpression(_))
+                {
+                    // Don't print `this` for ArkUI leading-dot expressions
+                    return;
+                }
+                write!(f, node);
+            }
         }
     }
 }

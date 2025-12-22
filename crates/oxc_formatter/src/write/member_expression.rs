@@ -21,6 +21,34 @@ impl<'a> FormatWrite<'a> for AstNode<'a, ComputedMemberExpression<'a>> {
 
 impl<'a> FormatWrite<'a> for AstNode<'a, StaticMemberExpression<'a>> {
     fn write(&self, f: &mut Formatter<'_, 'a>) {
+        // ArkUI: allow leading-dot style by omitting the base when it ultimately starts with `this`.
+        if f.context().source_type().is_arkui() {
+            fn base_is_this(expr: &Expression) -> bool {
+                match expr {
+                    Expression::ThisExpression(_) => true,
+                    Expression::StaticMemberExpression(m) => base_is_this(&m.object),
+                    Expression::ComputedMemberExpression(m) => base_is_this(&m.object),
+                    Expression::PrivateFieldExpression(m) => base_is_this(&m.object),
+                    Expression::CallExpression(call) => base_is_this(&call.callee),
+                    _ => false,
+                }
+            }
+
+            if base_is_this(&self.object) {
+                // Print only the leading dot and property, with optional `?.`.
+                // For ArkUI leading-dot expressions, don't indent on line breaks (align with first dot)
+                write!(
+                    f,
+                    [group(&format_args!(
+                        soft_line_break_or_space(),
+                        operator_token(self.optional()),
+                        self.property()
+                    ))]
+                );
+                return;
+            }
+        }
+
         let is_member_chain = {
             let mut recording = f.start_recording();
             write!(recording, [self.object()]);

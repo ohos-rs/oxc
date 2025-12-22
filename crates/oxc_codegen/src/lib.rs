@@ -103,6 +103,10 @@ pub struct Codegen<'a> {
     /// is obtained by [`oxc_span::SourceType::is_jsx`]
     is_jsx: bool,
 
+    /// Indicates the output is ArkUI type, it is set in [`Program::gen`] and the result
+    /// is obtained by [`oxc_span::SourceType::is_arkui`]
+    is_arkui: bool,
+
     /// For avoiding `;` if the previous statement ends with `}`.
     needs_semicolon: bool,
 
@@ -173,6 +177,7 @@ impl<'a> Codegen<'a> {
             start_of_default_export: 0,
             skip_function_decorators: false,
             is_jsx: false,
+            is_arkui: false,
             indent: 0,
             quote: Quote::Double,
             comments: CommentsMap::default(),

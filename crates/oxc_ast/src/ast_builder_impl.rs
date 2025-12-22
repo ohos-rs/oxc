@@ -183,8 +183,8 @@ impl<'a> AstBuilder<'a> {
             false, // generator
             false, // async
             false, // declare
-            NONE, // type_parameters
-            NONE, // this_param
+            NONE,  // type_parameters
+            NONE,  // this_param
             params,
             NONE, // return_type
             Some(body),

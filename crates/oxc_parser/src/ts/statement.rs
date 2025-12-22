@@ -436,8 +436,8 @@ impl<'a> ParserImpl<'a> {
     ) -> Declaration<'a> {
         let kind = self.cur_kind();
         // Allow decorators on classes, and on functions in ArkUI mode
-        let decorators_allowed = kind == Kind::Class
-            || (self.at_function_with_async() && self.source_type.is_arkui());
+        let decorators_allowed =
+            kind == Kind::Class || (self.at_function_with_async() && self.source_type.is_arkui());
         if !decorators_allowed {
             for decorator in &decorators {
                 self.error(diagnostics::decorators_are_not_valid_here(decorator.span));
@@ -527,7 +527,12 @@ impl<'a> ParserImpl<'a> {
                 } else {
                     let span = self.start_span();
                     let r#async = self.eat(Kind::Async);
-                    let decl = self.parse_function_impl(span, r#async, FunctionKind::Declaration, decorators);
+                    let decl = self.parse_function_impl(
+                        span,
+                        r#async,
+                        FunctionKind::Declaration,
+                        decorators,
+                    );
                     Declaration::FunctionDeclaration(decl)
                 }
             }

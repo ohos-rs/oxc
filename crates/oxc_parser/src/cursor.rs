@@ -167,7 +167,7 @@ impl<'a> ParserImpl<'a> {
         // or opening brace.
         // This prevents ASI from triggering incorrectly when parsing:
         // - Object literal property values followed by commas on new lines
-        // - Object literal property names followed by colons on new lines  
+        // - Object literal property names followed by colons on new lines
         // - Array elements followed by commas on new lines
         // - Expressions followed by closing brackets/parens (they're part of the expression)
         // - Object literals in return statements (e.g., `return { x: 1 }`)

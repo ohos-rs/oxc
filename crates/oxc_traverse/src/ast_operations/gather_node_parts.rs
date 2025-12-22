@@ -89,7 +89,7 @@ impl<'a> GatherNodeParts<'a> for ExportDefaultDeclarationKind<'a> {
             ExportDefaultDeclarationKind::TSInterfaceDeclaration(_) => {}
             ExportDefaultDeclarationKind::StructStatement(_) => {
                 // StructStatement doesn't need to gather node parts for now
-            },
+            }
             match_expression!(ExportDefaultDeclarationKind) => self.to_expression().gather(f),
         }
     }

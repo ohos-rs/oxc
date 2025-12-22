@@ -1158,9 +1158,15 @@ impl<'a> LegacyDecorator<'a, '_> {
         let local = ModuleExportName::IdentifierReference(class_binding.create_read_reference(ctx));
         let exported = ctx.ast.module_export_name_identifier_name(SPAN, class_binding.name);
         let specifiers = ctx.ast.vec1(ctx.ast.export_specifier(SPAN, local, exported, kind));
-        let export_class_reference = ctx
-            .ast
-            .module_declaration_export_named_declaration(SPAN, ctx.ast.vec(), None, specifiers, None, kind, NONE);
+        let export_class_reference = ctx.ast.module_declaration_export_named_declaration(
+            SPAN,
+            ctx.ast.vec(),
+            None,
+            specifiers,
+            None,
+            kind,
+            NONE,
+        );
         Statement::from(export_class_reference)
     }
 }

@@ -122,7 +122,12 @@ impl<'a> ParserImpl<'a> {
             }
             // Fast path
             Kind::Function => {
-                self.parse_function_declaration(self.start_span(), /* async */ false, stmt_ctx, self.ast.vec())
+                self.parse_function_declaration(
+                    self.start_span(),
+                    /* async */ false,
+                    stmt_ctx,
+                    self.ast.vec(),
+                )
             }
             Kind::At => self.parse_decorated_statement(stmt_ctx),
             Kind::Let if !self.cur_token().escaped() => self.parse_let(stmt_ctx),
@@ -197,13 +202,10 @@ impl<'a> ParserImpl<'a> {
 
     fn parse_expression_or_labeled_statement(&mut self) -> Statement<'a> {
         let span = self.start_span();
-        
+
         // Handle ArkUI @Extend function body expressions starting with dots
         // Example: @Extend(Text) function foo() { .textOverflow(...) }
-        if self.source_type.is_arkui()
-            && self.ctx.has_return()
-            && self.at(Kind::Dot)
-        {
+        if self.source_type.is_arkui() && self.ctx.has_return() && self.at(Kind::Dot) {
             // Parse as method chaining expression starting from 'this'
             // In @Extend context, these expressions are chained onto the component type
             let this_span = self.start_span();
@@ -211,7 +213,7 @@ impl<'a> ParserImpl<'a> {
             let expr = self.parse_member_expression_rest_from_lhs(span, this_expr);
             return self.parse_expression_statement(span, expr);
         }
-        
+
         let expr = self.parse_expr();
         if let Expression::Identifier(ident) = &expr {
             // Section 14.13 Labelled Statement
@@ -224,7 +226,7 @@ impl<'a> ParserImpl<'a> {
         }
         self.parse_expression_statement(span, expr)
     }
-    
+
     /// Parse member expression rest starting from a given LHS
     /// Used for ArkUI @Extend function body expressions
     fn parse_member_expression_rest_from_lhs(
@@ -234,17 +236,17 @@ impl<'a> ParserImpl<'a> {
     ) -> Expression<'a> {
         use crate::lexer::Kind;
         let mut lhs = lhs;
-        
+
         loop {
             if self.fatal_error.is_some() {
                 return lhs;
             }
-            
+
             let is_property_access = self.eat(Kind::Dot);
             if !is_property_access {
                 break;
             }
-            
+
             if self.cur_kind().is_identifier_or_keyword() {
                 let ident_span = self.start_span();
                 let ident = self.parse_identifier_name();
@@ -296,10 +298,10 @@ impl<'a> ParserImpl<'a> {
                     continue;
                 }
             }
-            
+
             break;
         }
-        
+
         lhs
     }
 
@@ -865,7 +867,12 @@ impl<'a> ParserImpl<'a> {
         self.bump_any(); // bump `async`
         let token = self.cur_token();
         if token.kind() == Kind::Function && !token.is_on_new_line() {
-            return self.parse_function_declaration(span, /* async */ true, stmt_ctx, self.ast.vec());
+            return self.parse_function_declaration(
+                span,
+                /* async */ true,
+                stmt_ctx,
+                self.ast.vec(),
+            );
         }
         self.rewind(checkpoint);
         if self.is_ts && self.at_start_of_ts_declaration() {
@@ -896,14 +903,21 @@ impl<'a> ParserImpl<'a> {
             // Function declarations with decorators are only allowed in ArkUI mode
             // (e.g., ArkUI @Builder)
             if self.source_type.is_arkui() {
-                return self.parse_function_declaration(span, /* async */ false, stmt_ctx, decorators);
+                return self.parse_function_declaration(
+                    span, /* async */ false, stmt_ctx, decorators,
+                );
             } else {
                 // In non-ArkUI mode, decorators on functions are not allowed
                 for decorator in &decorators {
                     self.error(diagnostics::decorators_are_not_valid_here(decorator.span));
                 }
                 // Continue parsing the function without decorators
-                return self.parse_function_declaration(span, /* async */ false, stmt_ctx, self.ast.vec());
+                return self.parse_function_declaration(
+                    span,
+                    /* async */ false,
+                    stmt_ctx,
+                    self.ast.vec(),
+                );
             }
         }
         self.unexpected()

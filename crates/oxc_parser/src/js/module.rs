@@ -442,7 +442,8 @@ impl<'a> ParserImpl<'a> {
                 let modifiers = self.parse_modifiers(false, false);
                 // Save decorators before passing to parse_struct_declaration
                 let export_decorators = decorators;
-                let struct_decl = self.parse_struct_declaration(struct_span, &modifiers, export_decorators);
+                let struct_decl =
+                    self.parse_struct_declaration(struct_span, &modifiers, export_decorators);
                 // Since StructStatement is not a Declaration, we cannot put it in ExportNamedDeclaration.
                 // Instead, we create a Statement and wrap it appropriately.
                 // For now, we'll create an export without a declaration (similar to export { ... })
@@ -450,7 +451,7 @@ impl<'a> ParserImpl<'a> {
                 let export_named_decl = self.ast.alloc_export_named_declaration(
                     self.end_span(span),
                     self.ast.vec(), // decorators already on struct
-                    None, // No declaration since StructStatement is not a Declaration
+                    None,           // No declaration since StructStatement is not a Declaration
                     self.ast.vec(),
                     None,
                     ImportOrExportKind::Value,
