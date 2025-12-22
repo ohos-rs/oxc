@@ -484,6 +484,7 @@ impl GetAddress for ExportDefaultDeclarationKind<'_> {
             Self::FunctionDeclaration(it) => GetAddress::address(it),
             Self::ClassDeclaration(it) => GetAddress::address(it),
             Self::TSInterfaceDeclaration(it) => GetAddress::address(it),
+            Self::StructStatement(it) => GetAddress::address(it),
             Self::BooleanLiteral(it) => GetAddress::address(it),
             Self::NullLiteral(it) => GetAddress::address(it),
             Self::NumericLiteral(it) => GetAddress::address(it),

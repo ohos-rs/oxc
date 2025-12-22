@@ -3585,6 +3585,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for Function<'_> {
         Function {
             span: CloneIn::clone_in(&self.span, allocator),
             r#type: CloneIn::clone_in(&self.r#type, allocator),
+            decorators: CloneIn::clone_in(&self.decorators, allocator),
             id: CloneIn::clone_in(&self.id, allocator),
             generator: CloneIn::clone_in(&self.generator, allocator),
             r#async: CloneIn::clone_in(&self.r#async, allocator),
@@ -3604,6 +3605,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for Function<'_> {
         Function {
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             r#type: CloneIn::clone_in_with_semantic_ids(&self.r#type, allocator),
+            decorators: CloneIn::clone_in_with_semantic_ids(&self.decorators, allocator),
             id: CloneIn::clone_in_with_semantic_ids(&self.id, allocator),
             generator: CloneIn::clone_in_with_semantic_ids(&self.generator, allocator),
             r#async: CloneIn::clone_in_with_semantic_ids(&self.r#async, allocator),
@@ -4387,6 +4389,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ExportNamedDeclaration<'_> {
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ExportNamedDeclaration {
             span: CloneIn::clone_in(&self.span, allocator),
+            decorators: CloneIn::clone_in(&self.decorators, allocator),
             declaration: CloneIn::clone_in(&self.declaration, allocator),
             specifiers: CloneIn::clone_in(&self.specifiers, allocator),
             source: CloneIn::clone_in(&self.source, allocator),
@@ -4398,6 +4401,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ExportNamedDeclaration<'_> {
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ExportNamedDeclaration {
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
+            decorators: CloneIn::clone_in_with_semantic_ids(&self.decorators, allocator),
             declaration: CloneIn::clone_in_with_semantic_ids(&self.declaration, allocator),
             specifiers: CloneIn::clone_in_with_semantic_ids(&self.specifiers, allocator),
             source: CloneIn::clone_in_with_semantic_ids(&self.source, allocator),
@@ -4486,6 +4490,9 @@ impl<'new_alloc> CloneIn<'new_alloc> for ExportDefaultDeclarationKind<'_> {
                 ExportDefaultDeclarationKind::TSInterfaceDeclaration(CloneIn::clone_in(
                     it, allocator,
                 ))
+            }
+            Self::StructStatement(it) => {
+                ExportDefaultDeclarationKind::StructStatement(CloneIn::clone_in(it, allocator))
             }
             Self::BooleanLiteral(it) => {
                 ExportDefaultDeclarationKind::BooleanLiteral(CloneIn::clone_in(it, allocator))
@@ -4651,6 +4658,9 @@ impl<'new_alloc> CloneIn<'new_alloc> for ExportDefaultDeclarationKind<'_> {
                     CloneIn::clone_in_with_semantic_ids(it, allocator),
                 )
             }
+            Self::StructStatement(it) => ExportDefaultDeclarationKind::StructStatement(
+                CloneIn::clone_in_with_semantic_ids(it, allocator),
+            ),
             Self::BooleanLiteral(it) => ExportDefaultDeclarationKind::BooleanLiteral(
                 CloneIn::clone_in_with_semantic_ids(it, allocator),
             ),

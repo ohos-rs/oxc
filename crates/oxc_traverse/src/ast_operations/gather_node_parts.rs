@@ -87,6 +87,9 @@ impl<'a> GatherNodeParts<'a> for ExportDefaultDeclarationKind<'a> {
             ExportDefaultDeclarationKind::FunctionDeclaration(decl) => decl.gather(f),
             ExportDefaultDeclarationKind::ClassDeclaration(decl) => decl.gather(f),
             ExportDefaultDeclarationKind::TSInterfaceDeclaration(_) => {}
+            ExportDefaultDeclarationKind::StructStatement(_) => {
+                // StructStatement doesn't need to gather node parts for now
+            },
             match_expression!(ExportDefaultDeclarationKind) => self.to_expression().gather(f),
         }
     }

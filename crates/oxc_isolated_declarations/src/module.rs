@@ -13,6 +13,7 @@ impl<'a> IsolatedDeclarations<'a> {
 
         Some(self.ast.export_named_declaration(
             prev_decl.span,
+            self.ast.vec(), // decorators
             Some(decl),
             self.ast.vec(),
             None,
@@ -49,6 +50,10 @@ impl<'a> IsolatedDeclarations<'a> {
                 ),
             )),
             ExportDefaultDeclarationKind::TSInterfaceDeclaration(_) => {
+                Some((None, decl.declaration.clone_in(self.ast.allocator)))
+            }
+            ExportDefaultDeclarationKind::StructStatement(_) => {
+                // StructStatement is ArkUI-specific syntax, clone as-is for declaration files
                 Some((None, decl.declaration.clone_in(self.ast.allocator)))
             }
             declaration @ match_expression!(ExportDefaultDeclarationKind) => self

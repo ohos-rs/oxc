@@ -1761,6 +1761,9 @@ pub struct BindingRestElement<'a> {
 pub struct Function<'a> {
     pub span: Span,
     pub r#type: FunctionType,
+    /// Decorators on the function (e.g., `@Builder function ...` in ArkUI)
+    #[ts]
+    pub decorators: Vec<'a, Decorator<'a>>,
     /// The function identifier. [`None`] for anonymous function expressions.
     pub id: Option<BindingIdentifier<'a>>,
     /// Is this a generator function?
@@ -2608,6 +2611,9 @@ pub enum ImportAttributeKey<'a> {
 #[generate_derive(CloneIn, Dummy, TakeIn, GetSpan, GetSpanMut, ContentEq, ESTree, UnstableAddress)]
 pub struct ExportNamedDeclaration<'a> {
     pub span: Span,
+    /// Decorators on the export declaration (e.g., `@Builder export function ...`)
+    #[ts]
+    pub decorators: Vec<'a, Decorator<'a>>,
     pub declaration: Option<Declaration<'a>>,
     pub specifiers: Vec<'a, ExportSpecifier<'a>>,
     pub source: Option<StringLiteral<'a>>,
@@ -2702,6 +2708,8 @@ pub enum ExportDefaultDeclarationKind<'a> {
     ClassDeclaration(Box<'a, Class<'a>>) = 65,
 
     TSInterfaceDeclaration(Box<'a, TSInterfaceDeclaration<'a>>) = 66,
+
+    StructStatement(Box<'a, StructStatement<'a>>) = 67,
 
     // `Expression` variants added here by `inherit_variants!` macro
     @inherit Expression

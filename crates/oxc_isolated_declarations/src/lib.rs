@@ -426,7 +426,7 @@ impl<'a> IsolatedDeclarations<'a> {
             let specifiers = self.ast.vec();
             let kind = ImportOrExportKind::Value;
             let empty_export =
-                self.ast.alloc_export_named_declaration(SPAN, None, specifiers, None, kind, NONE);
+                self.ast.alloc_export_named_declaration(SPAN, self.ast.vec(), None, specifiers, None, kind, NONE);
             new_stmts
                 .push(Statement::from(ModuleDeclaration::ExportNamedDeclaration(empty_export)));
         } else if self.scope.is_ts_module_block() {

@@ -224,7 +224,7 @@ pub static STRUCTS: phf::Map<&'static str, StructDetails> = ::phf::Map {
         ("StaticImport", StructDetails { field_order: None }),
         ("BindingIdentifier", StructDetails { field_order: None }),
         ("TSTypeOperator", StructDetails { field_order: Some(&[0, 2, 1]) }),
-        ("ExportNamedDeclaration", StructDetails { field_order: Some(&[0, 1, 2, 3, 5, 4]) }),
+        ("ExportNamedDeclaration", StructDetails { field_order: Some(&[0, 1, 2, 3, 4, 6, 5]) }),
         ("NamedReference", StructDetails { field_order: None }),
         ("IndexedReference", StructDetails { field_order: None }),
         ("JSXOpeningElement", StructDetails { field_order: None }),
@@ -270,7 +270,9 @@ pub static STRUCTS: phf::Map<&'static str, StructDetails> = ::phf::Map {
         ("TSNamespaceExportDeclaration", StructDetails { field_order: None }),
         (
             "Function",
-            StructDetails { field_order: Some(&[0, 8, 1, 9, 10, 11, 2, 3, 4, 5, 6, 7, 12, 13]) },
+            StructDetails {
+                field_order: Some(&[0, 9, 1, 2, 10, 11, 12, 3, 4, 5, 6, 7, 8, 13, 14]),
+            },
         ),
         ("BlockStatement", StructDetails { field_order: None }),
         ("ScopeId", StructDetails { field_order: None }),

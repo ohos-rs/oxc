@@ -20,6 +20,14 @@ impl<'a> ParserImpl<'a> {
         let span = self.start_span();
         let opening_span = self.cur_token().span();
         self.expect(Kind::LCurly);
+        
+        // Check if this is an ArkUI object literal with expression statements (e.g., { .backgroundColor(...) })
+        // In ArkUI, object literals can contain expression statements starting with dots
+        if self.source_type.is_arkui() && self.at(Kind::Dot) {
+            // Parse as ArkUI object literal with expression statements
+            return self.parse_arkui_object_expression_with_statements(span, opening_span);
+        }
+        
         let (object_expression_properties, comma_span) = self.context_add(Context::In, |p| {
             p.parse_delimited_list(
                 Kind::RCurly,
@@ -33,6 +41,60 @@ impl<'a> ParserImpl<'a> {
         }
         self.expect(Kind::RCurly);
         self.ast.alloc_object_expression(self.end_span(span), object_expression_properties)
+    }
+    
+    /// Parse ArkUI object literal with expression statements
+    /// Example: { .backgroundColor('#ffffeef0') }
+    /// In ArkUI, object literals can contain expression statements starting with dots
+    fn parse_arkui_object_expression_with_statements(
+        &mut self,
+        span: u32,
+        _opening_span: Span,
+    ) -> Box<'a, ObjectExpression<'a>> {
+        use crate::lexer::Kind;
+        let mut properties = self.ast.vec();
+        
+        // Parse expression statements until closing brace
+        while !self.at(Kind::RCurly) && !self.has_fatal_error() {
+            if self.at(Kind::Dot) {
+                // Parse expression statement starting with dot
+                let expr_span = self.start_span();
+                let this_span = self.start_span();
+                let this_expr = self.ast.expression_this(self.end_span(this_span));
+                let expr = self.parse_member_expression_rest_from_lhs_for_primary(expr_span, this_expr);
+                
+                // Create a property with the expression as value
+                // Use a synthetic key for the expression statement
+                let key_span = self.end_span(expr_span);
+                let key_name = self.ast.identifier_name(key_span, oxc_span::Atom::from(""));
+                let key = PropertyKey::StaticIdentifier(self.alloc(key_name));
+                let property = self.ast.alloc_object_property(
+                    self.end_span(expr_span),
+                    PropertyKind::Init,
+                    key,
+                    expr,
+                    false, // not a method
+                    false, // not shorthand
+                    false, // not computed
+                );
+                properties.push(ObjectPropertyKind::ObjectProperty(property));
+                
+                // Optional semicolon
+                let _ = self.eat(Kind::Semicolon);
+            } else {
+                // Parse as normal object property
+                let property = self.parse_object_expression_property();
+                properties.push(property);
+                
+                // Expect comma or closing brace
+                if !self.at(Kind::RCurly) {
+                    self.expect(Kind::Comma);
+                }
+            }
+        }
+        
+        self.expect(Kind::RCurly);
+        self.ast.alloc_object_expression(self.end_span(span), properties)
     }
 
     fn parse_object_expression_property(&mut self) -> ObjectPropertyKind<'a> {

@@ -628,6 +628,7 @@ impl<'a, 'ctx> AsyncGeneratorExecutor<'a, 'ctx> {
         ctx.ast.alloc_function_with_scope_id(
             SPAN,
             r#type,
+            ctx.ast.vec(), // decorators
             id,
             false,
             false,

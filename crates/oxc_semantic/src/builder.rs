@@ -2004,6 +2004,11 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
             ExportDefaultDeclarationKind::TSInterfaceDeclaration(it) => {
                 self.visit_ts_interface_declaration(it);
             }
+            ExportDefaultDeclarationKind::StructStatement(it) => {
+                // StructStatement is similar to ClassDeclaration
+                // Use the default visitor implementation which will handle scoping and binding
+                self.visit_struct_statement(it);
+            }
             ExportDefaultDeclarationKind::Identifier(it) => {
                 // `export default ident`
                 //                 ^^^^^ -> can reference both type/value symbols

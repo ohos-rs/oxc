@@ -943,4 +943,81 @@ mod test {
             panic!("ETS should parse ArkUI component expressions");
         }
     }
+
+    #[test]
+    fn arkui_export_function_with_decorator() {
+        // Test that ArkUI allows decorators on exported functions (e.g., @Builder)
+        let allocator = Allocator::default();
+        let source_type = SourceType::ets();
+        let source = "@Builder\nexport function titleContent() {\n  TitleContent();\n}";
+        let ret = Parser::new(&allocator, source, source_type).parse();
+        assert!(
+            ret.errors.is_empty(),
+            "Should parse exported function with decorator in ArkUI mode. Errors: {:?}",
+            ret.errors
+        );
+        assert_eq!(ret.program.body.len(), 1);
+        // Verify it's an export statement
+        let stmt = &ret.program.body[0];
+        assert!(
+            stmt.is_module_declaration(),
+            "Expected ModuleDeclaration, got: {:?}",
+            stmt
+        );
+    }
+
+    #[test]
+    fn arkui_extend_function() {
+        // Test @Extend decorator on function declarations
+        let allocator = Allocator::default();
+        let source_type = SourceType::ets();
+        let source = "@Extend(Text)\nfunction memoTextExpand() {\n  .textOverflow({ overflow: TextOverflow.Ellipsis })\n  .maxLines(Constants.MAX_TEXT_LINES)\n}";
+        let ret = Parser::new(&allocator, source, source_type).parse();
+        assert!(
+            ret.errors.is_empty(),
+            "Should parse @Extend function in ArkUI mode. Errors: {:?}",
+            ret.errors
+        );
+        assert_eq!(ret.program.body.len(), 1);
+        if let Statement::FunctionDeclaration(func) = &ret.program.body[0] {
+            assert_eq!(func.id.as_ref().unwrap().name.as_str(), "memoTextExpand");
+            assert!(!func.decorators.is_empty(), "Function should have decorators");
+            // Verify function body has statements
+            if let Some(body) = &func.body {
+                assert!(!body.statements.is_empty(), "Function body should have statements");
+                // The two method calls are chained together as a single expression statement
+                assert_eq!(body.statements.len(), 1, "Should have 1 chained expression statement");
+            }
+        } else {
+            panic!("Expected FunctionDeclaration");
+        }
+    }
+
+    #[test]
+    fn arkui_extend_function_single_chain() {
+        // Test @Extend with single method chain
+        let allocator = Allocator::default();
+        let source_type = SourceType::ets();
+        let source = "@Extend(Text)\nfunction test() {\n  .fontSize(16)\n}";
+        let ret = Parser::new(&allocator, source, source_type).parse();
+        assert!(
+            ret.errors.is_empty(),
+            "Should parse @Extend function with single chain. Errors: {:?}",
+            ret.errors
+        );
+    }
+
+    #[test]
+    fn arkui_extend_function_property_access() {
+        // Test @Extend with property access (not just method calls)
+        let allocator = Allocator::default();
+        let source_type = SourceType::ets();
+        let source = "@Extend(Text)\nfunction test() {\n  .fontSize\n}";
+        let ret = Parser::new(&allocator, source, source_type).parse();
+        assert!(
+            ret.errors.is_empty(),
+            "Should parse @Extend function with property access. Errors: {:?}",
+            ret.errors
+        );
+    }
 }

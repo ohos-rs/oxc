@@ -169,6 +169,16 @@ impl<'a> ParserImpl<'a> {
     ///     `TemplateLiteral`[?Yield, ?Await, ~Tagged]
     ///     `CoverParenthesizedExpressionAndArrowParameterList`[?Yield, ?Await]
     fn parse_primary_expression(&mut self) -> Expression<'a> {
+        // Handle ArkUI expressions starting with dots (e.g., in object literals or function bodies)
+        // Example: { focused: { .backgroundColor('#ffffeef0') } }
+        if self.source_type.is_arkui() && self.at(Kind::Dot) {
+            let span = self.start_span();
+            // Parse as method chaining expression starting from 'this'
+            let this_span = self.start_span();
+            let this_expr = self.ast.expression_this(self.end_span(this_span));
+            return self.parse_member_expression_rest_from_lhs_for_primary(span, this_expr);
+        }
+
         // FunctionExpression, GeneratorExpression
         // AsyncFunctionExpression, AsyncGeneratorExpression
         if self.at_function_with_async() {
@@ -210,6 +220,84 @@ impl<'a> ParserImpl<'a> {
             kind if kind.is_literal() => self.parse_literal_expression(),
             _ => self.parse_identifier_expression(),
         }
+    }
+    
+    /// Parse member expression rest starting from a given LHS for primary expressions
+    /// Used for ArkUI expressions starting with dots in object literals and other contexts
+    pub(crate) fn parse_member_expression_rest_from_lhs_for_primary(
+        &mut self,
+        _lhs_span: u32,
+        lhs: Expression<'a>,
+    ) -> Expression<'a> {
+        use crate::lexer::Kind;
+        let mut lhs = lhs;
+        
+        loop {
+            if self.fatal_error.is_some() {
+                return lhs;
+            }
+            
+            let is_property_access = self.eat(Kind::Dot);
+            if !is_property_access {
+                break;
+            }
+            
+            if self.cur_kind().is_identifier_or_keyword() {
+                let ident_span = self.start_span();
+                let ident = self.parse_identifier_name();
+                if self.at(Kind::LParen) {
+                    // Method call: .methodName(...)
+                    let member_expr = self.ast.member_expression_static(
+                        self.end_span(ident_span),
+                        lhs,
+                        ident,
+                        false,
+                    );
+                    // Parse call arguments
+                    let call_span = self.start_span();
+                    let opening_span = self.cur_token().span();
+                    self.expect(Kind::LParen);
+                    let (exprs, _) = self.parse_delimited_list(
+                        Kind::RParen,
+                        Kind::Comma,
+                        opening_span,
+                        Self::parse_assignment_expression_or_higher,
+                    );
+                    let mut call_args = self.ast.vec();
+                    for expr in exprs {
+                        call_args.push(Argument::from(expr));
+                    }
+                    self.expect(Kind::RParen);
+                    // Create call expression
+                    lhs = self.ast.expression_call(
+                        self.end_span(call_span),
+                        Expression::from(member_expr),
+                        oxc_ast::NONE,
+                        call_args,
+                        false,
+                    );
+                    // Continue parsing more chain expressions
+                    continue;
+                } else {
+                    // Property access: .propertyName
+                    lhs = Expression::from(self.ast.member_expression_static(
+                        self.end_span(ident_span),
+                        lhs,
+                        ident,
+                        false,
+                    ));
+                    // Check if there are more chain expressions
+                    if !self.at(Kind::Dot) {
+                        break;
+                    }
+                    continue;
+                }
+            }
+            
+            break;
+        }
+        
+        lhs
     }
 
     fn parse_parenthesized_expression(&mut self) -> Expression<'a> {

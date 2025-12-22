@@ -4029,6 +4029,24 @@ impl<'a> AstNode<'a, Function<'a>> {
     }
 
     #[inline]
+    pub fn decorators(&self) -> &AstNode<'a, Vec<'a, Decorator<'a>>> {
+        let following_span = self
+            .inner
+            .id
+            .as_ref()
+            .map(GetSpan::span)
+            .or_else(|| self.inner.type_parameters.as_deref().map(GetSpan::span))
+            .or_else(|| self.inner.this_param.as_deref().map(GetSpan::span))
+            .or_else(|| Some(self.inner.params.span()));
+        self.allocator.alloc(AstNode {
+            inner: &self.inner.decorators,
+            allocator: self.allocator,
+            parent: self.allocator.alloc(AstNodes::Function(transmute_self(self))),
+            following_span,
+        })
+    }
+
+    #[inline]
     pub fn id(&self) -> Option<&AstNode<'a, BindingIdentifier<'a>>> {
         let following_span = self
             .inner
@@ -5271,6 +5289,24 @@ impl<'a> AstNode<'a, ImportAttributeKey<'a>> {
 
 impl<'a> AstNode<'a, ExportNamedDeclaration<'a>> {
     #[inline]
+    pub fn decorators(&self) -> &AstNode<'a, Vec<'a, Decorator<'a>>> {
+        let following_span = self
+            .inner
+            .declaration
+            .as_ref()
+            .map(GetSpan::span)
+            .or_else(|| self.inner.specifiers.first().map(GetSpan::span))
+            .or_else(|| self.inner.source.as_ref().map(GetSpan::span))
+            .or_else(|| self.inner.with_clause.as_deref().map(GetSpan::span));
+        self.allocator.alloc(AstNode {
+            inner: &self.inner.decorators,
+            allocator: self.allocator,
+            parent: self.allocator.alloc(AstNodes::ExportNamedDeclaration(transmute_self(self))),
+            following_span,
+        })
+    }
+
+    #[inline]
     pub fn declaration(&self) -> Option<&AstNode<'a, Declaration<'a>>> {
         let following_span = self
             .inner
@@ -5481,6 +5517,14 @@ impl<'a> AstNode<'a, ExportDefaultDeclarationKind<'a>> {
             }
             ExportDefaultDeclarationKind::TSInterfaceDeclaration(s) => {
                 AstNodes::TSInterfaceDeclaration(self.allocator.alloc(AstNode {
+                    inner: s.as_ref(),
+                    parent,
+                    allocator: self.allocator,
+                    following_span: self.following_span,
+                }))
+            }
+            ExportDefaultDeclarationKind::StructStatement(s) => {
+                AstNodes::StructStatement(self.allocator.alloc(AstNode {
                     inner: s.as_ref(),
                     parent,
                     allocator: self.allocator,

@@ -712,7 +712,15 @@ impl Gen for Function<'_> {
         let wrap = self.is_expression()
             && ((p.start_of_stmt == n || p.start_of_default_export == n) || self.pife);
         let ctx = ctx.and_forbid_call(false);
+        // Check if decorators should be skipped (they're handled by the parent export)
+        let skip_decorators = p.skip_function_decorators;
         p.wrap(wrap, |p| {
+            // Print decorators if present (e.g., @Builder in ArkUI)
+            // For exported functions, decorators are handled by ExportNamedDeclaration
+            // to ensure proper placement relative to the export keyword
+            if !self.decorators.is_empty() && !skip_decorators {
+                p.print_decorators(&self.decorators, ctx);
+            }
             p.print_space_before_identifier();
             p.add_source_mapping(self.span);
             if self.declare {
@@ -975,9 +983,25 @@ impl Gen for ExportNamedDeclaration<'_> {
         }
         p.add_source_mapping(self.span);
         p.print_indent();
+        // Print function decorators before export keyword (e.g., @Builder export function ...)
+        let has_function_decorators = if let Some(Declaration::FunctionDeclaration(func)) = &self.declaration {
+            !func.decorators.is_empty()
+        } else {
+            false
+        };
+        if has_function_decorators {
+            if let Some(Declaration::FunctionDeclaration(func)) = &self.declaration {
+                p.print_decorators(&func.decorators, ctx);
+            }
+        }
         p.print_str("export");
         if let Some(decl) = &self.declaration {
             p.print_hard_space();
+            // Set flag to skip function decorators since we already printed them above
+            let old_skip = p.skip_function_decorators;
+            if has_function_decorators {
+                p.skip_function_decorators = true;
+            }
             match decl {
                 Declaration::VariableDeclaration(decl) => decl.print(p, ctx),
                 Declaration::FunctionDeclaration(decl) => decl.print(p, ctx),
@@ -989,6 +1013,8 @@ impl Gen for ExportNamedDeclaration<'_> {
                 Declaration::TSEnumDeclaration(decl) => decl.print(p, ctx),
                 Declaration::TSImportEqualsDeclaration(decl) => decl.print(p, ctx),
             }
+            // Restore the flag
+            p.skip_function_decorators = old_skip;
             if matches!(
                 decl,
                 Declaration::VariableDeclaration(_)
@@ -1148,6 +1174,10 @@ impl Gen for ExportDefaultDeclarationKind<'_> {
                 p.print_soft_newline();
             }
             Self::TSInterfaceDeclaration(interface) => interface.print(p, ctx),
+            Self::StructStatement(struct_stmt) => {
+                struct_stmt.print(p, ctx);
+                p.print_soft_newline();
+            }
             _ => {
                 p.start_of_default_export = p.code_len();
                 self.to_expression().print_expr(p, Precedence::Comma, Context::empty());

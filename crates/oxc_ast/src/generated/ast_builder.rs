@@ -680,6 +680,7 @@ impl<'a> AstBuilder<'a> {
     /// ## Parameters
     /// * `span`: The [`Span`] covering this node
     /// * `type`
+    /// * `decorators`: Decorators on the function (e.g., `@Builder function ...` in ArkUI)
     /// * `id`: The function identifier. [`None`] for anonymous function expressions.
     /// * `generator`: Is this a generator function?
     /// * `async`
@@ -694,6 +695,7 @@ impl<'a> AstBuilder<'a> {
         self,
         span: Span,
         r#type: FunctionType,
+        decorators: Vec<'a, Decorator<'a>>,
         id: Option<BindingIdentifier<'a>>,
         generator: bool,
         r#async: bool,
@@ -714,6 +716,7 @@ impl<'a> AstBuilder<'a> {
         Expression::FunctionExpression(self.alloc_function(
             span,
             r#type,
+            decorators,
             id,
             generator,
             r#async,
@@ -733,6 +736,7 @@ impl<'a> AstBuilder<'a> {
     /// ## Parameters
     /// * `span`: The [`Span`] covering this node
     /// * `type`
+    /// * `decorators`: Decorators on the function (e.g., `@Builder function ...` in ArkUI)
     /// * `id`: The function identifier. [`None`] for anonymous function expressions.
     /// * `generator`: Is this a generator function?
     /// * `async`
@@ -750,6 +754,7 @@ impl<'a> AstBuilder<'a> {
         self,
         span: Span,
         r#type: FunctionType,
+        decorators: Vec<'a, Decorator<'a>>,
         id: Option<BindingIdentifier<'a>>,
         generator: bool,
         r#async: bool,
@@ -773,6 +778,7 @@ impl<'a> AstBuilder<'a> {
         Expression::FunctionExpression(self.alloc_function_with_scope_id_and_pure_and_pife(
             span,
             r#type,
+            decorators,
             id,
             generator,
             r#async,
@@ -3997,6 +4003,7 @@ impl<'a> AstBuilder<'a> {
     /// ## Parameters
     /// * `span`: The [`Span`] covering this node
     /// * `type`
+    /// * `decorators`: Decorators on the function (e.g., `@Builder function ...` in ArkUI)
     /// * `id`: The function identifier. [`None`] for anonymous function expressions.
     /// * `generator`: Is this a generator function?
     /// * `async`
@@ -4011,6 +4018,7 @@ impl<'a> AstBuilder<'a> {
         self,
         span: Span,
         r#type: FunctionType,
+        decorators: Vec<'a, Decorator<'a>>,
         id: Option<BindingIdentifier<'a>>,
         generator: bool,
         r#async: bool,
@@ -4031,6 +4039,7 @@ impl<'a> AstBuilder<'a> {
         Declaration::FunctionDeclaration(self.alloc_function(
             span,
             r#type,
+            decorators,
             id,
             generator,
             r#async,
@@ -4050,6 +4059,7 @@ impl<'a> AstBuilder<'a> {
     /// ## Parameters
     /// * `span`: The [`Span`] covering this node
     /// * `type`
+    /// * `decorators`: Decorators on the function (e.g., `@Builder function ...` in ArkUI)
     /// * `id`: The function identifier. [`None`] for anonymous function expressions.
     /// * `generator`: Is this a generator function?
     /// * `async`
@@ -4067,6 +4077,7 @@ impl<'a> AstBuilder<'a> {
         self,
         span: Span,
         r#type: FunctionType,
+        decorators: Vec<'a, Decorator<'a>>,
         id: Option<BindingIdentifier<'a>>,
         generator: bool,
         r#async: bool,
@@ -4090,6 +4101,7 @@ impl<'a> AstBuilder<'a> {
         Declaration::FunctionDeclaration(self.alloc_function_with_scope_id_and_pure_and_pife(
             span,
             r#type,
+            decorators,
             id,
             generator,
             r#async,
@@ -5956,6 +5968,7 @@ impl<'a> AstBuilder<'a> {
     /// ## Parameters
     /// * `span`: The [`Span`] covering this node
     /// * `type`
+    /// * `decorators`: Decorators on the function (e.g., `@Builder function ...` in ArkUI)
     /// * `id`: The function identifier. [`None`] for anonymous function expressions.
     /// * `generator`: Is this a generator function?
     /// * `async`
@@ -5970,6 +5983,7 @@ impl<'a> AstBuilder<'a> {
         self,
         span: Span,
         r#type: FunctionType,
+        decorators: Vec<'a, Decorator<'a>>,
         id: Option<BindingIdentifier<'a>>,
         generator: bool,
         r#async: bool,
@@ -5990,6 +6004,7 @@ impl<'a> AstBuilder<'a> {
         Function {
             span,
             r#type,
+            decorators,
             id,
             generator,
             r#async,
@@ -6013,6 +6028,7 @@ impl<'a> AstBuilder<'a> {
     /// ## Parameters
     /// * `span`: The [`Span`] covering this node
     /// * `type`
+    /// * `decorators`: Decorators on the function (e.g., `@Builder function ...` in ArkUI)
     /// * `id`: The function identifier. [`None`] for anonymous function expressions.
     /// * `generator`: Is this a generator function?
     /// * `async`
@@ -6027,6 +6043,7 @@ impl<'a> AstBuilder<'a> {
         self,
         span: Span,
         r#type: FunctionType,
+        decorators: Vec<'a, Decorator<'a>>,
         id: Option<BindingIdentifier<'a>>,
         generator: bool,
         r#async: bool,
@@ -6048,6 +6065,7 @@ impl<'a> AstBuilder<'a> {
             self.function(
                 span,
                 r#type,
+                decorators,
                 id,
                 generator,
                 r#async,
@@ -6070,6 +6088,7 @@ impl<'a> AstBuilder<'a> {
     /// ## Parameters
     /// * `span`: The [`Span`] covering this node
     /// * `type`
+    /// * `decorators`: Decorators on the function (e.g., `@Builder function ...` in ArkUI)
     /// * `id`: The function identifier. [`None`] for anonymous function expressions.
     /// * `generator`: Is this a generator function?
     /// * `async`
@@ -6087,6 +6106,7 @@ impl<'a> AstBuilder<'a> {
         self,
         span: Span,
         r#type: FunctionType,
+        decorators: Vec<'a, Decorator<'a>>,
         id: Option<BindingIdentifier<'a>>,
         generator: bool,
         r#async: bool,
@@ -6110,6 +6130,7 @@ impl<'a> AstBuilder<'a> {
         Function {
             span,
             r#type,
+            decorators,
             id,
             generator,
             r#async,
@@ -6133,6 +6154,7 @@ impl<'a> AstBuilder<'a> {
     /// ## Parameters
     /// * `span`: The [`Span`] covering this node
     /// * `type`
+    /// * `decorators`: Decorators on the function (e.g., `@Builder function ...` in ArkUI)
     /// * `id`: The function identifier. [`None`] for anonymous function expressions.
     /// * `generator`: Is this a generator function?
     /// * `async`
@@ -6150,6 +6172,7 @@ impl<'a> AstBuilder<'a> {
         self,
         span: Span,
         r#type: FunctionType,
+        decorators: Vec<'a, Decorator<'a>>,
         id: Option<BindingIdentifier<'a>>,
         generator: bool,
         r#async: bool,
@@ -6174,6 +6197,7 @@ impl<'a> AstBuilder<'a> {
             self.function_with_scope_id_and_pure_and_pife(
                 span,
                 r#type,
+                decorators,
                 id,
                 generator,
                 r#async,
@@ -7417,6 +7441,7 @@ impl<'a> AstBuilder<'a> {
     ///
     /// ## Parameters
     /// * `span`: The [`Span`] covering this node
+    /// * `decorators`: Decorators on the export declaration (e.g., `@Builder export function ...`)
     /// * `declaration`
     /// * `specifiers`
     /// * `source`
@@ -7426,6 +7451,7 @@ impl<'a> AstBuilder<'a> {
     pub fn module_declaration_export_named_declaration<T1>(
         self,
         span: Span,
+        decorators: Vec<'a, Decorator<'a>>,
         declaration: Option<Declaration<'a>>,
         specifiers: Vec<'a, ExportSpecifier<'a>>,
         source: Option<StringLiteral<'a>>,
@@ -7437,6 +7463,7 @@ impl<'a> AstBuilder<'a> {
     {
         ModuleDeclaration::ExportNamedDeclaration(self.alloc_export_named_declaration(
             span,
+            decorators,
             declaration,
             specifiers,
             source,
@@ -7980,6 +8007,7 @@ impl<'a> AstBuilder<'a> {
     ///
     /// ## Parameters
     /// * `span`: The [`Span`] covering this node
+    /// * `decorators`: Decorators on the export declaration (e.g., `@Builder export function ...`)
     /// * `declaration`
     /// * `specifiers`
     /// * `source`
@@ -7989,6 +8017,7 @@ impl<'a> AstBuilder<'a> {
     pub fn export_named_declaration<T1>(
         self,
         span: Span,
+        decorators: Vec<'a, Decorator<'a>>,
         declaration: Option<Declaration<'a>>,
         specifiers: Vec<'a, ExportSpecifier<'a>>,
         source: Option<StringLiteral<'a>>,
@@ -8000,6 +8029,7 @@ impl<'a> AstBuilder<'a> {
     {
         ExportNamedDeclaration {
             span,
+            decorators,
             declaration,
             specifiers,
             source,
@@ -8015,6 +8045,7 @@ impl<'a> AstBuilder<'a> {
     ///
     /// ## Parameters
     /// * `span`: The [`Span`] covering this node
+    /// * `decorators`: Decorators on the export declaration (e.g., `@Builder export function ...`)
     /// * `declaration`
     /// * `specifiers`
     /// * `source`
@@ -8024,6 +8055,7 @@ impl<'a> AstBuilder<'a> {
     pub fn alloc_export_named_declaration<T1>(
         self,
         span: Span,
+        decorators: Vec<'a, Decorator<'a>>,
         declaration: Option<Declaration<'a>>,
         specifiers: Vec<'a, ExportSpecifier<'a>>,
         source: Option<StringLiteral<'a>>,
@@ -8036,6 +8068,7 @@ impl<'a> AstBuilder<'a> {
         Box::new_in(
             self.export_named_declaration(
                 span,
+                decorators,
                 declaration,
                 specifiers,
                 source,
@@ -8166,6 +8199,7 @@ impl<'a> AstBuilder<'a> {
     /// ## Parameters
     /// * `span`: The [`Span`] covering this node
     /// * `type`
+    /// * `decorators`: Decorators on the function (e.g., `@Builder function ...` in ArkUI)
     /// * `id`: The function identifier. [`None`] for anonymous function expressions.
     /// * `generator`: Is this a generator function?
     /// * `async`
@@ -8180,6 +8214,7 @@ impl<'a> AstBuilder<'a> {
         self,
         span: Span,
         r#type: FunctionType,
+        decorators: Vec<'a, Decorator<'a>>,
         id: Option<BindingIdentifier<'a>>,
         generator: bool,
         r#async: bool,
@@ -8200,6 +8235,7 @@ impl<'a> AstBuilder<'a> {
         ExportDefaultDeclarationKind::FunctionDeclaration(self.alloc_function(
             span,
             r#type,
+            decorators,
             id,
             generator,
             r#async,
@@ -8219,6 +8255,7 @@ impl<'a> AstBuilder<'a> {
     /// ## Parameters
     /// * `span`: The [`Span`] covering this node
     /// * `type`
+    /// * `decorators`: Decorators on the function (e.g., `@Builder function ...` in ArkUI)
     /// * `id`: The function identifier. [`None`] for anonymous function expressions.
     /// * `generator`: Is this a generator function?
     /// * `async`
@@ -8242,6 +8279,7 @@ impl<'a> AstBuilder<'a> {
         self,
         span: Span,
         r#type: FunctionType,
+        decorators: Vec<'a, Decorator<'a>>,
         id: Option<BindingIdentifier<'a>>,
         generator: bool,
         r#async: bool,
@@ -8266,6 +8304,7 @@ impl<'a> AstBuilder<'a> {
             self.alloc_function_with_scope_id_and_pure_and_pife(
                 span,
                 r#type,
+                decorators,
                 id,
                 generator,
                 r#async,
@@ -8460,6 +8499,73 @@ impl<'a> AstBuilder<'a> {
                 scope_id,
             ),
         )
+    }
+
+    /// Build an [`ExportDefaultDeclarationKind::StructStatement`].
+    ///
+    /// This node contains a [`StructStatement`] that will be stored in the memory arena.
+    ///
+    /// ## Parameters
+    /// * `span`: Span
+    /// * `decorators`: Decorators applied to the struct.
+    /// * `id`: Struct identifier, AKA the name
+    /// * `type_parameters`: Type parameters (for generic structs, if supported)
+    /// * `body`: Struct body containing properties and methods
+    #[inline]
+    pub fn export_default_declaration_kind_struct_statement<T1, T2>(
+        self,
+        span: Span,
+        decorators: Vec<'a, Decorator<'a>>,
+        id: BindingIdentifier<'a>,
+        type_parameters: T1,
+        body: T2,
+    ) -> ExportDefaultDeclarationKind<'a>
+    where
+        T1: IntoIn<'a, Option<Box<'a, TSTypeParameterDeclaration<'a>>>>,
+        T2: IntoIn<'a, Box<'a, StructBody<'a>>>,
+    {
+        ExportDefaultDeclarationKind::StructStatement(self.alloc_struct_statement(
+            span,
+            decorators,
+            id,
+            type_parameters,
+            body,
+        ))
+    }
+
+    /// Build an [`ExportDefaultDeclarationKind::StructStatement`] with `scope_id`.
+    ///
+    /// This node contains a [`StructStatement`] that will be stored in the memory arena.
+    ///
+    /// ## Parameters
+    /// * `span`: Span
+    /// * `decorators`: Decorators applied to the struct.
+    /// * `id`: Struct identifier, AKA the name
+    /// * `type_parameters`: Type parameters (for generic structs, if supported)
+    /// * `body`: Struct body containing properties and methods
+    /// * `scope_id`: Id of the scope created by the [`StructStatement`], including type parameters and
+    #[inline]
+    pub fn export_default_declaration_kind_struct_statement_with_scope_id<T1, T2>(
+        self,
+        span: Span,
+        decorators: Vec<'a, Decorator<'a>>,
+        id: BindingIdentifier<'a>,
+        type_parameters: T1,
+        body: T2,
+        scope_id: ScopeId,
+    ) -> ExportDefaultDeclarationKind<'a>
+    where
+        T1: IntoIn<'a, Option<Box<'a, TSTypeParameterDeclaration<'a>>>>,
+        T2: IntoIn<'a, Box<'a, StructBody<'a>>>,
+    {
+        ExportDefaultDeclarationKind::StructStatement(self.alloc_struct_statement_with_scope_id(
+            span,
+            decorators,
+            id,
+            type_parameters,
+            body,
+            scope_id,
+        ))
     }
 
     /// Build a [`ModuleExportName::IdentifierName`].

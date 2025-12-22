@@ -1158,6 +1158,7 @@ impl GetSpanMut for ExportDefaultDeclarationKind<'_> {
             Self::FunctionDeclaration(it) => GetSpanMut::span_mut(&mut **it),
             Self::ClassDeclaration(it) => GetSpanMut::span_mut(&mut **it),
             Self::TSInterfaceDeclaration(it) => GetSpanMut::span_mut(&mut **it),
+            Self::StructStatement(it) => GetSpanMut::span_mut(&mut **it),
             Self::BooleanLiteral(it) => GetSpanMut::span_mut(&mut **it),
             Self::NullLiteral(it) => GetSpanMut::span_mut(&mut **it),
             Self::NumericLiteral(it) => GetSpanMut::span_mut(&mut **it),

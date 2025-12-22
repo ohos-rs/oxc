@@ -571,22 +571,23 @@ const _: () = {
     assert!(offset_of!(BindingRestElement, argument) == 8);
 
     // Padding: 6 bytes
-    assert!(size_of::<Function>() == 96);
+    assert!(size_of::<Function>() == 120);
     assert!(align_of::<Function>() == 8);
     assert!(offset_of!(Function, span) == 0);
-    assert!(offset_of!(Function, r#type) == 84);
-    assert!(offset_of!(Function, id) == 8);
-    assert!(offset_of!(Function, generator) == 85);
-    assert!(offset_of!(Function, r#async) == 86);
-    assert!(offset_of!(Function, declare) == 87);
-    assert!(offset_of!(Function, type_parameters) == 40);
-    assert!(offset_of!(Function, this_param) == 48);
-    assert!(offset_of!(Function, params) == 56);
-    assert!(offset_of!(Function, return_type) == 64);
-    assert!(offset_of!(Function, body) == 72);
-    assert!(offset_of!(Function, scope_id) == 80);
-    assert!(offset_of!(Function, pure) == 88);
-    assert!(offset_of!(Function, pife) == 89);
+    assert!(offset_of!(Function, r#type) == 108);
+    assert!(offset_of!(Function, decorators) == 8);
+    assert!(offset_of!(Function, id) == 32);
+    assert!(offset_of!(Function, generator) == 109);
+    assert!(offset_of!(Function, r#async) == 110);
+    assert!(offset_of!(Function, declare) == 111);
+    assert!(offset_of!(Function, type_parameters) == 64);
+    assert!(offset_of!(Function, this_param) == 72);
+    assert!(offset_of!(Function, params) == 80);
+    assert!(offset_of!(Function, return_type) == 88);
+    assert!(offset_of!(Function, body) == 96);
+    assert!(offset_of!(Function, scope_id) == 104);
+    assert!(offset_of!(Function, pure) == 112);
+    assert!(offset_of!(Function, pife) == 113);
 
     assert!(size_of::<FunctionType>() == 1);
     assert!(align_of::<FunctionType>() == 1);
@@ -809,14 +810,15 @@ const _: () = {
     assert!(align_of::<ImportAttributeKey>() == 8);
 
     // Padding: 7 bytes
-    assert!(size_of::<ExportNamedDeclaration>() == 112);
+    assert!(size_of::<ExportNamedDeclaration>() == 136);
     assert!(align_of::<ExportNamedDeclaration>() == 8);
     assert!(offset_of!(ExportNamedDeclaration, span) == 0);
-    assert!(offset_of!(ExportNamedDeclaration, declaration) == 8);
-    assert!(offset_of!(ExportNamedDeclaration, specifiers) == 24);
-    assert!(offset_of!(ExportNamedDeclaration, source) == 48);
-    assert!(offset_of!(ExportNamedDeclaration, export_kind) == 104);
-    assert!(offset_of!(ExportNamedDeclaration, with_clause) == 96);
+    assert!(offset_of!(ExportNamedDeclaration, decorators) == 8);
+    assert!(offset_of!(ExportNamedDeclaration, declaration) == 32);
+    assert!(offset_of!(ExportNamedDeclaration, specifiers) == 48);
+    assert!(offset_of!(ExportNamedDeclaration, source) == 72);
+    assert!(offset_of!(ExportNamedDeclaration, export_kind) == 128);
+    assert!(offset_of!(ExportNamedDeclaration, with_clause) == 120);
 
     // Padding: 0 bytes
     assert!(size_of::<ExportDefaultDeclaration>() == 24);
@@ -2219,22 +2221,23 @@ const _: () = if cfg!(target_family = "wasm") || align_of::<u64>() == 8 {
     assert!(offset_of!(BindingRestElement, argument) == 8);
 
     // Padding: 2 bytes
-    assert!(size_of::<Function>() == 60);
+    assert!(size_of::<Function>() == 76);
     assert!(align_of::<Function>() == 4);
     assert!(offset_of!(Function, span) == 0);
-    assert!(offset_of!(Function, r#type) == 52);
-    assert!(offset_of!(Function, id) == 8);
-    assert!(offset_of!(Function, generator) == 53);
-    assert!(offset_of!(Function, r#async) == 54);
-    assert!(offset_of!(Function, declare) == 55);
-    assert!(offset_of!(Function, type_parameters) == 28);
-    assert!(offset_of!(Function, this_param) == 32);
-    assert!(offset_of!(Function, params) == 36);
-    assert!(offset_of!(Function, return_type) == 40);
-    assert!(offset_of!(Function, body) == 44);
-    assert!(offset_of!(Function, scope_id) == 48);
-    assert!(offset_of!(Function, pure) == 56);
-    assert!(offset_of!(Function, pife) == 57);
+    assert!(offset_of!(Function, r#type) == 68);
+    assert!(offset_of!(Function, decorators) == 8);
+    assert!(offset_of!(Function, id) == 24);
+    assert!(offset_of!(Function, generator) == 69);
+    assert!(offset_of!(Function, r#async) == 70);
+    assert!(offset_of!(Function, declare) == 71);
+    assert!(offset_of!(Function, type_parameters) == 44);
+    assert!(offset_of!(Function, this_param) == 48);
+    assert!(offset_of!(Function, params) == 52);
+    assert!(offset_of!(Function, return_type) == 56);
+    assert!(offset_of!(Function, body) == 60);
+    assert!(offset_of!(Function, scope_id) == 64);
+    assert!(offset_of!(Function, pure) == 72);
+    assert!(offset_of!(Function, pife) == 73);
 
     assert!(size_of::<FunctionType>() == 1);
     assert!(align_of::<FunctionType>() == 1);
@@ -2457,14 +2460,15 @@ const _: () = if cfg!(target_family = "wasm") || align_of::<u64>() == 8 {
     assert!(align_of::<ImportAttributeKey>() == 4);
 
     // Padding: 3 bytes
-    assert!(size_of::<ExportNamedDeclaration>() == 68);
+    assert!(size_of::<ExportNamedDeclaration>() == 84);
     assert!(align_of::<ExportNamedDeclaration>() == 4);
     assert!(offset_of!(ExportNamedDeclaration, span) == 0);
-    assert!(offset_of!(ExportNamedDeclaration, declaration) == 8);
-    assert!(offset_of!(ExportNamedDeclaration, specifiers) == 16);
-    assert!(offset_of!(ExportNamedDeclaration, source) == 32);
-    assert!(offset_of!(ExportNamedDeclaration, export_kind) == 64);
-    assert!(offset_of!(ExportNamedDeclaration, with_clause) == 60);
+    assert!(offset_of!(ExportNamedDeclaration, decorators) == 8);
+    assert!(offset_of!(ExportNamedDeclaration, declaration) == 24);
+    assert!(offset_of!(ExportNamedDeclaration, specifiers) == 32);
+    assert!(offset_of!(ExportNamedDeclaration, source) == 48);
+    assert!(offset_of!(ExportNamedDeclaration, export_kind) == 80);
+    assert!(offset_of!(ExportNamedDeclaration, with_clause) == 76);
 
     // Padding: 0 bytes
     assert!(size_of::<ExportDefaultDeclaration>() == 16);

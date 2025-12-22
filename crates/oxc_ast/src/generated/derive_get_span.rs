@@ -1158,6 +1158,7 @@ impl GetSpan for ExportDefaultDeclarationKind<'_> {
             Self::FunctionDeclaration(it) => GetSpan::span(&**it),
             Self::ClassDeclaration(it) => GetSpan::span(&**it),
             Self::TSInterfaceDeclaration(it) => GetSpan::span(&**it),
+            Self::StructStatement(it) => GetSpan::span(&**it),
             Self::BooleanLiteral(it) => GetSpan::span(&**it),
             Self::NullLiteral(it) => GetSpan::span(&**it),
             Self::NumericLiteral(it) => GetSpan::span(&**it),

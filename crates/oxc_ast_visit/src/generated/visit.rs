@@ -1285,13 +1285,13 @@ pub trait Visit<'a>: Sized {
     }
 
     #[inline]
-    fn visit_formal_parameter_list(&mut self, it: &Vec<'a, FormalParameter<'a>>) {
-        walk_formal_parameter_list(self, it);
+    fn visit_decorators(&mut self, it: &Vec<'a, Decorator<'a>>) {
+        walk_decorators(self, it);
     }
 
     #[inline]
-    fn visit_decorators(&mut self, it: &Vec<'a, Decorator<'a>>) {
-        walk_decorators(self, it);
+    fn visit_formal_parameter_list(&mut self, it: &Vec<'a, FormalParameter<'a>>) {
+        walk_formal_parameter_list(self, it);
     }
 
     #[inline]
@@ -2494,6 +2494,7 @@ pub mod walk {
             &it.scope_id,
         );
         visitor.visit_span(&it.span);
+        visitor.visit_decorators(&it.decorators);
         if let Some(id) = &it.id {
             visitor.visit_binding_identifier(id);
         }
@@ -2832,7 +2833,6 @@ pub mod walk {
         }
     }
 
-    #[inline]
     pub fn walk_export_named_declaration<'a, V: Visit<'a>>(
         visitor: &mut V,
         it: &ExportNamedDeclaration<'a>,
@@ -2840,6 +2840,7 @@ pub mod walk {
         let kind = AstKind::ExportNamedDeclaration(visitor.alloc(it));
         visitor.enter_node(kind);
         visitor.visit_span(&it.span);
+        visitor.visit_decorators(&it.decorators);
         if let Some(declaration) = &it.declaration {
             visitor.visit_declaration(declaration);
         }
@@ -2908,6 +2909,7 @@ pub mod walk {
             ExportDefaultDeclarationKind::TSInterfaceDeclaration(it) => {
                 visitor.visit_ts_interface_declaration(it)
             }
+            ExportDefaultDeclarationKind::StructStatement(it) => visitor.visit_struct_statement(it),
             match_expression!(ExportDefaultDeclarationKind) => {
                 visitor.visit_expression(it.to_expression())
             }
@@ -4432,19 +4434,19 @@ pub mod walk {
     }
 
     #[inline]
+    pub fn walk_decorators<'a, V: Visit<'a>>(visitor: &mut V, it: &Vec<'a, Decorator<'a>>) {
+        for el in it {
+            visitor.visit_decorator(el);
+        }
+    }
+
+    #[inline]
     pub fn walk_formal_parameter_list<'a, V: Visit<'a>>(
         visitor: &mut V,
         it: &Vec<'a, FormalParameter<'a>>,
     ) {
         for el in it {
             visitor.visit_formal_parameter(el);
-        }
-    }
-
-    #[inline]
-    pub fn walk_decorators<'a, V: Visit<'a>>(visitor: &mut V, it: &Vec<'a, Decorator<'a>>) {
-        for el in it {
-            visitor.visit_decorator(el);
         }
     }
 

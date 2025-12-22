@@ -2298,11 +2298,18 @@ unsafe fn walk_function<'a, State, Tr: Traverse<'a, State>>(
     ctx.set_current_hoist_scope_id(current_scope_id);
     let previous_block_scope_id = ctx.current_block_scope_id();
     ctx.set_current_block_scope_id(current_scope_id);
-    let pop_token =
-        ctx.push_stack(Ancestor::FunctionId(ancestor::FunctionWithoutId(node, PhantomData)));
+    let pop_token = ctx.push_stack(Ancestor::FunctionDecorators(
+        ancestor::FunctionWithoutDecorators(node, PhantomData),
+    ));
+    for item in
+        &mut *((node as *mut u8).add(ancestor::OFFSET_FUNCTION_DECORATORS) as *mut Vec<Decorator>)
+    {
+        walk_decorator(traverser, item as *mut _, ctx);
+    }
     if let Some(field) = &mut *((node as *mut u8).add(ancestor::OFFSET_FUNCTION_ID)
         as *mut Option<BindingIdentifier>)
     {
+        ctx.retag_stack(AncestorType::FunctionId);
         walk_binding_identifier(traverser, field as *mut _, ctx);
     }
     if let Some(field) = &mut *((node as *mut u8).add(ancestor::OFFSET_FUNCTION_TYPE_PARAMETERS)
@@ -2969,13 +2976,19 @@ unsafe fn walk_export_named_declaration<'a, State, Tr: Traverse<'a, State>>(
     ctx: &mut TraverseCtx<'a, State>,
 ) {
     traverser.enter_export_named_declaration(&mut *node, ctx);
-    let pop_token = ctx.push_stack(Ancestor::ExportNamedDeclarationDeclaration(
-        ancestor::ExportNamedDeclarationWithoutDeclaration(node, PhantomData),
+    let pop_token = ctx.push_stack(Ancestor::ExportNamedDeclarationDecorators(
+        ancestor::ExportNamedDeclarationWithoutDecorators(node, PhantomData),
     ));
+    for item in &mut *((node as *mut u8).add(ancestor::OFFSET_EXPORT_NAMED_DECLARATION_DECORATORS)
+        as *mut Vec<Decorator>)
+    {
+        walk_decorator(traverser, item as *mut _, ctx);
+    }
     if let Some(field) = &mut *((node as *mut u8)
         .add(ancestor::OFFSET_EXPORT_NAMED_DECLARATION_DECLARATION)
         as *mut Option<Declaration>)
     {
+        ctx.retag_stack(AncestorType::ExportNamedDeclarationDeclaration);
         walk_declaration(traverser, field as *mut _, ctx);
     }
     ctx.retag_stack(AncestorType::ExportNamedDeclarationSpecifiers);
@@ -3092,6 +3105,9 @@ unsafe fn walk_export_default_declaration_kind<'a, State, Tr: Traverse<'a, State
         }
         ExportDefaultDeclarationKind::TSInterfaceDeclaration(node) => {
             walk_ts_interface_declaration(traverser, (&mut **node) as *mut _, ctx)
+        }
+        ExportDefaultDeclarationKind::StructStatement(node) => {
+            walk_struct_statement(traverser, (&mut **node) as *mut _, ctx)
         }
         ExportDefaultDeclarationKind::BooleanLiteral(_)
         | ExportDefaultDeclarationKind::NullLiteral(_)

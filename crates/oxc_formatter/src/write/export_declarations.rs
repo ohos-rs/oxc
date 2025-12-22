@@ -58,6 +58,16 @@ fn format_export_keyword_with_class_decorators<'a>(
                 ]
             );
         }
+    } else if let AstNodes::Function(function) = declaration
+        && !function.decorators.is_empty()
+        && function.is_function_declaration()
+    {
+        // `@Builder export function ...`
+        // decorators are placed before the export keyword
+        write!(
+            f,
+            [function.decorators(), hard_line_break(), format_leading_comments, keyword, space()]
+        );
     } else {
         write!(f, [format_leading_comments, keyword, space()]);
     }

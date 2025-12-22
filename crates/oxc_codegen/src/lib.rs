@@ -112,6 +112,9 @@ pub struct Codegen<'a> {
     start_of_arrow_expr: usize,
     start_of_default_export: usize,
 
+    /// Skip printing function decorators (they're handled by the parent export)
+    skip_function_decorators: bool,
+
     /// Track the current indentation level
     indent: u32,
 
@@ -168,6 +171,7 @@ impl<'a> Codegen<'a> {
             start_of_stmt: 0,
             start_of_arrow_expr: 0,
             start_of_default_export: 0,
+            skip_function_decorators: false,
             is_jsx: false,
             indent: 0,
             quote: Quote::Double,

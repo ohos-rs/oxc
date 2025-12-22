@@ -1065,6 +1065,7 @@ impl ContentEq for BindingRestElement<'_> {
 impl ContentEq for Function<'_> {
     fn content_eq(&self, other: &Self) -> bool {
         ContentEq::content_eq(&self.r#type, &other.r#type)
+            && ContentEq::content_eq(&self.decorators, &other.decorators)
             && ContentEq::content_eq(&self.id, &other.id)
             && ContentEq::content_eq(&self.generator, &other.generator)
             && ContentEq::content_eq(&self.r#async, &other.r#async)
@@ -1367,7 +1368,8 @@ impl ContentEq for ImportAttributeKey<'_> {
 
 impl ContentEq for ExportNamedDeclaration<'_> {
     fn content_eq(&self, other: &Self) -> bool {
-        ContentEq::content_eq(&self.declaration, &other.declaration)
+        ContentEq::content_eq(&self.decorators, &other.decorators)
+            && ContentEq::content_eq(&self.declaration, &other.declaration)
             && ContentEq::content_eq(&self.specifiers, &other.specifiers)
             && ContentEq::content_eq(&self.source, &other.source)
             && ContentEq::content_eq(&self.export_kind, &other.export_kind)
@@ -1404,6 +1406,7 @@ impl ContentEq for ExportDefaultDeclarationKind<'_> {
             (Self::FunctionDeclaration(a), Self::FunctionDeclaration(b)) => a.content_eq(b),
             (Self::ClassDeclaration(a), Self::ClassDeclaration(b)) => a.content_eq(b),
             (Self::TSInterfaceDeclaration(a), Self::TSInterfaceDeclaration(b)) => a.content_eq(b),
+            (Self::StructStatement(a), Self::StructStatement(b)) => a.content_eq(b),
             (Self::BooleanLiteral(a), Self::BooleanLiteral(b)) => a.content_eq(b),
             (Self::NullLiteral(a), Self::NullLiteral(b)) => a.content_eq(b),
             (Self::NumericLiteral(a), Self::NumericLiteral(b)) => a.content_eq(b),

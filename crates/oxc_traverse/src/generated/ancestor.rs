@@ -129,204 +129,206 @@ pub(crate) enum AncestorType {
     ArrayPatternElements = 105,
     ArrayPatternRest = 106,
     BindingRestElementArgument = 107,
-    FunctionId = 108,
-    FunctionTypeParameters = 109,
-    FunctionThisParam = 110,
-    FunctionParams = 111,
-    FunctionReturnType = 112,
-    FunctionBody = 113,
-    FormalParametersItems = 114,
-    FormalParametersRest = 115,
-    FormalParameterDecorators = 116,
-    FormalParameterPattern = 117,
-    FunctionBodyDirectives = 118,
-    FunctionBodyStatements = 119,
-    ArrowFunctionExpressionTypeParameters = 120,
-    ArrowFunctionExpressionParams = 121,
-    ArrowFunctionExpressionReturnType = 122,
-    ArrowFunctionExpressionBody = 123,
-    YieldExpressionArgument = 124,
-    ClassDecorators = 125,
-    ClassId = 126,
-    ClassTypeParameters = 127,
-    ClassSuperClass = 128,
-    ClassSuperTypeArguments = 129,
-    ClassImplements = 130,
-    ClassBody = 131,
-    ClassBodyBody = 132,
-    MethodDefinitionDecorators = 133,
-    MethodDefinitionKey = 134,
-    MethodDefinitionValue = 135,
-    PropertyDefinitionDecorators = 136,
-    PropertyDefinitionKey = 137,
-    PropertyDefinitionTypeAnnotation = 138,
-    PropertyDefinitionValue = 139,
-    StaticBlockBody = 140,
-    AccessorPropertyDecorators = 141,
-    AccessorPropertyKey = 142,
-    AccessorPropertyTypeAnnotation = 143,
-    AccessorPropertyValue = 144,
-    ImportExpressionSource = 145,
-    ImportExpressionOptions = 146,
-    ImportDeclarationSpecifiers = 147,
-    ImportDeclarationSource = 148,
-    ImportDeclarationWithClause = 149,
-    ImportSpecifierImported = 150,
-    ImportSpecifierLocal = 151,
-    ImportDefaultSpecifierLocal = 152,
-    ImportNamespaceSpecifierLocal = 153,
-    WithClauseWithEntries = 154,
-    ImportAttributeKey = 155,
-    ImportAttributeValue = 156,
-    ExportNamedDeclarationDeclaration = 157,
-    ExportNamedDeclarationSpecifiers = 158,
-    ExportNamedDeclarationSource = 159,
-    ExportNamedDeclarationWithClause = 160,
-    ExportDefaultDeclarationDeclaration = 161,
-    ExportAllDeclarationExported = 162,
-    ExportAllDeclarationSource = 163,
-    ExportAllDeclarationWithClause = 164,
-    ExportSpecifierLocal = 165,
-    ExportSpecifierExported = 166,
-    V8IntrinsicExpressionName = 167,
-    V8IntrinsicExpressionArguments = 168,
-    JSXElementOpeningElement = 169,
-    JSXElementChildren = 170,
-    JSXElementClosingElement = 171,
-    JSXOpeningElementName = 172,
-    JSXOpeningElementTypeArguments = 173,
-    JSXOpeningElementAttributes = 174,
-    JSXClosingElementName = 175,
-    JSXFragmentOpeningFragment = 176,
-    JSXFragmentChildren = 177,
-    JSXFragmentClosingFragment = 178,
-    JSXNamespacedNameNamespace = 179,
-    JSXNamespacedNameName = 180,
-    JSXMemberExpressionObject = 181,
-    JSXMemberExpressionProperty = 182,
-    JSXExpressionContainerExpression = 183,
-    JSXAttributeName = 184,
-    JSXAttributeValue = 185,
-    JSXSpreadAttributeArgument = 186,
-    JSXSpreadChildExpression = 187,
-    TSThisParameterTypeAnnotation = 188,
-    TSEnumDeclarationId = 189,
-    TSEnumDeclarationBody = 190,
-    TSEnumBodyMembers = 191,
-    TSEnumMemberId = 192,
-    TSEnumMemberInitializer = 193,
-    TSTypeAnnotationTypeAnnotation = 194,
-    TSLiteralTypeLiteral = 195,
-    TSConditionalTypeCheckType = 196,
-    TSConditionalTypeExtendsType = 197,
-    TSConditionalTypeTrueType = 198,
-    TSConditionalTypeFalseType = 199,
-    TSUnionTypeTypes = 200,
-    TSIntersectionTypeTypes = 201,
-    TSParenthesizedTypeTypeAnnotation = 202,
-    TSTypeOperatorTypeAnnotation = 203,
-    TSArrayTypeElementType = 204,
-    TSIndexedAccessTypeObjectType = 205,
-    TSIndexedAccessTypeIndexType = 206,
-    TSTupleTypeElementTypes = 207,
-    TSNamedTupleMemberLabel = 208,
-    TSNamedTupleMemberElementType = 209,
-    TSOptionalTypeTypeAnnotation = 210,
-    TSRestTypeTypeAnnotation = 211,
-    TSTypeReferenceTypeName = 212,
-    TSTypeReferenceTypeArguments = 213,
-    TSQualifiedNameLeft = 214,
-    TSQualifiedNameRight = 215,
-    TSTypeParameterInstantiationParams = 216,
-    TSTypeParameterName = 217,
-    TSTypeParameterConstraint = 218,
-    TSTypeParameterDefault = 219,
-    TSTypeParameterDeclarationParams = 220,
-    TSTypeAliasDeclarationId = 221,
-    TSTypeAliasDeclarationTypeParameters = 222,
-    TSTypeAliasDeclarationTypeAnnotation = 223,
-    TSClassImplementsExpression = 224,
-    TSClassImplementsTypeArguments = 225,
-    TSInterfaceDeclarationId = 226,
-    TSInterfaceDeclarationTypeParameters = 227,
-    TSInterfaceDeclarationExtends = 228,
-    TSInterfaceDeclarationBody = 229,
-    TSInterfaceBodyBody = 230,
-    TSPropertySignatureKey = 231,
-    TSPropertySignatureTypeAnnotation = 232,
-    TSIndexSignatureParameters = 233,
-    TSIndexSignatureTypeAnnotation = 234,
-    TSCallSignatureDeclarationTypeParameters = 235,
-    TSCallSignatureDeclarationThisParam = 236,
-    TSCallSignatureDeclarationParams = 237,
-    TSCallSignatureDeclarationReturnType = 238,
-    TSMethodSignatureKey = 239,
-    TSMethodSignatureTypeParameters = 240,
-    TSMethodSignatureThisParam = 241,
-    TSMethodSignatureParams = 242,
-    TSMethodSignatureReturnType = 243,
-    TSConstructSignatureDeclarationTypeParameters = 244,
-    TSConstructSignatureDeclarationParams = 245,
-    TSConstructSignatureDeclarationReturnType = 246,
-    TSIndexSignatureNameTypeAnnotation = 247,
-    TSInterfaceHeritageExpression = 248,
-    TSInterfaceHeritageTypeArguments = 249,
-    TSTypePredicateParameterName = 250,
-    TSTypePredicateTypeAnnotation = 251,
-    TSModuleDeclarationId = 252,
-    TSModuleDeclarationBody = 253,
-    TSGlobalDeclarationBody = 254,
-    TSModuleBlockDirectives = 255,
-    TSModuleBlockBody = 256,
-    TSTypeLiteralMembers = 257,
-    TSInferTypeTypeParameter = 258,
-    TSTypeQueryExprName = 259,
-    TSTypeQueryTypeArguments = 260,
-    TSImportTypeSource = 261,
-    TSImportTypeOptions = 262,
-    TSImportTypeQualifier = 263,
-    TSImportTypeTypeArguments = 264,
-    TSImportTypeQualifiedNameLeft = 265,
-    TSImportTypeQualifiedNameRight = 266,
-    TSFunctionTypeTypeParameters = 267,
-    TSFunctionTypeThisParam = 268,
-    TSFunctionTypeParams = 269,
-    TSFunctionTypeReturnType = 270,
-    TSConstructorTypeTypeParameters = 271,
-    TSConstructorTypeParams = 272,
-    TSConstructorTypeReturnType = 273,
-    TSMappedTypeTypeParameter = 274,
-    TSMappedTypeNameType = 275,
-    TSMappedTypeTypeAnnotation = 276,
-    TSTemplateLiteralTypeQuasis = 277,
-    TSTemplateLiteralTypeTypes = 278,
-    TSAsExpressionExpression = 279,
-    TSAsExpressionTypeAnnotation = 280,
-    TSSatisfiesExpressionExpression = 281,
-    TSSatisfiesExpressionTypeAnnotation = 282,
-    TSTypeAssertionTypeAnnotation = 283,
-    TSTypeAssertionExpression = 284,
-    TSImportEqualsDeclarationId = 285,
-    TSImportEqualsDeclarationModuleReference = 286,
-    TSExternalModuleReferenceExpression = 287,
-    TSNonNullExpressionExpression = 288,
-    DecoratorExpression = 289,
-    TSExportAssignmentExpression = 290,
-    TSNamespaceExportDeclarationId = 291,
-    TSInstantiationExpressionExpression = 292,
-    TSInstantiationExpressionTypeArguments = 293,
-    JSDocNullableTypeTypeAnnotation = 294,
-    JSDocNonNullableTypeTypeAnnotation = 295,
-    StructStatementDecorators = 296,
-    StructStatementId = 297,
-    StructStatementTypeParameters = 298,
-    StructStatementBody = 299,
-    StructBodyBody = 300,
-    ArkUIComponentExpressionCallee = 301,
-    ArkUIComponentExpressionTypeArguments = 302,
-    ArkUIComponentExpressionArguments = 303,
-    ArkUIComponentExpressionChildren = 304,
-    ArkUIComponentExpressionChainExpressions = 305,
+    FunctionDecorators = 108,
+    FunctionId = 109,
+    FunctionTypeParameters = 110,
+    FunctionThisParam = 111,
+    FunctionParams = 112,
+    FunctionReturnType = 113,
+    FunctionBody = 114,
+    FormalParametersItems = 115,
+    FormalParametersRest = 116,
+    FormalParameterDecorators = 117,
+    FormalParameterPattern = 118,
+    FunctionBodyDirectives = 119,
+    FunctionBodyStatements = 120,
+    ArrowFunctionExpressionTypeParameters = 121,
+    ArrowFunctionExpressionParams = 122,
+    ArrowFunctionExpressionReturnType = 123,
+    ArrowFunctionExpressionBody = 124,
+    YieldExpressionArgument = 125,
+    ClassDecorators = 126,
+    ClassId = 127,
+    ClassTypeParameters = 128,
+    ClassSuperClass = 129,
+    ClassSuperTypeArguments = 130,
+    ClassImplements = 131,
+    ClassBody = 132,
+    ClassBodyBody = 133,
+    MethodDefinitionDecorators = 134,
+    MethodDefinitionKey = 135,
+    MethodDefinitionValue = 136,
+    PropertyDefinitionDecorators = 137,
+    PropertyDefinitionKey = 138,
+    PropertyDefinitionTypeAnnotation = 139,
+    PropertyDefinitionValue = 140,
+    StaticBlockBody = 141,
+    AccessorPropertyDecorators = 142,
+    AccessorPropertyKey = 143,
+    AccessorPropertyTypeAnnotation = 144,
+    AccessorPropertyValue = 145,
+    ImportExpressionSource = 146,
+    ImportExpressionOptions = 147,
+    ImportDeclarationSpecifiers = 148,
+    ImportDeclarationSource = 149,
+    ImportDeclarationWithClause = 150,
+    ImportSpecifierImported = 151,
+    ImportSpecifierLocal = 152,
+    ImportDefaultSpecifierLocal = 153,
+    ImportNamespaceSpecifierLocal = 154,
+    WithClauseWithEntries = 155,
+    ImportAttributeKey = 156,
+    ImportAttributeValue = 157,
+    ExportNamedDeclarationDecorators = 158,
+    ExportNamedDeclarationDeclaration = 159,
+    ExportNamedDeclarationSpecifiers = 160,
+    ExportNamedDeclarationSource = 161,
+    ExportNamedDeclarationWithClause = 162,
+    ExportDefaultDeclarationDeclaration = 163,
+    ExportAllDeclarationExported = 164,
+    ExportAllDeclarationSource = 165,
+    ExportAllDeclarationWithClause = 166,
+    ExportSpecifierLocal = 167,
+    ExportSpecifierExported = 168,
+    V8IntrinsicExpressionName = 169,
+    V8IntrinsicExpressionArguments = 170,
+    JSXElementOpeningElement = 171,
+    JSXElementChildren = 172,
+    JSXElementClosingElement = 173,
+    JSXOpeningElementName = 174,
+    JSXOpeningElementTypeArguments = 175,
+    JSXOpeningElementAttributes = 176,
+    JSXClosingElementName = 177,
+    JSXFragmentOpeningFragment = 178,
+    JSXFragmentChildren = 179,
+    JSXFragmentClosingFragment = 180,
+    JSXNamespacedNameNamespace = 181,
+    JSXNamespacedNameName = 182,
+    JSXMemberExpressionObject = 183,
+    JSXMemberExpressionProperty = 184,
+    JSXExpressionContainerExpression = 185,
+    JSXAttributeName = 186,
+    JSXAttributeValue = 187,
+    JSXSpreadAttributeArgument = 188,
+    JSXSpreadChildExpression = 189,
+    TSThisParameterTypeAnnotation = 190,
+    TSEnumDeclarationId = 191,
+    TSEnumDeclarationBody = 192,
+    TSEnumBodyMembers = 193,
+    TSEnumMemberId = 194,
+    TSEnumMemberInitializer = 195,
+    TSTypeAnnotationTypeAnnotation = 196,
+    TSLiteralTypeLiteral = 197,
+    TSConditionalTypeCheckType = 198,
+    TSConditionalTypeExtendsType = 199,
+    TSConditionalTypeTrueType = 200,
+    TSConditionalTypeFalseType = 201,
+    TSUnionTypeTypes = 202,
+    TSIntersectionTypeTypes = 203,
+    TSParenthesizedTypeTypeAnnotation = 204,
+    TSTypeOperatorTypeAnnotation = 205,
+    TSArrayTypeElementType = 206,
+    TSIndexedAccessTypeObjectType = 207,
+    TSIndexedAccessTypeIndexType = 208,
+    TSTupleTypeElementTypes = 209,
+    TSNamedTupleMemberLabel = 210,
+    TSNamedTupleMemberElementType = 211,
+    TSOptionalTypeTypeAnnotation = 212,
+    TSRestTypeTypeAnnotation = 213,
+    TSTypeReferenceTypeName = 214,
+    TSTypeReferenceTypeArguments = 215,
+    TSQualifiedNameLeft = 216,
+    TSQualifiedNameRight = 217,
+    TSTypeParameterInstantiationParams = 218,
+    TSTypeParameterName = 219,
+    TSTypeParameterConstraint = 220,
+    TSTypeParameterDefault = 221,
+    TSTypeParameterDeclarationParams = 222,
+    TSTypeAliasDeclarationId = 223,
+    TSTypeAliasDeclarationTypeParameters = 224,
+    TSTypeAliasDeclarationTypeAnnotation = 225,
+    TSClassImplementsExpression = 226,
+    TSClassImplementsTypeArguments = 227,
+    TSInterfaceDeclarationId = 228,
+    TSInterfaceDeclarationTypeParameters = 229,
+    TSInterfaceDeclarationExtends = 230,
+    TSInterfaceDeclarationBody = 231,
+    TSInterfaceBodyBody = 232,
+    TSPropertySignatureKey = 233,
+    TSPropertySignatureTypeAnnotation = 234,
+    TSIndexSignatureParameters = 235,
+    TSIndexSignatureTypeAnnotation = 236,
+    TSCallSignatureDeclarationTypeParameters = 237,
+    TSCallSignatureDeclarationThisParam = 238,
+    TSCallSignatureDeclarationParams = 239,
+    TSCallSignatureDeclarationReturnType = 240,
+    TSMethodSignatureKey = 241,
+    TSMethodSignatureTypeParameters = 242,
+    TSMethodSignatureThisParam = 243,
+    TSMethodSignatureParams = 244,
+    TSMethodSignatureReturnType = 245,
+    TSConstructSignatureDeclarationTypeParameters = 246,
+    TSConstructSignatureDeclarationParams = 247,
+    TSConstructSignatureDeclarationReturnType = 248,
+    TSIndexSignatureNameTypeAnnotation = 249,
+    TSInterfaceHeritageExpression = 250,
+    TSInterfaceHeritageTypeArguments = 251,
+    TSTypePredicateParameterName = 252,
+    TSTypePredicateTypeAnnotation = 253,
+    TSModuleDeclarationId = 254,
+    TSModuleDeclarationBody = 255,
+    TSGlobalDeclarationBody = 256,
+    TSModuleBlockDirectives = 257,
+    TSModuleBlockBody = 258,
+    TSTypeLiteralMembers = 259,
+    TSInferTypeTypeParameter = 260,
+    TSTypeQueryExprName = 261,
+    TSTypeQueryTypeArguments = 262,
+    TSImportTypeSource = 263,
+    TSImportTypeOptions = 264,
+    TSImportTypeQualifier = 265,
+    TSImportTypeTypeArguments = 266,
+    TSImportTypeQualifiedNameLeft = 267,
+    TSImportTypeQualifiedNameRight = 268,
+    TSFunctionTypeTypeParameters = 269,
+    TSFunctionTypeThisParam = 270,
+    TSFunctionTypeParams = 271,
+    TSFunctionTypeReturnType = 272,
+    TSConstructorTypeTypeParameters = 273,
+    TSConstructorTypeParams = 274,
+    TSConstructorTypeReturnType = 275,
+    TSMappedTypeTypeParameter = 276,
+    TSMappedTypeNameType = 277,
+    TSMappedTypeTypeAnnotation = 278,
+    TSTemplateLiteralTypeQuasis = 279,
+    TSTemplateLiteralTypeTypes = 280,
+    TSAsExpressionExpression = 281,
+    TSAsExpressionTypeAnnotation = 282,
+    TSSatisfiesExpressionExpression = 283,
+    TSSatisfiesExpressionTypeAnnotation = 284,
+    TSTypeAssertionTypeAnnotation = 285,
+    TSTypeAssertionExpression = 286,
+    TSImportEqualsDeclarationId = 287,
+    TSImportEqualsDeclarationModuleReference = 288,
+    TSExternalModuleReferenceExpression = 289,
+    TSNonNullExpressionExpression = 290,
+    DecoratorExpression = 291,
+    TSExportAssignmentExpression = 292,
+    TSNamespaceExportDeclarationId = 293,
+    TSInstantiationExpressionExpression = 294,
+    TSInstantiationExpressionTypeArguments = 295,
+    JSDocNullableTypeTypeAnnotation = 296,
+    JSDocNonNullableTypeTypeAnnotation = 297,
+    StructStatementDecorators = 298,
+    StructStatementId = 299,
+    StructStatementTypeParameters = 300,
+    StructStatementBody = 301,
+    StructBodyBody = 302,
+    ArkUIComponentExpressionCallee = 303,
+    ArkUIComponentExpressionTypeArguments = 304,
+    ArkUIComponentExpressionArguments = 305,
+    ArkUIComponentExpressionChildren = 306,
+    ArkUIComponentExpressionChainExpressions = 307,
 }
 
 /// Ancestor type used in AST traversal.
@@ -540,6 +542,7 @@ pub enum Ancestor<'a, 't> {
     ArrayPatternRest(ArrayPatternWithoutRest<'a, 't>) = AncestorType::ArrayPatternRest as u16,
     BindingRestElementArgument(BindingRestElementWithoutArgument<'a, 't>) =
         AncestorType::BindingRestElementArgument as u16,
+    FunctionDecorators(FunctionWithoutDecorators<'a, 't>) = AncestorType::FunctionDecorators as u16,
     FunctionId(FunctionWithoutId<'a, 't>) = AncestorType::FunctionId as u16,
     FunctionTypeParameters(FunctionWithoutTypeParameters<'a, 't>) =
         AncestorType::FunctionTypeParameters as u16,
@@ -625,6 +628,8 @@ pub enum Ancestor<'a, 't> {
     ImportAttributeKey(ImportAttributeWithoutKey<'a, 't>) = AncestorType::ImportAttributeKey as u16,
     ImportAttributeValue(ImportAttributeWithoutValue<'a, 't>) =
         AncestorType::ImportAttributeValue as u16,
+    ExportNamedDeclarationDecorators(ExportNamedDeclarationWithoutDecorators<'a, 't>) =
+        AncestorType::ExportNamedDeclarationDecorators as u16,
     ExportNamedDeclarationDeclaration(ExportNamedDeclarationWithoutDeclaration<'a, 't>) =
         AncestorType::ExportNamedDeclarationDeclaration as u16,
     ExportNamedDeclarationSpecifiers(ExportNamedDeclarationWithoutSpecifiers<'a, 't>) =
@@ -1281,7 +1286,8 @@ impl<'a, 't> Ancestor<'a, 't> {
     pub fn is_function(self) -> bool {
         matches!(
             self,
-            Self::FunctionId(_)
+            Self::FunctionDecorators(_)
+                | Self::FunctionId(_)
                 | Self::FunctionTypeParameters(_)
                 | Self::FunctionThisParam(_)
                 | Self::FunctionParams(_)
@@ -1421,7 +1427,8 @@ impl<'a, 't> Ancestor<'a, 't> {
     pub fn is_export_named_declaration(self) -> bool {
         matches!(
             self,
-            Self::ExportNamedDeclarationDeclaration(_)
+            Self::ExportNamedDeclarationDecorators(_)
+                | Self::ExportNamedDeclarationDeclaration(_)
                 | Self::ExportNamedDeclarationSpecifiers(_)
                 | Self::ExportNamedDeclarationSource(_)
                 | Self::ExportNamedDeclarationWithClause(_)
@@ -2388,6 +2395,7 @@ impl<'a, 't> GetAddress for Ancestor<'a, 't> {
             Self::ArrayPatternElements(a) => a.address(),
             Self::ArrayPatternRest(a) => a.address(),
             Self::BindingRestElementArgument(a) => a.address(),
+            Self::FunctionDecorators(a) => a.address(),
             Self::FunctionId(a) => a.address(),
             Self::FunctionTypeParameters(a) => a.address(),
             Self::FunctionThisParam(a) => a.address(),
@@ -2437,6 +2445,7 @@ impl<'a, 't> GetAddress for Ancestor<'a, 't> {
             Self::WithClauseWithEntries(a) => a.address(),
             Self::ImportAttributeKey(a) => a.address(),
             Self::ImportAttributeValue(a) => a.address(),
+            Self::ExportNamedDeclarationDecorators(a) => a.address(),
             Self::ExportNamedDeclarationDeclaration(a) => a.address(),
             Self::ExportNamedDeclarationSpecifiers(a) => a.address(),
             Self::ExportNamedDeclarationSource(a) => a.address(),
@@ -6609,6 +6618,7 @@ impl<'a, 't> GetAddress for BindingRestElementWithoutArgument<'a, 't> {
 
 pub(crate) const OFFSET_FUNCTION_SPAN: usize = offset_of!(Function, span);
 pub(crate) const OFFSET_FUNCTION_TYPE: usize = offset_of!(Function, r#type);
+pub(crate) const OFFSET_FUNCTION_DECORATORS: usize = offset_of!(Function, decorators);
 pub(crate) const OFFSET_FUNCTION_ID: usize = offset_of!(Function, id);
 pub(crate) const OFFSET_FUNCTION_GENERATOR: usize = offset_of!(Function, generator);
 pub(crate) const OFFSET_FUNCTION_ASYNC: usize = offset_of!(Function, r#async);
@@ -6621,6 +6631,112 @@ pub(crate) const OFFSET_FUNCTION_BODY: usize = offset_of!(Function, body);
 pub(crate) const OFFSET_FUNCTION_SCOPE_ID: usize = offset_of!(Function, scope_id);
 pub(crate) const OFFSET_FUNCTION_PURE: usize = offset_of!(Function, pure);
 pub(crate) const OFFSET_FUNCTION_PIFE: usize = offset_of!(Function, pife);
+
+#[repr(transparent)]
+#[derive(Clone, Copy, Debug)]
+pub struct FunctionWithoutDecorators<'a, 't>(
+    pub(crate) *const Function<'a>,
+    pub(crate) PhantomData<&'t ()>,
+);
+
+impl<'a, 't> FunctionWithoutDecorators<'a, 't> {
+    #[inline]
+    pub fn span(self) -> &'t Span {
+        unsafe { &*((self.0 as *const u8).add(OFFSET_FUNCTION_SPAN) as *const Span) }
+    }
+
+    #[inline]
+    pub fn r#type(self) -> &'t FunctionType {
+        unsafe { &*((self.0 as *const u8).add(OFFSET_FUNCTION_TYPE) as *const FunctionType) }
+    }
+
+    #[inline]
+    pub fn id(self) -> &'t Option<BindingIdentifier<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_FUNCTION_ID)
+                as *const Option<BindingIdentifier<'a>>)
+        }
+    }
+
+    #[inline]
+    pub fn generator(self) -> &'t bool {
+        unsafe { &*((self.0 as *const u8).add(OFFSET_FUNCTION_GENERATOR) as *const bool) }
+    }
+
+    #[inline]
+    pub fn r#async(self) -> &'t bool {
+        unsafe { &*((self.0 as *const u8).add(OFFSET_FUNCTION_ASYNC) as *const bool) }
+    }
+
+    #[inline]
+    pub fn declare(self) -> &'t bool {
+        unsafe { &*((self.0 as *const u8).add(OFFSET_FUNCTION_DECLARE) as *const bool) }
+    }
+
+    #[inline]
+    pub fn type_parameters(self) -> &'t Option<Box<'a, TSTypeParameterDeclaration<'a>>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_FUNCTION_TYPE_PARAMETERS)
+                as *const Option<Box<'a, TSTypeParameterDeclaration<'a>>>)
+        }
+    }
+
+    #[inline]
+    pub fn this_param(self) -> &'t Option<Box<'a, TSThisParameter<'a>>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_FUNCTION_THIS_PARAM)
+                as *const Option<Box<'a, TSThisParameter<'a>>>)
+        }
+    }
+
+    #[inline]
+    pub fn params(self) -> &'t Box<'a, FormalParameters<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_FUNCTION_PARAMS)
+                as *const Box<'a, FormalParameters<'a>>)
+        }
+    }
+
+    #[inline]
+    pub fn return_type(self) -> &'t Option<Box<'a, TSTypeAnnotation<'a>>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_FUNCTION_RETURN_TYPE)
+                as *const Option<Box<'a, TSTypeAnnotation<'a>>>)
+        }
+    }
+
+    #[inline]
+    pub fn body(self) -> &'t Option<Box<'a, FunctionBody<'a>>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_FUNCTION_BODY)
+                as *const Option<Box<'a, FunctionBody<'a>>>)
+        }
+    }
+
+    #[inline]
+    pub fn scope_id(self) -> &'t Cell<Option<ScopeId>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_FUNCTION_SCOPE_ID) as *const Cell<Option<ScopeId>>)
+        }
+    }
+
+    #[inline]
+    pub fn pure(self) -> &'t bool {
+        unsafe { &*((self.0 as *const u8).add(OFFSET_FUNCTION_PURE) as *const bool) }
+    }
+
+    #[inline]
+    pub fn pife(self) -> &'t bool {
+        unsafe { &*((self.0 as *const u8).add(OFFSET_FUNCTION_PIFE) as *const bool) }
+    }
+}
+
+impl<'a, 't> GetAddress for FunctionWithoutDecorators<'a, 't> {
+    #[inline]
+    fn address(&self) -> Address {
+        unsafe { Address::from_ptr(self.0) }
+    }
+}
 
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug)]
@@ -6638,6 +6754,14 @@ impl<'a, 't> FunctionWithoutId<'a, 't> {
     #[inline]
     pub fn r#type(self) -> &'t FunctionType {
         unsafe { &*((self.0 as *const u8).add(OFFSET_FUNCTION_TYPE) as *const FunctionType) }
+    }
+
+    #[inline]
+    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_FUNCTION_DECORATORS)
+                as *const Vec<'a, Decorator<'a>>)
+        }
     }
 
     #[inline]
@@ -6739,6 +6863,14 @@ impl<'a, 't> FunctionWithoutTypeParameters<'a, 't> {
     }
 
     #[inline]
+    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_FUNCTION_DECORATORS)
+                as *const Vec<'a, Decorator<'a>>)
+        }
+    }
+
+    #[inline]
     pub fn id(self) -> &'t Option<BindingIdentifier<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FUNCTION_ID)
@@ -6834,6 +6966,14 @@ impl<'a, 't> FunctionWithoutThisParam<'a, 't> {
     #[inline]
     pub fn r#type(self) -> &'t FunctionType {
         unsafe { &*((self.0 as *const u8).add(OFFSET_FUNCTION_TYPE) as *const FunctionType) }
+    }
+
+    #[inline]
+    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_FUNCTION_DECORATORS)
+                as *const Vec<'a, Decorator<'a>>)
+        }
     }
 
     #[inline]
@@ -6935,6 +7075,14 @@ impl<'a, 't> FunctionWithoutParams<'a, 't> {
     }
 
     #[inline]
+    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_FUNCTION_DECORATORS)
+                as *const Vec<'a, Decorator<'a>>)
+        }
+    }
+
+    #[inline]
     pub fn id(self) -> &'t Option<BindingIdentifier<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FUNCTION_ID)
@@ -7033,6 +7181,14 @@ impl<'a, 't> FunctionWithoutReturnType<'a, 't> {
     }
 
     #[inline]
+    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_FUNCTION_DECORATORS)
+                as *const Vec<'a, Decorator<'a>>)
+        }
+    }
+
+    #[inline]
     pub fn id(self) -> &'t Option<BindingIdentifier<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FUNCTION_ID)
@@ -7128,6 +7284,14 @@ impl<'a, 't> FunctionWithoutBody<'a, 't> {
     #[inline]
     pub fn r#type(self) -> &'t FunctionType {
         unsafe { &*((self.0 as *const u8).add(OFFSET_FUNCTION_TYPE) as *const FunctionType) }
+    }
+
+    #[inline]
+    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_FUNCTION_DECORATORS)
+                as *const Vec<'a, Decorator<'a>>)
+        }
     }
 
     #[inline]
@@ -9983,6 +10147,8 @@ impl<'a, 't> GetAddress for ImportAttributeWithoutValue<'a, 't> {
 
 pub(crate) const OFFSET_EXPORT_NAMED_DECLARATION_SPAN: usize =
     offset_of!(ExportNamedDeclaration, span);
+pub(crate) const OFFSET_EXPORT_NAMED_DECLARATION_DECORATORS: usize =
+    offset_of!(ExportNamedDeclaration, decorators);
 pub(crate) const OFFSET_EXPORT_NAMED_DECLARATION_DECLARATION: usize =
     offset_of!(ExportNamedDeclaration, declaration);
 pub(crate) const OFFSET_EXPORT_NAMED_DECLARATION_SPECIFIERS: usize =
@@ -9996,6 +10162,69 @@ pub(crate) const OFFSET_EXPORT_NAMED_DECLARATION_WITH_CLAUSE: usize =
 
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug)]
+pub struct ExportNamedDeclarationWithoutDecorators<'a, 't>(
+    pub(crate) *const ExportNamedDeclaration<'a>,
+    pub(crate) PhantomData<&'t ()>,
+);
+
+impl<'a, 't> ExportNamedDeclarationWithoutDecorators<'a, 't> {
+    #[inline]
+    pub fn span(self) -> &'t Span {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_EXPORT_NAMED_DECLARATION_SPAN) as *const Span)
+        }
+    }
+
+    #[inline]
+    pub fn declaration(self) -> &'t Option<Declaration<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_EXPORT_NAMED_DECLARATION_DECLARATION)
+                as *const Option<Declaration<'a>>)
+        }
+    }
+
+    #[inline]
+    pub fn specifiers(self) -> &'t Vec<'a, ExportSpecifier<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_EXPORT_NAMED_DECLARATION_SPECIFIERS)
+                as *const Vec<'a, ExportSpecifier<'a>>)
+        }
+    }
+
+    #[inline]
+    pub fn source(self) -> &'t Option<StringLiteral<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_EXPORT_NAMED_DECLARATION_SOURCE)
+                as *const Option<StringLiteral<'a>>)
+        }
+    }
+
+    #[inline]
+    pub fn export_kind(self) -> &'t ImportOrExportKind {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_EXPORT_NAMED_DECLARATION_EXPORT_KIND)
+                as *const ImportOrExportKind)
+        }
+    }
+
+    #[inline]
+    pub fn with_clause(self) -> &'t Option<Box<'a, WithClause<'a>>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_EXPORT_NAMED_DECLARATION_WITH_CLAUSE)
+                as *const Option<Box<'a, WithClause<'a>>>)
+        }
+    }
+}
+
+impl<'a, 't> GetAddress for ExportNamedDeclarationWithoutDecorators<'a, 't> {
+    #[inline]
+    fn address(&self) -> Address {
+        unsafe { Address::from_ptr(self.0) }
+    }
+}
+
+#[repr(transparent)]
+#[derive(Clone, Copy, Debug)]
 pub struct ExportNamedDeclarationWithoutDeclaration<'a, 't>(
     pub(crate) *const ExportNamedDeclaration<'a>,
     pub(crate) PhantomData<&'t ()>,
@@ -10006,6 +10235,14 @@ impl<'a, 't> ExportNamedDeclarationWithoutDeclaration<'a, 't> {
     pub fn span(self) -> &'t Span {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_EXPORT_NAMED_DECLARATION_SPAN) as *const Span)
+        }
+    }
+
+    #[inline]
+    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_EXPORT_NAMED_DECLARATION_DECORATORS)
+                as *const Vec<'a, Decorator<'a>>)
         }
     }
 
@@ -10065,6 +10302,14 @@ impl<'a, 't> ExportNamedDeclarationWithoutSpecifiers<'a, 't> {
     }
 
     #[inline]
+    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_EXPORT_NAMED_DECLARATION_DECORATORS)
+                as *const Vec<'a, Decorator<'a>>)
+        }
+    }
+
+    #[inline]
     pub fn declaration(self) -> &'t Option<Declaration<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_EXPORT_NAMED_DECLARATION_DECLARATION)
@@ -10120,6 +10365,14 @@ impl<'a, 't> ExportNamedDeclarationWithoutSource<'a, 't> {
     }
 
     #[inline]
+    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_EXPORT_NAMED_DECLARATION_DECORATORS)
+                as *const Vec<'a, Decorator<'a>>)
+        }
+    }
+
+    #[inline]
     pub fn declaration(self) -> &'t Option<Declaration<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_EXPORT_NAMED_DECLARATION_DECLARATION)
@@ -10171,6 +10424,14 @@ impl<'a, 't> ExportNamedDeclarationWithoutWithClause<'a, 't> {
     pub fn span(self) -> &'t Span {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_EXPORT_NAMED_DECLARATION_SPAN) as *const Span)
+        }
+    }
+
+    #[inline]
+    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_EXPORT_NAMED_DECLARATION_DECORATORS)
+                as *const Vec<'a, Decorator<'a>>)
         }
     }
 

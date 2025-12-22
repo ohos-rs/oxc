@@ -1160,7 +1160,7 @@ impl<'a> LegacyDecorator<'a, '_> {
         let specifiers = ctx.ast.vec1(ctx.ast.export_specifier(SPAN, local, exported, kind));
         let export_class_reference = ctx
             .ast
-            .module_declaration_export_named_declaration(SPAN, None, specifiers, None, kind, NONE);
+            .module_declaration_export_named_declaration(SPAN, ctx.ast.vec(), None, specifiers, None, kind, NONE);
         Statement::from(export_class_reference)
     }
 }

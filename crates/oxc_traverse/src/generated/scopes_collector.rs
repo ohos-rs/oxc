@@ -1117,6 +1117,7 @@ impl<'a> Visit<'a> for ChildScopeCollector {
 
     #[inline]
     fn visit_export_named_declaration(&mut self, it: &ExportNamedDeclaration<'a>) {
+        self.visit_decorators(&it.decorators);
         if let Some(declaration) = &it.declaration {
             self.visit_declaration(declaration);
         }
@@ -1147,6 +1148,7 @@ impl<'a> Visit<'a> for ChildScopeCollector {
             ExportDefaultDeclarationKind::TSInterfaceDeclaration(it) => {
                 self.visit_ts_interface_declaration(it)
             }
+            ExportDefaultDeclarationKind::StructStatement(it) => self.visit_struct_statement(it),
             ExportDefaultDeclarationKind::TemplateLiteral(it) => self.visit_template_literal(it),
             ExportDefaultDeclarationKind::ArrayExpression(it) => self.visit_array_expression(it),
             ExportDefaultDeclarationKind::ArrowFunctionExpression(it) => {

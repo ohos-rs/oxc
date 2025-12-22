@@ -205,6 +205,9 @@ impl Rule for ExplicitModuleBoundaryTypes {
                     ExportDefaultDeclarationKind::TSInterfaceDeclaration(_) => {
                         // nada
                     }
+                    ExportDefaultDeclarationKind::StructStatement(_) => {
+                        // StructStatement is ArkUI-specific, skip type checking for now
+                    }
                     match_expression!(ExportDefaultDeclarationKind) => {
                         self.run_on_exported_expression(ctx, export.declaration.to_expression());
                     }

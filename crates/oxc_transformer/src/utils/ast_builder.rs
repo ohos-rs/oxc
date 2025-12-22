@@ -201,6 +201,7 @@ pub fn create_class_constructor_with_params<'a>(
         ctx.ast.alloc_function_with_scope_id(
             SPAN,
             FunctionType::FunctionExpression,
+            ctx.ast.vec(), // decorators
             None,
             false,
             false,

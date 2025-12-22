@@ -370,6 +370,7 @@ impl<'a> ClassProperties<'a, '_> {
         let super_func = ctx.ast.expression_function_with_scope_id_and_pure_and_pife(
             SPAN,
             FunctionType::FunctionExpression,
+            ctx.ast.vec(), // decorators
             None,
             false,
             false,

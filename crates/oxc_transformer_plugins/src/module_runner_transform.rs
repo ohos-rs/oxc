@@ -582,6 +582,10 @@ impl<'a> ModuleRunnerTransform<'a> {
                 // Do nothing for `export default interface Foo {}`
                 return;
             }
+            ExportDefaultDeclarationKind::StructStatement(_) => {
+                // Do nothing for `export default struct Foo {}` (ArkUI)
+                return;
+            }
             expr @ match_expression!(ExportDefaultDeclarationKind) => expr.into_expression(),
         };
 
@@ -741,6 +745,7 @@ impl<'a> ModuleRunnerTransform<'a> {
         ctx.ast.expression_function_with_scope_id_and_pure_and_pife(
             SPAN,
             r#type,
+            ctx.ast.vec(), // decorators
             None,
             false,
             false,

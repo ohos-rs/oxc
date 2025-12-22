@@ -1284,6 +1284,7 @@ impl ESTree for Function<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) {
         let mut state = serializer.serialize_struct();
         state.serialize_field("type", &self.r#type);
+        state.serialize_ts_field("decorators", &self.decorators);
         state.serialize_field("id", &self.id);
         state.serialize_field("generator", &self.generator);
         state.serialize_field("async", &self.r#async);
@@ -1679,6 +1680,7 @@ impl ESTree for ExportNamedDeclaration<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) {
         let mut state = serializer.serialize_struct();
         state.serialize_field("type", &JsonSafeString("ExportNamedDeclaration"));
+        state.serialize_ts_field("decorators", &self.decorators);
         state.serialize_field("declaration", &self.declaration);
         state.serialize_field("specifiers", &self.specifiers);
         state.serialize_field("source", &self.source);
@@ -1737,6 +1739,7 @@ impl ESTree for ExportDefaultDeclarationKind<'_> {
             Self::FunctionDeclaration(it) => it.serialize(serializer),
             Self::ClassDeclaration(it) => it.serialize(serializer),
             Self::TSInterfaceDeclaration(it) => it.serialize(serializer),
+            Self::StructStatement(it) => it.serialize(serializer),
             Self::BooleanLiteral(it) => it.serialize(serializer),
             Self::NullLiteral(it) => it.serialize(serializer),
             Self::NumericLiteral(it) => it.serialize(serializer),

@@ -61,6 +61,21 @@ impl<'a, 'b> FormatFunction<'a, 'b> {
 
     #[inline]
     pub fn format(&self, f: &mut Formatter<'_, 'a>) {
+        // Format decorators if present (e.g., @Builder in ArkUI)
+        // Decorators are handled differently depending on the parent context
+        // When the function is exported, the export statement handles decorator formatting
+        // to ensure proper placement relative to the export keyword
+        let decorators = self.decorators();
+        if !decorators.is_empty()
+            && !matches!(
+                self.parent,
+                crate::ast_nodes::AstNodes::ExportNamedDeclaration(_)
+                    | crate::ast_nodes::AstNodes::ExportDefaultDeclaration(_)
+            )
+        {
+            write!(f, decorators);
+        }
+
         let head = format_with(|f| {
             write!(
                 f,

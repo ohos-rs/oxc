@@ -3072,6 +3072,16 @@ impl<'a> Format<'a> for AstNode<'a, ExportDefaultDeclarationKind<'a>> {
                     })
                     .fmt(f);
             }
+            ExportDefaultDeclarationKind::StructStatement(inner) => {
+                allocator
+                    .alloc(AstNode::<StructStatement> {
+                        inner,
+                        parent,
+                        allocator,
+                        following_span: self.following_span,
+                    })
+                    .fmt(f);
+            }
             it @ match_expression!(ExportDefaultDeclarationKind) => {
                 let inner = it.to_expression();
                 allocator

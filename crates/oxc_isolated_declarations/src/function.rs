@@ -25,6 +25,7 @@ impl<'a> IsolatedDeclarations<'a> {
         self.ast.alloc_function(
             func.span,
             func.r#type,
+            func.decorators.clone_in(self.ast.allocator),
             func.id.clone_in(self.ast.allocator),
             false,
             false,

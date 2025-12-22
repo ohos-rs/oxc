@@ -178,18 +178,19 @@ impl<'a> AstBuilder<'a> {
         self.alloc_function_with_scope_id_and_pure_and_pife(
             span,
             r#type,
+            self.vec(), // decorators
             id,
-            false,
-            false,
-            false,
-            NONE,
-            NONE,
+            false, // generator
+            false, // async
+            false, // declare
+            NONE, // type_parameters
+            NONE, // this_param
             params,
-            NONE,
+            NONE, // return_type
             Some(body),
             scope_id,
-            false,
-            false,
+            false, // pure
+            false, // pife
         )
     }
 
@@ -199,6 +200,7 @@ impl<'a> AstBuilder<'a> {
         self,
         span: Span,
         r#type: FunctionType,
+        decorators: Vec<'a, Decorator<'a>>,
         id: Option<BindingIdentifier<'a>>,
         generator: bool,
         r#async: bool,
@@ -220,6 +222,7 @@ impl<'a> AstBuilder<'a> {
         self.alloc_function_with_scope_id_and_pure_and_pife(
             span,
             r#type,
+            decorators,
             id,
             generator,
             r#async,
@@ -246,6 +249,7 @@ impl<'a> AstBuilder<'a> {
     ) -> Box<'a, ExportNamedDeclaration<'a>> {
         self.alloc(self.export_named_declaration(
             span,
+            self.vec(), // decorators
             Some(declaration),
             self.vec(),
             None,
@@ -265,6 +269,7 @@ impl<'a> AstBuilder<'a> {
     ) -> Box<'a, ExportNamedDeclaration<'a>> {
         self.alloc(self.export_named_declaration(
             span,
+            self.vec(), // decorators
             None,
             specifiers,
             source,

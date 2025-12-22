@@ -383,6 +383,7 @@ impl<'a> Traverse<'a, TransformState<'a>> for ExplicitResourceManagement<'a, '_>
                         program_body.push(Statement::ExportNamedDeclaration(
                             ctx.ast.alloc_export_named_declaration(
                                 SPAN,
+                                ctx.ast.vec(), // decorators
                                 None,
                                 ctx.ast.vec1(ctx.ast.export_specifier(
                                     SPAN,
@@ -474,6 +475,7 @@ impl<'a> Traverse<'a, TransformState<'a>> for ExplicitResourceManagement<'a, '_>
                         program_body.push(Statement::ExportNamedDeclaration(
                             ctx.ast.alloc_export_named_declaration(
                                 SPAN,
+                                ctx.ast.vec(), // decorators
                                 None,
                                 export_specifiers,
                                 None,

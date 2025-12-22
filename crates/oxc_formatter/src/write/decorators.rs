@@ -38,6 +38,23 @@ impl<'a> Format<'a> for AstNode<'a, Vec<'a, Decorator<'a>>> {
             AstNodes::FormalParameter(_) => {
                 write!(f, should_expand_decorators(self, f).then_some(expand_parent()));
             }
+            // Function decorators: check if the function's parent is an export declaration
+            AstNodes::Function(function) => {
+                // If the function is exported, decorators are handled by the export formatter
+                // Otherwise, format normally
+                if matches!(
+                    function.parent,
+                    AstNodes::ExportNamedDeclaration(_) | AstNodes::ExportDefaultDeclaration(_)
+                ) {
+                    // This case is handled by export_declarations.rs, so we just format the decorators
+                    // without extra line breaks (the export formatter handles positioning)
+                    // Format decorators inline, then the export formatter will add the hard_line_break
+                    f.join_with(&soft_line_break_or_space()).entries(self.iter());
+                    return;
+                }
+                // Non-exported function decorators
+                write!(f, [expand_parent()]);
+            }
             AstNodes::ExportNamedDeclaration(_) | AstNodes::ExportDefaultDeclaration(_) => {
                 write!(f, [hard_line_break()]);
             }

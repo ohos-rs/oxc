@@ -652,6 +652,7 @@ impl<'a> ArrowFunctionConverter<'a> {
         ctx.ast.expression_function_with_scope_id_and_pure_and_pife(
             arrow_function_expr.span,
             FunctionType::FunctionExpression,
+            ctx.ast.vec(), // decorators
             None,
             false,
             arrow_function_expr.r#async,

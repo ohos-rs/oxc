@@ -1049,6 +1049,7 @@ impl<'a> Dummy<'a> for Function<'a> {
         Self {
             span: Dummy::dummy(allocator),
             r#type: Dummy::dummy(allocator),
+            decorators: Dummy::dummy(allocator),
             id: Dummy::dummy(allocator),
             generator: Dummy::dummy(allocator),
             r#async: Dummy::dummy(allocator),
@@ -1214,7 +1215,7 @@ impl<'a> Dummy<'a> for ClassElement<'a> {
 impl<'a> Dummy<'a> for MethodDefinition<'a> {
     /// Create a dummy [`MethodDefinition`].
     ///
-    /// Has cost of making 3 allocations (152 bytes).
+    /// Has cost of making 3 allocations (176 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
             span: Dummy::dummy(allocator),
@@ -1481,6 +1482,7 @@ impl<'a> Dummy<'a> for ExportNamedDeclaration<'a> {
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
             span: Dummy::dummy(allocator),
+            decorators: Dummy::dummy(allocator),
             declaration: Dummy::dummy(allocator),
             specifiers: Dummy::dummy(allocator),
             source: Dummy::dummy(allocator),

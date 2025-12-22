@@ -1,4 +1,4 @@
-use oxc_allocator::Box;
+use oxc_allocator::{Box, Vec};
 use oxc_ast::ast::*;
 use oxc_span::Span;
 
@@ -139,6 +139,7 @@ impl<'a> ParserImpl<'a> {
         func_kind: FunctionKind,
         param_kind: FormalParameterKind,
         modifiers: &Modifiers<'a>,
+        decorators: Vec<'a, Decorator<'a>>,
     ) -> Box<'a, Function<'a>> {
         let ctx = self.ctx;
         self.ctx = self.ctx.and_in(true).and_await(r#async).and_yield(generator);
@@ -198,6 +199,7 @@ impl<'a> ParserImpl<'a> {
         self.ast.alloc_function(
             self.end_span(span),
             function_type,
+            decorators,
             id,
             generator,
             r#async,
@@ -216,9 +218,10 @@ impl<'a> ParserImpl<'a> {
         span: u32,
         r#async: bool,
         stmt_ctx: StatementContext,
+        decorators: Vec<'a, Decorator<'a>>,
     ) -> Statement<'a> {
         let func_kind = FunctionKind::Declaration;
-        let decl = self.parse_function_impl(span, r#async, func_kind);
+        let decl = self.parse_function_impl(span, r#async, func_kind, decorators);
         if stmt_ctx.is_single_statement() {
             if decl.r#async {
                 self.error(diagnostics::async_function_declaration(Span::new(
@@ -242,6 +245,7 @@ impl<'a> ParserImpl<'a> {
         span: u32,
         r#async: bool,
         func_kind: FunctionKind,
+        decorators: Vec<'a, Decorator<'a>>,
     ) -> Box<'a, Function<'a>> {
         self.expect(Kind::Function);
         let generator = self.eat(Kind::Star);
@@ -254,6 +258,7 @@ impl<'a> ParserImpl<'a> {
             func_kind,
             FormalParameterKind::FormalParameter,
             &Modifiers::empty(),
+            decorators,
         )
     }
 
@@ -264,6 +269,7 @@ impl<'a> ParserImpl<'a> {
         start_span: u32,
         func_kind: FunctionKind,
         modifiers: &Modifiers<'a>,
+        decorators: Vec<'a, Decorator<'a>>,
     ) -> Box<'a, Function<'a>> {
         let r#async = modifiers.contains(ModifierKind::Async);
         self.expect(Kind::Function);
@@ -277,6 +283,7 @@ impl<'a> ParserImpl<'a> {
             func_kind,
             FormalParameterKind::FormalParameter,
             modifiers,
+            decorators,
         )
     }
 
@@ -295,6 +302,7 @@ impl<'a> ParserImpl<'a> {
             func_kind,
             FormalParameterKind::FormalParameter,
             &Modifiers::empty(),
+            self.ast.vec(), // decorators
         );
         Expression::FunctionExpression(function)
     }
@@ -322,6 +330,7 @@ impl<'a> ParserImpl<'a> {
             func_kind,
             FormalParameterKind::UniqueFormalParameters,
             &Modifiers::empty(),
+            self.ast.vec(), // decorators
         )
     }
 

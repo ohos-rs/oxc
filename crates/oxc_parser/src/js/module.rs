@@ -393,6 +393,7 @@ impl<'a> ParserImpl<'a> {
                 if stmt.is_declaration() {
                     let export_named_decl = self.ast.alloc_export_named_declaration(
                         self.end_span(span),
+                        self.ast.vec(), // decorators
                         Some(stmt.into_declaration()),
                         self.ast.vec(),
                         None,
@@ -422,6 +423,7 @@ impl<'a> ParserImpl<'a> {
                 let decl = Declaration::ClassDeclaration(class_decl);
                 let export_named_decl = self.ast.alloc_export_named_declaration(
                     self.end_span(span),
+                    self.ast.vec(), // decorators (already on class)
                     Some(decl),
                     self.ast.vec(),
                     None,
@@ -438,13 +440,16 @@ impl<'a> ParserImpl<'a> {
                 // Struct is not a Declaration, so we need special handling
                 let struct_span = self.start_span();
                 let modifiers = self.parse_modifiers(false, false);
-                let struct_decl = self.parse_struct_declaration(struct_span, &modifiers, decorators);
+                // Save decorators before passing to parse_struct_declaration
+                let export_decorators = decorators;
+                let struct_decl = self.parse_struct_declaration(struct_span, &modifiers, export_decorators);
                 // Since StructStatement is not a Declaration, we cannot put it in ExportNamedDeclaration.
                 // Instead, we create a Statement and wrap it appropriately.
                 // For now, we'll create an export without a declaration (similar to export { ... })
                 // but this is a workaround. The proper solution would be to add StructStatement to Declaration.
                 let export_named_decl = self.ast.alloc_export_named_declaration(
                     self.end_span(span),
+                    self.ast.vec(), // decorators already on struct
                     None, // No declaration since StructStatement is not a Declaration
                     self.ast.vec(),
                     None,
@@ -574,6 +579,7 @@ impl<'a> ParserImpl<'a> {
         let span = self.end_span(span);
         let export_named_decl = self.ast.alloc_export_named_declaration(
             span,
+            self.ast.vec(), // decorators
             None,
             specifiers,
             source,
@@ -599,6 +605,7 @@ impl<'a> ParserImpl<'a> {
             if self.is_ts { self.eat_modifiers_before_declaration() } else { Modifiers::empty() };
         self.ctx = self.ctx.union_ambient_if(modifiers.contains_declare());
 
+        // Decorators are stored on the declaration itself (class or function)
         let declaration = self.parse_declaration(decl_span, &modifiers, decorators);
         let export_kind = if declaration.declare() || declaration.is_type() {
             ImportOrExportKind::Type
@@ -606,8 +613,10 @@ impl<'a> ParserImpl<'a> {
             ImportOrExportKind::Value
         };
         self.ctx = reserved_ctx;
+        // Decorators are now stored on the declaration itself (class or function), not on export
         let export_named_decl = self.ast.alloc_export_named_declaration(
             self.end_span(span),
+            self.ast.vec(), // decorators (stored on declaration, not export)
             Some(declaration),
             self.ast.vec(),
             None,
@@ -703,6 +712,7 @@ impl<'a> ParserImpl<'a> {
                         function_span,
                         /* r#async */ true,
                         FunctionKind::DefaultExport,
+                        self.ast.vec(), // decorators
                     );
                     if has_no_side_effects_comment {
                         func.pure = true;
@@ -735,6 +745,13 @@ impl<'a> ParserImpl<'a> {
             ));
         }
 
+        // export default struct ... (ArkUI)
+        if kind == Kind::Struct && self.source_type.is_arkui() {
+            let modifiers = Modifiers::empty();
+            let struct_decl = self.parse_struct_declaration(decl_span, &modifiers, decorators);
+            return ExportDefaultDeclarationKind::StructStatement(struct_decl);
+        }
+
         for decorator in &decorators {
             self.error(diagnostics::decorators_are_not_valid_here(decorator.span));
         }
@@ -745,6 +762,7 @@ impl<'a> ParserImpl<'a> {
                 function_span,
                 /* r#async */ false,
                 FunctionKind::DefaultExport,
+                decorators,
             );
             if has_no_side_effects_comment {
                 func.pure = true;

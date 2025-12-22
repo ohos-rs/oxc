@@ -158,6 +158,7 @@ impl<'a> IsolatedDeclarations<'a> {
         let value = self.ast.alloc_function(
             function.span,
             FunctionType::TSEmptyBodyFunctionExpression,
+            function.decorators.clone_in(self.ast.allocator),
             function.id.clone_in(self.ast.allocator),
             false,
             false,
