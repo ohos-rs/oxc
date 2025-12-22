@@ -799,6 +799,22 @@ impl<'a> ParserImpl<'a> {
             // Struct span.start starts before decorators.
             return self.parse_struct_statement(span, stmt_ctx, &modifiers, decorators);
         }
+        if self.at(Kind::Function) {
+            // Function declarations with decorators are only allowed in ArkUI mode
+            // (e.g., ArkUI @Builder)
+            if self.source_type.is_arkui() {
+                // Note: Function AST node doesn't have a decorators field, so we parse
+                // the function normally. The decorators are parsed but not stored.
+                return self.parse_function_declaration(span, /* async */ false, stmt_ctx);
+            } else {
+                // In non-ArkUI mode, decorators on functions are not allowed
+                for decorator in &decorators {
+                    self.error(diagnostics::decorators_are_not_valid_here(decorator.span));
+                }
+                // Continue parsing the function without decorators
+                return self.parse_function_declaration(span, /* async */ false, stmt_ctx);
+            }
+        }
         self.unexpected()
     }
 }

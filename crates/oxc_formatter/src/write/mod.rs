@@ -2019,11 +2019,12 @@ impl<'a> FormatWrite<'a> for AstNode<'a, ArkUIComponentExpression<'a>> {
         // Support line breaks when the chain is too long
         if !chain_expressions.as_ref().is_empty() {
             let should_break = should_break_arkui_chain(chain_expressions.as_ref(), f);
+            let has_children = !children.as_ref().is_empty();
 
             if should_break {
                 // Force multi-line format when chain should break
-                // Each chain expression should be on a new line with indentation
-                // First chain expression should be on a new line after the component call
+                // If component has children ({}), chain expressions align with component (no indent)
+                // If component has no children, chain expressions should be indented
                 let format_chains_multi_line = format_with(|f| {
                     for (i, chain_expr_node) in chain_expressions.iter().enumerate() {
                         if i > 0 {
@@ -2032,9 +2033,14 @@ impl<'a> FormatWrite<'a> for AstNode<'a, ArkUIComponentExpression<'a>> {
                         write!(f, [FormatArkUIChainExpression(chain_expr_node)]);
                     }
                 });
-                // Add a line break before the first chain expression and indent all chain expressions
-                // The indent() function will add proper indentation to all chain expressions
-                write!(f, [indent(&format_args!(hard_line_break(), format_chains_multi_line))]);
+                // Add a line break before the first chain expression
+                // If component has children, no indentation (aligned with component)
+                // If component has no children, add indentation
+                if has_children {
+                    write!(f, [hard_line_break(), format_chains_multi_line]);
+                } else {
+                    write!(f, [indent(&format_args!(hard_line_break(), format_chains_multi_line))]);
+                }
             } else {
                 // Format all chain expressions, allowing breaking when needed
                 // In single-line format, chain expressions should be directly connected (no space)
@@ -2044,7 +2050,9 @@ impl<'a> FormatWrite<'a> for AstNode<'a, ArkUIComponentExpression<'a>> {
                     }
                 });
 
-                // In multi-line format, each chain expression should be on a new line with indentation
+                // In multi-line format, each chain expression should be on a new line
+                // If component has children, no indentation (aligned with component)
+                // If component has no children, add indentation
                 let format_chains_multi_line = format_with(|f| {
                     for (i, chain_expr_node) in chain_expressions.iter().enumerate() {
                         if i > 0 {
@@ -2057,14 +2065,26 @@ impl<'a> FormatWrite<'a> for AstNode<'a, ArkUIComponentExpression<'a>> {
                 // Use best_fitting to choose between single-line and multi-line formatting
                 // This allows the formatter to break the chain when it's too long
                 // Wrap in a group to allow breaking when needed
+                // If component has children, chain expressions align with component (no indent)
+                // If component has no children, chain expressions should be indented
                 let format_content = format_with(|f| {
-                    write!(
-                        f,
-                        [best_fitting!(
-                            format_chains_single_line,
-                            indent(&format_chains_multi_line)
-                        )]
-                    );
+                    if has_children {
+                        write!(
+                            f,
+                            [best_fitting!(
+                                format_chains_single_line,
+                                format_args!(hard_line_break(), format_chains_multi_line)
+                            )]
+                        );
+                    } else {
+                        write!(
+                            f,
+                            [best_fitting!(
+                                format_chains_single_line,
+                                indent(&format_args!(hard_line_break(), format_chains_multi_line))
+                            )]
+                        );
+                    }
                 });
                 write!(f, [group(&format_content)]);
             }
