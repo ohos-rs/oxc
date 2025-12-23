@@ -560,6 +560,37 @@ impl<'a> ParserImpl<'a> {
                 // This is a limitation: we can't properly export struct in the current AST design
                 return Statement::StructStatement(struct_decl);
             }
+            // Handle `export declare struct` (and other modifiers) in ArkUI mode.
+            // We need a lookahead because the current token is the modifier (`declare`),
+            // not `struct`.
+            kind if self.source_type.is_arkui()
+                && matches!(kind, Kind::Declare | Kind::Async | Kind::Abstract | Kind::Public)
+                && self.lookahead(|p| {
+                    p.eat_modifiers_before_declaration();
+                    p.cur_kind() == Kind::Struct
+                }) =>
+            {
+                // Struct is not a Declaration, so mirror the `export struct` workaround above.
+                let struct_span = self.start_span();
+                let modifiers = self.parse_modifiers(false, false);
+                let export_decorators = decorators;
+                let struct_decl =
+                    self.parse_struct_declaration(struct_span, &modifiers, export_decorators);
+                let export_named_decl = self.ast.alloc_export_named_declaration(
+                    self.end_span(span),
+                    self.ast.vec(), // decorators already on struct
+                    None,           // No declaration since StructStatement is not a Declaration
+                    self.ast.vec(),
+                    None,
+                    ImportOrExportKind::Value,
+                    NONE,
+                );
+                if stmt_ctx.is_top_level() {
+                    self.module_record_builder.visit_export_named_declaration(&export_named_decl);
+                }
+                // Return the struct statement directly, not wrapped in export
+                return Statement::StructStatement(struct_decl);
+            }
             Kind::Eq if self.is_ts => ModuleDeclaration::TSExportAssignment(
                 self.parse_ts_export_assignment_declaration(span, stmt_ctx),
             ),
@@ -1447,6 +1478,24 @@ mod test {
         assert!(decl.specifiers.is_some());
         let specifiers = decl.specifiers.as_ref().unwrap();
         assert_eq!(specifiers[0].name(), "type");
+    }
+
+    #[test]
+    fn export_declare_struct_with_decorator_in_arkui() {
+        let src = "@Component
+export declare struct Foo {
+    @State count: number;
+    build(): void;
+}";
+        let source_type = SourceType::default().with_typescript(true).with_arkui(true);
+        let allocator = Allocator::default();
+        let ret = Parser::new(&allocator, src, source_type).parse();
+        assert!(
+            ret.errors.is_empty(),
+            "Unexpected errors: {:?}",
+            ret.errors
+        );
+        assert!(matches!(ret.program.body.first(), Some(Statement::StructStatement(_))));
     }
 
     fn parse_and_assert_statements(

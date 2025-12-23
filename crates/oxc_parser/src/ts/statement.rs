@@ -435,9 +435,10 @@ impl<'a> ParserImpl<'a> {
         decorators: Vec<'a, Decorator<'a>>,
     ) -> Declaration<'a> {
         let kind = self.cur_kind();
-        // Allow decorators on classes, and on functions in ArkUI mode
-        let decorators_allowed =
-            kind == Kind::Class || (self.at_function_with_async() && self.source_type.is_arkui());
+        // Allow decorators on classes, and on functions/structs in ArkUI mode
+        let decorators_allowed = kind == Kind::Class
+            || (self.source_type.is_arkui()
+                && (kind == Kind::Struct || self.at_function_with_async()));
         if !decorators_allowed {
             for decorator in &decorators {
                 self.error(diagnostics::decorators_are_not_valid_here(decorator.span));
@@ -680,5 +681,33 @@ impl<'a> ParserImpl<'a> {
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use oxc_allocator::Allocator;
+    use oxc_ast::ast::Statement;
+    use oxc_span::SourceType;
+
+    use crate::Parser;
+
+    #[test]
+    fn allows_decorators_on_exported_arkui_struct_with_declare() {
+        let src = "@Component
+export declare struct Foo {
+    @State count: number;
+    build(): void;
+}
+";
+        let source_type = SourceType::default().with_typescript(true).with_arkui(true);
+        let allocator = Allocator::default();
+        let ret = Parser::new(&allocator, src, source_type).parse();
+        assert!(
+            ret.errors.is_empty(),
+            "Unexpected errors while parsing ArkUI struct: {:?}",
+            ret.errors
+        );
+        assert!(matches!(ret.program.body.first(), Some(Statement::StructStatement(_))));
     }
 }
