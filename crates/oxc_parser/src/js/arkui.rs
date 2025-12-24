@@ -158,125 +158,87 @@ impl<'a> ParserImpl<'a> {
             ));
         }
 
-        // Check if this is a method definition
-        // We need to check if the next token after the identifier is a left parenthesis
-        // or if it's a method with return type annotation (methodName(): ReturnType {)
-        if self.cur_kind().is_identifier_or_keyword() {
-            let checkpoint = self.checkpoint();
-            let (_name, _computed) = self.parse_property_name();
-            let has_lparen = self.at(Kind::LParen);
-
-            // Check for methods with return type annotations: methodName(): ReturnType {
-            // Pattern: identifier, optional (), colon, type, opening brace
-            let is_method_with_return_type = if self.is_ts && self.at(Kind::Colon) {
-                // Check if this looks like a method return type annotation
-                // We need to peek ahead: colon, type, then opening brace (not = or ;)
-                let checkpoint2 = self.checkpoint();
-                self.bump_any(); // consume colon
-                // Try to parse a type (this is a best-effort check)
-                // If we see an identifier/keyword followed by {, it's likely a method
-                let looks_like_method = self.cur_kind().is_identifier_or_keyword() && {
-                    // Peek further to see if next is { (method) vs = or ; (property)
-                    let checkpoint3 = self.checkpoint();
-                    self.bump_any(); // consume type identifier
-                    // Skip any dots (qualified names like Some.Type)
-                    while self.eat(Kind::Dot) && self.cur_kind().is_identifier_or_keyword() {
-                        self.bump_any();
-                    }
-                    let is_method_pattern = self.at(Kind::LCurly);
-                    self.rewind(checkpoint3);
-                    is_method_pattern
-                };
-                self.rewind(checkpoint2);
-                looks_like_method
-            } else {
-                false
-            };
-
-            // Also check if we have () followed by : ReturnType {
-            let is_method_with_parens_and_return_type = if has_lparen && self.is_ts {
-                let checkpoint2 = self.checkpoint();
-                self.bump_any(); // consume (
-                // Check for empty params: )
-                if self.eat(Kind::RParen) {
-                    // Now check for return type annotation
-                    if self.at(Kind::Colon) {
-                        self.bump_any(); // consume :
-                        let looks_like_method = self.cur_kind().is_identifier_or_keyword() && {
-                            let checkpoint3 = self.checkpoint();
-                            self.bump_any(); // consume type identifier
-                            while self.eat(Kind::Dot) && self.cur_kind().is_identifier_or_keyword()
-                            {
-                                self.bump_any();
-                            }
-                            let is_method_pattern = self.at(Kind::LCurly);
-                            self.rewind(checkpoint3);
-                            is_method_pattern
-                        };
-                        self.rewind(checkpoint2);
-                        looks_like_method
-                    } else {
-                        self.rewind(checkpoint2);
-                        false
-                    }
-                } else {
-                    self.rewind(checkpoint2);
-                    false
-                }
-            } else {
-                false
-            };
-
-            let is_method =
-                has_lparen || is_method_with_return_type || is_method_with_parens_and_return_type;
-            self.rewind(checkpoint);
-
-            if is_method {
-                // Parse as method definition
-                // Since try_parse_method_definition_for_struct doesn't use checkpoint/rewind,
-                // we need to handle decorators carefully. If method parsing fails, we'll need to re-parse decorators.
-                let method_def =
-                    self.try_parse_method_definition_for_struct(span, &modifiers, decorators);
-                if let Some(method_def) = method_def {
-                    return StructElement::MethodDefinition(method_def);
-                }
-                // If method parsing failed, decorators were consumed, so we need to re-parse them
-                // But since we used checkpoint/rewind above, the parser state should be restored
-                // So we can re-parse decorators and modifiers
-                let decorators = self.parse_decorators();
-                let modifiers = self.parse_modifiers(
-                    /* permit_const_as_modifier */ true,
-                    /* stop_on_start_of_class_static_block */ false,
-                );
-                return self.parse_property_definition_for_struct(span, &modifiers, decorators);
-            }
+        // Parse property or method declaration (similar to class)
+        if self.cur_kind().is_identifier_or_keyword() || self.at(Kind::Star) || self.at(Kind::LBrack) {
+            return self.parse_property_or_method_declaration_for_struct(span, r#type, &modifiers, decorators);
         }
 
         // Otherwise parse as property definition
         self.parse_property_definition_for_struct(span, &modifiers, decorators)
     }
 
-    /// Try to parse a method definition for struct
-    fn try_parse_method_definition_for_struct(
+    /// Parse property or method declaration for struct (similar to class)
+    fn parse_property_or_method_declaration_for_struct(
         &mut self,
         span: u32,
+        r#type: MethodDefinitionType,
         modifiers: &Modifiers<'a>,
         decorators: Vec<'a, Decorator<'a>>,
-    ) -> Option<Box<'a, MethodDefinition<'a>>> {
-        // Parse as method definition using parse_property_or_method_declaration logic
+    ) -> StructElement<'a> {
         let generator = self.eat(Kind::Star);
         let (name, computed) = self.parse_property_name();
-        let optional = self.eat(Kind::Question);
 
-        if generator || self.at(Kind::LParen) {
+        // Handle optional ? token (aligned with class parsing)
+        let cur_token = self.cur_token();
+        let optional_span = (cur_token.kind() == Kind::Question).then(|| {
+            let span = cur_token.span();
+            self.bump_any();
+            span
+        });
+        let optional = optional_span.is_some();
+
+        // Check if this is a method (generator or has parentheses or type parameters)
+        if generator || matches!(self.cur_kind(), Kind::LParen | Kind::LAngle) {
+            return StructElement::MethodDefinition(self.parse_method_declaration_for_struct(
+                span,
+                r#type,
+                generator,
+                name,
+                computed,
+                optional,
+                modifiers,
+                decorators,
+            ));
+        }
+
+        // Otherwise parse as property
+        let definite = self.eat(Kind::Bang);
+
+        if definite && let Some(optional_span) = optional_span {
+            self.error(diagnostics::optional_definite_property(optional_span.expand_right(1)));
+        }
+
+        self.parse_property_declaration_for_struct(
+            span,
+            name,
+            computed,
+            optional_span,
+            definite,
+            modifiers,
+            decorators,
+        )
+    }
+
+    /// Parse method declaration for struct (similar to class)
+    fn parse_method_declaration_for_struct(
+        &mut self,
+        span: u32,
+        r#type: MethodDefinitionType,
+        generator: bool,
+        name: PropertyKey<'a>,
+        computed: bool,
+        optional: bool,
+        modifiers: &Modifiers<'a>,
+        decorators: Vec<'a, Decorator<'a>>,
+    ) -> Box<'a, MethodDefinition<'a>> {
             let value = self.parse_method(
                 modifiers.contains(ModifierKind::Async),
                 generator,
                 FunctionKind::ClassMethod,
             );
-            let method_def = self.ast.alloc_method_definition(
+        self.ast.alloc_method_definition(
                 self.end_span(span),
-                MethodDefinitionType::MethodDefinition,
+            r#type,
                 decorators,
                 name,
                 value,
@@ -286,11 +248,58 @@ impl<'a> ParserImpl<'a> {
                 modifiers.contains(ModifierKind::Override),
                 optional,
                 modifiers.accessibility(),
-            );
-            return Some(method_def);
-        }
+        )
+    }
 
-        None
+    /// Parse property declaration for struct (similar to class)
+    fn parse_property_declaration_for_struct(
+        &mut self,
+        span: u32,
+        name: PropertyKey<'a>,
+        computed: bool,
+        optional_span: Option<Span>,
+        definite: bool,
+        modifiers: &Modifiers<'a>,
+        decorators: Vec<'a, Decorator<'a>>,
+    ) -> StructElement<'a> {
+        let optional = optional_span.is_some();
+
+        // Parse optional type annotation
+        let type_annotation = if self.is_ts && self.eat(Kind::Colon) {
+            let span = self.start_span();
+            let ts_type = self.parse_ts_type();
+            Some(self.ast.alloc_ts_type_annotation(self.end_span(span), ts_type))
+        } else {
+            None
+        };
+
+        // Parse optional initializer
+        let initializer = self
+            .eat(Kind::Eq)
+            .then(|| self.context(Context::In, Context::Yield | Context::Await, Self::parse_expr));
+
+        // Semicolon is optional in struct bodies
+        let _ = self.eat(Kind::Semicolon);
+
+        let r#type = PropertyDefinitionType::PropertyDefinition;
+        let property_def = self.ast.alloc_property_definition(
+            self.end_span(span),
+            r#type,
+            decorators,
+            name,
+            type_annotation,
+            initializer,
+            computed,
+            modifiers.contains(ModifierKind::Static),
+            false, // declare
+            modifiers.contains(ModifierKind::Override),
+            optional,
+            definite,
+            modifiers.contains(ModifierKind::Readonly),
+            modifiers.accessibility(),
+        );
+
+        StructElement::PropertyDefinition(property_def)
     }
 
     /// Parse an accessor declaration (get/set) for struct
@@ -335,7 +344,7 @@ impl<'a> ParserImpl<'a> {
         method_definition
     }
 
-    /// Parse a property definition for struct
+    /// Parse a property definition for struct (fallback when not identifier/keyword/star/bracket)
     fn parse_property_definition_for_struct(
         &mut self,
         span: u32,
@@ -344,45 +353,26 @@ impl<'a> ParserImpl<'a> {
     ) -> StructElement<'a> {
         // Parse property key
         let (name, computed) = self.parse_property_name();
-        let optional = self.eat(Kind::Question);
+        let optional_span = (self.cur_token().kind() == Kind::Question).then(|| {
+            let span = self.cur_token().span();
+            self.bump_any();
+            span
+        });
         let definite = self.eat(Kind::Bang);
 
-        // Parse optional type annotation
-        let type_annotation = if self.is_ts && self.eat(Kind::Colon) {
-            let span = self.start_span();
-            let ts_type = self.parse_ts_type();
-            Some(self.ast.alloc_ts_type_annotation(self.end_span(span), ts_type))
-        } else {
-            None
-        };
+        if definite && let Some(optional_span) = optional_span {
+            self.error(diagnostics::optional_definite_property(optional_span.expand_right(1)));
+        }
 
-        // Parse optional initializer
-        let initializer = self
-            .eat(Kind::Eq)
-            .then(|| self.context(Context::In, Context::Yield | Context::Await, Self::parse_expr));
-
-        // Semicolon is optional in struct bodies
-        let _ = self.eat(Kind::Semicolon);
-
-        let r#type = PropertyDefinitionType::PropertyDefinition;
-        let property_def = self.ast.alloc_property_definition(
-            self.end_span(span),
-            r#type,
-            decorators,
+        self.parse_property_declaration_for_struct(
+            span,
             name,
-            type_annotation,
-            initializer,
             computed,
-            modifiers.contains(ModifierKind::Static),
-            false, // declare
-            modifiers.contains(ModifierKind::Override),
-            optional,
+            optional_span,
             definite,
-            modifiers.contains(ModifierKind::Readonly),
-            modifiers.accessibility(),
-        );
-
-        StructElement::PropertyDefinition(property_def)
+            modifiers,
+            decorators,
+        )
     }
 
     /// Parse an ArkUI component expression

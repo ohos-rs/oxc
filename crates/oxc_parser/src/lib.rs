@@ -590,7 +590,7 @@ impl<'a> ParserImpl<'a> {
 mod test {
     use std::path::Path;
 
-    use oxc_ast::ast::{CommentKind, Expression, Statement};
+    use oxc_ast::ast::{CommentKind, Expression, Statement, StructElement};
     use oxc_span::GetSpan;
 
     use super::*;
@@ -872,6 +872,29 @@ mod test {
             assert_eq!(component.children.len(), 1);
         } else {
             panic!("Expected ArkUIComponentExpression");
+        }
+    }
+
+    #[test]
+    fn arkui_struct_optional_method() {
+        let allocator = Allocator::default();
+        // Use ETS source type for ArkUI
+        let source_type = SourceType::ets();
+        let source = "struct A {\n  aboutToAppear?(): void {\n  }\n}";
+        let ret = Parser::new(&allocator, source, source_type).parse();
+        assert!(ret.errors.is_empty(), "Errors: {:?}", ret.errors);
+        assert_eq!(ret.program.body.len(), 1);
+        if let Statement::StructStatement(struct_stmt) = &ret.program.body[0] {
+            assert_eq!(struct_stmt.id.name.as_str(), "A");
+            assert_eq!(struct_stmt.body.body.len(), 1);
+            if let StructElement::MethodDefinition(method_def) = &struct_stmt.body.body[0] {
+                assert!(method_def.optional, "Method should be optional");
+                assert_eq!(method_def.key.static_name().unwrap(), "aboutToAppear");
+            } else {
+                panic!("Expected MethodDefinition");
+            }
+        } else {
+            panic!("Expected StructStatement");
         }
     }
 
