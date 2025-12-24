@@ -2128,7 +2128,6 @@ pub mod walk_mut {
             Statement::TryStatement(it) => visitor.visit_try_statement(it),
             Statement::WhileStatement(it) => visitor.visit_while_statement(it),
             Statement::WithStatement(it) => visitor.visit_with_statement(it),
-            Statement::StructStatement(it) => visitor.visit_struct_statement(it),
             match_declaration!(Statement) => visitor.visit_declaration(it.to_declaration_mut()),
             match_module_declaration!(Statement) => {
                 visitor.visit_module_declaration(it.to_module_declaration_mut())
@@ -2181,6 +2180,7 @@ pub mod walk_mut {
             Declaration::TSImportEqualsDeclaration(it) => {
                 visitor.visit_ts_import_equals_declaration(it)
             }
+            Declaration::StructStatement(it) => visitor.visit_struct_statement(it),
         }
     }
 

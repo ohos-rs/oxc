@@ -198,6 +198,16 @@ impl<'a> IsolatedDeclarations<'a> {
                     None
                 }
             }
+            Declaration::StructStatement(struct_decl) => {
+                let needs_transform = !check_binding
+                    || self.scope.has_reference(&struct_decl.id.name);
+                needs_transform
+                    .then(|| {
+                        let mut decl = decl.clone_in(self.ast.allocator);
+                        self.visit_declaration(&mut decl);
+                        decl
+                    })
+            }
             Declaration::TSModuleDeclaration(decl) => {
                 if !check_binding
                     || matches!(

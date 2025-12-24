@@ -318,7 +318,6 @@ impl GetAddress for Statement<'_> {
             Self::TryStatement(it) => GetAddress::address(it),
             Self::WhileStatement(it) => GetAddress::address(it),
             Self::WithStatement(it) => GetAddress::address(it),
-            Self::StructStatement(it) => GetAddress::address(it),
             Self::VariableDeclaration(it) => GetAddress::address(it),
             Self::FunctionDeclaration(it) => GetAddress::address(it),
             Self::ClassDeclaration(it) => GetAddress::address(it),
@@ -328,6 +327,7 @@ impl GetAddress for Statement<'_> {
             Self::TSModuleDeclaration(it) => GetAddress::address(it),
             Self::TSGlobalDeclaration(it) => GetAddress::address(it),
             Self::TSImportEqualsDeclaration(it) => GetAddress::address(it),
+            Self::StructStatement(it) => GetAddress::address(it),
             Self::ImportDeclaration(it) => GetAddress::address(it),
             Self::LazyImportDeclaration(it) => GetAddress::address(it),
             Self::ExportAllDeclaration(it) => GetAddress::address(it),
@@ -353,6 +353,7 @@ impl GetAddress for Declaration<'_> {
             Self::TSModuleDeclaration(it) => GetAddress::address(it),
             Self::TSGlobalDeclaration(it) => GetAddress::address(it),
             Self::TSImportEqualsDeclaration(it) => GetAddress::address(it),
+            Self::StructStatement(it) => GetAddress::address(it),
         }
     }
 }

@@ -622,7 +622,6 @@ impl GetSpanMut for Statement<'_> {
             Self::TryStatement(it) => GetSpanMut::span_mut(&mut **it),
             Self::WhileStatement(it) => GetSpanMut::span_mut(&mut **it),
             Self::WithStatement(it) => GetSpanMut::span_mut(&mut **it),
-            Self::StructStatement(it) => GetSpanMut::span_mut(&mut **it),
             Self::VariableDeclaration(it) => GetSpanMut::span_mut(&mut **it),
             Self::FunctionDeclaration(it) => GetSpanMut::span_mut(&mut **it),
             Self::ClassDeclaration(it) => GetSpanMut::span_mut(&mut **it),
@@ -632,6 +631,7 @@ impl GetSpanMut for Statement<'_> {
             Self::TSModuleDeclaration(it) => GetSpanMut::span_mut(&mut **it),
             Self::TSGlobalDeclaration(it) => GetSpanMut::span_mut(&mut **it),
             Self::TSImportEqualsDeclaration(it) => GetSpanMut::span_mut(&mut **it),
+            Self::StructStatement(it) => GetSpanMut::span_mut(&mut **it),
             Self::ImportDeclaration(it) => GetSpanMut::span_mut(&mut **it),
             Self::LazyImportDeclaration(it) => GetSpanMut::span_mut(&mut **it),
             Self::ExportAllDeclaration(it) => GetSpanMut::span_mut(&mut **it),
@@ -676,6 +676,7 @@ impl GetSpanMut for Declaration<'_> {
             Self::TSModuleDeclaration(it) => GetSpanMut::span_mut(&mut **it),
             Self::TSGlobalDeclaration(it) => GetSpanMut::span_mut(&mut **it),
             Self::TSImportEqualsDeclaration(it) => GetSpanMut::span_mut(&mut **it),
+            Self::StructStatement(it) => GetSpanMut::span_mut(&mut **it),
         }
     }
 }

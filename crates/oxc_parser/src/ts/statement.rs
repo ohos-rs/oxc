@@ -512,6 +512,10 @@ impl<'a> ParserImpl<'a> {
                 self.bump_any();
                 self.parse_ts_interface_declaration(start_span, modifiers)
             }
+            Kind::Struct if self.source_type.is_arkui() => {
+                let decl = self.parse_struct_declaration(start_span, modifiers, decorators);
+                Declaration::StructStatement(decl)
+            }
             _ if self.at_function_with_async() => {
                 let declare = modifiers.contains(ModifierKind::Declare);
                 if declare {

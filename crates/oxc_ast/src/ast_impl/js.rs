@@ -1164,6 +1164,7 @@ impl<'a> Declaration<'a> {
             Declaration::TSInterfaceDeclaration(decl) => Some(&decl.id),
             Declaration::TSEnumDeclaration(decl) => Some(&decl.id),
             Declaration::TSImportEqualsDeclaration(decl) => Some(&decl.id),
+            Declaration::StructStatement(decl) => Some(&decl.id),
             Declaration::TSModuleDeclaration(decl) => {
                 if let TSModuleDeclarationName::Identifier(ident) = &decl.id {
                     Some(ident)
@@ -1186,6 +1187,7 @@ impl<'a> Declaration<'a> {
             Declaration::TSModuleDeclaration(decl) => decl.declare,
             Declaration::TSGlobalDeclaration(decl) => decl.declare,
             Declaration::TSInterfaceDeclaration(decl) => decl.declare,
+            Declaration::StructStatement(decl) => decl.declare,
             Declaration::TSImportEqualsDeclaration(_) => false,
         }
     }

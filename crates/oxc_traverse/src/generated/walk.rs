@@ -1419,9 +1419,6 @@ unsafe fn walk_statement<'a, State, Tr: Traverse<'a, State>>(
         Statement::WithStatement(node) => {
             walk_with_statement(traverser, (&mut **node) as *mut _, ctx)
         }
-        Statement::StructStatement(node) => {
-            walk_struct_statement(traverser, (&mut **node) as *mut _, ctx)
-        }
         Statement::VariableDeclaration(_)
         | Statement::FunctionDeclaration(_)
         | Statement::ClassDeclaration(_)
@@ -1430,9 +1427,8 @@ unsafe fn walk_statement<'a, State, Tr: Traverse<'a, State>>(
         | Statement::TSEnumDeclaration(_)
         | Statement::TSModuleDeclaration(_)
         | Statement::TSGlobalDeclaration(_)
-        | Statement::TSImportEqualsDeclaration(_) => {
-            walk_declaration(traverser, node as *mut _, ctx)
-        }
+        | Statement::TSImportEqualsDeclaration(_)
+        | Statement::StructStatement(_) => walk_declaration(traverser, node as *mut _, ctx),
         Statement::ImportDeclaration(_)
         | Statement::LazyImportDeclaration(_)
         | Statement::ExportAllDeclaration(_)
@@ -1532,6 +1528,9 @@ unsafe fn walk_declaration<'a, State, Tr: Traverse<'a, State>>(
         }
         Declaration::TSImportEqualsDeclaration(node) => {
             walk_ts_import_equals_declaration(traverser, (&mut **node) as *mut _, ctx)
+        }
+        Declaration::StructStatement(node) => {
+            walk_struct_statement(traverser, (&mut **node) as *mut _, ctx)
         }
     }
     traverser.exit_declaration(&mut *node, ctx);

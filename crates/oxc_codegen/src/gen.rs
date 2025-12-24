@@ -1111,6 +1111,7 @@ impl Gen for ExportNamedDeclaration<'_> {
                 Declaration::TSInterfaceDeclaration(decl) => decl.print(p, ctx),
                 Declaration::TSEnumDeclaration(decl) => decl.print(p, ctx),
                 Declaration::TSImportEqualsDeclaration(decl) => decl.print(p, ctx),
+                Declaration::StructStatement(decl) => decl.print(p, ctx),
             }
             // Restore the flag
             p.skip_function_decorators = old_skip;

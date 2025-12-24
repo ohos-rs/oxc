@@ -1617,7 +1617,7 @@ const _: () = {
     assert!(align_of::<JSDocUnknownType>() == 8);
     assert!(offset_of!(JSDocUnknownType, span) == 0);
 
-    // Padding: 1 bytes
+    // Padding: 3 bytes
     assert!(size_of::<StructStatement>() == 88);
     assert!(align_of::<StructStatement>() == 8);
     assert!(offset_of!(StructStatement, span) == 0);
@@ -1626,8 +1626,6 @@ const _: () = {
     assert!(offset_of!(StructStatement, type_parameters) == 64);
     assert!(offset_of!(StructStatement, body) == 72);
     assert!(offset_of!(StructStatement, declare) == 84);
-    assert!(offset_of!(StructStatement, is_export) == 85);
-    assert!(offset_of!(StructStatement, is_default_export) == 86);
     assert!(offset_of!(StructStatement, scope_id) == 80);
 
     // Padding: 0 bytes
@@ -3286,7 +3284,7 @@ const _: () = if cfg!(target_family = "wasm") || align_of::<u64>() == 8 {
     assert!(align_of::<JSDocUnknownType>() == 4);
     assert!(offset_of!(JSDocUnknownType, span) == 0);
 
-    // Padding: 1 bytes
+    // Padding: 3 bytes
     assert!(size_of::<StructStatement>() == 60);
     assert!(align_of::<StructStatement>() == 4);
     assert!(offset_of!(StructStatement, span) == 0);
@@ -3295,8 +3293,6 @@ const _: () = if cfg!(target_family = "wasm") || align_of::<u64>() == 8 {
     assert!(offset_of!(StructStatement, type_parameters) == 44);
     assert!(offset_of!(StructStatement, body) == 48);
     assert!(offset_of!(StructStatement, declare) == 56);
-    assert!(offset_of!(StructStatement, is_export) == 57);
-    assert!(offset_of!(StructStatement, is_default_export) == 58);
     assert!(offset_of!(StructStatement, scope_id) == 52);
 
     // Padding: 0 bytes

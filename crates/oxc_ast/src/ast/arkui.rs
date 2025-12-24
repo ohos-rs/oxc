@@ -59,10 +59,6 @@ pub struct StructStatement<'a> {
     /// Whether this struct is marked with `declare`.
     #[ts]
     pub declare: bool,
-    /// Whether this struct is exported (`export struct ...`).
-    pub is_export: bool,
-    /// Whether this struct is exported as default (`export default struct ...`).
-    pub is_default_export: bool,
     /// Id of the scope created by the [`StructStatement`], including type parameters and
     /// statements within the [`StructBody`].
     pub scope_id: Cell<Option<ScopeId>>,

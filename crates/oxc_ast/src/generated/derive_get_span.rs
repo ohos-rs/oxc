@@ -622,7 +622,6 @@ impl GetSpan for Statement<'_> {
             Self::TryStatement(it) => GetSpan::span(&**it),
             Self::WhileStatement(it) => GetSpan::span(&**it),
             Self::WithStatement(it) => GetSpan::span(&**it),
-            Self::StructStatement(it) => GetSpan::span(&**it),
             Self::VariableDeclaration(it) => GetSpan::span(&**it),
             Self::FunctionDeclaration(it) => GetSpan::span(&**it),
             Self::ClassDeclaration(it) => GetSpan::span(&**it),
@@ -632,6 +631,7 @@ impl GetSpan for Statement<'_> {
             Self::TSModuleDeclaration(it) => GetSpan::span(&**it),
             Self::TSGlobalDeclaration(it) => GetSpan::span(&**it),
             Self::TSImportEqualsDeclaration(it) => GetSpan::span(&**it),
+            Self::StructStatement(it) => GetSpan::span(&**it),
             Self::ImportDeclaration(it) => GetSpan::span(&**it),
             Self::LazyImportDeclaration(it) => GetSpan::span(&**it),
             Self::ExportAllDeclaration(it) => GetSpan::span(&**it),
@@ -676,6 +676,7 @@ impl GetSpan for Declaration<'_> {
             Self::TSModuleDeclaration(it) => GetSpan::span(&**it),
             Self::TSGlobalDeclaration(it) => GetSpan::span(&**it),
             Self::TSImportEqualsDeclaration(it) => GetSpan::span(&**it),
+            Self::StructStatement(it) => GetSpan::span(&**it),
         }
     }
 }

@@ -533,34 +533,10 @@ impl<'a> ParserImpl<'a> {
             }
             Kind::Struct if self.source_type.is_arkui() => {
                 // Handle `export struct` in ArkUI mode
-                // Struct is not a Declaration, so we need special handling
-                let struct_span = self.start_span();
-                let modifiers = self.parse_modifiers(false, false);
-                // Save decorators before passing to parse_struct_declaration
-                let export_decorators = decorators;
-                let mut struct_decl =
-                    self.parse_struct_declaration(struct_span, &modifiers, export_decorators);
-                struct_decl.is_export = true;
-                struct_decl.is_default_export = false;
-                // Since StructStatement is not a Declaration, we cannot put it in ExportNamedDeclaration.
-                // Instead, we create a Statement and wrap it appropriately.
-                // For now, we'll create an export without a declaration (similar to export { ... })
-                // but this is a workaround. The proper solution would be to add StructStatement to Declaration.
-                let export_named_decl = self.ast.alloc_export_named_declaration(
-                    self.end_span(span),
-                    self.ast.vec(), // decorators already on struct
-                    None,           // No declaration since StructStatement is not a Declaration
-                    self.ast.vec(),
-                    None,
-                    ImportOrExportKind::Value,
-                    NONE,
-                );
-                if stmt_ctx.is_top_level() {
-                    self.module_record_builder.visit_export_named_declaration(&export_named_decl);
-                }
-                // Return the struct statement directly, not wrapped in export
-                // This is a limitation: we can't properly export struct in the current AST design
-                return Statement::StructStatement(struct_decl);
+                // Now StructStatement is a Declaration, so we can use the standard export handling
+                ModuleDeclaration::ExportNamedDeclaration(
+                    self.parse_export_named_declaration(span, decorators, stmt_ctx),
+                )
             }
             // Handle `export declare struct` (and other modifiers) in ArkUI mode.
             // We need a lookahead because the current token is the modifier (`declare`),
@@ -572,28 +548,10 @@ impl<'a> ParserImpl<'a> {
                     p.cur_kind() == Kind::Struct
                 }) =>
             {
-                // Struct is not a Declaration, so mirror the `export struct` workaround above.
-                let struct_span = self.start_span();
-                let modifiers = self.parse_modifiers(false, false);
-                let export_decorators = decorators;
-                let mut struct_decl =
-                    self.parse_struct_declaration(struct_span, &modifiers, export_decorators);
-                struct_decl.is_export = true;
-                struct_decl.is_default_export = false;
-                let export_named_decl = self.ast.alloc_export_named_declaration(
-                    self.end_span(span),
-                    self.ast.vec(), // decorators already on struct
-                    None,           // No declaration since StructStatement is not a Declaration
-                    self.ast.vec(),
-                    None,
-                    ImportOrExportKind::Value,
-                    NONE,
-                );
-                if stmt_ctx.is_top_level() {
-                    self.module_record_builder.visit_export_named_declaration(&export_named_decl);
-                }
-                // Return the struct statement directly, not wrapped in export
-                return Statement::StructStatement(struct_decl);
+                // Now StructStatement is a Declaration, so we can use the standard export handling
+                ModuleDeclaration::ExportNamedDeclaration(
+                    self.parse_export_named_declaration(span, decorators, stmt_ctx),
+                )
             }
             Kind::Eq if self.is_ts => ModuleDeclaration::TSExportAssignment(
                 self.parse_ts_export_assignment_declaration(span, stmt_ctx),
@@ -880,9 +838,7 @@ impl<'a> ParserImpl<'a> {
         // export default struct ... (ArkUI)
         if kind == Kind::Struct && self.source_type.is_arkui() {
             let modifiers = Modifiers::empty();
-            let mut struct_decl = self.parse_struct_declaration(decl_span, &modifiers, decorators);
-            struct_decl.is_export = true;
-            struct_decl.is_default_export = true;
+            let struct_decl = self.parse_struct_declaration(decl_span, &modifiers, decorators);
             return ExportDefaultDeclarationKind::StructStatement(struct_decl);
         }
 

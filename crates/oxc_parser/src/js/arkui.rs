@@ -80,8 +80,6 @@ impl<'a> ParserImpl<'a> {
         let span = self.end_span(start_span);
 
         let declare = modifiers.contains(ModifierKind::Declare);
-        let is_export = false;
-        let is_default_export = false;
 
         self.ast.alloc_struct_statement(
             span,
@@ -90,8 +88,6 @@ impl<'a> ParserImpl<'a> {
             type_parameters,
             body,
             declare,
-            is_export,
-            is_default_export,
         )
     }
 

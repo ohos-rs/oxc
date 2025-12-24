@@ -1808,16 +1808,6 @@ impl<'a> Format<'a> for AstNode<'a, Statement<'a>> {
                     })
                     .fmt(f);
             }
-            Statement::StructStatement(inner) => {
-                allocator
-                    .alloc(AstNode::<StructStatement> {
-                        inner,
-                        parent,
-                        allocator,
-                        following_span: self.following_span,
-                    })
-                    .fmt(f);
-            }
             it @ match_declaration!(Statement) => {
                 let inner = it.to_declaration();
                 allocator
@@ -1972,6 +1962,16 @@ impl<'a> Format<'a> for AstNode<'a, Declaration<'a>> {
             Declaration::TSImportEqualsDeclaration(inner) => {
                 allocator
                     .alloc(AstNode::<TSImportEqualsDeclaration> {
+                        inner,
+                        parent,
+                        allocator,
+                        following_span: self.following_span,
+                    })
+                    .fmt(f);
+            }
+            Declaration::StructStatement(inner) => {
+                allocator
+                    .alloc(AstNode::<StructStatement> {
                         inner,
                         parent,
                         allocator,

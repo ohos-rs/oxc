@@ -30,7 +30,6 @@ impl<'a> MayHaveSideEffects<'a> for Statement<'a> {
             | Statement::DebuggerStatement(_) => true,
             #[expect(clippy::match_same_arms)]
             match_module_declaration!(Statement) => true,
-            Statement::StructStatement(_) => false, // Struct declarations don't have side effects
         }
     }
 }
@@ -97,6 +96,7 @@ impl<'a> MayHaveSideEffects<'a> for Declaration<'a> {
             | Declaration::TSGlobalDeclaration(_)
             | Declaration::TSInterfaceDeclaration(_)
             | Declaration::TSTypeAliasDeclaration(_) => unreachable!(),
+            | Declaration::StructStatement(_) => false, // Struct declarations don't have side effects
         }
     }
 }

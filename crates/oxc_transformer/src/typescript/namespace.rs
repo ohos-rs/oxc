@@ -253,6 +253,11 @@ impl<'a> TypeScriptNamespace<'a, '_> {
                                     );
                                 }
                             }
+                            Declaration::StructStatement(ref struct_decl) => {
+                                let binding = BoundIdentifier::from_binding_ident(&struct_decl.id);
+                                new_stmts.push(Statement::from(decl));
+                                Self::add_declaration(&uid_binding, &binding, &mut new_stmts, ctx);
+                            }
                             Declaration::VariableDeclaration(var_decl) => {
                                 var_decl.declarations.iter().for_each(|decl| {
                                     if !decl.kind.is_const() {

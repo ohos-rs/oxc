@@ -1135,9 +1135,8 @@ pub enum Statement<'a> {
     TryStatement(Box<'a, TryStatement<'a>>) = 15,
     WhileStatement(Box<'a, WhileStatement<'a>>) = 17,
     WithStatement(Box<'a, WithStatement<'a>>) = 18,
-    /// See [`StructStatement`] for AST node details.
-    StructStatement(Box<'a, StructStatement<'a>>) = 19,
     // `Declaration` variants added here by `inherit_variants!` macro
+    // Note: StructStatement is now inherited from Declaration (discriminant 19)
     @inherit Declaration
     // `ModuleDeclaration` variants added here by `inherit_variants!` macro
     @inherit ModuleDeclaration
@@ -1199,6 +1198,7 @@ pub enum Declaration<'a> {
     TSModuleDeclaration(Box<'a, TSModuleDeclaration<'a>>) = 38,
     TSGlobalDeclaration(Box<'a, TSGlobalDeclaration<'a>>) = 39,
     TSImportEqualsDeclaration(Box<'a, TSImportEqualsDeclaration<'a>>) = 40,
+    StructStatement(Box<'a, StructStatement<'a>>) = 19,
 }
 
 /// Macro for matching `Declaration`'s variants.
@@ -1214,6 +1214,7 @@ macro_rules! match_declaration {
             | $ty::TSModuleDeclaration(_)
             | $ty::TSGlobalDeclaration(_)
             | $ty::TSImportEqualsDeclaration(_)
+            | $ty::StructStatement(_)
     };
 }
 pub use match_declaration;

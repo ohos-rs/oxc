@@ -2892,14 +2892,6 @@ impl<'a> AstNode<'a, Statement<'a>> {
                 allocator: self.allocator,
                 following_span: self.following_span,
             })),
-            Statement::StructStatement(s) => {
-                AstNodes::StructStatement(self.allocator.alloc(AstNode {
-                    inner: s.as_ref(),
-                    parent,
-                    allocator: self.allocator,
-                    following_span: self.following_span,
-                }))
-            }
             it @ match_declaration!(Statement) => {
                 return self
                     .allocator
@@ -3058,6 +3050,14 @@ impl<'a> AstNode<'a, Declaration<'a>> {
             }
             Declaration::TSImportEqualsDeclaration(s) => {
                 AstNodes::TSImportEqualsDeclaration(self.allocator.alloc(AstNode {
+                    inner: s.as_ref(),
+                    parent,
+                    allocator: self.allocator,
+                    following_span: self.following_span,
+                }))
+            }
+            Declaration::StructStatement(s) => {
+                AstNodes::StructStatement(self.allocator.alloc(AstNode {
                     inner: s.as_ref(),
                     parent,
                     allocator: self.allocator,
@@ -9428,16 +9428,6 @@ impl<'a> AstNode<'a, StructStatement<'a>> {
     #[inline]
     pub fn declare(&self) -> bool {
         self.inner.declare
-    }
-
-    #[inline]
-    pub fn is_export(&self) -> bool {
-        self.inner.is_export
-    }
-
-    #[inline]
-    pub fn is_default_export(&self) -> bool {
-        self.inner.is_default_export
     }
 
     pub fn format_leading_comments(&self, f: &mut Formatter<'_, 'a>) {

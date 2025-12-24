@@ -639,7 +639,6 @@ impl<'a> Visit<'a> for ChildScopeCollector {
             Statement::TryStatement(it) => self.visit_try_statement(it),
             Statement::WhileStatement(it) => self.visit_while_statement(it),
             Statement::WithStatement(it) => self.visit_with_statement(it),
-            Statement::StructStatement(it) => self.visit_struct_statement(it),
             Statement::VariableDeclaration(it) => self.visit_variable_declaration(it),
             Statement::FunctionDeclaration(it) => {
                 let flags = ScopeFlags::Function;
@@ -651,6 +650,7 @@ impl<'a> Visit<'a> for ChildScopeCollector {
             Statement::TSEnumDeclaration(it) => self.visit_ts_enum_declaration(it),
             Statement::TSModuleDeclaration(it) => self.visit_ts_module_declaration(it),
             Statement::TSGlobalDeclaration(it) => self.visit_ts_global_declaration(it),
+            Statement::StructStatement(it) => self.visit_struct_statement(it),
             Statement::ExportDefaultDeclaration(it) => self.visit_export_default_declaration(it),
             Statement::ExportNamedDeclaration(it) => self.visit_export_named_declaration(it),
             Statement::TSExportAssignment(it) => self.visit_ts_export_assignment(it),
@@ -697,6 +697,7 @@ impl<'a> Visit<'a> for ChildScopeCollector {
             Declaration::TSEnumDeclaration(it) => self.visit_ts_enum_declaration(it),
             Declaration::TSModuleDeclaration(it) => self.visit_ts_module_declaration(it),
             Declaration::TSGlobalDeclaration(it) => self.visit_ts_global_declaration(it),
+            Declaration::StructStatement(it) => self.visit_struct_statement(it),
             _ => {
                 // Remaining variants do not contain scopes:
                 // `TSImportEqualsDeclaration`

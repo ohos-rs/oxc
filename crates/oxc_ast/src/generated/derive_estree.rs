@@ -825,7 +825,6 @@ impl ESTree for Statement<'_> {
             Self::TryStatement(it) => it.serialize(serializer),
             Self::WhileStatement(it) => it.serialize(serializer),
             Self::WithStatement(it) => it.serialize(serializer),
-            Self::StructStatement(it) => it.serialize(serializer),
             Self::VariableDeclaration(it) => it.serialize(serializer),
             Self::FunctionDeclaration(it) => it.serialize(serializer),
             Self::ClassDeclaration(it) => it.serialize(serializer),
@@ -835,6 +834,7 @@ impl ESTree for Statement<'_> {
             Self::TSModuleDeclaration(it) => it.serialize(serializer),
             Self::TSGlobalDeclaration(it) => it.serialize(serializer),
             Self::TSImportEqualsDeclaration(it) => it.serialize(serializer),
+            Self::StructStatement(it) => it.serialize(serializer),
             Self::ImportDeclaration(it) => it.serialize(serializer),
             Self::LazyImportDeclaration(it) => it.serialize(serializer),
             Self::ExportAllDeclaration(it) => it.serialize(serializer),
@@ -889,6 +889,7 @@ impl ESTree for Declaration<'_> {
             Self::TSModuleDeclaration(it) => it.serialize(serializer),
             Self::TSGlobalDeclaration(it) => it.serialize(serializer),
             Self::TSImportEqualsDeclaration(it) => it.serialize(serializer),
+            Self::StructStatement(it) => it.serialize(serializer),
         }
     }
 }
@@ -3296,8 +3297,6 @@ impl ESTree for StructStatement<'_> {
         state.serialize_ts_field("typeParameters", &self.type_parameters);
         state.serialize_field("body", &self.body);
         state.serialize_ts_field("declare", &self.declare);
-        state.serialize_field("isExport", &self.is_export);
-        state.serialize_field("isDefaultExport", &self.is_default_export);
         state.serialize_span(self.span);
         state.end();
     }

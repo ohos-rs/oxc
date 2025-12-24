@@ -730,7 +730,6 @@ impl ContentEq for Statement<'_> {
             (Self::TryStatement(a), Self::TryStatement(b)) => a.content_eq(b),
             (Self::WhileStatement(a), Self::WhileStatement(b)) => a.content_eq(b),
             (Self::WithStatement(a), Self::WithStatement(b)) => a.content_eq(b),
-            (Self::StructStatement(a), Self::StructStatement(b)) => a.content_eq(b),
             (Self::VariableDeclaration(a), Self::VariableDeclaration(b)) => a.content_eq(b),
             (Self::FunctionDeclaration(a), Self::FunctionDeclaration(b)) => a.content_eq(b),
             (Self::ClassDeclaration(a), Self::ClassDeclaration(b)) => a.content_eq(b),
@@ -742,6 +741,7 @@ impl ContentEq for Statement<'_> {
             (Self::TSImportEqualsDeclaration(a), Self::TSImportEqualsDeclaration(b)) => {
                 a.content_eq(b)
             }
+            (Self::StructStatement(a), Self::StructStatement(b)) => a.content_eq(b),
             (Self::ImportDeclaration(a), Self::ImportDeclaration(b)) => a.content_eq(b),
             (Self::LazyImportDeclaration(a), Self::LazyImportDeclaration(b)) => a.content_eq(b),
             (Self::ExportAllDeclaration(a), Self::ExportAllDeclaration(b)) => a.content_eq(b),
@@ -791,6 +791,7 @@ impl ContentEq for Declaration<'_> {
             (Self::TSImportEqualsDeclaration(a), Self::TSImportEqualsDeclaration(b)) => {
                 a.content_eq(b)
             }
+            (Self::StructStatement(a), Self::StructStatement(b)) => a.content_eq(b),
             _ => false,
         }
     }
@@ -2588,8 +2589,6 @@ impl ContentEq for StructStatement<'_> {
             && ContentEq::content_eq(&self.type_parameters, &other.type_parameters)
             && ContentEq::content_eq(&self.body, &other.body)
             && ContentEq::content_eq(&self.declare, &other.declare)
-            && ContentEq::content_eq(&self.is_export, &other.is_export)
-            && ContentEq::content_eq(&self.is_default_export, &other.is_default_export)
     }
 }
 

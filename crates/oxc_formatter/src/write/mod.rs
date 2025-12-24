@@ -1812,8 +1812,6 @@ impl<'a> FormatWrite<'a> for AstNode<'a, StructStatement<'a>> {
         let id = self.id();
         let type_parameters = self.type_parameters();
         let body = self.body();
-        let is_export = self.is_export;
-        let is_default_export = self.is_default_export;
         let is_declare = self.declare;
 
         // Decorators are handled differently depending on the parent context
@@ -1823,24 +1821,12 @@ impl<'a> FormatWrite<'a> for AstNode<'a, StructStatement<'a>> {
             self.parent,
             AstNodes::ExportNamedDeclaration(_) | AstNodes::ExportDefaultDeclaration(_)
         ) {
-            // For exported structs, place decorators before the export keyword just like classes.
-            if is_export && !decorators.is_empty() {
-                write!(f, [decorators, hard_line_break()]);
-            } else {
-                write!(f, decorators);
-            }
+            // For non-exported structs, format decorators normally
+            write!(f, decorators);
         }
 
-        if is_export && !matches!(self.parent, AstNodes::ExportDefaultDeclaration(_)) {
-            write!(f, ["export", space()]);
-            if is_declare {
-                write!(f, ["declare", space()]);
-            }
-        } else if is_declare {
+        if is_declare {
             write!(f, ["declare", space()]);
-        } else if is_default_export && matches!(self.parent, AstNodes::ExportDefaultDeclaration(_))
-        {
-            // export default struct handled by parent; nothing to print here
         }
 
         write!(f, ["struct", space(), id]);
