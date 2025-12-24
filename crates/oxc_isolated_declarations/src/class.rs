@@ -233,7 +233,7 @@ impl<'a> IsolatedDeclarations<'a> {
             false,
             false,
             param.r#override,
-            param.pattern.optional,
+            param.optional,
             false,
             param.readonly,
             Self::transform_accessibility(param.accessibility),
@@ -271,7 +271,7 @@ impl<'a> IsolatedDeclarations<'a> {
             }
             MethodDefinitionKind::Set => {
                 let params = self.create_formal_parameters(
-                    self.ast.binding_pattern_kind_binding_identifier(SPAN, "value"),
+                    self.ast.binding_pattern_binding_identifier(SPAN, "value"),
                 );
                 self.transform_class_method_definition(method, params, None)
             }
@@ -311,10 +311,7 @@ impl<'a> IsolatedDeclarations<'a> {
                             None
                         } else {
                             // transformed params will definitely have type annotation
-                            typed_params.items[index]
-                                .pattern
-                                .type_annotation
-                                .clone_in(self.ast.allocator)
+                            typed_params.items[index].type_annotation.clone_in(self.ast.allocator)
                         };
                     self.transform_formal_parameter_to_class_property(param, type_annotation)
                 }),
@@ -351,7 +348,7 @@ impl<'a> IsolatedDeclarations<'a> {
                             continue;
                         };
                         if let Some(annotation) =
-                            first_param.pattern.type_annotation.clone_in(self.ast.allocator)
+                            first_param.type_annotation.clone_in(self.ast.allocator)
                         {
                             if let Some(entry) = method_annotations
                                 .iter_mut()
@@ -450,7 +447,7 @@ impl<'a> IsolatedDeclarations<'a> {
                             let params = &method.value.params;
                             if params.items.is_empty() {
                                 self.create_formal_parameters(
-                                    self.ast.binding_pattern_kind_binding_identifier(SPAN, "value"),
+                                    self.ast.binding_pattern_binding_identifier(SPAN, "value"),
                                 )
                             } else {
                                 let mut params = params.clone_in(self.ast.allocator);
@@ -467,7 +464,7 @@ impl<'a> IsolatedDeclarations<'a> {
                                             }
                                         })
                                 {
-                                    param.pattern.type_annotation = annotation;
+                                    param.type_annotation = annotation;
                                 }
                                 params
                             }
@@ -637,11 +634,19 @@ impl<'a> IsolatedDeclarations<'a> {
 
     pub(crate) fn create_formal_parameters(
         &self,
-        kind: BindingPatternKind<'a>,
+        kind: BindingPattern<'a>,
     ) -> ArenaBox<'a, FormalParameters<'a>> {
-        let pattern = self.ast.binding_pattern(kind, NONE, false);
-        let parameter =
-            self.ast.formal_parameter(SPAN, self.ast.vec(), pattern, None, false, false);
+        let parameter = self.ast.formal_parameter(
+            SPAN,
+            self.ast.vec(),
+            kind,
+            NONE,
+            NONE,
+            false,
+            None,
+            false,
+            false,
+        );
         let items = self.ast.vec1(parameter);
         self.ast.alloc_formal_parameters(SPAN, FormalParameterKind::Signature, items, NONE)
     }

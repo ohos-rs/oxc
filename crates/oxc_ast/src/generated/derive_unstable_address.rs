@@ -137,8 +137,6 @@ impl UnstableAddress for CatchParameter<'_> {}
 
 impl UnstableAddress for DebuggerStatement {}
 
-impl UnstableAddress for BindingPattern<'_> {}
-
 impl UnstableAddress for AssignmentPattern<'_> {}
 
 impl UnstableAddress for ObjectPattern<'_> {}
@@ -154,6 +152,8 @@ impl UnstableAddress for Function<'_> {}
 impl UnstableAddress for FormalParameters<'_> {}
 
 impl UnstableAddress for FormalParameter<'_> {}
+
+impl UnstableAddress for FormalParameterRest<'_> {}
 
 impl UnstableAddress for FunctionBody<'_> {}
 

@@ -1,5 +1,6 @@
 import { strictEqual } from 'assert';
 import { ConfigurationTarget, workspace } from 'vscode';
+import { DiagnosticPullMode } from 'vscode-languageclient';
 import { FixKind, WorkspaceConfig } from '../client/WorkspaceConfig.js';
 import { WORKSPACE_FOLDER } from './test-helpers.js';
 
@@ -65,7 +66,7 @@ suite('WorkspaceConfig', () => {
     const config = new WorkspaceConfig(WORKSPACE_FOLDER);
 
     await Promise.all([
-      config.updateRunTrigger('onSave'),
+      config.updateRunTrigger(DiagnosticPullMode.onSave),
       config.updateConfigPath('./somewhere'),
       config.updateTsConfigPath('./tsconfig.json'),
       config.updateUnusedDisableDirectives('deny'),
@@ -87,37 +88,11 @@ suite('WorkspaceConfig', () => {
     strictEqual(wsConfig.get('fmt.configPath'), './oxfmt.json');
   });
 
-  test('toLanguageServerConfig method', async () => {
-    const config = new WorkspaceConfig(WORKSPACE_FOLDER);
-
-    await Promise.all([
-      config.updateRunTrigger('onSave'),
-      config.updateConfigPath('./somewhere'),
-      config.updateTsConfigPath('./tsconfig.json'),
-      config.updateUnusedDisableDirectives('deny'),
-      config.updateTypeAware(true),
-      config.updateDisableNestedConfig(true),
-      config.updateFixKind(FixKind.DangerousFix),
-      config.updateFormattingConfigPath('./oxfmt.json'),
-    ]);
-
-    const lsConfig = config.toLanguageServerConfig();
-
-    strictEqual(lsConfig.run, 'onSave');
-    strictEqual(lsConfig.configPath, './somewhere');
-    strictEqual(lsConfig.tsConfigPath, './tsconfig.json');
-    strictEqual(lsConfig.unusedDisableDirectives, 'deny');
-    strictEqual(lsConfig.typeAware, true);
-    strictEqual(lsConfig.disableNestedConfig, true);
-    strictEqual(lsConfig.fixKind, 'dangerous_fix');
-    strictEqual(lsConfig['fmt.configPath'], './oxfmt.json');
-  });
-
   test('toOxlintConfig method', async () => {
     const config = new WorkspaceConfig(WORKSPACE_FOLDER);
 
     await Promise.all([
-      config.updateRunTrigger('onSave'),
+      config.updateRunTrigger(DiagnosticPullMode.onSave),
       config.updateConfigPath('./somewhere'),
       config.updateTsConfigPath('./tsconfig.json'),
       config.updateUnusedDisableDirectives('deny'),

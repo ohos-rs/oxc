@@ -908,13 +908,6 @@ impl GetSpan for DebuggerStatement {
 }
 
 impl GetSpan for BindingPattern<'_> {
-    #[inline]
-    fn span(&self) -> Span {
-        GetSpan::span(&self.kind)
-    }
-}
-
-impl GetSpan for BindingPatternKind<'_> {
     fn span(&self) -> Span {
         match self {
             Self::BindingIdentifier(it) => GetSpan::span(&**it),
@@ -975,6 +968,13 @@ impl GetSpan for FormalParameters<'_> {
 }
 
 impl GetSpan for FormalParameter<'_> {
+    #[inline]
+    fn span(&self) -> Span {
+        self.span
+    }
+}
+
+impl GetSpan for FormalParameterRest<'_> {
     #[inline]
     fn span(&self) -> Span {
         self.span

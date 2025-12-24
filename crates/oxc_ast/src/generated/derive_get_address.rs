@@ -434,7 +434,7 @@ impl GetAddress for ForStatementLeft<'_> {
     }
 }
 
-impl GetAddress for BindingPatternKind<'_> {
+impl GetAddress for BindingPattern<'_> {
     // `#[inline]` because compiler should boil this down to a single assembly instruction
     #[inline]
     fn address(&self) -> Address {

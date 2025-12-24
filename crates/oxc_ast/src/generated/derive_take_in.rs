@@ -175,8 +175,6 @@ impl<'a> TakeIn<'a> for DebuggerStatement {}
 
 impl<'a> TakeIn<'a> for BindingPattern<'a> {}
 
-impl<'a> TakeIn<'a> for BindingPatternKind<'a> {}
-
 impl<'a> TakeIn<'a> for AssignmentPattern<'a> {}
 
 impl<'a> TakeIn<'a> for ObjectPattern<'a> {}
@@ -192,6 +190,8 @@ impl<'a> TakeIn<'a> for Function<'a> {}
 impl<'a> TakeIn<'a> for FormalParameters<'a> {}
 
 impl<'a> TakeIn<'a> for FormalParameter<'a> {}
+
+impl<'a> TakeIn<'a> for FormalParameterRest<'a> {}
 
 impl<'a> TakeIn<'a> for FunctionBody<'a> {}
 

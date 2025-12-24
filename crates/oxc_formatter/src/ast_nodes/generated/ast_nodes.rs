@@ -95,6 +95,7 @@ pub enum AstNodes<'a> {
     Function(&'a AstNode<'a, Function<'a>>),
     FormalParameters(&'a AstNode<'a, FormalParameters<'a>>),
     FormalParameter(&'a AstNode<'a, FormalParameter<'a>>),
+    FormalParameterRest(&'a AstNode<'a, FormalParameterRest<'a>>),
     FunctionBody(&'a AstNode<'a, FunctionBody<'a>>),
     ArrowFunctionExpression(&'a AstNode<'a, ArrowFunctionExpression<'a>>),
     YieldExpression(&'a AstNode<'a, YieldExpression<'a>>),
@@ -293,6 +294,7 @@ impl<'a> AstNodes<'a> {
             Self::Function(n) => n.span(),
             Self::FormalParameters(n) => n.span(),
             Self::FormalParameter(n) => n.span(),
+            Self::FormalParameterRest(n) => n.span(),
             Self::FunctionBody(n) => n.span(),
             Self::ArrowFunctionExpression(n) => n.span(),
             Self::YieldExpression(n) => n.span(),
@@ -491,6 +493,7 @@ impl<'a> AstNodes<'a> {
             Self::Function(n) => n.parent,
             Self::FormalParameters(n) => n.parent,
             Self::FormalParameter(n) => n.parent,
+            Self::FormalParameterRest(n) => n.parent,
             Self::FunctionBody(n) => n.parent,
             Self::ArrowFunctionExpression(n) => n.parent,
             Self::YieldExpression(n) => n.parent,
@@ -689,6 +692,7 @@ impl<'a> AstNodes<'a> {
             Self::Function(_) => "Function",
             Self::FormalParameters(_) => "FormalParameters",
             Self::FormalParameter(_) => "FormalParameter",
+            Self::FormalParameterRest(_) => "FormalParameterRest",
             Self::FunctionBody(_) => "FunctionBody",
             Self::ArrowFunctionExpression(_) => "ArrowFunctionExpression",
             Self::YieldExpression(_) => "YieldExpression",
@@ -3108,13 +3112,32 @@ impl<'a> AstNode<'a, VariableDeclarator<'a>> {
 
     #[inline]
     pub fn id(&self) -> &AstNode<'a, BindingPattern<'a>> {
-        let following_span = self.inner.init.as_ref().map(GetSpan::span).or(self.following_span);
+        let following_span = self
+            .inner
+            .type_annotation
+            .as_deref()
+            .map(GetSpan::span)
+            .or_else(|| self.inner.init.as_ref().map(GetSpan::span))
+            .or(self.following_span);
         self.allocator.alloc(AstNode {
             inner: &self.inner.id,
             allocator: self.allocator,
             parent: self.allocator.alloc(AstNodes::VariableDeclarator(transmute_self(self))),
             following_span,
         })
+    }
+
+    #[inline]
+    pub fn type_annotation(&self) -> Option<&AstNode<'a, TSTypeAnnotation<'a>>> {
+        let following_span = self.inner.init.as_ref().map(GetSpan::span).or(self.following_span);
+        self.allocator
+            .alloc(self.inner.type_annotation.as_ref().map(|inner| AstNode {
+                inner: inner.as_ref(),
+                allocator: self.allocator,
+                parent: self.allocator.alloc(AstNodes::VariableDeclarator(transmute_self(self))),
+                following_span,
+            }))
+            .as_ref()
     }
 
     #[inline]
@@ -3810,13 +3833,27 @@ impl<'a> AstNode<'a, CatchClause<'a>> {
 impl<'a> AstNode<'a, CatchParameter<'a>> {
     #[inline]
     pub fn pattern(&self) -> &AstNode<'a, BindingPattern<'a>> {
-        let following_span = self.following_span;
+        let following_span =
+            self.inner.type_annotation.as_deref().map(GetSpan::span).or(self.following_span);
         self.allocator.alloc(AstNode {
             inner: &self.inner.pattern,
             allocator: self.allocator,
             parent: self.allocator.alloc(AstNodes::CatchParameter(transmute_self(self))),
             following_span,
         })
+    }
+
+    #[inline]
+    pub fn type_annotation(&self) -> Option<&AstNode<'a, TSTypeAnnotation<'a>>> {
+        let following_span = self.following_span;
+        self.allocator
+            .alloc(self.inner.type_annotation.as_ref().map(|inner| AstNode {
+                inner: inner.as_ref(),
+                allocator: self.allocator,
+                parent: self.allocator.alloc(AstNodes::CatchParameter(transmute_self(self))),
+                following_span,
+            }))
+            .as_ref()
     }
 
     pub fn format_leading_comments(&self, f: &mut Formatter<'_, 'a>) {
@@ -3840,50 +3877,10 @@ impl<'a> AstNode<'a, DebuggerStatement> {
 
 impl<'a> AstNode<'a, BindingPattern<'a>> {
     #[inline]
-    pub fn kind(&self) -> &AstNode<'a, BindingPatternKind<'a>> {
-        let following_span =
-            self.inner.type_annotation.as_deref().map(GetSpan::span).or(self.following_span);
-        self.allocator.alloc(AstNode {
-            inner: &self.inner.kind,
-            allocator: self.allocator,
-            parent: self.parent,
-            following_span,
-        })
-    }
-
-    #[inline]
-    pub fn type_annotation(&self) -> Option<&AstNode<'a, TSTypeAnnotation<'a>>> {
-        let following_span = self.following_span;
-        self.allocator
-            .alloc(self.inner.type_annotation.as_ref().map(|inner| AstNode {
-                inner: inner.as_ref(),
-                allocator: self.allocator,
-                parent: self.parent,
-                following_span,
-            }))
-            .as_ref()
-    }
-
-    #[inline]
-    pub fn optional(&self) -> bool {
-        self.inner.optional
-    }
-
-    pub fn format_leading_comments(&self, f: &mut Formatter<'_, 'a>) {
-        format_leading_comments(self.span()).fmt(f);
-    }
-
-    pub fn format_trailing_comments(&self, f: &mut Formatter<'_, 'a>) {
-        format_trailing_comments(self.parent.span(), self.inner.span(), self.following_span).fmt(f);
-    }
-}
-
-impl<'a> AstNode<'a, BindingPatternKind<'a>> {
-    #[inline]
     pub fn as_ast_nodes(&self) -> &AstNodes<'a> {
         let parent = self.parent;
         let node = match self.inner {
-            BindingPatternKind::BindingIdentifier(s) => {
+            BindingPattern::BindingIdentifier(s) => {
                 AstNodes::BindingIdentifier(self.allocator.alloc(AstNode {
                     inner: s.as_ref(),
                     parent,
@@ -3891,7 +3888,7 @@ impl<'a> AstNode<'a, BindingPatternKind<'a>> {
                     following_span: self.following_span,
                 }))
             }
-            BindingPatternKind::ObjectPattern(s) => {
+            BindingPattern::ObjectPattern(s) => {
                 AstNodes::ObjectPattern(self.allocator.alloc(AstNode {
                     inner: s.as_ref(),
                     parent,
@@ -3899,7 +3896,7 @@ impl<'a> AstNode<'a, BindingPatternKind<'a>> {
                     following_span: self.following_span,
                 }))
             }
-            BindingPatternKind::ArrayPattern(s) => {
+            BindingPattern::ArrayPattern(s) => {
                 AstNodes::ArrayPattern(self.allocator.alloc(AstNode {
                     inner: s.as_ref(),
                     parent,
@@ -3907,7 +3904,7 @@ impl<'a> AstNode<'a, BindingPatternKind<'a>> {
                     following_span: self.following_span,
                 }))
             }
-            BindingPatternKind::AssignmentPattern(s) => {
+            BindingPattern::AssignmentPattern(s) => {
                 AstNodes::AssignmentPattern(self.allocator.alloc(AstNode {
                     inner: s.as_ref(),
                     parent,
@@ -4252,7 +4249,7 @@ impl<'a> AstNode<'a, FormalParameters<'a>> {
     }
 
     #[inline]
-    pub fn rest(&self) -> Option<&AstNode<'a, BindingRestElement<'a>>> {
+    pub fn rest(&self) -> Option<&AstNode<'a, FormalParameterRest<'a>>> {
         let following_span = self.following_span;
         self.allocator
             .alloc(self.inner.rest.as_ref().map(|inner| AstNode {
@@ -4287,13 +4284,51 @@ impl<'a> AstNode<'a, FormalParameter<'a>> {
 
     #[inline]
     pub fn pattern(&self) -> &AstNode<'a, BindingPattern<'a>> {
-        let following_span = self.following_span;
+        let following_span = self
+            .inner
+            .type_annotation
+            .as_deref()
+            .map(GetSpan::span)
+            .or_else(|| self.inner.initializer.as_deref().map(GetSpan::span))
+            .or(self.following_span);
         self.allocator.alloc(AstNode {
             inner: &self.inner.pattern,
             allocator: self.allocator,
             parent: self.allocator.alloc(AstNodes::FormalParameter(transmute_self(self))),
             following_span,
         })
+    }
+
+    #[inline]
+    pub fn type_annotation(&self) -> Option<&AstNode<'a, TSTypeAnnotation<'a>>> {
+        let following_span =
+            self.inner.initializer.as_deref().map(GetSpan::span).or(self.following_span);
+        self.allocator
+            .alloc(self.inner.type_annotation.as_ref().map(|inner| AstNode {
+                inner: inner.as_ref(),
+                allocator: self.allocator,
+                parent: self.allocator.alloc(AstNodes::FormalParameter(transmute_self(self))),
+                following_span,
+            }))
+            .as_ref()
+    }
+
+    #[inline]
+    pub fn initializer(&self) -> Option<&AstNode<'a, Expression<'a>>> {
+        let following_span = self.following_span;
+        self.allocator
+            .alloc(self.inner.initializer.as_ref().map(|inner| AstNode {
+                inner: inner.as_ref(),
+                allocator: self.allocator,
+                parent: self.allocator.alloc(AstNodes::FormalParameter(transmute_self(self))),
+                following_span,
+            }))
+            .as_ref()
+    }
+
+    #[inline]
+    pub fn optional(&self) -> bool {
+        self.inner.optional
     }
 
     #[inline]
@@ -4309,6 +4344,41 @@ impl<'a> AstNode<'a, FormalParameter<'a>> {
     #[inline]
     pub fn r#override(&self) -> bool {
         self.inner.r#override
+    }
+
+    pub fn format_leading_comments(&self, f: &mut Formatter<'_, 'a>) {
+        format_leading_comments(self.span()).fmt(f);
+    }
+
+    pub fn format_trailing_comments(&self, f: &mut Formatter<'_, 'a>) {
+        format_trailing_comments(self.parent.span(), self.inner.span(), self.following_span).fmt(f);
+    }
+}
+
+impl<'a> AstNode<'a, FormalParameterRest<'a>> {
+    #[inline]
+    pub fn rest(&self) -> &AstNode<'a, BindingRestElement<'a>> {
+        let following_span =
+            self.inner.type_annotation.as_deref().map(GetSpan::span).or(self.following_span);
+        self.allocator.alloc(AstNode {
+            inner: &self.inner.rest,
+            allocator: self.allocator,
+            parent: self.allocator.alloc(AstNodes::FormalParameterRest(transmute_self(self))),
+            following_span,
+        })
+    }
+
+    #[inline]
+    pub fn type_annotation(&self) -> Option<&AstNode<'a, TSTypeAnnotation<'a>>> {
+        let following_span = self.following_span;
+        self.allocator
+            .alloc(self.inner.type_annotation.as_ref().map(|inner| AstNode {
+                inner: inner.as_ref(),
+                allocator: self.allocator,
+                parent: self.allocator.alloc(AstNodes::FormalParameterRest(transmute_self(self))),
+                following_span,
+            }))
+            .as_ref()
     }
 
     pub fn format_leading_comments(&self, f: &mut Formatter<'_, 'a>) {

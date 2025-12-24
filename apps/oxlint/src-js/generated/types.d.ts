@@ -420,7 +420,6 @@ export type Statement =
   | TryStatement
   | WhileStatement
   | WithStatement
-  | StructStatement
   | Declaration
   | ModuleDeclaration;
 
@@ -452,7 +451,8 @@ export type Declaration =
   | TSEnumDeclaration
   | TSModuleDeclaration
   | TSGlobalDeclaration
-  | TSImportEqualsDeclaration;
+  | TSImportEqualsDeclaration
+  | StructStatement;
 
 export interface VariableDeclaration extends Span {
   type: "VariableDeclaration";
@@ -608,16 +608,7 @@ export interface DebuggerStatement extends Span {
   parent: Node;
 }
 
-export type BindingPattern = {
-  optional?: boolean;
-  typeAnnotation?: TSTypeAnnotation | null;
-} & (BindingIdentifier | ObjectPattern | ArrayPattern | AssignmentPattern);
-
-export type BindingPatternKind =
-  | BindingIdentifier
-  | ObjectPattern
-  | ArrayPattern
-  | AssignmentPattern;
+export type BindingPattern = BindingIdentifier | ObjectPattern | ArrayPattern | AssignmentPattern;
 
 export interface AssignmentPattern extends Span {
   type: "AssignmentPattern";
@@ -694,7 +685,7 @@ export type FunctionType =
 
 export interface FormalParameterRest extends Span {
   type: "RestElement";
-  argument: BindingPatternKind;
+  argument: BindingPattern;
   decorators?: [];
   optional?: boolean;
   typeAnnotation?: TSTypeAnnotation | null;
@@ -1721,8 +1712,6 @@ export interface StructStatement extends Span {
   typeParameters?: TSTypeParameterDeclaration | null;
   body: StructBody;
   declare?: boolean;
-  isExport: boolean;
-  isDefaultExport: boolean;
   parent: Node;
 }
 

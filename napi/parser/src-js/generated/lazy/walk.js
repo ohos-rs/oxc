@@ -1622,6 +1622,9 @@ function walkBlockStatement(pos, ast, visitors) {
 
 function walkDeclaration(pos, ast, visitors) {
   switch (ast.buffer[pos]) {
+    case 19:
+      walkBoxStructStatement(pos + 8, ast, visitors);
+      return;
     case 32:
       walkBoxVariableDeclaration(pos + 8, ast, visitors);
       return;
@@ -1682,7 +1685,7 @@ function walkVariableDeclarator(pos, ast, visitors) {
   }
 
   walkBindingPattern(pos + 8, ast, visitors);
-  walkOptionExpression(pos + 40, ast, visitors);
+  walkOptionExpression(pos + 32, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -2165,7 +2168,7 @@ function walkCatchClause(pos, ast, visitors) {
   }
 
   walkOptionCatchParameter(pos + 8, ast, visitors);
-  walkBoxBlockStatement(pos + 48, ast, visitors);
+  walkBoxBlockStatement(pos + 40, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -2180,11 +2183,6 @@ function walkDebuggerStatement(pos, ast, visitors) {
 }
 
 function walkBindingPattern(pos, ast, visitors) {
-  walkBindingPatternKind(pos, ast, visitors);
-  walkOptionBoxTSTypeAnnotation(pos + 16, ast, visitors);
-}
-
-function walkBindingPatternKind(pos, ast, visitors) {
   switch (ast.buffer[pos]) {
     case 0:
       walkBoxBindingIdentifier(pos + 8, ast, visitors);
@@ -2199,7 +2197,7 @@ function walkBindingPatternKind(pos, ast, visitors) {
       walkBoxAssignmentPattern(pos + 8, ast, visitors);
       return;
     default:
-      throw new Error(`Unexpected discriminant ${ast.buffer[pos]} for BindingPatternKind`);
+      throw new Error(`Unexpected discriminant ${ast.buffer[pos]} for BindingPattern`);
   }
 }
 
@@ -2215,7 +2213,7 @@ function walkAssignmentPattern(pos, ast, visitors) {
   }
 
   walkBindingPattern(pos + 8, ast, visitors);
-  walkExpression(pos + 40, ast, visitors);
+  walkExpression(pos + 24, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -2309,6 +2307,8 @@ function walkFormalParameters(pos, ast, visitors) {
 function walkFormalParameter(pos, ast, visitors) {
   walkVecDecorator(pos + 8, ast, visitors);
   walkBindingPattern(pos + 32, ast, visitors);
+  walkOptionBoxTSTypeAnnotation(pos + 48, ast, visitors);
+  walkOptionBoxExpression(pos + 56, ast, visitors);
 }
 
 function walkFunctionBody(pos, ast, visitors) {
@@ -5313,10 +5313,6 @@ function walkBoxWithStatement(pos, ast, visitors) {
   return walkWithStatement(ast.buffer.uint32[pos >> 2], ast, visitors);
 }
 
-function walkBoxStructStatement(pos, ast, visitors) {
-  return walkStructStatement(ast.buffer.uint32[pos >> 2], ast, visitors);
-}
-
 function walkBoxVariableDeclaration(pos, ast, visitors) {
   return walkVariableDeclaration(ast.buffer.uint32[pos >> 2], ast, visitors);
 }
@@ -5345,15 +5341,28 @@ function walkBoxTSImportEqualsDeclaration(pos, ast, visitors) {
   return walkTSImportEqualsDeclaration(ast.buffer.uint32[pos >> 2], ast, visitors);
 }
 
+function walkBoxStructStatement(pos, ast, visitors) {
+  return walkStructStatement(ast.buffer.uint32[pos >> 2], ast, visitors);
+}
+
 function walkVecVariableDeclarator(pos, ast, visitors) {
   const { uint32 } = ast.buffer,
     pos32 = pos >> 2;
   pos = uint32[pos32];
-  const endPos = pos + uint32[pos32 + 2] * 64;
+  const endPos = pos + uint32[pos32 + 2] * 56;
   while (pos < endPos) {
     walkVariableDeclarator(pos, ast, visitors);
-    pos += 64;
+    pos += 56;
   }
+}
+
+function walkBoxTSTypeAnnotation(pos, ast, visitors) {
+  return walkTSTypeAnnotation(ast.buffer.uint32[pos >> 2], ast, visitors);
+}
+
+function walkOptionBoxTSTypeAnnotation(pos, ast, visitors) {
+  if (!(ast.buffer.uint32[pos >> 2] === 0 && ast.buffer.uint32[(pos + 4) >> 2] === 0))
+    walkBoxTSTypeAnnotation(pos, ast, visitors);
 }
 
 function walkOptionStatement(pos, ast, visitors) {
@@ -5395,16 +5404,7 @@ function walkOptionBoxBlockStatement(pos, ast, visitors) {
 }
 
 function walkOptionCatchParameter(pos, ast, visitors) {
-  if (!(ast.buffer[pos + 32] === 2)) walkCatchParameter(pos, ast, visitors);
-}
-
-function walkBoxTSTypeAnnotation(pos, ast, visitors) {
-  return walkTSTypeAnnotation(ast.buffer.uint32[pos >> 2], ast, visitors);
-}
-
-function walkOptionBoxTSTypeAnnotation(pos, ast, visitors) {
-  if (!(ast.buffer.uint32[pos >> 2] === 0 && ast.buffer.uint32[(pos + 4) >> 2] === 0))
-    walkBoxTSTypeAnnotation(pos, ast, visitors);
+  if (!(ast.buffer[pos + 8] === 4)) walkCatchParameter(pos, ast, visitors);
 }
 
 function walkBoxBindingIdentifier(pos, ast, visitors) {
@@ -5427,25 +5427,25 @@ function walkVecBindingProperty(pos, ast, visitors) {
   const { uint32 } = ast.buffer,
     pos32 = pos >> 2;
   pos = uint32[pos32];
-  const endPos = pos + uint32[pos32 + 2] * 64;
+  const endPos = pos + uint32[pos32 + 2] * 48;
   while (pos < endPos) {
     walkBindingProperty(pos, ast, visitors);
-    pos += 64;
+    pos += 48;
   }
 }
 
 function walkOptionBindingPattern(pos, ast, visitors) {
-  if (!(ast.buffer[pos + 24] === 2)) walkBindingPattern(pos, ast, visitors);
+  if (!(ast.buffer[pos] === 4)) walkBindingPattern(pos, ast, visitors);
 }
 
 function walkVecOptionBindingPattern(pos, ast, visitors) {
   const { uint32 } = ast.buffer,
     pos32 = pos >> 2;
   pos = uint32[pos32];
-  const endPos = pos + uint32[pos32 + 2] * 32;
+  const endPos = pos + uint32[pos32 + 2] * 16;
   while (pos < endPos) {
     walkOptionBindingPattern(pos, ast, visitors);
-    pos += 32;
+    pos += 16;
   }
 }
 
@@ -5496,6 +5496,15 @@ function walkVecFormalParameter(pos, ast, visitors) {
     walkFormalParameter(pos, ast, visitors);
     pos += 72;
   }
+}
+
+function walkBoxExpression(pos, ast, visitors) {
+  return walkExpression(ast.buffer.uint32[pos >> 2], ast, visitors);
+}
+
+function walkOptionBoxExpression(pos, ast, visitors) {
+  if (!(ast.buffer.uint32[pos >> 2] === 0 && ast.buffer.uint32[(pos + 4) >> 2] === 0))
+    walkBoxExpression(pos, ast, visitors);
 }
 
 function walkVecTSClassImplements(pos, ast, visitors) {
@@ -5621,7 +5630,7 @@ function walkVecImportAttribute(pos, ast, visitors) {
 }
 
 function walkOptionDeclaration(pos, ast, visitors) {
-  if (!(ast.buffer[pos] === 31)) walkDeclaration(pos, ast, visitors);
+  if (!(ast.buffer[pos] === 18)) walkDeclaration(pos, ast, visitors);
 }
 
 function walkVecExportSpecifier(pos, ast, visitors) {
@@ -6039,10 +6048,6 @@ function walkVecCallExpression(pos, ast, visitors) {
     walkCallExpression(pos, ast, visitors);
     pos += 64;
   }
-}
-
-function walkBoxExpression(pos, ast, visitors) {
-  return walkExpression(ast.buffer.uint32[pos >> 2], ast, visitors);
 }
 
 function walkBoxStatement(pos, ast, visitors) {

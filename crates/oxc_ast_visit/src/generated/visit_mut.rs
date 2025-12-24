@@ -444,11 +444,6 @@ pub trait VisitMut<'a>: Sized {
     }
 
     #[inline]
-    fn visit_binding_pattern_kind(&mut self, it: &mut BindingPatternKind<'a>) {
-        walk_binding_pattern_kind(self, it);
-    }
-
-    #[inline]
     fn visit_assignment_pattern(&mut self, it: &mut AssignmentPattern<'a>) {
         walk_assignment_pattern(self, it);
     }
@@ -486,6 +481,11 @@ pub trait VisitMut<'a>: Sized {
     #[inline]
     fn visit_formal_parameter(&mut self, it: &mut FormalParameter<'a>) {
         walk_formal_parameter(self, it);
+    }
+
+    #[inline]
+    fn visit_formal_parameter_rest(&mut self, it: &mut FormalParameterRest<'a>) {
+        walk_formal_parameter_rest(self, it);
     }
 
     #[inline]
@@ -2205,6 +2205,9 @@ pub mod walk_mut {
         visitor.enter_node(kind);
         visitor.visit_span(&mut it.span);
         visitor.visit_binding_pattern(&mut it.id);
+        if let Some(type_annotation) = &mut it.type_annotation {
+            visitor.visit_ts_type_annotation(type_annotation);
+        }
         if let Some(init) = &mut it.init {
             visitor.visit_expression(init);
         }
@@ -2480,6 +2483,9 @@ pub mod walk_mut {
         visitor.enter_node(kind);
         visitor.visit_span(&mut it.span);
         visitor.visit_binding_pattern(&mut it.pattern);
+        if let Some(type_annotation) = &mut it.type_annotation {
+            visitor.visit_ts_type_annotation(type_annotation);
+        }
         visitor.leave_node(kind);
     }
 
@@ -2497,23 +2503,11 @@ pub mod walk_mut {
     #[inline]
     pub fn walk_binding_pattern<'a, V: VisitMut<'a>>(visitor: &mut V, it: &mut BindingPattern<'a>) {
         // No `AstType` for this type
-        visitor.visit_binding_pattern_kind(&mut it.kind);
-        if let Some(type_annotation) = &mut it.type_annotation {
-            visitor.visit_ts_type_annotation(type_annotation);
-        }
-    }
-
-    #[inline]
-    pub fn walk_binding_pattern_kind<'a, V: VisitMut<'a>>(
-        visitor: &mut V,
-        it: &mut BindingPatternKind<'a>,
-    ) {
-        // No `AstType` for this type
         match it {
-            BindingPatternKind::BindingIdentifier(it) => visitor.visit_binding_identifier(it),
-            BindingPatternKind::ObjectPattern(it) => visitor.visit_object_pattern(it),
-            BindingPatternKind::ArrayPattern(it) => visitor.visit_array_pattern(it),
-            BindingPatternKind::AssignmentPattern(it) => visitor.visit_assignment_pattern(it),
+            BindingPattern::BindingIdentifier(it) => visitor.visit_binding_identifier(it),
+            BindingPattern::ObjectPattern(it) => visitor.visit_object_pattern(it),
+            BindingPattern::ArrayPattern(it) => visitor.visit_array_pattern(it),
+            BindingPattern::AssignmentPattern(it) => visitor.visit_assignment_pattern(it),
         }
     }
 
@@ -2630,7 +2624,7 @@ pub mod walk_mut {
         visitor.visit_span(&mut it.span);
         visitor.visit_formal_parameter_list(&mut it.items);
         if let Some(rest) = &mut it.rest {
-            visitor.visit_binding_rest_element(rest);
+            visitor.visit_formal_parameter_rest(rest);
         }
         visitor.leave_node(kind);
     }
@@ -2645,6 +2639,27 @@ pub mod walk_mut {
         visitor.visit_span(&mut it.span);
         visitor.visit_decorators(&mut it.decorators);
         visitor.visit_binding_pattern(&mut it.pattern);
+        if let Some(type_annotation) = &mut it.type_annotation {
+            visitor.visit_ts_type_annotation(type_annotation);
+        }
+        if let Some(initializer) = &mut it.initializer {
+            visitor.visit_expression(initializer);
+        }
+        visitor.leave_node(kind);
+    }
+
+    #[inline]
+    pub fn walk_formal_parameter_rest<'a, V: VisitMut<'a>>(
+        visitor: &mut V,
+        it: &mut FormalParameterRest<'a>,
+    ) {
+        let kind = AstType::FormalParameterRest;
+        visitor.enter_node(kind);
+        visitor.visit_span(&mut it.span);
+        visitor.visit_binding_rest_element(&mut it.rest);
+        if let Some(type_annotation) = &mut it.type_annotation {
+            visitor.visit_ts_type_annotation(type_annotation);
+        }
         visitor.leave_node(kind);
     }
 

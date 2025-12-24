@@ -1,5 +1,6 @@
 import * as path from "node:path";
 import { ConfigurationChangeEvent, RelativePattern, Uri, workspace, WorkspaceFolder } from "vscode";
+import { DiagnosticPullMode } from "vscode-languageclient";
 import { validateSafeBinaryPath } from "./PathValidator";
 import { IDisposable } from "./types";
 import { VSCodeConfig } from "./VSCodeConfig";
@@ -7,18 +8,11 @@ import {
   OxfmtWorkspaceConfigInterface,
   OxlintWorkspaceConfigInterface,
   WorkspaceConfig,
-  WorkspaceConfigInterface,
 } from "./WorkspaceConfig";
 
 export class ConfigService implements IDisposable {
   public static readonly namespace = "oxc";
   private readonly _disposables: IDisposable[] = [];
-
-  /**
-   * Indicates whether the `oxc_language_server` is being used as the formatter.
-   * If true, the formatter functionality is handled by the language server itself.
-   */
-  public useOxcLanguageServerForFormatting: boolean = false;
 
   public vsCodeConfig: VSCodeConfig;
 
@@ -44,14 +38,12 @@ export class ConfigService implements IDisposable {
     this._disposables.push(disposeChangeListener);
   }
 
-  public get languageServerConfig(): {
+  public get oxlintServerConfig(): {
     workspaceUri: string;
-    options: WorkspaceConfigInterface | OxlintWorkspaceConfigInterface;
+    options: OxlintWorkspaceConfigInterface;
   }[] {
     return [...this.workspaceConfigs.entries()].map(([path, config]) => {
-      const options = this.useOxcLanguageServerForFormatting
-        ? config.toLanguageServerConfig()
-        : config.toOxlintConfig();
+      const options = config.toOxlintConfig();
 
       return {
         workspaceUri: Uri.file(path).toString(),
@@ -97,6 +89,24 @@ export class ConfigService implements IDisposable {
 
   public async getOxfmtServerBinPath(): Promise<string | undefined> {
     return this.searchBinaryPath(this.vsCodeConfig.binPathOxfmt, "oxfmt");
+  }
+
+  public shouldRequestDiagnostics(
+    textDocumentUri: Uri,
+    diagnosticPullMode: DiagnosticPullMode,
+  ): boolean {
+    if (!this.vsCodeConfig.enable) {
+      return false;
+    }
+
+    const textDocumentPath = textDocumentUri.path;
+
+    for (const [workspaceUri, workspaceConfig] of this.workspaceConfigs.entries()) {
+      if (textDocumentPath.startsWith(workspaceUri)) {
+        return workspaceConfig.shouldRequestDiagnostics(diagnosticPullMode);
+      }
+    }
+    return false;
   }
 
   private async searchBinaryPath(

@@ -95,7 +95,7 @@ jobs:
       - uses: taiki-e/checkout-action@b13d20b7cda4e2f325ef19895128f7ff735c0b3d # v1.3.1
 
       - name: Install cross
-        uses: taiki-e/install-action@61e5998d108b2b55a81b9b386c18bd46e4237e4f # v2.63.1
+        uses: taiki-e/install-action@b9c5db3aef04caffaf95a1d03931de10fb2a140f # v2.65.1
         with:
           tool: cross # cross installs the latest rust toolchain
 
@@ -104,7 +104,7 @@ jobs:
       - name: Add Rust Target
         run: rustup target add ${{ matrix.target }}
 
-      - uses: oxc-project/setup-node@141eb77546de6702f92d320926403fe3f9f6a6f2 # v1.0.5
+      - uses: oxc-project/setup-node@8958a8e040102244b619c4a94fccb657a44b1c21 # v1.0.6
 
       # For cargo-zigbuild in musl builds.
       - uses: goto-bus-stop/setup-zig@abea47f85e598557f500fa1fd2ab7464fcb39406 # v2.2.1
@@ -190,7 +190,7 @@ jobs:
       - name: Untar from non-windows builds
         run: ls *.gz | xargs -i tar xf {}
 
-      - uses: oxc-project/setup-node@141eb77546de6702f92d320926403fe3f9f6a6f2 # v1.0.5
+      - uses: oxc-project/setup-node@8958a8e040102244b619c4a94fccb657a44b1c21 # v1.0.6
 
       - name: Generate oxlint JS build
         working-directory: apps/oxlint
@@ -274,7 +274,7 @@ jobs:
       - uses: taiki-e/checkout-action@b13d20b7cda4e2f325ef19895128f7ff735c0b3d # v1.3.1
 
       - name: Install cross
-        uses: taiki-e/install-action@61e5998d108b2b55a81b9b386c18bd46e4237e4f # v2.63.1
+        uses: taiki-e/install-action@b9c5db3aef04caffaf95a1d03931de10fb2a140f # v2.65.1
         with:
           tool: cross # cross installs the latest rust toolchain
 
@@ -283,7 +283,7 @@ jobs:
       - name: Add Rust Target
         run: rustup target add ${{ matrix.target }}
 
-      - uses: oxc-project/setup-node@141eb77546de6702f92d320926403fe3f9f6a6f2 # v1.0.5
+      - uses: oxc-project/setup-node@8958a8e040102244b619c4a94fccb657a44b1c21 # v1.0.6
 
       # For cargo-zigbuild in musl builds.
       - uses: goto-bus-stop/setup-zig@abea47f85e598557f500fa1fd2ab7464fcb39406 # v2.2.1
@@ -357,7 +357,7 @@ jobs:
       - name: Untar from non-windows builds
         run: ls *.gz | xargs -i tar xf {}
 
-      - uses: oxc-project/setup-node@141eb77546de6702f92d320926403fe3f9f6a6f2 # v1.0.5
+      - uses: oxc-project/setup-node@8958a8e040102244b619c4a94fccb657a44b1c21 # v1.0.6
 
       - name: Generate oxfmt JS build
         working-directory: apps/oxfmt
@@ -396,7 +396,7 @@ jobs:
           fetch-depth: 0 # for changelog
           persist-credentials: true
 
-      - uses: oxc-project/setup-rust@ecabb7322a2ba5aeedb3612d2a40b86a85cee235 # v1.0.11
+      - uses: oxc-project/setup-rust@c8224157c0bf235aabc633e8cd50d344f087a7de # v1.0.12
         with:
           restore-cache: false
           tools: cargo-release-oxc
