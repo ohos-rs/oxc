@@ -4,6 +4,64 @@ All notable changes to this package will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0).
 
+## [0.110.0] - 2026-01-19
+
+### 🐛 Bug Fixes
+
+- f1e2dc0 semantic: No error in `check_function_redeclaration` for CommonJS files (#18231) (overlookmotel)
+
+### ⚡ Performance
+
+- 52073d9 semantic: Use cheaper test for source type (#18235) (overlookmotel)
+
+## [0.109.0] - 2026-01-19
+
+### 💥 BREAKING CHANGES
+
+- 9135b0b ast: [**BREAKING**] Move scope from `TSEnumDeclaration` to `TSEnumBody` (#18058) (Boshen)
+
+### 🚀 Features
+
+- e2221e6 semantic: Store `scope_id` in `Reference` (#18053) (Dunqing)
+- 66b8c02 parser: Implement unambiguous module parsing for JS/TS files (#18124) (Boshen)
+- 08dad63 span: Add `sourceType: 'commonjs'` support (#18089) (Boshen)
+- 6b29bd1 semantic/example: Add detailed references info (#17938) (camc314)
+
+### 🐛 Bug Fixes
+
+- 1b199af semantic: Report TS18019 for abstract modifier with private identifier (#18173) (Boshen)
+- fb181cc semantic: Error on `using` at top level in scripts (#18090) (Boshen)
+- 4d9582d semantic: Allow `arguments`/`eval` as binding identifier names and identifier reference names in `.d.ts` (#17910) (Dunqing)
+
+### 📚 Documentation
+
+- 06a96da semantic: Document `with` statement limitation in `is_global_reference` (#17996) (Boshen)
+
+## [0.108.0] - 2026-01-12
+
+### 🚀 Features
+
+- 2261e6e semantic: Improve error message to add `#` for private identifiers (#17779) (Dunqing)
+
+### 🐛 Bug Fixes
+
+- 5755b2d semantic: Report duplicate private identifier for static and instance elements (#17591) (camc314)
+
+### ⚡ Performance
+
+- 864f1fa semantic: Mark duplicate class element error reporting as cold (#17746) (camc314)
+- 3a452b8 semantic: Use smallvec for storing reference IDs (#17731) (camchenry)
+
+## [0.107.0] - 2026-01-05
+
+### ⚡ Performance
+
+- 6067143 semantic: Remove hash when checking identifier (#17564) (camchenry)
+- a28ab3d semantic: Avoid bounds check when checking string literal (#17545) (camc314)
+- 04809d1 semantic: Use SIMD for finding backslashes in `check_string_literal` (#17534) (camchenry)
+- 49ad2f0 semantic: Mark all diagnostic functions as `#[cold]` (#17487) (camc314)
+- d968e51 semantic: Mark `checker::check` as `inline(always)` (#17459) (camc314)
+
 ## [0.106.0] - 2025-12-29
 
 ### ⚡ Performance

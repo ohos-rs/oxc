@@ -2,7 +2,7 @@
  * `describe` and `it` functions for capturing test results.
  */
 
-import type { TestCase } from "./rule_tester.ts";
+import type { TestCase, LanguageOptionsInternal } from "./rule_tester.ts";
 
 /**
  * Result of running all tests in a rule file.
@@ -49,6 +49,18 @@ export function resetCurrentRule(): void {
   currentRule = null;
 }
 
+// Current test case being tested
+let currentTest: TestCase | null = null;
+
+/**
+ * Set the current test being tested.
+ * Call before running linter for a test case (in `modifyTestCase` hook).
+ * @param test - `TestCase` object
+ */
+export function setCurrentTest(test: TestCase): void {
+  currentTest = test;
+}
+
 /**
  * `describe` function that tracks the test hierarchy.
  * @param name - Name of the test group
@@ -80,17 +92,89 @@ export function it(code: string, fn: () => void): void {
 
   try {
     fn();
+
+    // Check that the test case was actually run
+    if (currentTest === null) throw new Error("Test case was not run with `RuleTester`");
+
     testResult.isPassed = true;
   } catch (err) {
-    if (err instanceof Error && err.message === "Custom parsers are not supported") {
-      testResult.isSkipped = true;
-    }
+    testResult.testCase = currentTest;
 
-    testResult.error = err as Error;
-    testResult.testCase = err?.__testCase ?? null;
+    if (!(err instanceof Error)) {
+      testResult.error = new Error("Unknown error");
+    } else if (currentTest === null) {
+      testResult.error = new Error("Test case was not run with `RuleTester`");
+    } else {
+      testResult.error = err;
+
+      const ruleName = describeStack[0];
+      if (shouldSkipTest(ruleName, currentTest, code, err)) testResult.isSkipped = true;
+    }
+  } finally {
+    // Reset current test
+    currentTest = null;
   }
 
   currentRule!.tests.push(testResult);
+}
+
+/**
+ * Determine if failing test case should be skipped.
+ * @param ruleName - Rule name
+ * @param test - Test case
+ * @param code - Code for test case
+ * @param err - Error thrown during test case
+ * @returns `true` if test should be skipped
+ */
+function shouldSkipTest(ruleName: string, test: TestCase, code: string, err: Error): boolean {
+  // We cannot support custom parsers
+  if (err.message === "Custom parsers are not supported") return true;
+
+  // Skip test cases which start with `/* global */`, `/* globals */`, `/* exported */`, or `/* eslint */` comments.
+  // Oxlint does not support defining globals inline.
+  // `RuleTester` does not support enabling other rules beyond the rule under test.
+  if (code.match(/^\s*\/\*\s*(globals?|exported|eslint)\s/)) return true;
+
+  // Skip test cases which include `// eslint-disable` comments.
+  // These are not handled by `RuleTester`.
+  if (code.match(/\/\/\s*eslint-disable((-next)?-line)?(\s|$)/)) return true;
+
+  const languageOptions = test.languageOptions as LanguageOptionsInternal | undefined;
+
+  // Tests rely on directives being parsed as plain `StringLiteral`s in ES3.
+  // Oxc parser does not support parsing as ES3.
+  if (
+    (ruleName === "no-eval" ||
+      ruleName === "no-invalid-this" ||
+      ruleName === "no-unused-expressions") &&
+    languageOptions?.ecmaVersion === 3
+  ) {
+    return true;
+  }
+
+  // Test relies on scope analysis to follow ES5 semantics where function declarations in blocks are bound in parent scope.
+  // TS-ESLint scope manager does not support ES5. Oxc also doesn't support parsing/semantic as ES5.
+  if (
+    ruleName === "no-use-before-define" &&
+    code === '"use strict"; a(); { function a() {} }' &&
+    languageOptions?.ecmaVersion === 5
+  ) {
+    return true;
+  }
+
+  // Code contains unrecoverable syntax error - `function (x, this: context) {}`
+  if (
+    ruleName === "no-invalid-this" &&
+    code.includes("function (x, this: context) {") &&
+    err?.message === "Parsing failed"
+  ) {
+    return true;
+  }
+
+  // TypeScript parser does not support HTML comments
+  if (ruleName === "prefer-object-spread" && code.includes("<!--")) return true;
+
+  return false;
 }
 
 // Add `it.only` property for compatibility.

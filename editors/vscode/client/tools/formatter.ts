@@ -34,6 +34,9 @@ export default class FormatterTool implements ToolInterface {
     outputChannel: LogOutputChannel,
     configService: ConfigService,
   ): Promise<string | undefined> {
+    if (process.env.SERVER_PATH_DEV) {
+      return process.env.SERVER_PATH_DEV;
+    }
     const bin = await configService.getOxfmtServerBinPath();
     if (bin) {
       try {
@@ -43,7 +46,6 @@ export default class FormatterTool implements ToolInterface {
         outputChannel.error(`Invalid bin path: ${bin}`, e);
       }
     }
-    return process.env.SERVER_PATH_DEV;
   }
 
   async activate(
@@ -67,7 +69,7 @@ export default class FormatterTool implements ToolInterface {
 
     outputChannel.info(`Using server binary at: ${binaryPath}`);
 
-    const run: Executable = runExecutable(binaryPath, configService.vsCodeConfig.nodePath);
+    const run: Executable = runExecutable(binaryPath, "oxfmt", configService.vsCodeConfig.nodePath);
 
     const serverOptions: ServerOptions = {
       run,
@@ -108,6 +110,101 @@ export default class FormatterTool implements ToolInterface {
       // https://github.com/oxc-project/oxc/blob/f3e9913f534e36195b9b5a6244dd21076ed8715e/crates/oxc_formatter/src/service/parse_utils.rs#L73
       // allow `*.start.frag` and `*.end.frag`,
       "frag",
+      // https://github.com/oxc-project/oxc/pull/16524/
+      // JSON
+      "json",
+      "4DForm",
+      "4DProject",
+      "avsc",
+      "geojson",
+      "gltf",
+      "har",
+      "ice",
+      "JSON-tmLanguage",
+      "json.example",
+      "mcmeta",
+      "sarif",
+      "tact",
+      "tfstate",
+      "tfstate.backup",
+      "topojson",
+      "webapp",
+      "webmanifest",
+      "yy",
+      "yyp",
+      // JSONC
+      "jsonc",
+      "code-snippets",
+      "code-workspace",
+      "sublime-build",
+      "sublime-color-scheme",
+      "sublime-commands",
+      "sublime-completions",
+      "sublime-keymap",
+      "sublime-macro",
+      "sublime-menu",
+      "sublime-mousemap",
+      "sublime-project",
+      "sublime-settings",
+      "sublime-theme",
+      "sublime-workspace",
+      "sublime_metrics",
+      "sublime_session",
+      // HTML
+      "html",
+      "hta",
+      "htm",
+      "inc",
+      "xht",
+      "xhtml",
+      // Vue
+      "vue",
+      // Angular
+      // mjml
+      "mjml",
+      // CSS
+      "css",
+      "wxss",
+      "pcss",
+      "postcss",
+      // less
+      "less",
+      // scss
+      "scss",
+      // GraphQL
+      "graphql",
+      "gql",
+      "graphqls",
+      // Handlebars
+      "handlebars",
+      "hbs",
+      // Markdown
+      "md",
+      "livemd",
+      "markdown",
+      "mdown",
+      "mdwn",
+      "mkd",
+      "mkdn",
+      "mkdown",
+      "ronn",
+      "scd",
+      "workbook",
+      // mdx
+      "mdx",
+      // YAML
+      "yml",
+      "mir",
+      "reek",
+      "rviz",
+      "sublime-syntax",
+      "syntax",
+      "yaml",
+      "yaml-tmlanguage",
+      // https://github.com/oxc-project/oxc/pull/17113/
+      // TOML
+      "toml",
+      "toml.example",
     ];
 
     // Special filenames that are valid JS files
@@ -118,6 +215,41 @@ export default class FormatterTool implements ToolInterface {
       // covered by the "frag" extension above
       // "start.frag",
       // "end.frag",
+
+      // JSON filenames
+      ".all-contributorsrc",
+      ".arcconfig",
+      ".auto-changelog",
+      ".c8rc",
+      ".htmlhintrc",
+      ".imgbotconfig",
+      ".nycrc",
+      ".tern-config",
+      ".tern-project",
+      ".watchmanconfig",
+      ".babelrc",
+      ".jscsrc",
+      ".jshintrc",
+      ".jslintrc",
+      ".swcrc",
+      // Markdown filenames
+      "contents.lr",
+      "README",
+      // YAML filenames
+      ".clang-format",
+      ".clang-tidy",
+      ".clangd",
+      ".gemrc",
+      "CITATION.cff",
+      "glide.lock",
+      "pixi.lock",
+      ".prettierrc",
+      ".stylelintrc",
+      ".lintstagedrc",
+      // https://github.com/oxc-project/oxc/pull/17113/
+      // TOML filenames
+      "Pipfile",
+      "Cargo.toml.orig",
     ];
 
     // If the extension is launched in debug mode then the debug server options are used
@@ -187,19 +319,19 @@ export default class FormatterTool implements ToolInterface {
 
   async restartClient(): Promise<void> {
     if (this.client === undefined) {
-      window.showErrorMessage("oxc client not found");
+      window.showErrorMessage("oxfmt client not found");
       return;
     }
 
     try {
       if (this.client.isRunning()) {
         await this.client.restart();
-        window.showInformationMessage("oxc server restarted.");
+        window.showInformationMessage("oxfmt server restarted.");
       } else {
         await this.client.start();
       }
     } catch (err) {
-      this.client.error("Restarting client failed", err, "force");
+      this.client.error("Restarting oxfmt client failed", err, "force");
     }
   }
 

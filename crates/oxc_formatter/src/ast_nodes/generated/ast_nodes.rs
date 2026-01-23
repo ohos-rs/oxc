@@ -5,7 +5,7 @@ use std::mem::transmute;
 
 use oxc_allocator::Vec;
 use oxc_ast::ast::*;
-use oxc_span::GetSpan;
+use oxc_span::{GetSpan, Ident};
 
 use crate::ast_nodes::AstNode;
 use crate::formatter::{
@@ -1230,7 +1230,7 @@ impl<'a> AstNode<'a, Expression<'a>> {
 
 impl<'a> AstNode<'a, IdentifierName<'a>> {
     #[inline]
-    pub fn name(&self) -> Atom<'a> {
+    pub fn name(&self) -> Ident<'a> {
         self.inner.name
     }
 
@@ -1245,7 +1245,7 @@ impl<'a> AstNode<'a, IdentifierName<'a>> {
 
 impl<'a> AstNode<'a, IdentifierReference<'a>> {
     #[inline]
-    pub fn name(&self) -> Atom<'a> {
+    pub fn name(&self) -> Ident<'a> {
         self.inner.name
     }
 
@@ -1260,7 +1260,7 @@ impl<'a> AstNode<'a, IdentifierReference<'a>> {
 
 impl<'a> AstNode<'a, BindingIdentifier<'a>> {
     #[inline]
-    pub fn name(&self) -> Atom<'a> {
+    pub fn name(&self) -> Ident<'a> {
         self.inner.name
     }
 
@@ -1275,7 +1275,7 @@ impl<'a> AstNode<'a, BindingIdentifier<'a>> {
 
 impl<'a> AstNode<'a, LabelIdentifier<'a>> {
     #[inline]
-    pub fn name(&self) -> Atom<'a> {
+    pub fn name(&self) -> Ident<'a> {
         self.inner.name
     }
 
@@ -4949,7 +4949,7 @@ impl<'a> AstNode<'a, PropertyDefinition<'a>> {
 
 impl<'a> AstNode<'a, PrivateIdentifier<'a>> {
     #[inline]
-    pub fn name(&self) -> Atom<'a> {
+    pub fn name(&self) -> Ident<'a> {
         self.inner.name
     }
 
@@ -8996,7 +8996,18 @@ impl<'a> AstNode<'a, TSConstructorType<'a>> {
 
 impl<'a> AstNode<'a, TSMappedType<'a>> {
     #[inline]
-    pub fn type_parameter(&self) -> &AstNode<'a, TSTypeParameter<'a>> {
+    pub fn key(&self) -> &AstNode<'a, BindingIdentifier<'a>> {
+        let following_span = Some(self.inner.constraint.span());
+        self.allocator.alloc(AstNode {
+            inner: &self.inner.key,
+            allocator: self.allocator,
+            parent: self.allocator.alloc(AstNodes::TSMappedType(transmute_self(self))),
+            following_span,
+        })
+    }
+
+    #[inline]
+    pub fn constraint(&self) -> &AstNode<'a, TSType<'a>> {
         let following_span = self
             .inner
             .name_type
@@ -9005,7 +9016,7 @@ impl<'a> AstNode<'a, TSMappedType<'a>> {
             .or_else(|| self.inner.type_annotation.as_ref().map(GetSpan::span))
             .or(self.following_span);
         self.allocator.alloc(AstNode {
-            inner: self.inner.type_parameter.as_ref(),
+            inner: &self.inner.constraint,
             allocator: self.allocator,
             parent: self.allocator.alloc(AstNodes::TSMappedType(transmute_self(self))),
             following_span,

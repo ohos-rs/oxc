@@ -1,5 +1,3 @@
-use std::ptr;
-
 use memchr::memchr_iter;
 use rustc_hash::FxHashMap;
 
@@ -15,14 +13,15 @@ use oxc_syntax::{
     symbol::{SymbolFlags, SymbolId},
 };
 
-use crate::{IsGlobalReference, builder::SemanticBuilder, diagnostics};
+use crate::{IsGlobalReference, builder::SemanticBuilder, class::Element, diagnostics};
 
 /// It is a Syntax Error if any element of the ExportedBindings of ModuleItemList
 /// does not also occur in either the VarDeclaredNames of ModuleItemList, or the LexicallyDeclaredNames of ModuleItemList.
 pub fn check_unresolved_exports(program: &Program<'_>, ctx: &SemanticBuilder<'_>) {
-    if ctx.source_type.is_typescript() || ctx.source_type.is_script() {
+    if ctx.source_type.is_typescript() || !ctx.source_type.is_module() {
         return;
     }
+
     for stmt in &program.body {
         if let Statement::ExportNamedDeclaration(decl) = stmt {
             for specifier in &decl.specifiers {
@@ -57,21 +56,48 @@ pub fn check_duplicate_class_elements(ctx: &SemanticBuilder<'_>) {
                         true
                     };
 
-                is_duplicate = if ctx.source_type.is_typescript() {
+                // * It is a Syntax Error if PrivateBoundIdentifiers of ClassElementList contains any duplicate entries,
+                // unless the name is used once for a getter and once for a setter and in no other entries,
+                // and the getter and setter are either both static or both non-static.
+                // For TypeScript, public elements with different static status are allowed (overloads, etc.),
+                // but private identifiers follow the same rules as JavaScript - static and instance
+                // elements cannot share the same private name.
+                is_duplicate = if element.is_private {
+                    is_duplicate
+                } else if ctx.source_type.is_typescript() {
                     element.r#static == prev_element.r#static && is_duplicate
                 } else {
-                    // * It is a Syntax Error if PrivateBoundIdentifiers of ClassElementList contains any duplicate entries,
-                    // unless the name is used once for a getter and once for a setter and in no other entries,
-                    // and the getter and setter are either both static or both non-static.
-                    element.is_private && is_duplicate
+                    false
                 };
 
                 if is_duplicate {
-                    ctx.error(diagnostics::redeclaration(
-                        &element.name,
-                        prev_element.span,
-                        element.span,
-                    ));
+                    #[cold]
+                    fn report_duplicate_class_element(
+                        element: &Element,
+                        prev_element: &Element,
+                        ctx: &SemanticBuilder<'_>,
+                    ) {
+                        if element.is_private
+                            && element.r#static != prev_element.r#static
+                            && ctx.source_type.is_typescript()
+                        {
+                            ctx.error(diagnostics::static_and_instance_private_identifier(
+                                &element.name,
+                                prev_element.span,
+                                element.span,
+                            ));
+                        } else {
+                            let span = prev_element.span;
+                            ctx.error(diagnostics::redeclaration(
+                                // `span` includes `#` for private identifiers
+                                span.source_text(ctx.source_text),
+                                span,
+                                element.span,
+                            ));
+                        }
+                    }
+
+                    report_duplicate_class_element(element, prev_element, ctx);
                 }
             }
         }
@@ -133,6 +159,11 @@ fn is_current_node_ambient_binding(symbol_id: Option<SymbolId>, ctx: &SemanticBu
 }
 
 pub fn check_binding_identifier(ident: &BindingIdentifier, ctx: &SemanticBuilder<'_>) {
+    // `.d.ts` files are allowed to use `eval` and `arguments` as binding identifiers
+    if ctx.source_type.is_typescript_definition() {
+        return;
+    }
+
     if ctx.strict_mode() {
         // In strict mode, `eval` and `arguments` are banned as identifiers.
         if matches!(ident.name.as_str(), "eval" | "arguments") {
@@ -157,24 +188,11 @@ pub fn check_binding_identifier(ident: &BindingIdentifier, ctx: &SemanticBuilder
                 AstKind::Function(func) => matches!(func.r#type, FunctionType::TSDeclareFunction),
                 AstKind::FormalParameter(_) | AstKind::FormalParameterRest(_) => {
                     is_declare_function(&ctx.nodes.parent_kind(parent.id()))
-                        || ctx.nodes.ancestor_kinds(parent.id()).nth(1).is_some_and(|node| {
-                            matches!(
-                                node,
-                                AstKind::TSFunctionType(_) | AstKind::TSMethodSignature(_)
-                            )
-                        })
                 }
                 AstKind::BindingRestElement(_) => {
                     let grand_parent = ctx.nodes.parent_node(parent.id());
                     is_declare_function(&ctx.nodes.parent_kind(grand_parent.id()))
-                        || ctx.nodes.ancestor_kinds(grand_parent.id()).nth(1).is_some_and(|node| {
-                            matches!(
-                                node,
-                                AstKind::TSFunctionType(_) | AstKind::TSMethodSignature(_)
-                            )
-                        })
                 }
-                AstKind::TSTypeAliasDeclaration(_) | AstKind::TSInterfaceDeclaration(_) => true,
                 _ => false,
             };
 
@@ -206,6 +224,11 @@ pub fn check_binding_identifier(ident: &BindingIdentifier, ctx: &SemanticBuilder
 }
 
 pub fn check_identifier_reference(ident: &IdentifierReference, ctx: &SemanticBuilder<'_>) {
+    // `.d.ts` files are allowed to use `eval` and `arguments` as identifier references
+    if ctx.source_type.is_typescript_definition() {
+        return;
+    }
+
     //  Static Semantics: AssignmentTargetType
     //  1. If this IdentifierReference is contained in strict mode code and StringValue of Identifier is "eval" or "arguments", return invalid.
     if ctx.strict_mode() && matches!(ident.name.as_str(), "arguments" | "eval") {
@@ -447,7 +470,8 @@ pub fn check_module_declaration(decl: &ModuleDeclarationKind, ctx: &SemanticBuil
             #[cfg(debug_assertions)]
             panic!("Technically unreachable, omit to avoid panic.");
         }
-        ModuleKind::Script => {
+        // CommonJS uses require/module.exports, not import/export statements
+        ModuleKind::Script | ModuleKind::CommonJS => {
             ctx.error(diagnostics::module_code(text, span));
         }
         ModuleKind::Module => {
@@ -459,28 +483,80 @@ pub fn check_module_declaration(decl: &ModuleDeclarationKind, ctx: &SemanticBuil
     }
 }
 
+/// Check that `using` declarations are not at the top level in script mode.
+/// `using` is allowed:
+/// - At the top level of ES modules
+/// - At the top level of CommonJS modules (wrapped in function scope)
+/// - Inside any block scope in scripts
+///
+/// But NOT at the top level of scripts.
+pub fn check_variable_declaration(decl: &VariableDeclaration, ctx: &SemanticBuilder<'_>) {
+    if decl.kind.is_using()
+        && ctx.source_type.is_script()
+        && ctx.current_scope_flags().contains(ScopeFlags::Top)
+    {
+        ctx.error(diagnostics::using_declaration_not_allowed_in_script(decl.span));
+    }
+}
+
 pub fn check_meta_property(prop: &MetaProperty, ctx: &SemanticBuilder<'_>) {
     match prop.meta.name.as_str() {
         "import" => {
-            if prop.property.name == "meta" && ctx.source_type.is_script() {
+            // import.meta is only allowed in ES modules, not in scripts or CommonJS
+            if prop.property.name == "meta" && !ctx.source_type.is_module() {
                 ctx.error(diagnostics::import_meta(prop.span));
             }
         }
         "new" => {
             if prop.property.name == "target" {
-                let mut in_function_scope = false;
-                for scope_id in ctx.scoping.scope_ancestors(ctx.current_scope_id) {
-                    let flags = ctx.scoping.scope_flags(scope_id);
-                    // In arrow functions, new.target is inherited from the surrounding scope.
-                    if flags.contains(ScopeFlags::Arrow) {
-                        continue;
-                    }
-                    if flags.intersects(ScopeFlags::Function | ScopeFlags::ClassStaticBlock) {
-                        in_function_scope = true;
-                        break;
+                // In CommonJS, the file is wrapped in a function, so new.target is always valid
+                if ctx.source_type.is_commonjs() {
+                    return;
+                }
+
+                // Check if we're in a valid context for new.target:
+                // 1. Inside a function (including constructor)
+                // 2. Inside a class static block
+                // 3. Inside a class field initializer (new.target evaluates to undefined)
+                //
+                // Arrow functions inherit new.target from their surrounding scope,
+                // so we skip them and continue checking the enclosing context.
+
+                let mut in_valid_context = false;
+
+                // First, check AST ancestors for class field initializers.
+                // We need to do this because class fields don't have their own scope.
+                for node_kind in ctx.nodes.ancestor_kinds(ctx.current_node_id) {
+                    match node_kind {
+                        // Regular functions have their own new.target binding.
+                        // Use scope-based check from here.
+                        AstKind::Function(_) => break,
+                        // Class field initializers allow new.target (evaluates to undefined).
+                        // This includes arrow functions nested inside the initializer.
+                        AstKind::PropertyDefinition(_) | AstKind::AccessorProperty(_) => {
+                            in_valid_context = true;
+                            break;
+                        }
+                        _ => {}
                     }
                 }
-                if !in_function_scope {
+
+                // If not in a class field, fall back to scope-based check
+                if !in_valid_context {
+                    for scope_id in ctx.scoping.scope_ancestors(ctx.current_scope_id) {
+                        let flags = ctx.scoping.scope_flags(scope_id);
+                        // In arrow functions, new.target is inherited from the surrounding scope.
+                        if flags.contains(ScopeFlags::Arrow) {
+                            continue;
+                        }
+                        if flags.intersects(ScopeFlags::Function | ScopeFlags::ClassStaticBlock) {
+                            in_valid_context = true;
+                            break;
+                        }
+                    }
+                }
+
+                if !in_valid_context {
                     ctx.error(diagnostics::new_target(prop.span));
                 }
             }
@@ -558,24 +634,23 @@ pub fn check_variable_declarator_redeclaration(
 }
 
 /// Check for Annex B `if (foo) function a() {} else function b() {}`
-pub fn is_function_part_of_if_statement(function: &Function, builder: &SemanticBuilder) -> bool {
+pub fn is_function_decl_part_of_if_statement(
+    function: &Function,
+    builder: &SemanticBuilder,
+) -> bool {
+    debug_assert!(function.is_declaration());
+
+    // Function declarations cannot be `consequent` or `alternate` of an `IfStatement` in strict mode.
+    // This check is redundant - parent kind lookup below will always return `false` in strict mode.
+    // But this check is cheaper, and strict mode code is more common than sloppy mode, so we do this cheap check first.
     if builder.current_scope_flags().is_strict_mode() {
         return false;
     }
-    let AstKind::IfStatement(stmt) = builder.nodes.parent_kind(builder.current_node_id) else {
-        return false;
-    };
-    if let Statement::FunctionDeclaration(func) = &stmt.consequent
-        && ptr::eq(func.as_ref(), function)
-    {
-        return true;
-    }
-    if let Some(Statement::FunctionDeclaration(func)) = &stmt.alternate
-        && ptr::eq(func.as_ref(), function)
-    {
-        return true;
-    }
-    false
+
+    // A function declaration whose parent is an `IfStatement` can only be
+    // either that `IfStatement`'s `consequent` or `alternate`
+    // (can't be `test` because that's an expression)
+    matches!(builder.nodes.parent_kind(builder.current_node_id), AstKind::IfStatement(_))
 }
 
 // It is a Syntax Error if the LexicallyDeclaredNames of StatementList contains any duplicate entries,
@@ -583,9 +658,15 @@ pub fn is_function_part_of_if_statement(function: &Function, builder: &SemanticB
 // and the duplicate entries are only bound by FunctionDeclarations.
 // https://tc39.es/ecma262/#sec-block-level-function-declarations-web-legacy-compatibility-semantics
 pub fn check_function_redeclaration(func: &Function, ctx: &SemanticBuilder<'_>) {
+    if !func.is_declaration() {
+        return;
+    }
+
+    // Function declarations always have an identifier, except for `export default function () {}`.
+    // Skip that case.
     let Some(id) = &func.id else { return };
 
-    if is_function_part_of_if_statement(func, ctx) {
+    if is_function_decl_part_of_if_statement(func, ctx) {
         return;
     }
 
@@ -597,8 +678,8 @@ pub fn check_function_redeclaration(func: &Function, ctx: &SemanticBuilder<'_>) 
         return;
     };
 
-    // Already checked in `check_redelcaration`, because it is also not allowed in TypeScript
-    // `let a; function a() {}` is invalid in both strict and non-strict mode
+    // Already checked in `check_redeclaration`, because it is also not allowed in TypeScript.
+    // `let a; function a() {}` is invalid in both strict and non-strict mode.
     if prev.flags.contains(SymbolFlags::BlockScopedVariable) {
         return;
     }
@@ -606,7 +687,8 @@ pub fn check_function_redeclaration(func: &Function, ctx: &SemanticBuilder<'_>) 
     let current_scope_flags = ctx.current_scope_flags();
     if prev.flags.intersects(SymbolFlags::FunctionScopedVariable | SymbolFlags::Function)
         && (current_scope_flags.is_function()
-            || (ctx.source_type.is_script() && current_scope_flags.is_top()))
+            || current_scope_flags.is_class_static_block()
+            || (!ctx.source_type.is_module() && current_scope_flags.is_top()))
     {
         // https://tc39.github.io/ecma262/#sec-scripts-static-semantics-lexicallydeclarednames
         // `function a() {}; function a() {}` and `var a; function a() {}` are
