@@ -271,8 +271,8 @@ impl StaticBlock<'_> {
     }
 }
 
-impl TSEnumDeclaration<'_> {
-    /// Get [`ScopeId`] of [`TSEnumDeclaration`].
+impl TSEnumBody<'_> {
+    /// Get [`ScopeId`] of [`TSEnumBody`].
     ///
     /// Only use this method on a post-semantic AST where [`ScopeId`]s are always defined.
     ///
@@ -283,7 +283,7 @@ impl TSEnumDeclaration<'_> {
         self.scope_id.get().unwrap()
     }
 
-    /// Set [`ScopeId`] of [`TSEnumDeclaration`].
+    /// Set [`ScopeId`] of [`TSEnumBody`].
     #[inline]
     pub fn set_scope_id(&self, scope_id: ScopeId) {
         self.scope_id.set(Some(scope_id));
@@ -512,6 +512,25 @@ impl StructStatement<'_> {
     }
 
     /// Set [`ScopeId`] of [`StructStatement`].
+    #[inline]
+    pub fn set_scope_id(&self, scope_id: ScopeId) {
+        self.scope_id.set(Some(scope_id));
+    }
+}
+
+impl AnnotationDeclaration<'_> {
+    /// Get [`ScopeId`] of [`AnnotationDeclaration`].
+    ///
+    /// Only use this method on a post-semantic AST where [`ScopeId`]s are always defined.
+    ///
+    /// # Panics
+    /// Panics if `scope_id` is [`None`].
+    #[inline]
+    pub fn scope_id(&self) -> ScopeId {
+        self.scope_id.get().unwrap()
+    }
+
+    /// Set [`ScopeId`] of [`AnnotationDeclaration`].
     #[inline]
     pub fn set_scope_id(&self, scope_id: ScopeId) {
         self.scope_id.set(Some(scope_id));

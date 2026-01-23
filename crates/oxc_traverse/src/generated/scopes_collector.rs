@@ -638,6 +638,7 @@ impl<'a> Visit<'a> for ChildScopeCollector {
             Statement::TSModuleDeclaration(it) => self.visit_ts_module_declaration(it),
             Statement::TSGlobalDeclaration(it) => self.visit_ts_global_declaration(it),
             Statement::StructStatement(it) => self.visit_struct_statement(it),
+            Statement::AnnotationDeclaration(it) => self.visit_annotation_declaration(it),
             Statement::ExportDefaultDeclaration(it) => self.visit_export_default_declaration(it),
             Statement::ExportNamedDeclaration(it) => self.visit_export_named_declaration(it),
             Statement::TSExportAssignment(it) => self.visit_ts_export_assignment(it),
@@ -685,6 +686,7 @@ impl<'a> Visit<'a> for ChildScopeCollector {
             Declaration::TSModuleDeclaration(it) => self.visit_ts_module_declaration(it),
             Declaration::TSGlobalDeclaration(it) => self.visit_ts_global_declaration(it),
             Declaration::StructStatement(it) => self.visit_struct_statement(it),
+            Declaration::AnnotationDeclaration(it) => self.visit_annotation_declaration(it),
             _ => {
                 // Remaining variants do not contain scopes:
                 // `TSImportEqualsDeclaration`
@@ -1510,12 +1512,12 @@ impl<'a> Visit<'a> for ChildScopeCollector {
 
     #[inline]
     fn visit_ts_enum_declaration(&mut self, it: &TSEnumDeclaration<'a>) {
-        self.add_scope(&it.scope_id);
+        self.visit_ts_enum_body(&it.body);
     }
 
     #[inline]
     fn visit_ts_enum_body(&mut self, it: &TSEnumBody<'a>) {
-        self.visit_ts_enum_members(&it.members);
+        self.add_scope(&it.scope_id);
     }
 
     #[inline]
@@ -2084,6 +2086,16 @@ impl<'a> Visit<'a> for ChildScopeCollector {
         self.visit_arguments(&it.arguments);
         self.visit_ark_ui_children(&it.children);
         self.visit_call_expressions(&it.chain_expressions);
+    }
+
+    #[inline]
+    fn visit_annotation_declaration(&mut self, it: &AnnotationDeclaration<'a>) {
+        self.add_scope(&it.scope_id);
+    }
+
+    #[inline]
+    fn visit_annotation_body(&mut self, it: &AnnotationBody<'a>) {
+        self.visit_annotation_elements(&it.body);
     }
 
     #[inline(always)]

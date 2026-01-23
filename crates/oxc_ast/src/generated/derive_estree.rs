@@ -823,6 +823,7 @@ impl ESTree for Statement<'_> {
             Self::TSGlobalDeclaration(it) => it.serialize(serializer),
             Self::TSImportEqualsDeclaration(it) => it.serialize(serializer),
             Self::StructStatement(it) => it.serialize(serializer),
+            Self::AnnotationDeclaration(it) => it.serialize(serializer),
             Self::ImportDeclaration(it) => it.serialize(serializer),
             Self::LazyImportDeclaration(it) => it.serialize(serializer),
             Self::ExportAllDeclaration(it) => it.serialize(serializer),
@@ -878,6 +879,7 @@ impl ESTree for Declaration<'_> {
             Self::TSGlobalDeclaration(it) => it.serialize(serializer),
             Self::TSImportEqualsDeclaration(it) => it.serialize(serializer),
             Self::StructStatement(it) => it.serialize(serializer),
+            Self::AnnotationDeclaration(it) => it.serialize(serializer),
         }
     }
 }
@@ -3074,8 +3076,8 @@ impl ESTree for TSMappedType<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) {
         let mut state = serializer.serialize_struct();
         state.serialize_field("type", &JsonSafeString("TSMappedType"));
-        state.serialize_field("key", &crate::serialize::ts::TSMappedTypeKey(self));
-        state.serialize_field("constraint", &crate::serialize::ts::TSMappedTypeConstraint(self));
+        state.serialize_field("key", &self.key);
+        state.serialize_field("constraint", &self.constraint);
         state.serialize_field("nameType", &self.name_type);
         state.serialize_field("typeAnnotation", &self.type_annotation);
         state.serialize_field("optional", &crate::serialize::ts::TSMappedTypeOptional(self));
@@ -3316,6 +3318,37 @@ impl ESTree for ArkUIChild<'_> {
             Self::Component(it) => it.serialize(serializer),
             Self::Expression(it) => it.serialize(serializer),
             Self::Statement(it) => it.serialize(serializer),
+        }
+    }
+}
+
+impl ESTree for AnnotationDeclaration<'_> {
+    fn serialize<S: Serializer>(&self, serializer: S) {
+        let mut state = serializer.serialize_struct();
+        state.serialize_field("type", &JsonSafeString("AnnotationDeclaration"));
+        state.serialize_field("decorators", &self.decorators);
+        state.serialize_field("id", &self.id);
+        state.serialize_field("body", &self.body);
+        state.serialize_ts_field("declare", &self.declare);
+        state.serialize_span(self.span);
+        state.end();
+    }
+}
+
+impl ESTree for AnnotationBody<'_> {
+    fn serialize<S: Serializer>(&self, serializer: S) {
+        let mut state = serializer.serialize_struct();
+        state.serialize_field("type", &JsonSafeString("AnnotationBody"));
+        state.serialize_field("body", &self.body);
+        state.serialize_span(self.span);
+        state.end();
+    }
+}
+
+impl ESTree for AnnotationElement<'_> {
+    fn serialize<S: Serializer>(&self, serializer: S) {
+        match self {
+            Self::PropertyDefinition(it) => it.serialize(serializer),
         }
     }
 }

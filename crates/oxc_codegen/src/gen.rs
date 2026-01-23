@@ -296,6 +296,12 @@ impl Gen for Statement<'_> {
                 decl.print(p, ctx);
                 p.print_soft_newline();
             }
+            Self::AnnotationDeclaration(decl) => {
+                p.print_comments_at(decl.span.start);
+                p.print_indent();
+                decl.print(p, ctx);
+                p.print_soft_newline();
+            }
         }
     }
 }
@@ -1135,6 +1141,7 @@ impl Gen for ExportNamedDeclaration<'_> {
                 Declaration::TSEnumDeclaration(decl) => decl.print(p, ctx),
                 Declaration::TSImportEqualsDeclaration(decl) => decl.print(p, ctx),
                 Declaration::StructStatement(decl) => decl.print(p, ctx),
+                Declaration::AnnotationDeclaration(decl) => decl.print(p, ctx),
             }
             // Restore the flag
             p.skip_function_decorators = old_skip;
@@ -1212,6 +1219,7 @@ impl Gen for ExportSpecifier<'_> {
         if let Some(comments) = p.get_comments(self.local.span().start) {
             p.print_comments(&comments);
             p.print_soft_space();
+            p.print_next_indent_as_space = false;
         }
         self.local.print(p, ctx);
         let local_name = get_module_export_name(&self.local, p);
@@ -1221,6 +1229,7 @@ impl Gen for ExportSpecifier<'_> {
             if let Some(comments) = p.get_comments(self.exported.span().start) {
                 p.print_comments(&comments);
                 p.print_soft_space();
+                p.print_next_indent_as_space = false;
             }
             self.exported.print(p, ctx);
         }
@@ -2420,7 +2429,7 @@ impl GenExpr for NewExpression<'_> {
 
 impl GenExpr for TSAsExpression<'_> {
     fn gen_expr(&self, p: &mut Codegen, precedence: Precedence, ctx: Context) {
-        let wrap = precedence >= Precedence::Shift;
+        let wrap = precedence >= Precedence::Compare;
 
         p.wrap(wrap, |p| {
             self.expression.print_expr(p, Precedence::Exponentiation, ctx);
@@ -2432,20 +2441,13 @@ impl GenExpr for TSAsExpression<'_> {
 
 impl GenExpr for TSSatisfiesExpression<'_> {
     fn gen_expr(&self, p: &mut Codegen, precedence: Precedence, ctx: Context) {
-        p.print_ascii_byte(b'(');
-        let should_wrap =
-            if let Expression::FunctionExpression(func) = &self.expression.without_parentheses() {
-                // pife is handled on Function side
-                !func.pife
-            } else {
-                true
-            };
-        p.wrap(should_wrap, |p| {
-            self.expression.print_expr(p, precedence, Context::default());
+        let wrap = precedence >= Precedence::Compare;
+
+        p.wrap(wrap, |p| {
+            self.expression.print_expr(p, Precedence::Exponentiation, ctx);
+            p.print_str(" satisfies ");
+            self.type_annotation.print(p, ctx);
         });
-        p.print_str(" satisfies ");
-        self.type_annotation.print(p, ctx);
-        p.print_ascii_byte(b')');
     }
 }
 
@@ -2676,6 +2678,40 @@ impl Gen for StructBody<'_> {
                 item.print(p, ctx);
             }
         });
+    }
+}
+
+impl Gen for AnnotationDeclaration<'_> {
+    fn r#gen(&self, p: &mut Codegen, ctx: Context) {
+        p.print_decorators(&self.decorators, ctx);
+        p.print_space_before_identifier();
+        p.add_source_mapping(self.span);
+        p.print_str("@interface");
+        p.print_hard_space();
+        self.id.print(p, ctx);
+        p.print_soft_space();
+        self.body.print(p, ctx);
+    }
+}
+
+impl Gen for AnnotationBody<'_> {
+    fn r#gen(&self, p: &mut Codegen, ctx: Context) {
+        p.print_curly_braces(self.span, self.body.is_empty(), |p| {
+            for item in &self.body {
+                p.print_semicolon_if_needed();
+                p.print_leading_comments(item.span().start);
+                p.print_indent();
+                item.print(p, ctx);
+            }
+        });
+    }
+}
+
+impl Gen for AnnotationElement<'_> {
+    fn r#gen(&self, p: &mut Codegen, ctx: Context) {
+        match self {
+            AnnotationElement::PropertyDefinition(prop) => prop.print(p, ctx),
+        }
     }
 }
 
@@ -3433,15 +3469,9 @@ impl Gen for TSMappedType<'_> {
             None => {}
         }
         p.print_ascii_byte(b'[');
-        self.type_parameter.name.print(p, ctx);
-        if let Some(constraint) = &self.type_parameter.constraint {
-            p.print_str(" in ");
-            constraint.print(p, ctx);
-        }
-        if let Some(default) = &self.type_parameter.default {
-            p.print_str(" = ");
-            default.print(p, ctx);
-        }
+        self.key.print(p, ctx);
+        p.print_str(" in ");
+        self.constraint.print(p, ctx);
         if let Some(name_type) = &self.name_type {
             p.print_str(" as ");
             name_type.print(p, ctx);
@@ -3612,7 +3642,9 @@ impl Gen for TSTypeParameter<'_> {
             constraint.print(p, ctx);
         }
         if let Some(default) = &self.default {
-            p.print_str(" = ");
+            p.print_soft_space();
+            p.print_ascii_byte(b'=');
+            p.print_soft_space();
             default.print(p, ctx);
         }
     }
@@ -4099,7 +4131,9 @@ impl Gen for TSImportEqualsDeclaration<'_> {
     fn r#gen(&self, p: &mut Codegen, ctx: Context) {
         p.print_str("import ");
         self.id.print(p, ctx);
-        p.print_str(" = ");
+        p.print_soft_space();
+        p.print_ascii_byte(b'=');
+        p.print_soft_space();
         self.module_reference.print(p, ctx);
     }
 }

@@ -219,6 +219,10 @@ impl<'a> TypeScriptNamespace<'a, '_> {
                             continue;
                         }
                         match decl {
+                            Declaration::AnnotationDeclaration(_) => {
+                                // Annotation declarations don't need transformation
+                                continue;
+                            }
                             Declaration::TSImportEqualsDeclaration(ref import_equals) => {
                                 let binding =
                                     BoundIdentifier::from_binding_ident(&import_equals.id);

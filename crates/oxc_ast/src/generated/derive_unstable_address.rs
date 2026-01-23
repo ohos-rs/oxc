@@ -394,3 +394,7 @@ impl UnstableAddress for StructStatement<'_> {}
 impl UnstableAddress for StructBody<'_> {}
 
 impl UnstableAddress for ArkUIComponentExpression<'_> {}
+
+impl UnstableAddress for AnnotationDeclaration<'_> {}
+
+impl UnstableAddress for AnnotationBody<'_> {}

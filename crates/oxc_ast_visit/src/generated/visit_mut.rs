@@ -1227,6 +1227,21 @@ pub trait VisitMut<'a>: Sized {
     }
 
     #[inline]
+    fn visit_annotation_declaration(&mut self, it: &mut AnnotationDeclaration<'a>) {
+        walk_annotation_declaration(self, it);
+    }
+
+    #[inline]
+    fn visit_annotation_body(&mut self, it: &mut AnnotationBody<'a>) {
+        walk_annotation_body(self, it);
+    }
+
+    #[inline]
+    fn visit_annotation_element(&mut self, it: &mut AnnotationElement<'a>) {
+        walk_annotation_element(self, it);
+    }
+
+    #[inline]
     fn visit_span(&mut self, it: &mut Span) {
         walk_span(self, it);
     }
@@ -1385,6 +1400,11 @@ pub trait VisitMut<'a>: Sized {
     #[inline]
     fn visit_call_expressions(&mut self, it: &mut Vec<'a, CallExpression<'a>>) {
         walk_call_expressions(self, it);
+    }
+
+    #[inline]
+    fn visit_annotation_elements(&mut self, it: &mut Vec<'a, AnnotationElement<'a>>) {
+        walk_annotation_elements(self, it);
     }
 
     #[inline]
@@ -2180,6 +2200,7 @@ pub mod walk_mut {
                 visitor.visit_ts_import_equals_declaration(it)
             }
             Declaration::StructStatement(it) => visitor.visit_struct_statement(it),
+            Declaration::AnnotationDeclaration(it) => visitor.visit_annotation_declaration(it),
         }
     }
 
@@ -3458,9 +3479,7 @@ pub mod walk_mut {
         visitor.enter_node(kind);
         visitor.visit_span(&mut it.span);
         visitor.visit_binding_identifier(&mut it.id);
-        visitor.enter_scope(ScopeFlags::empty(), &it.scope_id);
         visitor.visit_ts_enum_body(&mut it.body);
-        visitor.leave_scope();
         visitor.leave_node(kind);
     }
 
@@ -3468,8 +3487,10 @@ pub mod walk_mut {
     pub fn walk_ts_enum_body<'a, V: VisitMut<'a>>(visitor: &mut V, it: &mut TSEnumBody<'a>) {
         let kind = AstType::TSEnumBody;
         visitor.enter_node(kind);
+        visitor.enter_scope(ScopeFlags::empty(), &it.scope_id);
         visitor.visit_span(&mut it.span);
         visitor.visit_ts_enum_members(&mut it.members);
+        visitor.leave_scope();
         visitor.leave_node(kind);
     }
 
@@ -4358,7 +4379,8 @@ pub mod walk_mut {
         visitor.enter_node(kind);
         visitor.enter_scope(ScopeFlags::empty(), &it.scope_id);
         visitor.visit_span(&mut it.span);
-        visitor.visit_ts_type_parameter(&mut it.type_parameter);
+        visitor.visit_binding_identifier(&mut it.key);
+        visitor.visit_ts_type(&mut it.constraint);
         if let Some(name_type) = &mut it.name_type {
             visitor.visit_ts_type(name_type);
         }
@@ -4616,6 +4638,42 @@ pub mod walk_mut {
             ArkUIChild::Component(it) => visitor.visit_ark_ui_component_expression(it),
             ArkUIChild::Expression(it) => visitor.visit_expression(it),
             ArkUIChild::Statement(it) => visitor.visit_statement(it),
+        }
+    }
+
+    #[inline]
+    pub fn walk_annotation_declaration<'a, V: VisitMut<'a>>(
+        visitor: &mut V,
+        it: &mut AnnotationDeclaration<'a>,
+    ) {
+        let kind = AstType::AnnotationDeclaration;
+        visitor.enter_node(kind);
+        visitor.enter_scope(ScopeFlags::StrictMode, &it.scope_id);
+        visitor.visit_span(&mut it.span);
+        visitor.visit_decorators(&mut it.decorators);
+        visitor.visit_binding_identifier(&mut it.id);
+        visitor.visit_annotation_body(&mut it.body);
+        visitor.leave_scope();
+        visitor.leave_node(kind);
+    }
+
+    #[inline]
+    pub fn walk_annotation_body<'a, V: VisitMut<'a>>(visitor: &mut V, it: &mut AnnotationBody<'a>) {
+        let kind = AstType::AnnotationBody;
+        visitor.enter_node(kind);
+        visitor.visit_span(&mut it.span);
+        visitor.visit_annotation_elements(&mut it.body);
+        visitor.leave_node(kind);
+    }
+
+    #[inline]
+    pub fn walk_annotation_element<'a, V: VisitMut<'a>>(
+        visitor: &mut V,
+        it: &mut AnnotationElement<'a>,
+    ) {
+        // No `AstType` for this type
+        match it {
+            AnnotationElement::PropertyDefinition(it) => visitor.visit_property_definition(it),
         }
     }
 
@@ -4910,6 +4968,16 @@ pub mod walk_mut {
     ) {
         for el in it {
             visitor.visit_call_expression(el);
+        }
+    }
+
+    #[inline]
+    pub fn walk_annotation_elements<'a, V: VisitMut<'a>>(
+        visitor: &mut V,
+        it: &mut Vec<'a, AnnotationElement<'a>>,
+    ) {
+        for el in it {
+            visitor.visit_annotation_element(el);
         }
     }
 

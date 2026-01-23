@@ -239,6 +239,15 @@ impl<'a> IsolatedDeclarations<'a> {
                     None
                 }
             }
+            Declaration::AnnotationDeclaration(annotation_decl) => {
+                let needs_transform =
+                    !check_binding || self.scope.has_reference(&annotation_decl.id.name);
+                needs_transform.then(|| {
+                    let mut decl = decl.clone_in(self.ast.allocator);
+                    self.visit_declaration(&mut decl);
+                    decl
+                })
+            }
         }
     }
 

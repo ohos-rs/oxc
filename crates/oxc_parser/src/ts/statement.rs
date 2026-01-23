@@ -182,14 +182,7 @@ impl<'a> ParserImpl<'a> {
         let type_parameters = self.parse_ts_type_parameters();
         let (extends, implements) = self.parse_heritage_clause();
         let body = self.parse_ts_interface_body();
-        let extends = extends.map_or_else(
-            || self.ast.vec(),
-            |e| {
-                self.ast.vec_from_iter(e.into_iter().map(|(expression, type_parameters, span)| {
-                    TSInterfaceHeritage { span, expression, type_arguments: type_parameters }
-                }))
-            },
-        );
+        let extends = extends.unwrap_or_else(|| self.ast.vec());
         self.verify_modifiers(
             modifiers,
             ModifierFlags::DECLARE,
@@ -712,6 +705,18 @@ export declare struct Foo {
             "Unexpected errors while parsing ArkUI struct: {:?}",
             ret.errors
         );
-        assert!(matches!(ret.program.body.first(), Some(Statement::StructStatement(_))));
+        // export declare struct is parsed as ExportNamedDeclaration containing StructStatement
+        match ret.program.body.first() {
+            Some(Statement::ExportNamedDeclaration(export_decl)) => {
+                match export_decl.declaration.as_ref() {
+                    Some(oxc_ast::ast::Declaration::StructStatement(_)) => {}
+                    _ => panic!(
+                        "Expected StructStatement in ExportNamedDeclaration, got: {:?}",
+                        export_decl.declaration
+                    ),
+                }
+            }
+            _ => panic!("Expected ExportNamedDeclaration, got: {:?}", ret.program.body.first()),
+        }
     }
 }

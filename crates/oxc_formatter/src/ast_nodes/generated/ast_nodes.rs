@@ -5,7 +5,7 @@ use std::mem::transmute;
 
 use oxc_allocator::Vec;
 use oxc_ast::ast::*;
-use oxc_span::GetSpan;
+use oxc_span::{GetSpan, Ident};
 
 use crate::ast_nodes::AstNode;
 use crate::formatter::{
@@ -216,6 +216,8 @@ pub enum AstNodes<'a> {
     StructStatement(&'a AstNode<'a, StructStatement<'a>>),
     StructBody(&'a AstNode<'a, StructBody<'a>>),
     ArkUIComponentExpression(&'a AstNode<'a, ArkUIComponentExpression<'a>>),
+    AnnotationDeclaration(&'a AstNode<'a, AnnotationDeclaration<'a>>),
+    AnnotationBody(&'a AstNode<'a, AnnotationBody<'a>>),
 }
 impl<'a> AstNodes<'a> {
     #[inline]
@@ -415,6 +417,8 @@ impl<'a> AstNodes<'a> {
             Self::StructStatement(n) => n.span(),
             Self::StructBody(n) => n.span(),
             Self::ArkUIComponentExpression(n) => n.span(),
+            Self::AnnotationDeclaration(n) => n.span(),
+            Self::AnnotationBody(n) => n.span(),
         }
     }
     #[inline]
@@ -614,6 +618,8 @@ impl<'a> AstNodes<'a> {
             Self::StructStatement(n) => n.parent,
             Self::StructBody(n) => n.parent,
             Self::ArkUIComponentExpression(n) => n.parent,
+            Self::AnnotationDeclaration(n) => n.parent,
+            Self::AnnotationBody(n) => n.parent,
         }
     }
     #[inline]
@@ -813,6 +819,8 @@ impl<'a> AstNodes<'a> {
             Self::StructStatement(_) => "StructStatement",
             Self::StructBody(_) => "StructBody",
             Self::ArkUIComponentExpression(_) => "ArkUIComponentExpression",
+            Self::AnnotationDeclaration(_) => "AnnotationDeclaration",
+            Self::AnnotationBody(_) => "AnnotationBody",
         }
     }
 }
@@ -1230,7 +1238,7 @@ impl<'a> AstNode<'a, Expression<'a>> {
 
 impl<'a> AstNode<'a, IdentifierName<'a>> {
     #[inline]
-    pub fn name(&self) -> Atom<'a> {
+    pub fn name(&self) -> Ident<'a> {
         self.inner.name
     }
 
@@ -1245,7 +1253,7 @@ impl<'a> AstNode<'a, IdentifierName<'a>> {
 
 impl<'a> AstNode<'a, IdentifierReference<'a>> {
     #[inline]
-    pub fn name(&self) -> Atom<'a> {
+    pub fn name(&self) -> Ident<'a> {
         self.inner.name
     }
 
@@ -1260,7 +1268,7 @@ impl<'a> AstNode<'a, IdentifierReference<'a>> {
 
 impl<'a> AstNode<'a, BindingIdentifier<'a>> {
     #[inline]
-    pub fn name(&self) -> Atom<'a> {
+    pub fn name(&self) -> Ident<'a> {
         self.inner.name
     }
 
@@ -1275,7 +1283,7 @@ impl<'a> AstNode<'a, BindingIdentifier<'a>> {
 
 impl<'a> AstNode<'a, LabelIdentifier<'a>> {
     #[inline]
-    pub fn name(&self) -> Atom<'a> {
+    pub fn name(&self) -> Ident<'a> {
         self.inner.name
     }
 
@@ -3072,6 +3080,14 @@ impl<'a> AstNode<'a, Declaration<'a>> {
             }
             Declaration::StructStatement(s) => {
                 AstNodes::StructStatement(self.allocator.alloc(AstNode {
+                    inner: s.as_ref(),
+                    parent,
+                    allocator: self.allocator,
+                    following_span: self.following_span,
+                }))
+            }
+            Declaration::AnnotationDeclaration(s) => {
+                AstNodes::AnnotationDeclaration(self.allocator.alloc(AstNode {
                     inner: s.as_ref(),
                     parent,
                     allocator: self.allocator,
@@ -4949,7 +4965,7 @@ impl<'a> AstNode<'a, PropertyDefinition<'a>> {
 
 impl<'a> AstNode<'a, PrivateIdentifier<'a>> {
     #[inline]
-    pub fn name(&self) -> Atom<'a> {
+    pub fn name(&self) -> Ident<'a> {
         self.inner.name
     }
 
@@ -8996,7 +9012,18 @@ impl<'a> AstNode<'a, TSConstructorType<'a>> {
 
 impl<'a> AstNode<'a, TSMappedType<'a>> {
     #[inline]
-    pub fn type_parameter(&self) -> &AstNode<'a, TSTypeParameter<'a>> {
+    pub fn key(&self) -> &AstNode<'a, BindingIdentifier<'a>> {
+        let following_span = Some(self.inner.constraint.span());
+        self.allocator.alloc(AstNode {
+            inner: &self.inner.key,
+            allocator: self.allocator,
+            parent: self.allocator.alloc(AstNodes::TSMappedType(transmute_self(self))),
+            following_span,
+        })
+    }
+
+    #[inline]
+    pub fn constraint(&self) -> &AstNode<'a, TSType<'a>> {
         let following_span = self
             .inner
             .name_type
@@ -9005,7 +9032,7 @@ impl<'a> AstNode<'a, TSMappedType<'a>> {
             .or_else(|| self.inner.type_annotation.as_ref().map(GetSpan::span))
             .or(self.following_span);
         self.allocator.alloc(AstNode {
-            inner: self.inner.type_parameter.as_ref(),
+            inner: &self.inner.constraint,
             allocator: self.allocator,
             parent: self.allocator.alloc(AstNodes::TSMappedType(transmute_self(self))),
             following_span,
@@ -9678,6 +9705,93 @@ impl<'a> AstNode<'a, ArkUIChild<'a>> {
                 panic!(
                     "No kind for current enum variant yet, please see `tasks/ast_tools/src/generators/ast_kind.rs`"
                 )
+            }
+        };
+        self.allocator.alloc(node)
+    }
+}
+
+impl<'a> AstNode<'a, AnnotationDeclaration<'a>> {
+    #[inline]
+    pub fn decorators(&self) -> &AstNode<'a, Vec<'a, Decorator<'a>>> {
+        let following_span = Some(self.inner.id.span());
+        self.allocator.alloc(AstNode {
+            inner: &self.inner.decorators,
+            allocator: self.allocator,
+            parent: self.allocator.alloc(AstNodes::AnnotationDeclaration(transmute_self(self))),
+            following_span,
+        })
+    }
+
+    #[inline]
+    pub fn id(&self) -> &AstNode<'a, BindingIdentifier<'a>> {
+        let following_span = Some(self.inner.body.span());
+        self.allocator.alloc(AstNode {
+            inner: &self.inner.id,
+            allocator: self.allocator,
+            parent: self.allocator.alloc(AstNodes::AnnotationDeclaration(transmute_self(self))),
+            following_span,
+        })
+    }
+
+    #[inline]
+    pub fn body(&self) -> &AstNode<'a, AnnotationBody<'a>> {
+        let following_span = None;
+        self.allocator.alloc(AstNode {
+            inner: self.inner.body.as_ref(),
+            allocator: self.allocator,
+            parent: self.allocator.alloc(AstNodes::AnnotationDeclaration(transmute_self(self))),
+            following_span,
+        })
+    }
+
+    #[inline]
+    pub fn declare(&self) -> bool {
+        self.inner.declare
+    }
+
+    pub fn format_leading_comments(&self, f: &mut Formatter<'_, 'a>) {
+        format_leading_comments(self.span()).fmt(f);
+    }
+
+    pub fn format_trailing_comments(&self, f: &mut Formatter<'_, 'a>) {
+        format_trailing_comments(self.parent.span(), self.inner.span(), self.following_span).fmt(f);
+    }
+}
+
+impl<'a> AstNode<'a, AnnotationBody<'a>> {
+    #[inline]
+    pub fn body(&self) -> &AstNode<'a, Vec<'a, AnnotationElement<'a>>> {
+        let following_span = self.following_span;
+        self.allocator.alloc(AstNode {
+            inner: &self.inner.body,
+            allocator: self.allocator,
+            parent: self.allocator.alloc(AstNodes::AnnotationBody(transmute_self(self))),
+            following_span,
+        })
+    }
+
+    pub fn format_leading_comments(&self, f: &mut Formatter<'_, 'a>) {
+        format_leading_comments(self.span()).fmt(f);
+    }
+
+    pub fn format_trailing_comments(&self, f: &mut Formatter<'_, 'a>) {
+        format_trailing_comments(self.parent.span(), self.inner.span(), self.following_span).fmt(f);
+    }
+}
+
+impl<'a> AstNode<'a, AnnotationElement<'a>> {
+    #[inline]
+    pub fn as_ast_nodes(&self) -> &AstNodes<'a> {
+        let parent = self.parent;
+        let node = match self.inner {
+            AnnotationElement::PropertyDefinition(s) => {
+                AstNodes::PropertyDefinition(self.allocator.alloc(AstNode {
+                    inner: s.as_ref(),
+                    parent,
+                    allocator: self.allocator,
+                    following_span: self.following_span,
+                }))
             }
         };
         self.allocator.alloc(node)

@@ -2395,6 +2395,9 @@ impl<'new_alloc> CloneIn<'new_alloc> for Statement<'_> {
             Self::StructStatement(it) => {
                 Statement::StructStatement(CloneIn::clone_in(it, allocator))
             }
+            Self::AnnotationDeclaration(it) => {
+                Statement::AnnotationDeclaration(CloneIn::clone_in(it, allocator))
+            }
             Self::ImportDeclaration(it) => {
                 Statement::ImportDeclaration(CloneIn::clone_in(it, allocator))
             }
@@ -2504,6 +2507,9 @@ impl<'new_alloc> CloneIn<'new_alloc> for Statement<'_> {
             ),
             Self::StructStatement(it) => {
                 Statement::StructStatement(CloneIn::clone_in_with_semantic_ids(it, allocator))
+            }
+            Self::AnnotationDeclaration(it) => {
+                Statement::AnnotationDeclaration(CloneIn::clone_in_with_semantic_ids(it, allocator))
             }
             Self::ImportDeclaration(it) => {
                 Statement::ImportDeclaration(CloneIn::clone_in_with_semantic_ids(it, allocator))
@@ -2623,6 +2629,9 @@ impl<'new_alloc> CloneIn<'new_alloc> for Declaration<'_> {
             Self::StructStatement(it) => {
                 Declaration::StructStatement(CloneIn::clone_in(it, allocator))
             }
+            Self::AnnotationDeclaration(it) => {
+                Declaration::AnnotationDeclaration(CloneIn::clone_in(it, allocator))
+            }
         }
     }
 
@@ -2658,6 +2667,9 @@ impl<'new_alloc> CloneIn<'new_alloc> for Declaration<'_> {
             Self::StructStatement(it) => {
                 Declaration::StructStatement(CloneIn::clone_in_with_semantic_ids(it, allocator))
             }
+            Self::AnnotationDeclaration(it) => Declaration::AnnotationDeclaration(
+                CloneIn::clone_in_with_semantic_ids(it, allocator),
+            ),
         }
     }
 }
@@ -5903,7 +5915,6 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSEnumDeclaration<'_> {
             body: CloneIn::clone_in(&self.body, allocator),
             r#const: CloneIn::clone_in(&self.r#const, allocator),
             declare: CloneIn::clone_in(&self.declare, allocator),
-            scope_id: Default::default(),
         }
     }
 
@@ -5914,7 +5925,6 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSEnumDeclaration<'_> {
             body: CloneIn::clone_in_with_semantic_ids(&self.body, allocator),
             r#const: CloneIn::clone_in_with_semantic_ids(&self.r#const, allocator),
             declare: CloneIn::clone_in_with_semantic_ids(&self.declare, allocator),
-            scope_id: CloneIn::clone_in_with_semantic_ids(&self.scope_id, allocator),
         }
     }
 }
@@ -5926,6 +5936,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSEnumBody<'_> {
         TSEnumBody {
             span: CloneIn::clone_in(&self.span, allocator),
             members: CloneIn::clone_in(&self.members, allocator),
+            scope_id: Default::default(),
         }
     }
 
@@ -5933,6 +5944,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSEnumBody<'_> {
         TSEnumBody {
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             members: CloneIn::clone_in_with_semantic_ids(&self.members, allocator),
+            scope_id: CloneIn::clone_in_with_semantic_ids(&self.scope_id, allocator),
         }
     }
 }
@@ -7769,7 +7781,8 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSMappedType<'_> {
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSMappedType {
             span: CloneIn::clone_in(&self.span, allocator),
-            type_parameter: CloneIn::clone_in(&self.type_parameter, allocator),
+            key: CloneIn::clone_in(&self.key, allocator),
+            constraint: CloneIn::clone_in(&self.constraint, allocator),
             name_type: CloneIn::clone_in(&self.name_type, allocator),
             type_annotation: CloneIn::clone_in(&self.type_annotation, allocator),
             optional: CloneIn::clone_in(&self.optional, allocator),
@@ -7781,7 +7794,8 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSMappedType<'_> {
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSMappedType {
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
-            type_parameter: CloneIn::clone_in_with_semantic_ids(&self.type_parameter, allocator),
+            key: CloneIn::clone_in_with_semantic_ids(&self.key, allocator),
+            constraint: CloneIn::clone_in_with_semantic_ids(&self.constraint, allocator),
             name_type: CloneIn::clone_in_with_semantic_ids(&self.name_type, allocator),
             type_annotation: CloneIn::clone_in_with_semantic_ids(&self.type_annotation, allocator),
             optional: CloneIn::clone_in_with_semantic_ids(&self.optional, allocator),
@@ -8247,6 +8261,70 @@ impl<'new_alloc> CloneIn<'new_alloc> for ArkUIChild<'_> {
             Self::Statement(it) => {
                 ArkUIChild::Statement(CloneIn::clone_in_with_semantic_ids(it, allocator))
             }
+        }
+    }
+}
+
+impl<'new_alloc> CloneIn<'new_alloc> for AnnotationDeclaration<'_> {
+    type Cloned = AnnotationDeclaration<'new_alloc>;
+
+    fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
+        AnnotationDeclaration {
+            span: CloneIn::clone_in(&self.span, allocator),
+            decorators: CloneIn::clone_in(&self.decorators, allocator),
+            id: CloneIn::clone_in(&self.id, allocator),
+            body: CloneIn::clone_in(&self.body, allocator),
+            declare: CloneIn::clone_in(&self.declare, allocator),
+            scope_id: Default::default(),
+        }
+    }
+
+    fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
+        AnnotationDeclaration {
+            span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
+            decorators: CloneIn::clone_in_with_semantic_ids(&self.decorators, allocator),
+            id: CloneIn::clone_in_with_semantic_ids(&self.id, allocator),
+            body: CloneIn::clone_in_with_semantic_ids(&self.body, allocator),
+            declare: CloneIn::clone_in_with_semantic_ids(&self.declare, allocator),
+            scope_id: CloneIn::clone_in_with_semantic_ids(&self.scope_id, allocator),
+        }
+    }
+}
+
+impl<'new_alloc> CloneIn<'new_alloc> for AnnotationBody<'_> {
+    type Cloned = AnnotationBody<'new_alloc>;
+
+    fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
+        AnnotationBody {
+            span: CloneIn::clone_in(&self.span, allocator),
+            body: CloneIn::clone_in(&self.body, allocator),
+        }
+    }
+
+    fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
+        AnnotationBody {
+            span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
+            body: CloneIn::clone_in_with_semantic_ids(&self.body, allocator),
+        }
+    }
+}
+
+impl<'new_alloc> CloneIn<'new_alloc> for AnnotationElement<'_> {
+    type Cloned = AnnotationElement<'new_alloc>;
+
+    fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
+        match self {
+            Self::PropertyDefinition(it) => {
+                AnnotationElement::PropertyDefinition(CloneIn::clone_in(it, allocator))
+            }
+        }
+    }
+
+    fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
+        match self {
+            Self::PropertyDefinition(it) => AnnotationElement::PropertyDefinition(
+                CloneIn::clone_in_with_semantic_ids(it, allocator),
+            ),
         }
     }
 }

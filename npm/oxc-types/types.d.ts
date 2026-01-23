@@ -445,7 +445,8 @@ export type Declaration =
   | TSModuleDeclaration
   | TSGlobalDeclaration
   | TSImportEqualsDeclaration
-  | StructStatement;
+  | StructStatement
+  | AnnotationDeclaration;
 
 export interface VariableDeclaration extends Span {
   type: "VariableDeclaration";
@@ -1591,8 +1592,8 @@ export interface TSConstructorType extends Span {
 
 export interface TSMappedType extends Span {
   type: "TSMappedType";
-  key: TSTypeParameter["name"];
-  constraint: TSTypeParameter["constraint"];
+  key: BindingIdentifier;
+  constraint: TSType;
   nameType: TSType | null;
   typeAnnotation: TSType | null;
   optional: TSMappedTypeModifierOperator | false;
@@ -1728,6 +1729,23 @@ export interface ArkUIComponentExpression extends Span {
 
 export type ArkUIChild = ArkUIComponentExpression | Expression | Statement;
 
+export interface AnnotationDeclaration extends Span {
+  type: "AnnotationDeclaration";
+  decorators: Array<Decorator>;
+  id: BindingIdentifier;
+  body: AnnotationBody;
+  declare?: boolean;
+  parent?: Node;
+}
+
+export interface AnnotationBody extends Span {
+  type: "AnnotationBody";
+  body: Array<AnnotationElement>;
+  parent?: Node;
+}
+
+export type AnnotationElement = PropertyDefinition;
+
 export type AssignmentOperator =
   | "="
   | "+="
@@ -1782,7 +1800,7 @@ export interface Span {
   range?: [number, number];
 }
 
-export type ModuleKind = "script" | "module";
+export type ModuleKind = "script" | "module" | "commonjs";
 
 export type Node =
   | Program
@@ -1972,4 +1990,6 @@ export type Node =
   | StructStatement
   | StructBody
   | ArkUIComponentExpression
+  | AnnotationDeclaration
+  | AnnotationBody
   | ParamPattern;

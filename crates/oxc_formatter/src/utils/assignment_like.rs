@@ -8,13 +8,13 @@ use crate::{
         prelude::{FormatElements, format_once, line_suffix_boundary, *},
         trivia::FormatTrailingComments,
     },
+    print::{BinaryLikeExpression, FormatJsArrowFunctionExpressionOptions, FormatWrite},
     utils::{
         format_node_without_trailing_comments::FormatNodeWithoutTrailingComments,
         member_chain::is_member_call_chain,
         object::{format_property_key, write_member_name},
     },
     write,
-    write::{BinaryLikeExpression, FormatJsArrowFunctionExpressionOptions, FormatWrite},
 };
 
 use super::string::{FormatLiteralStringToken, StringLiteralParentKind};
@@ -310,6 +310,29 @@ impl<'a> AssignmentLike<'a, '_> {
                     matches!(&declaration.type_annotation, TSType::TSTypeLiteral(_)),
                     f,
                 );
+
+                // For single-element union/intersection types (e.g., `type A = /*1*/ | C`),
+                // Prettier relocates the single leading comment to after the identifier,
+                // producing `type A /*1*/ = C;`. Skip complex nested cases.
+                let type_span = match &declaration.type_annotation {
+                    TSType::TSUnionType(u) if u.types.len() == 1 => (!matches!(
+                        u.types.first().unwrap(),
+                        TSType::TSParenthesizedType(_) | TSType::TSUnionType(_)
+                    ))
+                    .then_some(u.span),
+                    TSType::TSIntersectionType(i) if i.types.len() == 1 => (!matches!(
+                        i.types.first().unwrap(),
+                        TSType::TSParenthesizedType(_) | TSType::TSIntersectionType(_)
+                    ))
+                    .then_some(i.span),
+                    _ => None,
+                };
+                if let Some(span) = type_span {
+                    let comments = f.context().comments().comments_before(span.start);
+                    if comments.len() == 1 {
+                        write!(f, [FormatTrailingComments::Comments(comments)]);
+                    }
+                }
 
                 false
             }
@@ -1027,7 +1050,7 @@ fn is_complex_type_arguments(type_arguments: &TSTypeParameterInstantiation) -> b
         if let TSType::TSTypeReference(type_ref) = first_argument
             && let Some(type_args) = &type_ref.type_arguments
         {
-            return is_complex_type_arguments(type_args);
+            return type_args.params.iter().any(is_complex_ts_type);
         }
 
         false

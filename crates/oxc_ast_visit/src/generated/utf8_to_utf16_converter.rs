@@ -1156,4 +1156,16 @@ impl<'a> VisitMut<'a> for Utf8ToUtf16Converter<'_> {
         walk_mut::walk_ark_ui_component_expression(self, it);
         self.convert_offset(&mut it.span.end);
     }
+
+    fn visit_annotation_declaration(&mut self, it: &mut AnnotationDeclaration<'a>) {
+        self.convert_offset(&mut it.span.start);
+        walk_mut::walk_annotation_declaration(self, it);
+        self.convert_offset(&mut it.span.end);
+    }
+
+    fn visit_annotation_body(&mut self, it: &mut AnnotationBody<'a>) {
+        self.convert_offset(&mut it.span.start);
+        walk_mut::walk_annotation_body(self, it);
+        self.convert_offset(&mut it.span.end);
+    }
 }

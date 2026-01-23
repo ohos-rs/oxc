@@ -12,7 +12,7 @@ use oxc_span::{GetSpan, Span};
 use crate::ast::*;
 
 /// The largest integer value that can be mapped to an `AstType`/`AstKind` enum variant.
-pub const AST_TYPE_MAX: u8 = 192;
+pub const AST_TYPE_MAX: u8 = 194;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(u8)]
@@ -210,6 +210,8 @@ pub enum AstType {
     StructStatement = 190,
     StructBody = 191,
     ArkUIComponentExpression = 192,
+    AnnotationDeclaration = 193,
+    AnnotationBody = 194,
 }
 
 /// Untyped AST Node Kind
@@ -428,6 +430,8 @@ pub enum AstKind<'a> {
     StructBody(&'a StructBody<'a>) = AstType::StructBody as u8,
     ArkUIComponentExpression(&'a ArkUIComponentExpression<'a>) =
         AstType::ArkUIComponentExpression as u8,
+    AnnotationDeclaration(&'a AnnotationDeclaration<'a>) = AstType::AnnotationDeclaration as u8,
+    AnnotationBody(&'a AnnotationBody<'a>) = AstType::AnnotationBody as u8,
 }
 
 impl AstKind<'_> {
@@ -638,6 +642,8 @@ impl GetSpan for AstKind<'_> {
             Self::StructStatement(it) => it.span(),
             Self::StructBody(it) => it.span(),
             Self::ArkUIComponentExpression(it) => it.span(),
+            Self::AnnotationDeclaration(it) => it.span(),
+            Self::AnnotationBody(it) => it.span(),
         }
     }
 }
@@ -838,6 +844,8 @@ impl GetAddress for AstKind<'_> {
             Self::StructStatement(it) => it.unstable_address(),
             Self::StructBody(it) => it.unstable_address(),
             Self::ArkUIComponentExpression(it) => it.unstable_address(),
+            Self::AnnotationDeclaration(it) => it.unstable_address(),
+            Self::AnnotationBody(it) => it.unstable_address(),
         }
     }
 }
@@ -1816,5 +1824,15 @@ impl<'a> AstKind<'a> {
     #[inline]
     pub fn as_ark_ui_component_expression(self) -> Option<&'a ArkUIComponentExpression<'a>> {
         if let Self::ArkUIComponentExpression(v) = self { Some(v) } else { None }
+    }
+
+    #[inline]
+    pub fn as_annotation_declaration(self) -> Option<&'a AnnotationDeclaration<'a>> {
+        if let Self::AnnotationDeclaration(v) = self { Some(v) } else { None }
+    }
+
+    #[inline]
+    pub fn as_annotation_body(self) -> Option<&'a AnnotationBody<'a>> {
+        if let Self::AnnotationBody(v) = self { Some(v) } else { None }
     }
 }

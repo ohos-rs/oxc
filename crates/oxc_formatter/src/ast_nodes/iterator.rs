@@ -170,6 +170,7 @@ impl_ast_node_vec!(ImportAttribute<'a>);
 impl_ast_node_vec!(ExportSpecifier<'a>);
 impl_ast_node_vec!(JSXAttributeItem<'a>);
 impl_ast_node_vec!(StructElement<'a>);
+impl_ast_node_vec!(AnnotationElement<'a>);
 impl_ast_node_vec!(JSXChild<'a>);
 impl_ast_node_vec!(ArkUIChild<'a>);
 impl_ast_node_vec!(CallExpression<'a>);

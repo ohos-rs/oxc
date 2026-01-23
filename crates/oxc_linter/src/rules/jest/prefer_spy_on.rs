@@ -183,9 +183,8 @@ impl PreferSpyOn {
                 formatter.print_expression(&static_mem_expr.object);
                 formatter.print_ascii_byte(b',');
                 formatter.print_ascii_byte(b' ');
-                formatter.print_str(name.as_str());
+                formatter.print_str(format!("\'{name}\'").as_str());
             }
-            // LeadingDotExpression is now a separate Expression type, not a MemberExpression
             MemberExpression::PrivateFieldExpression(_) => (),
         }
 

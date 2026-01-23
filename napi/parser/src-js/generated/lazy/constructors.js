@@ -2713,6 +2713,8 @@ function constructStatement(pos, ast) {
       return constructBoxWithStatement(pos + 8, ast);
     case 19:
       return constructBoxStructStatement(pos + 8, ast);
+    case 20:
+      return constructBoxAnnotationDeclaration(pos + 8, ast);
     case 32:
       return constructBoxVariableDeclaration(pos + 8, ast);
     case 33:
@@ -2904,6 +2906,8 @@ function constructDeclaration(pos, ast) {
   switch (ast.buffer[pos]) {
     case 19:
       return constructBoxStructStatement(pos + 8, ast);
+    case 20:
+      return constructBoxAnnotationDeclaration(pos + 8, ast);
     case 32:
       return constructBoxVariableDeclaration(pos + 8, ast);
     case 33:
@@ -7860,12 +7864,12 @@ export class TSEnumDeclaration {
 
   get const() {
     const internal = this.#internal;
-    return constructBool(internal.pos + 76, internal.ast);
+    return constructBool(internal.pos + 80, internal.ast);
   }
 
   get declare() {
     const internal = this.#internal;
-    return constructBool(internal.pos + 77, internal.ast);
+    return constructBool(internal.pos + 81, internal.ast);
   }
 
   toJSON() {
@@ -11118,24 +11122,34 @@ export class TSMappedType {
     return constructU32(internal.pos + 4, internal.ast);
   }
 
+  get key() {
+    const internal = this.#internal;
+    return new BindingIdentifier(internal.pos + 8, internal.ast);
+  }
+
+  get constraint() {
+    const internal = this.#internal;
+    return constructTSType(internal.pos + 40, internal.ast);
+  }
+
   get nameType() {
     const internal = this.#internal;
-    return constructOptionTSType(internal.pos + 16, internal.ast);
+    return constructOptionTSType(internal.pos + 56, internal.ast);
   }
 
   get typeAnnotation() {
     const internal = this.#internal;
-    return constructOptionTSType(internal.pos + 32, internal.ast);
+    return constructOptionTSType(internal.pos + 72, internal.ast);
   }
 
   get optional() {
     const internal = this.#internal;
-    return constructOptionTSMappedTypeModifierOperator(internal.pos + 52, internal.ast);
+    return constructOptionTSMappedTypeModifierOperator(internal.pos + 92, internal.ast);
   }
 
   get readonly() {
     const internal = this.#internal;
-    return constructOptionTSMappedTypeModifierOperator(internal.pos + 53, internal.ast);
+    return constructOptionTSMappedTypeModifierOperator(internal.pos + 93, internal.ast);
   }
 
   toJSON() {
@@ -11143,6 +11157,8 @@ export class TSMappedType {
       type: "TSMappedType",
       start: this.start,
       end: this.end,
+      key: this.key,
+      constraint: this.constraint,
       nameType: this.nameType,
       typeAnnotation: this.typeAnnotation,
       optional: this.optional,
@@ -12117,6 +12133,129 @@ function constructArkUIChild(pos, ast) {
   }
 }
 
+export class AnnotationDeclaration {
+  type = "AnnotationDeclaration";
+  #internal;
+
+  constructor(pos, ast) {
+    if (ast?.token !== TOKEN) constructorError();
+
+    const { nodes } = ast;
+    const cached = nodes.get(pos);
+    if (cached !== void 0) return cached;
+
+    this.#internal = { pos, ast, $decorators: void 0 };
+    nodes.set(pos, this);
+  }
+
+  get start() {
+    const internal = this.#internal;
+    return constructU32(internal.pos, internal.ast);
+  }
+
+  get end() {
+    const internal = this.#internal;
+    return constructU32(internal.pos + 4, internal.ast);
+  }
+
+  get decorators() {
+    const internal = this.#internal,
+      cached = internal.$decorators;
+    if (cached !== void 0) return cached;
+    return (internal.$decorators = constructVecDecorator(internal.pos + 8, internal.ast));
+  }
+
+  get id() {
+    const internal = this.#internal;
+    return new BindingIdentifier(internal.pos + 32, internal.ast);
+  }
+
+  get body() {
+    const internal = this.#internal;
+    return constructBoxAnnotationBody(internal.pos + 64, internal.ast);
+  }
+
+  get declare() {
+    const internal = this.#internal;
+    return constructBool(internal.pos + 76, internal.ast);
+  }
+
+  toJSON() {
+    return {
+      type: "AnnotationDeclaration",
+      start: this.start,
+      end: this.end,
+      decorators: this.decorators,
+      id: this.id,
+      body: this.body,
+      declare: this.declare,
+    };
+  }
+
+  [inspectSymbol]() {
+    return Object.setPrototypeOf(this.toJSON(), DebugAnnotationDeclaration.prototype);
+  }
+}
+
+const DebugAnnotationDeclaration = class AnnotationDeclaration {};
+
+export class AnnotationBody {
+  type = "AnnotationBody";
+  #internal;
+
+  constructor(pos, ast) {
+    if (ast?.token !== TOKEN) constructorError();
+
+    const { nodes } = ast;
+    const cached = nodes.get(pos);
+    if (cached !== void 0) return cached;
+
+    this.#internal = { pos, ast, $body: void 0 };
+    nodes.set(pos, this);
+  }
+
+  get start() {
+    const internal = this.#internal;
+    return constructU32(internal.pos, internal.ast);
+  }
+
+  get end() {
+    const internal = this.#internal;
+    return constructU32(internal.pos + 4, internal.ast);
+  }
+
+  get body() {
+    const internal = this.#internal,
+      cached = internal.$body;
+    if (cached !== void 0) return cached;
+    return (internal.$body = constructVecAnnotationElement(internal.pos + 8, internal.ast));
+  }
+
+  toJSON() {
+    return {
+      type: "AnnotationBody",
+      start: this.start,
+      end: this.end,
+      body: this.body,
+    };
+  }
+
+  [inspectSymbol]() {
+    return Object.setPrototypeOf(this.toJSON(), DebugAnnotationBody.prototype);
+  }
+}
+
+const DebugAnnotationBody = class AnnotationBody {};
+
+function constructAnnotationElement(pos, ast) {
+  switch (ast.buffer[pos]) {
+    case 0:
+      return constructBoxPropertyDefinition(pos + 8, ast);
+    default:
+      throw new Error(`Unexpected discriminant ${ast.buffer[pos]} for AnnotationElement`);
+  }
+}
+
 function constructCommentKind(pos, ast) {
   switch (ast.buffer[pos]) {
     case 0:
@@ -12641,6 +12780,8 @@ function constructModuleKind(pos, ast) {
       return "script";
     case 1:
       return "module";
+    case 3:
+      return "commonjs";
     default:
       throw new Error(`Unexpected discriminant ${ast.buffer[pos]} for ModuleKind`);
   }
@@ -13486,6 +13627,10 @@ function constructBoxStructStatement(pos, ast) {
   return new StructStatement(ast.buffer.uint32[pos >> 2], ast);
 }
 
+function constructBoxAnnotationDeclaration(pos, ast) {
+  return new AnnotationDeclaration(ast.buffer.uint32[pos >> 2], ast);
+}
+
 function constructVecVariableDeclarator(pos, ast) {
   const { uint32 } = ast.buffer,
     pos32 = pos >> 2;
@@ -14186,6 +14331,16 @@ function constructCallExpression(pos, ast) {
 
 function constructBoxStatement(pos, ast) {
   return constructStatement(ast.buffer.uint32[pos >> 2], ast);
+}
+
+function constructBoxAnnotationBody(pos, ast) {
+  return new AnnotationBody(ast.buffer.uint32[pos >> 2], ast);
+}
+
+function constructVecAnnotationElement(pos, ast) {
+  const { uint32 } = ast.buffer,
+    pos32 = pos >> 2;
+  return new NodeArray(uint32[pos32], uint32[pos32 + 2], 16, constructAnnotationElement, ast);
 }
 
 function constructU64(pos, ast) {

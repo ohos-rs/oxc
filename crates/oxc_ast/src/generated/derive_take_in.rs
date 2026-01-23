@@ -490,3 +490,9 @@ impl<'a> TakeIn<'a> for StructElement<'a> {}
 impl<'a> TakeIn<'a> for ArkUIComponentExpression<'a> {}
 
 impl<'a> TakeIn<'a> for ArkUIChild<'a> {}
+
+impl<'a> TakeIn<'a> for AnnotationDeclaration<'a> {}
+
+impl<'a> TakeIn<'a> for AnnotationBody<'a> {}
+
+impl<'a> TakeIn<'a> for AnnotationElement<'a> {}

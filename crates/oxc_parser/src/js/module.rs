@@ -360,6 +360,7 @@ impl<'a> ParserImpl<'a> {
         };
 
         if let Some(default_specifier) = default_specifier {
+            let default_span = default_specifier.span;
             specifiers.push(self.ast.import_declaration_specifier_import_default_specifier(
                 default_specifier.span,
                 default_specifier,
@@ -367,9 +368,21 @@ impl<'a> ParserImpl<'a> {
             if self.eat(Kind::Comma) {
                 match self.cur_kind() {
                     // import defaultExport, * as name from "module-name";
-                    Kind::Star => specifiers.push(self.parse_import_namespace_specifier()),
+                    Kind::Star => {
+                        if self.is_ts && import_kind == ImportOrExportKind::Type {
+                            self.error(diagnostics::type_only_import_default_and_named(
+                                default_span,
+                            ));
+                        }
+                        specifiers.push(self.parse_import_namespace_specifier());
+                    }
                     // import defaultExport, { export1 [ , [...] ] } from "module-name";
                     Kind::LCurly => {
+                        if self.is_ts && import_kind == ImportOrExportKind::Type {
+                            self.error(diagnostics::type_only_import_default_and_named(
+                                default_span,
+                            ));
+                        }
                         let mut import_specifiers = self.parse_import_specifiers(import_kind);
                         specifiers.append(&mut import_specifiers);
                     }
@@ -624,9 +637,18 @@ impl<'a> ParserImpl<'a> {
                     ),
                 }
             }
-            _ => ModuleDeclaration::ExportNamedDeclaration(
-                self.parse_export_named_declaration(span, decorators, stmt_ctx),
-            ),
+            _ => {
+                if self.at(Kind::Export) {
+                    self.error(diagnostics::modifier_already_seen(&Modifier::new(
+                        self.cur_token().span(),
+                        ModifierKind::Export,
+                    )));
+                    self.bump_any();
+                }
+                ModuleDeclaration::ExportNamedDeclaration(
+                    self.parse_export_named_declaration(span, decorators, stmt_ctx),
+                )
+            }
         };
         Statement::from(decl)
     }
@@ -1407,17 +1429,6 @@ mod test {
             assert_eq!(specifiers[0].name(), "defer");
         });
 
-        let src = "import type foo, { bar } from 'bar';";
-        parse_and_assert_import_declarations(src, |declarations| {
-            assert_eq!(declarations.len(), 1);
-            let decl = declarations[0];
-            assert_eq!(decl.import_kind, ImportOrExportKind::Type);
-            let specifiers = decl.specifiers.as_ref().unwrap();
-            assert_eq!(specifiers.len(), 2);
-            assert_eq!(specifiers[0].name(), "foo");
-            assert_eq!(specifiers[1].name(), "bar");
-        });
-
         let src = "import foo = bar";
         parse_and_assert_statements(src, |statements| {
             if let Statement::TSImportEqualsDeclaration(decl) = statements[0] {
@@ -1489,7 +1500,19 @@ export declare struct Foo {
         let allocator = Allocator::default();
         let ret = Parser::new(&allocator, src, source_type).parse();
         assert!(ret.errors.is_empty(), "Unexpected errors: {:?}", ret.errors);
-        assert!(matches!(ret.program.body.first(), Some(Statement::StructStatement(_))));
+        // export declare struct is parsed as ExportNamedDeclaration containing StructStatement
+        match ret.program.body.first() {
+            Some(Statement::ExportNamedDeclaration(export_decl)) => {
+                match export_decl.declaration.as_ref() {
+                    Some(oxc_ast::ast::Declaration::StructStatement(_)) => {}
+                    _ => panic!(
+                        "Expected StructStatement in ExportNamedDeclaration, got: {:?}",
+                        export_decl.declaration
+                    ),
+                }
+            }
+            _ => panic!("Expected ExportNamedDeclaration, got: {:?}", ret.program.body.first()),
+        }
     }
 
     fn parse_and_assert_statements(

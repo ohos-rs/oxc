@@ -323,6 +323,7 @@ impl GetAddress for Statement<'_> {
             Self::TSGlobalDeclaration(it) => GetAddress::address(it),
             Self::TSImportEqualsDeclaration(it) => GetAddress::address(it),
             Self::StructStatement(it) => GetAddress::address(it),
+            Self::AnnotationDeclaration(it) => GetAddress::address(it),
             Self::ImportDeclaration(it) => GetAddress::address(it),
             Self::LazyImportDeclaration(it) => GetAddress::address(it),
             Self::ExportAllDeclaration(it) => GetAddress::address(it),
@@ -349,6 +350,7 @@ impl GetAddress for Declaration<'_> {
             Self::TSGlobalDeclaration(it) => GetAddress::address(it),
             Self::TSImportEqualsDeclaration(it) => GetAddress::address(it),
             Self::StructStatement(it) => GetAddress::address(it),
+            Self::AnnotationDeclaration(it) => GetAddress::address(it),
         }
     }
 }
@@ -831,6 +833,16 @@ impl GetAddress for ArkUIChild<'_> {
             Self::Component(it) => GetAddress::address(it),
             Self::Expression(it) => GetAddress::address(it),
             Self::Statement(it) => GetAddress::address(it),
+        }
+    }
+}
+
+impl GetAddress for AnnotationElement<'_> {
+    // `#[inline]` because compiler should boil this down to a single assembly instruction
+    #[inline]
+    fn address(&self) -> Address {
+        match self {
+            Self::PropertyDefinition(it) => GetAddress::address(it),
         }
     }
 }

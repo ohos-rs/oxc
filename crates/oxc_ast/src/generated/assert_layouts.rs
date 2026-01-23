@@ -1061,21 +1061,21 @@ const _: () = {
     assert!(offset_of!(TSThisParameter, this_span) == 8);
     assert!(offset_of!(TSThisParameter, type_annotation) == 16);
 
-    // Padding: 2 bytes
-    assert!(size_of::<TSEnumDeclaration>() == 80);
+    // Padding: 6 bytes
+    assert!(size_of::<TSEnumDeclaration>() == 88);
     assert!(align_of::<TSEnumDeclaration>() == 8);
     assert!(offset_of!(TSEnumDeclaration, span) == 0);
     assert!(offset_of!(TSEnumDeclaration, id) == 8);
     assert!(offset_of!(TSEnumDeclaration, body) == 40);
-    assert!(offset_of!(TSEnumDeclaration, r#const) == 76);
-    assert!(offset_of!(TSEnumDeclaration, declare) == 77);
-    assert!(offset_of!(TSEnumDeclaration, scope_id) == 72);
+    assert!(offset_of!(TSEnumDeclaration, r#const) == 80);
+    assert!(offset_of!(TSEnumDeclaration, declare) == 81);
 
-    // Padding: 0 bytes
-    assert!(size_of::<TSEnumBody>() == 32);
+    // Padding: 4 bytes
+    assert!(size_of::<TSEnumBody>() == 40);
     assert!(align_of::<TSEnumBody>() == 8);
     assert!(offset_of!(TSEnumBody, span) == 0);
     assert!(offset_of!(TSEnumBody, members) == 8);
+    assert!(offset_of!(TSEnumBody, scope_id) == 32);
 
     // Padding: 0 bytes
     assert!(size_of::<TSEnumMember>() == 40);
@@ -1512,15 +1512,16 @@ const _: () = {
     assert!(offset_of!(TSConstructorType, scope_id) == 32);
 
     // Padding: 2 bytes
-    assert!(size_of::<TSMappedType>() == 56);
+    assert!(size_of::<TSMappedType>() == 96);
     assert!(align_of::<TSMappedType>() == 8);
     assert!(offset_of!(TSMappedType, span) == 0);
-    assert!(offset_of!(TSMappedType, type_parameter) == 8);
-    assert!(offset_of!(TSMappedType, name_type) == 16);
-    assert!(offset_of!(TSMappedType, type_annotation) == 32);
-    assert!(offset_of!(TSMappedType, optional) == 52);
-    assert!(offset_of!(TSMappedType, readonly) == 53);
-    assert!(offset_of!(TSMappedType, scope_id) == 48);
+    assert!(offset_of!(TSMappedType, key) == 8);
+    assert!(offset_of!(TSMappedType, constraint) == 40);
+    assert!(offset_of!(TSMappedType, name_type) == 56);
+    assert!(offset_of!(TSMappedType, type_annotation) == 72);
+    assert!(offset_of!(TSMappedType, optional) == 92);
+    assert!(offset_of!(TSMappedType, readonly) == 93);
+    assert!(offset_of!(TSMappedType, scope_id) == 88);
 
     assert!(size_of::<TSMappedTypeModifierOperator>() == 1);
     assert!(align_of::<TSMappedTypeModifierOperator>() == 1);
@@ -1655,6 +1656,25 @@ const _: () = {
 
     assert!(size_of::<ArkUIChild>() == 16);
     assert!(align_of::<ArkUIChild>() == 8);
+
+    // Padding: 3 bytes
+    assert!(size_of::<AnnotationDeclaration>() == 80);
+    assert!(align_of::<AnnotationDeclaration>() == 8);
+    assert!(offset_of!(AnnotationDeclaration, span) == 0);
+    assert!(offset_of!(AnnotationDeclaration, decorators) == 8);
+    assert!(offset_of!(AnnotationDeclaration, id) == 32);
+    assert!(offset_of!(AnnotationDeclaration, body) == 64);
+    assert!(offset_of!(AnnotationDeclaration, declare) == 76);
+    assert!(offset_of!(AnnotationDeclaration, scope_id) == 72);
+
+    // Padding: 0 bytes
+    assert!(size_of::<AnnotationBody>() == 32);
+    assert!(align_of::<AnnotationBody>() == 8);
+    assert!(offset_of!(AnnotationBody, span) == 0);
+    assert!(offset_of!(AnnotationBody, body) == 8);
+
+    assert!(size_of::<AnnotationElement>() == 16);
+    assert!(align_of::<AnnotationElement>() == 8);
 
     assert!(size_of::<CommentKind>() == 1);
     assert!(align_of::<CommentKind>() == 1);
@@ -2742,13 +2762,13 @@ const _: () = if cfg!(target_family = "wasm") || align_of::<u64>() == 8 {
     assert!(offset_of!(TSEnumDeclaration, body) == 28);
     assert!(offset_of!(TSEnumDeclaration, r#const) == 56);
     assert!(offset_of!(TSEnumDeclaration, declare) == 57);
-    assert!(offset_of!(TSEnumDeclaration, scope_id) == 52);
 
     // Padding: 0 bytes
-    assert!(size_of::<TSEnumBody>() == 24);
+    assert!(size_of::<TSEnumBody>() == 28);
     assert!(align_of::<TSEnumBody>() == 4);
     assert!(offset_of!(TSEnumBody, span) == 0);
     assert!(offset_of!(TSEnumBody, members) == 8);
+    assert!(offset_of!(TSEnumBody, scope_id) == 24);
 
     // Padding: 0 bytes
     assert!(size_of::<TSEnumMember>() == 24);
@@ -3185,15 +3205,16 @@ const _: () = if cfg!(target_family = "wasm") || align_of::<u64>() == 8 {
     assert!(offset_of!(TSConstructorType, scope_id) == 20);
 
     // Padding: 2 bytes
-    assert!(size_of::<TSMappedType>() == 36);
+    assert!(size_of::<TSMappedType>() == 60);
     assert!(align_of::<TSMappedType>() == 4);
     assert!(offset_of!(TSMappedType, span) == 0);
-    assert!(offset_of!(TSMappedType, type_parameter) == 8);
-    assert!(offset_of!(TSMappedType, name_type) == 12);
-    assert!(offset_of!(TSMappedType, type_annotation) == 20);
-    assert!(offset_of!(TSMappedType, optional) == 32);
-    assert!(offset_of!(TSMappedType, readonly) == 33);
-    assert!(offset_of!(TSMappedType, scope_id) == 28);
+    assert!(offset_of!(TSMappedType, key) == 8);
+    assert!(offset_of!(TSMappedType, constraint) == 28);
+    assert!(offset_of!(TSMappedType, name_type) == 36);
+    assert!(offset_of!(TSMappedType, type_annotation) == 44);
+    assert!(offset_of!(TSMappedType, optional) == 56);
+    assert!(offset_of!(TSMappedType, readonly) == 57);
+    assert!(offset_of!(TSMappedType, scope_id) == 52);
 
     assert!(size_of::<TSMappedTypeModifierOperator>() == 1);
     assert!(align_of::<TSMappedTypeModifierOperator>() == 1);
@@ -3328,6 +3349,25 @@ const _: () = if cfg!(target_family = "wasm") || align_of::<u64>() == 8 {
 
     assert!(size_of::<ArkUIChild>() == 8);
     assert!(align_of::<ArkUIChild>() == 4);
+
+    // Padding: 3 bytes
+    assert!(size_of::<AnnotationDeclaration>() == 56);
+    assert!(align_of::<AnnotationDeclaration>() == 4);
+    assert!(offset_of!(AnnotationDeclaration, span) == 0);
+    assert!(offset_of!(AnnotationDeclaration, decorators) == 8);
+    assert!(offset_of!(AnnotationDeclaration, id) == 24);
+    assert!(offset_of!(AnnotationDeclaration, body) == 44);
+    assert!(offset_of!(AnnotationDeclaration, declare) == 52);
+    assert!(offset_of!(AnnotationDeclaration, scope_id) == 48);
+
+    // Padding: 0 bytes
+    assert!(size_of::<AnnotationBody>() == 24);
+    assert!(align_of::<AnnotationBody>() == 4);
+    assert!(offset_of!(AnnotationBody, span) == 0);
+    assert!(offset_of!(AnnotationBody, body) == 8);
+
+    assert!(size_of::<AnnotationElement>() == 8);
+    assert!(align_of::<AnnotationElement>() == 4);
 
     assert!(size_of::<CommentKind>() == 1);
     assert!(align_of::<CommentKind>() == 1);

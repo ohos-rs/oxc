@@ -6,34 +6,23 @@
 import eslintGlobals from "../submodules/eslint/conf/globals.js";
 import { createRequire } from "node:module";
 import { RuleTester } from "#oxlint";
-import { describe, it } from "./capture.ts";
+import { describe, it, setCurrentTest } from "./capture.ts";
 import { ESLINT_RULES_TESTS_DIR_PATH } from "./run.ts";
 import { FILTER_ONLY_CODE } from "./filter.ts";
 
 import type { Rule } from "#oxlint";
+import type { LanguageOptionsInternal } from "../../src-js/package/rule_tester.ts";
+export type { LanguageOptionsInternal };
 
 type DescribeFn = RuleTester.DescribeFn;
 type ItFn = RuleTester.ItFn;
 type TestCases = RuleTester.TestCases;
 type ValidTestCase = RuleTester.ValidTestCase;
 type InvalidTestCase = RuleTester.InvalidTestCase;
-type LanguageOptions = RuleTester.LanguageOptions;
 type Globals = RuleTester.Globals;
 export type TestCase = ValidTestCase | InvalidTestCase;
 
 const { isArray } = Array;
-
-/**
- * Language options config, with `parser` and `ecmaVersion` properties.
- * This is a copy of `RuleTester`'s internal type of the same name.
- */
-interface LanguageOptionsInternal extends LanguageOptions {
-  ecmaVersion?: number | "latest";
-  parser?: {
-    parse?: (code: string, options?: Record<string, unknown>) => unknown;
-    parseForESLint?: (code: string, options?: Record<string, unknown>) => unknown;
-  };
-}
 
 // Get `@typescript-eslint/parser` module.
 // Load the instance which would be loaded by files in ESLint's `tests/lib/rules` directory.
@@ -100,9 +89,12 @@ class RuleTesterShim extends RuleTester {
 (RuleTester as any).registerModifyTestCaseHook(modifyTestCase);
 
 function modifyTestCase(test: TestCase): void {
+  // Record current test case.
+  // Clone it to avoid including the changes to the original test case made below.
+  setCurrentTest({ ...test });
+
   // Enable ESLint compat mode.
-  // This makes `RuleTester` adjust column indexes in diagnostics to match ESLint's behavior,
-  // and enables `sourceType: "commonjs"`.
+  // This makes `RuleTester` adjust column indexes in diagnostics to match ESLint's behavior.
   test.eslintCompat = true;
 
   // Ignore parsing errors. ESLint's test cases include invalid code.
