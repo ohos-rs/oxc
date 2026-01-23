@@ -31,7 +31,7 @@ impl<'a> Format<'a> for AstNode<'a, Expression<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -41,7 +41,7 @@ impl<'a> Format<'a> for AstNode<'a, Expression<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -51,7 +51,7 @@ impl<'a> Format<'a> for AstNode<'a, Expression<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -61,7 +61,7 @@ impl<'a> Format<'a> for AstNode<'a, Expression<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -71,7 +71,7 @@ impl<'a> Format<'a> for AstNode<'a, Expression<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -81,7 +81,7 @@ impl<'a> Format<'a> for AstNode<'a, Expression<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -91,7 +91,7 @@ impl<'a> Format<'a> for AstNode<'a, Expression<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -101,7 +101,7 @@ impl<'a> Format<'a> for AstNode<'a, Expression<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -111,7 +111,7 @@ impl<'a> Format<'a> for AstNode<'a, Expression<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -121,7 +121,7 @@ impl<'a> Format<'a> for AstNode<'a, Expression<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -131,7 +131,7 @@ impl<'a> Format<'a> for AstNode<'a, Expression<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -141,7 +141,7 @@ impl<'a> Format<'a> for AstNode<'a, Expression<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -151,7 +151,7 @@ impl<'a> Format<'a> for AstNode<'a, Expression<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -161,7 +161,7 @@ impl<'a> Format<'a> for AstNode<'a, Expression<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -171,7 +171,7 @@ impl<'a> Format<'a> for AstNode<'a, Expression<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -181,7 +181,7 @@ impl<'a> Format<'a> for AstNode<'a, Expression<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -191,7 +191,7 @@ impl<'a> Format<'a> for AstNode<'a, Expression<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -201,7 +201,7 @@ impl<'a> Format<'a> for AstNode<'a, Expression<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -211,7 +211,7 @@ impl<'a> Format<'a> for AstNode<'a, Expression<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -221,7 +221,7 @@ impl<'a> Format<'a> for AstNode<'a, Expression<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -231,7 +231,7 @@ impl<'a> Format<'a> for AstNode<'a, Expression<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -241,7 +241,7 @@ impl<'a> Format<'a> for AstNode<'a, Expression<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -251,7 +251,7 @@ impl<'a> Format<'a> for AstNode<'a, Expression<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -261,7 +261,7 @@ impl<'a> Format<'a> for AstNode<'a, Expression<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -271,7 +271,7 @@ impl<'a> Format<'a> for AstNode<'a, Expression<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -281,7 +281,7 @@ impl<'a> Format<'a> for AstNode<'a, Expression<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -291,7 +291,7 @@ impl<'a> Format<'a> for AstNode<'a, Expression<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -301,7 +301,7 @@ impl<'a> Format<'a> for AstNode<'a, Expression<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -311,7 +311,7 @@ impl<'a> Format<'a> for AstNode<'a, Expression<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -321,7 +321,7 @@ impl<'a> Format<'a> for AstNode<'a, Expression<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -331,7 +331,7 @@ impl<'a> Format<'a> for AstNode<'a, Expression<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -341,7 +341,7 @@ impl<'a> Format<'a> for AstNode<'a, Expression<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -351,7 +351,7 @@ impl<'a> Format<'a> for AstNode<'a, Expression<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -361,7 +361,7 @@ impl<'a> Format<'a> for AstNode<'a, Expression<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -371,7 +371,7 @@ impl<'a> Format<'a> for AstNode<'a, Expression<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -381,7 +381,7 @@ impl<'a> Format<'a> for AstNode<'a, Expression<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -391,7 +391,7 @@ impl<'a> Format<'a> for AstNode<'a, Expression<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -401,7 +401,7 @@ impl<'a> Format<'a> for AstNode<'a, Expression<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -411,7 +411,7 @@ impl<'a> Format<'a> for AstNode<'a, Expression<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -421,7 +421,7 @@ impl<'a> Format<'a> for AstNode<'a, Expression<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -431,7 +431,7 @@ impl<'a> Format<'a> for AstNode<'a, Expression<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -441,7 +441,7 @@ impl<'a> Format<'a> for AstNode<'a, Expression<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -452,7 +452,7 @@ impl<'a> Format<'a> for AstNode<'a, Expression<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -580,7 +580,7 @@ impl<'a> Format<'a> for AstNode<'a, ArrayExpressionElement<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -590,7 +590,7 @@ impl<'a> Format<'a> for AstNode<'a, ArrayExpressionElement<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -601,7 +601,7 @@ impl<'a> Format<'a> for AstNode<'a, ArrayExpressionElement<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -657,7 +657,7 @@ impl<'a> Format<'a> for AstNode<'a, ObjectPropertyKind<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -667,7 +667,7 @@ impl<'a> Format<'a> for AstNode<'a, ObjectPropertyKind<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -700,7 +700,7 @@ impl<'a> Format<'a> for AstNode<'a, PropertyKey<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -710,7 +710,7 @@ impl<'a> Format<'a> for AstNode<'a, PropertyKey<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -721,7 +721,7 @@ impl<'a> Format<'a> for AstNode<'a, PropertyKey<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -800,7 +800,7 @@ impl<'a> Format<'a> for AstNode<'a, MemberExpression<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -810,7 +810,7 @@ impl<'a> Format<'a> for AstNode<'a, MemberExpression<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -820,7 +820,7 @@ impl<'a> Format<'a> for AstNode<'a, MemberExpression<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -1014,7 +1014,7 @@ impl<'a> Format<'a> for AstNode<'a, Argument<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -1025,7 +1025,7 @@ impl<'a> Format<'a> for AstNode<'a, Argument<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -1207,7 +1207,7 @@ impl<'a> Format<'a> for AstNode<'a, AssignmentTarget<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -1218,7 +1218,7 @@ impl<'a> Format<'a> for AstNode<'a, AssignmentTarget<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -1238,7 +1238,7 @@ impl<'a> Format<'a> for AstNode<'a, SimpleAssignmentTarget<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -1248,7 +1248,7 @@ impl<'a> Format<'a> for AstNode<'a, SimpleAssignmentTarget<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -1258,7 +1258,7 @@ impl<'a> Format<'a> for AstNode<'a, SimpleAssignmentTarget<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -1268,7 +1268,7 @@ impl<'a> Format<'a> for AstNode<'a, SimpleAssignmentTarget<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -1278,7 +1278,7 @@ impl<'a> Format<'a> for AstNode<'a, SimpleAssignmentTarget<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -1289,7 +1289,7 @@ impl<'a> Format<'a> for AstNode<'a, SimpleAssignmentTarget<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -1309,7 +1309,7 @@ impl<'a> Format<'a> for AstNode<'a, AssignmentTargetPattern<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -1319,7 +1319,7 @@ impl<'a> Format<'a> for AstNode<'a, AssignmentTargetPattern<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -1378,7 +1378,7 @@ impl<'a> Format<'a> for AstNode<'a, AssignmentTargetMaybeDefault<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -1389,7 +1389,7 @@ impl<'a> Format<'a> for AstNode<'a, AssignmentTargetMaybeDefault<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -1422,7 +1422,7 @@ impl<'a> Format<'a> for AstNode<'a, AssignmentTargetProperty<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -1432,7 +1432,7 @@ impl<'a> Format<'a> for AstNode<'a, AssignmentTargetProperty<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -1570,7 +1570,7 @@ impl<'a> Format<'a> for AstNode<'a, ChainElement<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -1580,7 +1580,7 @@ impl<'a> Format<'a> for AstNode<'a, ChainElement<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -1591,7 +1591,7 @@ impl<'a> Format<'a> for AstNode<'a, ChainElement<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -1634,7 +1634,7 @@ impl<'a> Format<'a> for AstNode<'a, Statement<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -1644,7 +1644,7 @@ impl<'a> Format<'a> for AstNode<'a, Statement<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -1654,7 +1654,7 @@ impl<'a> Format<'a> for AstNode<'a, Statement<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -1664,7 +1664,7 @@ impl<'a> Format<'a> for AstNode<'a, Statement<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -1674,7 +1674,7 @@ impl<'a> Format<'a> for AstNode<'a, Statement<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -1684,7 +1684,7 @@ impl<'a> Format<'a> for AstNode<'a, Statement<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -1694,7 +1694,7 @@ impl<'a> Format<'a> for AstNode<'a, Statement<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -1704,7 +1704,7 @@ impl<'a> Format<'a> for AstNode<'a, Statement<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -1714,7 +1714,7 @@ impl<'a> Format<'a> for AstNode<'a, Statement<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -1724,7 +1724,7 @@ impl<'a> Format<'a> for AstNode<'a, Statement<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -1734,7 +1734,7 @@ impl<'a> Format<'a> for AstNode<'a, Statement<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -1744,7 +1744,7 @@ impl<'a> Format<'a> for AstNode<'a, Statement<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -1754,7 +1754,7 @@ impl<'a> Format<'a> for AstNode<'a, Statement<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -1764,7 +1764,7 @@ impl<'a> Format<'a> for AstNode<'a, Statement<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -1774,7 +1774,7 @@ impl<'a> Format<'a> for AstNode<'a, Statement<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -1784,7 +1784,7 @@ impl<'a> Format<'a> for AstNode<'a, Statement<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -1794,7 +1794,7 @@ impl<'a> Format<'a> for AstNode<'a, Statement<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -1804,7 +1804,7 @@ impl<'a> Format<'a> for AstNode<'a, Statement<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -1815,7 +1815,7 @@ impl<'a> Format<'a> for AstNode<'a, Statement<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -1826,7 +1826,7 @@ impl<'a> Format<'a> for AstNode<'a, Statement<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -1885,7 +1885,7 @@ impl<'a> Format<'a> for AstNode<'a, Declaration<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -1895,7 +1895,7 @@ impl<'a> Format<'a> for AstNode<'a, Declaration<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -1905,7 +1905,7 @@ impl<'a> Format<'a> for AstNode<'a, Declaration<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -1915,7 +1915,7 @@ impl<'a> Format<'a> for AstNode<'a, Declaration<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -1925,7 +1925,7 @@ impl<'a> Format<'a> for AstNode<'a, Declaration<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -1935,7 +1935,7 @@ impl<'a> Format<'a> for AstNode<'a, Declaration<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -1945,7 +1945,7 @@ impl<'a> Format<'a> for AstNode<'a, Declaration<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -1955,7 +1955,7 @@ impl<'a> Format<'a> for AstNode<'a, Declaration<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -1965,7 +1965,7 @@ impl<'a> Format<'a> for AstNode<'a, Declaration<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -1975,7 +1975,7 @@ impl<'a> Format<'a> for AstNode<'a, Declaration<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -1985,7 +1985,7 @@ impl<'a> Format<'a> for AstNode<'a, Declaration<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -2109,7 +2109,7 @@ impl<'a> Format<'a> for AstNode<'a, ForStatementInit<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -2120,7 +2120,7 @@ impl<'a> Format<'a> for AstNode<'a, ForStatementInit<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -2153,7 +2153,7 @@ impl<'a> Format<'a> for AstNode<'a, ForStatementLeft<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -2164,7 +2164,7 @@ impl<'a> Format<'a> for AstNode<'a, ForStatementLeft<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -2353,7 +2353,7 @@ impl<'a> Format<'a> for AstNode<'a, BindingPattern<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -2363,7 +2363,7 @@ impl<'a> Format<'a> for AstNode<'a, BindingPattern<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -2373,7 +2373,7 @@ impl<'a> Format<'a> for AstNode<'a, BindingPattern<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -2383,7 +2383,7 @@ impl<'a> Format<'a> for AstNode<'a, BindingPattern<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -2673,7 +2673,7 @@ impl<'a> Format<'a> for AstNode<'a, ClassElement<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -2683,7 +2683,7 @@ impl<'a> Format<'a> for AstNode<'a, ClassElement<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -2693,7 +2693,7 @@ impl<'a> Format<'a> for AstNode<'a, ClassElement<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -2703,7 +2703,7 @@ impl<'a> Format<'a> for AstNode<'a, ClassElement<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -2713,7 +2713,7 @@ impl<'a> Format<'a> for AstNode<'a, ClassElement<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -2785,7 +2785,7 @@ impl<'a> Format<'a> for AstNode<'a, ModuleDeclaration<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -2795,7 +2795,7 @@ impl<'a> Format<'a> for AstNode<'a, ModuleDeclaration<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -2805,7 +2805,7 @@ impl<'a> Format<'a> for AstNode<'a, ModuleDeclaration<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -2815,7 +2815,7 @@ impl<'a> Format<'a> for AstNode<'a, ModuleDeclaration<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -2825,7 +2825,7 @@ impl<'a> Format<'a> for AstNode<'a, ModuleDeclaration<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -2835,7 +2835,7 @@ impl<'a> Format<'a> for AstNode<'a, ModuleDeclaration<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -2845,7 +2845,7 @@ impl<'a> Format<'a> for AstNode<'a, ModuleDeclaration<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -2927,7 +2927,7 @@ impl<'a> Format<'a> for AstNode<'a, ImportDeclarationSpecifier<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -2937,7 +2937,7 @@ impl<'a> Format<'a> for AstNode<'a, ImportDeclarationSpecifier<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -2947,7 +2947,7 @@ impl<'a> Format<'a> for AstNode<'a, ImportDeclarationSpecifier<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -3032,7 +3032,7 @@ impl<'a> Format<'a> for AstNode<'a, ImportAttributeKey<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -3042,7 +3042,7 @@ impl<'a> Format<'a> for AstNode<'a, ImportAttributeKey<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -3114,7 +3114,7 @@ impl<'a> Format<'a> for AstNode<'a, ExportDefaultDeclarationKind<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -3124,7 +3124,7 @@ impl<'a> Format<'a> for AstNode<'a, ExportDefaultDeclarationKind<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -3134,7 +3134,7 @@ impl<'a> Format<'a> for AstNode<'a, ExportDefaultDeclarationKind<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -3144,7 +3144,7 @@ impl<'a> Format<'a> for AstNode<'a, ExportDefaultDeclarationKind<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -3155,7 +3155,7 @@ impl<'a> Format<'a> for AstNode<'a, ExportDefaultDeclarationKind<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -3175,7 +3175,7 @@ impl<'a> Format<'a> for AstNode<'a, ModuleExportName<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -3185,7 +3185,7 @@ impl<'a> Format<'a> for AstNode<'a, ModuleExportName<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -3195,7 +3195,7 @@ impl<'a> Format<'a> for AstNode<'a, ModuleExportName<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -3460,7 +3460,7 @@ impl<'a> Format<'a> for AstNode<'a, JSXElementName<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -3470,7 +3470,7 @@ impl<'a> Format<'a> for AstNode<'a, JSXElementName<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -3480,7 +3480,7 @@ impl<'a> Format<'a> for AstNode<'a, JSXElementName<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -3490,7 +3490,7 @@ impl<'a> Format<'a> for AstNode<'a, JSXElementName<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -3500,7 +3500,7 @@ impl<'a> Format<'a> for AstNode<'a, JSXElementName<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -3546,7 +3546,7 @@ impl<'a> Format<'a> for AstNode<'a, JSXMemberExpressionObject<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -3556,7 +3556,7 @@ impl<'a> Format<'a> for AstNode<'a, JSXMemberExpressionObject<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -3566,7 +3566,7 @@ impl<'a> Format<'a> for AstNode<'a, JSXMemberExpressionObject<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -3599,7 +3599,7 @@ impl<'a> Format<'a> for AstNode<'a, JSXExpression<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -3610,7 +3610,7 @@ impl<'a> Format<'a> for AstNode<'a, JSXExpression<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -3643,7 +3643,7 @@ impl<'a> Format<'a> for AstNode<'a, JSXAttributeItem<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -3653,7 +3653,7 @@ impl<'a> Format<'a> for AstNode<'a, JSXAttributeItem<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -3699,7 +3699,7 @@ impl<'a> Format<'a> for AstNode<'a, JSXAttributeName<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -3709,7 +3709,7 @@ impl<'a> Format<'a> for AstNode<'a, JSXAttributeName<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -3729,7 +3729,7 @@ impl<'a> Format<'a> for AstNode<'a, JSXAttributeValue<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -3739,7 +3739,7 @@ impl<'a> Format<'a> for AstNode<'a, JSXAttributeValue<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -3749,7 +3749,7 @@ impl<'a> Format<'a> for AstNode<'a, JSXAttributeValue<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -3759,7 +3759,7 @@ impl<'a> Format<'a> for AstNode<'a, JSXAttributeValue<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -3792,7 +3792,7 @@ impl<'a> Format<'a> for AstNode<'a, JSXChild<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -3802,7 +3802,7 @@ impl<'a> Format<'a> for AstNode<'a, JSXChild<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -3812,7 +3812,7 @@ impl<'a> Format<'a> for AstNode<'a, JSXChild<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -3822,7 +3822,7 @@ impl<'a> Format<'a> for AstNode<'a, JSXChild<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -3832,7 +3832,7 @@ impl<'a> Format<'a> for AstNode<'a, JSXChild<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -3930,7 +3930,7 @@ impl<'a> Format<'a> for AstNode<'a, TSEnumMemberName<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -3940,7 +3940,7 @@ impl<'a> Format<'a> for AstNode<'a, TSEnumMemberName<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -3950,7 +3950,7 @@ impl<'a> Format<'a> for AstNode<'a, TSEnumMemberName<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -3960,7 +3960,7 @@ impl<'a> Format<'a> for AstNode<'a, TSEnumMemberName<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -4006,7 +4006,7 @@ impl<'a> Format<'a> for AstNode<'a, TSLiteral<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -4016,7 +4016,7 @@ impl<'a> Format<'a> for AstNode<'a, TSLiteral<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -4026,7 +4026,7 @@ impl<'a> Format<'a> for AstNode<'a, TSLiteral<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -4036,7 +4036,7 @@ impl<'a> Format<'a> for AstNode<'a, TSLiteral<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -4046,7 +4046,7 @@ impl<'a> Format<'a> for AstNode<'a, TSLiteral<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -4056,7 +4056,7 @@ impl<'a> Format<'a> for AstNode<'a, TSLiteral<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -4076,7 +4076,7 @@ impl<'a> Format<'a> for AstNode<'a, TSType<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -4086,7 +4086,7 @@ impl<'a> Format<'a> for AstNode<'a, TSType<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -4096,7 +4096,7 @@ impl<'a> Format<'a> for AstNode<'a, TSType<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -4106,7 +4106,7 @@ impl<'a> Format<'a> for AstNode<'a, TSType<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -4116,7 +4116,7 @@ impl<'a> Format<'a> for AstNode<'a, TSType<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -4126,7 +4126,7 @@ impl<'a> Format<'a> for AstNode<'a, TSType<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -4136,7 +4136,7 @@ impl<'a> Format<'a> for AstNode<'a, TSType<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -4146,7 +4146,7 @@ impl<'a> Format<'a> for AstNode<'a, TSType<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -4156,7 +4156,7 @@ impl<'a> Format<'a> for AstNode<'a, TSType<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -4166,7 +4166,7 @@ impl<'a> Format<'a> for AstNode<'a, TSType<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -4176,7 +4176,7 @@ impl<'a> Format<'a> for AstNode<'a, TSType<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -4186,7 +4186,7 @@ impl<'a> Format<'a> for AstNode<'a, TSType<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -4196,7 +4196,7 @@ impl<'a> Format<'a> for AstNode<'a, TSType<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -4206,7 +4206,7 @@ impl<'a> Format<'a> for AstNode<'a, TSType<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -4216,7 +4216,7 @@ impl<'a> Format<'a> for AstNode<'a, TSType<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -4226,7 +4226,7 @@ impl<'a> Format<'a> for AstNode<'a, TSType<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -4236,7 +4236,7 @@ impl<'a> Format<'a> for AstNode<'a, TSType<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -4246,7 +4246,7 @@ impl<'a> Format<'a> for AstNode<'a, TSType<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -4256,7 +4256,7 @@ impl<'a> Format<'a> for AstNode<'a, TSType<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -4266,7 +4266,7 @@ impl<'a> Format<'a> for AstNode<'a, TSType<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -4276,7 +4276,7 @@ impl<'a> Format<'a> for AstNode<'a, TSType<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -4286,7 +4286,7 @@ impl<'a> Format<'a> for AstNode<'a, TSType<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -4296,7 +4296,7 @@ impl<'a> Format<'a> for AstNode<'a, TSType<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -4306,7 +4306,7 @@ impl<'a> Format<'a> for AstNode<'a, TSType<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -4316,7 +4316,7 @@ impl<'a> Format<'a> for AstNode<'a, TSType<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -4326,7 +4326,7 @@ impl<'a> Format<'a> for AstNode<'a, TSType<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -4336,7 +4336,7 @@ impl<'a> Format<'a> for AstNode<'a, TSType<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -4346,7 +4346,7 @@ impl<'a> Format<'a> for AstNode<'a, TSType<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -4356,7 +4356,7 @@ impl<'a> Format<'a> for AstNode<'a, TSType<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -4366,7 +4366,7 @@ impl<'a> Format<'a> for AstNode<'a, TSType<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -4376,7 +4376,7 @@ impl<'a> Format<'a> for AstNode<'a, TSType<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -4386,7 +4386,7 @@ impl<'a> Format<'a> for AstNode<'a, TSType<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -4396,7 +4396,7 @@ impl<'a> Format<'a> for AstNode<'a, TSType<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -4406,7 +4406,7 @@ impl<'a> Format<'a> for AstNode<'a, TSType<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -4416,7 +4416,7 @@ impl<'a> Format<'a> for AstNode<'a, TSType<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -4426,7 +4426,7 @@ impl<'a> Format<'a> for AstNode<'a, TSType<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -4436,7 +4436,7 @@ impl<'a> Format<'a> for AstNode<'a, TSType<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -4638,7 +4638,7 @@ impl<'a> Format<'a> for AstNode<'a, TSTupleElement<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -4648,7 +4648,7 @@ impl<'a> Format<'a> for AstNode<'a, TSTupleElement<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -4659,7 +4659,7 @@ impl<'a> Format<'a> for AstNode<'a, TSTupleElement<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -4874,7 +4874,7 @@ impl<'a> Format<'a> for AstNode<'a, TSTypeName<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -4884,7 +4884,7 @@ impl<'a> Format<'a> for AstNode<'a, TSTypeName<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -4894,7 +4894,7 @@ impl<'a> Format<'a> for AstNode<'a, TSTypeName<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -5031,7 +5031,7 @@ impl<'a> Format<'a> for AstNode<'a, TSSignature<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -5041,7 +5041,7 @@ impl<'a> Format<'a> for AstNode<'a, TSSignature<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -5051,7 +5051,7 @@ impl<'a> Format<'a> for AstNode<'a, TSSignature<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -5061,7 +5061,7 @@ impl<'a> Format<'a> for AstNode<'a, TSSignature<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -5071,7 +5071,7 @@ impl<'a> Format<'a> for AstNode<'a, TSSignature<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -5182,7 +5182,7 @@ impl<'a> Format<'a> for AstNode<'a, TSTypePredicateName<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -5192,7 +5192,7 @@ impl<'a> Format<'a> for AstNode<'a, TSTypePredicateName<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -5225,7 +5225,7 @@ impl<'a> Format<'a> for AstNode<'a, TSModuleDeclarationName<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -5235,7 +5235,7 @@ impl<'a> Format<'a> for AstNode<'a, TSModuleDeclarationName<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -5255,7 +5255,7 @@ impl<'a> Format<'a> for AstNode<'a, TSModuleDeclarationBody<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -5265,7 +5265,7 @@ impl<'a> Format<'a> for AstNode<'a, TSModuleDeclarationBody<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -5370,7 +5370,7 @@ impl<'a> Format<'a> for AstNode<'a, TSTypeQueryExprName<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -5381,7 +5381,7 @@ impl<'a> Format<'a> for AstNode<'a, TSTypeQueryExprName<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -5414,7 +5414,7 @@ impl<'a> Format<'a> for AstNode<'a, TSImportTypeQualifier<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -5424,7 +5424,7 @@ impl<'a> Format<'a> for AstNode<'a, TSImportTypeQualifier<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -5611,7 +5611,7 @@ impl<'a> Format<'a> for AstNode<'a, TSModuleReference<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -5622,7 +5622,7 @@ impl<'a> Format<'a> for AstNode<'a, TSModuleReference<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -5805,7 +5805,7 @@ impl<'a> Format<'a> for AstNode<'a, StructElement<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -5815,7 +5815,7 @@ impl<'a> Format<'a> for AstNode<'a, StructElement<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -5858,7 +5858,7 @@ impl<'a> Format<'a> for AstNode<'a, ArkUIChild<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -5868,7 +5868,7 @@ impl<'a> Format<'a> for AstNode<'a, ArkUIChild<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -5878,7 +5878,7 @@ impl<'a> Format<'a> for AstNode<'a, ArkUIChild<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }
@@ -5924,7 +5924,7 @@ impl<'a> Format<'a> for AstNode<'a, AnnotationElement<'a>> {
                         inner,
                         parent,
                         allocator,
-                        following_span: self.following_span,
+                        following_span_start: self.following_span_start,
                     })
                     .fmt(f);
             }

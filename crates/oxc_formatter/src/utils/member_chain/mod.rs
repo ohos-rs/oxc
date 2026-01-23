@@ -52,7 +52,7 @@ impl<'a, 'b> MemberChain<'a, 'b> {
 
         // Here we check if the first element of Groups::groups can be moved inside the head.
         // If so, then we extract it and concatenate it together with the head.
-        member_chain.maybe_merge_with_first_group(call_expression.parent, f);
+        member_chain.maybe_merge_with_first_group(call_expression.parent(), f);
 
         member_chain
     }
@@ -232,7 +232,7 @@ impl<'a> Format<'a> for MemberChain<'a, '_> {
                         Expression::LeadingDotExpression(_)
                     )
                 )
-            }) || matches!(self.root.parent, AstNodes::LeadingDotExpression(_)));
+            }) || matches!(self.root.parent(), AstNodes::LeadingDotExpression(_)));
 
         // For ArkUI leading-dot expressions, use the same break logic as ArkUI components
         let should_break_arkui_style = if is_arkui_leading_dot {

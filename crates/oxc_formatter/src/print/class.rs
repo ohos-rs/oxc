@@ -238,7 +238,7 @@ impl<'a> FormatWrite<'a> for AstNode<'a, TSIndexSignature<'a>> {
         if self.readonly {
             write!(f, ["readonly", space()]);
         }
-        let is_class = matches!(self.parent, AstNodes::ClassBody(_));
+        let is_class = matches!(self.parent(), AstNodes::ClassBody(_));
         write!(
             f,
             [
@@ -328,7 +328,7 @@ impl<'a> Format<'a> for FormatClass<'a, '_> {
         // to ensure proper placement relative to the export keyword
         if self.is_expression()
             || !matches!(
-                self.parent,
+                self.parent(),
                 AstNodes::ExportNamedDeclaration(_) | AstNodes::ExportDefaultDeclaration(_)
             )
         {
@@ -535,7 +535,7 @@ fn should_group<'a>(class: &AstNode<Class<'a>>, f: &Formatter<'_, 'a>) -> bool {
         return true;
     }
 
-    if (!class.is_expression() || !matches!(class.parent, AstNodes::AssignmentExpression(_)))
+    if (!class.is_expression() || !matches!(class.parent(), AstNodes::AssignmentExpression(_)))
         && class
             .super_class
             .as_ref()

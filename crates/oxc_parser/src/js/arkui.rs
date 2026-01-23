@@ -125,7 +125,9 @@ impl<'a> ParserImpl<'a> {
         if self.at(Kind::Interface) {
             self.bump_any();
         } else {
-            self.unexpected::<()>();
+            // Call unexpected to report error; the return value is () which we intentionally ignore
+            #[allow(unused_must_use, unused_variables)]
+            let _: () = self.unexpected::<()>();
         }
 
         // Move span start to @ position

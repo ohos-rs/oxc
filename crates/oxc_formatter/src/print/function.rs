@@ -68,7 +68,7 @@ impl<'a, 'b> FormatFunction<'a, 'b> {
         let decorators = self.decorators();
         if !decorators.is_empty()
             && !matches!(
-                self.parent,
+                self.parent(),
                 crate::ast_nodes::AstNodes::ExportNamedDeclaration(_)
                     | crate::ast_nodes::AstNodes::ExportDefaultDeclaration(_)
             )

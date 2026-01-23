@@ -19,7 +19,7 @@ impl<'a> Format<'a> for AstNode<'a, Vec<'a, Decorator<'a>>> {
         }
 
         // Check parent to determine formatting context
-        match self.parent {
+        match self.parent() {
             AstNodes::PropertyDefinition(_)
             | AstNodes::MethodDefinition(_)
             | AstNodes::AccessorProperty(_) => {
@@ -43,7 +43,7 @@ impl<'a> Format<'a> for AstNode<'a, Vec<'a, Decorator<'a>>> {
                 // If the function is exported, decorators are handled by the export formatter
                 // Otherwise, format normally
                 if matches!(
-                    function.parent,
+                    function.parent(),
                     AstNodes::ExportNamedDeclaration(_) | AstNodes::ExportDefaultDeclaration(_)
                 ) {
                     // This case is handled by export_declarations.rs, so we just format the decorators

@@ -487,9 +487,12 @@ impl<'a> ParserImpl<'a> {
         if source_type.is_unambiguous() {
             if module_record.has_module_syntax {
                 // Resolved to Module - discard deferred script errors (TLA is valid in ESM)
+                // but emit deferred module errors (HTML comments are invalid in ESM)
                 program.source_type = source_type.with_module(true);
+                errors.append(&mut self.lexer.deferred_module_errors);
             } else {
                 // Resolved to Script - emit deferred script errors
+                // discard deferred module errors (HTML comments are valid in scripts)
                 program.source_type = source_type.with_script(true);
                 errors.extend(self.deferred_script_errors);
             }
@@ -956,12 +959,10 @@ mod test {
             assert_eq!(annotation.id.name.as_str(), "MyAnnotation");
             assert_eq!(annotation.body.body.len(), 2);
             // Check that both properties have default values
-            if let AnnotationElement::PropertyDefinition(prop1) = &annotation.body.body[0] {
-                assert!(prop1.value.is_some());
-            }
-            if let AnnotationElement::PropertyDefinition(prop2) = &annotation.body.body[1] {
-                assert!(prop2.value.is_some());
-            }
+            let AnnotationElement::PropertyDefinition(prop1) = &annotation.body.body[0];
+            assert!(prop1.value.is_some());
+            let AnnotationElement::PropertyDefinition(prop2) = &annotation.body.body[1];
+            assert!(prop2.value.is_some());
         } else {
             panic!("Expected AnnotationDeclaration");
         }

@@ -97,7 +97,7 @@ impl<'a> FormatWrite<'a> for AstNode<'a, IdentifierName<'a>> {
     fn write(&self, f: &mut Formatter<'_, 'a>) {
         let text = text_without_whitespace(self.name().as_str());
         let is_property_key_parent = matches!(
-            self.parent,
+            self.parent(),
             AstNodes::ObjectProperty(_)
                 | AstNodes::TSPropertySignature(_)
                 | AstNodes::TSMethodSignature(_)
@@ -433,10 +433,10 @@ impl<'a> FormatWrite<'a> for AstNode<'a, AwaitExpression<'a>> {
     fn write(&self, f: &mut Formatter<'_, 'a>) {
         let format_inner = format_with(|f| write!(f, ["await", space(), self.argument()]));
 
-        let is_callee_or_object = match self.parent {
+        let is_callee_or_object = match self.parent() {
             AstNodes::StaticMemberExpression(_) => true,
             AstNodes::ComputedMemberExpression(member) => member.object.span() == self.span(),
-            _ => self.parent.is_call_like_callee_span(self.span),
+            _ => self.parent().is_call_like_callee_span(self.span),
         };
 
         if is_callee_or_object {
@@ -479,7 +479,7 @@ impl<'a> FormatWrite<'a> for AstNode<'a, ChainExpression<'a>> {
         // See: https://github.com/prettier/prettier/blob/main/src/language-js/clean.js
         if let AstNodes::TSNonNullExpression(non_null) = self.expression().as_ast_nodes() {
             let needs_parens =
-                crate::parentheses::chain_expression_needs_parens(self.span, self.parent);
+                crate::parentheses::chain_expression_needs_parens(self.span, self.parent());
             if needs_parens {
                 write!(f, "(");
             }
@@ -503,7 +503,7 @@ impl<'a> FormatWrite<'a> for AstNode<'a, ParenthesizedExpression<'a>> {
 impl<'a> FormatWrite<'a> for AstNode<'a, EmptyStatement> {
     fn write(&self, f: &mut Formatter<'_, 'a>) {
         if matches!(
-            self.parent,
+            self.parent(),
             AstNodes::DoWhileStatement(_)
                 | AstNodes::IfStatement(_)
                 | AstNodes::WhileStatement(_)
@@ -523,7 +523,7 @@ fn expression_statement_needs_semicolon<'a>(
     f: &Formatter<'_, 'a>,
 ) -> bool {
     if matches!(
-        stmt.parent,
+        stmt.parent(),
         // `if (true) (() => {})`
         AstNodes::IfStatement(_)
         // `do ({} => {}) while (true)`
@@ -940,7 +940,7 @@ impl<'a> FormatWrite<'a> for AstNode<'a, DebuggerStatement> {
 impl<'a> FormatWrite<'a> for AstNode<'a, BindingPattern<'a>> {
     fn write(&self, f: &mut Formatter<'_, 'a>) {
         Format::fmt(self, f);
-        if let AstNodes::VariableDeclarator(declarator) = self.parent {
+        if let AstNodes::VariableDeclarator(declarator) = self.parent() {
             write!(f, declarator.definite.then_some("!"));
         }
     }
@@ -1051,7 +1051,7 @@ impl<'a> FormatWrite<'a> for AstNode<'a, StringLiteral<'a>> {
             write_tailwind_string_literal(self, ctx, f);
         } else {
             // Not in Tailwind context - use normal string literal formatting
-            let is_jsx = matches!(self.parent, AstNodes::JSXAttribute(_));
+            let is_jsx = matches!(self.parent(), AstNodes::JSXAttribute(_));
             FormatLiteralStringToken::new(
                 f.source_text().text_for(self),
                 is_jsx,
@@ -1150,7 +1150,7 @@ impl<'a> FormatWrite<'a> for AstNode<'a, TSEnumMember<'a>> {
 
 impl<'a> FormatWrite<'a> for AstNode<'a, TSTypeAnnotation<'a>> {
     fn write(&self, f: &mut Formatter<'_, 'a>) {
-        match self.parent {
+        match self.parent() {
             AstNodes::TSFunctionType(_) | AstNodes::TSConstructorType(_) => {
                 write!(f, ["=>", space(), self.type_annotation()]);
             }
@@ -1812,7 +1812,7 @@ impl<'a> FormatWrite<'a> for AstNode<'a, StructStatement<'a>> {
         // When the struct is exported, the export statement handles decorator formatting
         // to ensure proper placement relative to the export keyword
         if !matches!(
-            self.parent,
+            self.parent(),
             AstNodes::ExportNamedDeclaration(_) | AstNodes::ExportDefaultDeclaration(_)
         ) {
             // For non-exported structs, format decorators normally
@@ -1850,7 +1850,7 @@ impl<'a> FormatWrite<'a> for AstNode<'a, AnnotationDeclaration<'a>> {
         // When the annotation is exported, the export statement handles decorator formatting
         // to ensure proper placement relative to the export keyword
         if !matches!(
-            self.parent,
+            self.parent(),
             AstNodes::ExportNamedDeclaration(_) | AstNodes::ExportDefaultDeclaration(_)
         ) {
             // For non-exported annotations, format decorators normally
