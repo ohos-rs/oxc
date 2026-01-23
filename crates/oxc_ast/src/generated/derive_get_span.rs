@@ -627,6 +627,7 @@ impl GetSpan for Statement<'_> {
             Self::TSGlobalDeclaration(it) => GetSpan::span(&**it),
             Self::TSImportEqualsDeclaration(it) => GetSpan::span(&**it),
             Self::StructStatement(it) => GetSpan::span(&**it),
+            Self::AnnotationDeclaration(it) => GetSpan::span(&**it),
             Self::ImportDeclaration(it) => GetSpan::span(&**it),
             Self::LazyImportDeclaration(it) => GetSpan::span(&**it),
             Self::ExportAllDeclaration(it) => GetSpan::span(&**it),
@@ -672,6 +673,7 @@ impl GetSpan for Declaration<'_> {
             Self::TSGlobalDeclaration(it) => GetSpan::span(&**it),
             Self::TSImportEqualsDeclaration(it) => GetSpan::span(&**it),
             Self::StructStatement(it) => GetSpan::span(&**it),
+            Self::AnnotationDeclaration(it) => GetSpan::span(&**it),
         }
     }
 }
@@ -2251,6 +2253,28 @@ impl GetSpan for ArkUIChild<'_> {
             Self::Component(it) => GetSpan::span(&**it),
             Self::Expression(it) => GetSpan::span(&**it),
             Self::Statement(it) => GetSpan::span(&**it),
+        }
+    }
+}
+
+impl GetSpan for AnnotationDeclaration<'_> {
+    #[inline]
+    fn span(&self) -> Span {
+        self.span
+    }
+}
+
+impl GetSpan for AnnotationBody<'_> {
+    #[inline]
+    fn span(&self) -> Span {
+        self.span
+    }
+}
+
+impl GetSpan for AnnotationElement<'_> {
+    fn span(&self) -> Span {
+        match self {
+            Self::PropertyDefinition(it) => GetSpan::span(&**it),
         }
     }
 }

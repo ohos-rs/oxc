@@ -848,6 +848,21 @@ impl<'a> ParserImpl<'a> {
     /// Parse statements that start with `@`.
     fn parse_decorated_statement(&mut self, stmt_ctx: StatementContext) -> Statement<'a> {
         let span = self.start_span();
+
+        // Check for @interface (annotation declaration) in ArkUI mode
+        if self.source_type.is_arkui() && self.at(Kind::At) {
+            let checkpoint = self.checkpoint();
+            self.bump_any(); // consume @
+            if self.at(Kind::Interface) {
+                // This is @interface, parse as annotation declaration
+                let modifiers = self.parse_modifiers(false, false);
+                return self.parse_annotation_statement(span, stmt_ctx, &modifiers, self.ast.vec());
+            } else {
+                // Not @interface, rewind and continue normal decorator parsing
+                self.rewind(checkpoint);
+            }
+        }
+
         let decorators = self.parse_decorators();
         let kind = self.cur_kind();
         if kind == Kind::Export {

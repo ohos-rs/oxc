@@ -296,6 +296,12 @@ impl Gen for Statement<'_> {
                 decl.print(p, ctx);
                 p.print_soft_newline();
             }
+            Self::AnnotationDeclaration(decl) => {
+                p.print_comments_at(decl.span.start);
+                p.print_indent();
+                decl.print(p, ctx);
+                p.print_soft_newline();
+            }
         }
     }
 }
@@ -1135,6 +1141,7 @@ impl Gen for ExportNamedDeclaration<'_> {
                 Declaration::TSEnumDeclaration(decl) => decl.print(p, ctx),
                 Declaration::TSImportEqualsDeclaration(decl) => decl.print(p, ctx),
                 Declaration::StructStatement(decl) => decl.print(p, ctx),
+                Declaration::AnnotationDeclaration(decl) => decl.print(p, ctx),
             }
             // Restore the flag
             p.skip_function_decorators = old_skip;
@@ -2671,6 +2678,40 @@ impl Gen for StructBody<'_> {
                 item.print(p, ctx);
             }
         });
+    }
+}
+
+impl Gen for AnnotationDeclaration<'_> {
+    fn r#gen(&self, p: &mut Codegen, ctx: Context) {
+        p.print_decorators(&self.decorators, ctx);
+        p.print_space_before_identifier();
+        p.add_source_mapping(self.span);
+        p.print_str("@interface");
+        p.print_hard_space();
+        self.id.print(p, ctx);
+        p.print_soft_space();
+        self.body.print(p, ctx);
+    }
+}
+
+impl Gen for AnnotationBody<'_> {
+    fn r#gen(&self, p: &mut Codegen, ctx: Context) {
+        p.print_curly_braces(self.span, self.body.is_empty(), |p| {
+            for item in &self.body {
+                p.print_semicolon_if_needed();
+                p.print_leading_comments(item.span().start);
+                p.print_indent();
+                item.print(p, ctx);
+            }
+        });
+    }
+}
+
+impl Gen for AnnotationElement<'_> {
+    fn r#gen(&self, p: &mut Codegen, ctx: Context) {
+        match self {
+            AnnotationElement::PropertyDefinition(prop) => prop.print(p, ctx),
+        }
     }
 }
 

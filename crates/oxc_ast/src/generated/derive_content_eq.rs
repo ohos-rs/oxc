@@ -720,6 +720,7 @@ impl ContentEq for Statement<'_> {
                 a.content_eq(b)
             }
             (Self::StructStatement(a), Self::StructStatement(b)) => a.content_eq(b),
+            (Self::AnnotationDeclaration(a), Self::AnnotationDeclaration(b)) => a.content_eq(b),
             (Self::ImportDeclaration(a), Self::ImportDeclaration(b)) => a.content_eq(b),
             (Self::LazyImportDeclaration(a), Self::LazyImportDeclaration(b)) => a.content_eq(b),
             (Self::ExportAllDeclaration(a), Self::ExportAllDeclaration(b)) => a.content_eq(b),
@@ -770,6 +771,7 @@ impl ContentEq for Declaration<'_> {
                 a.content_eq(b)
             }
             (Self::StructStatement(a), Self::StructStatement(b)) => a.content_eq(b),
+            (Self::AnnotationDeclaration(a), Self::AnnotationDeclaration(b)) => a.content_eq(b),
             _ => false,
         }
     }
@@ -2598,6 +2600,30 @@ impl ContentEq for ArkUIChild<'_> {
             (Self::Component(a), Self::Component(b)) => a.content_eq(b),
             (Self::Expression(a), Self::Expression(b)) => a.content_eq(b),
             (Self::Statement(a), Self::Statement(b)) => a.content_eq(b),
+            _ => false,
+        }
+    }
+}
+
+impl ContentEq for AnnotationDeclaration<'_> {
+    fn content_eq(&self, other: &Self) -> bool {
+        ContentEq::content_eq(&self.decorators, &other.decorators)
+            && ContentEq::content_eq(&self.id, &other.id)
+            && ContentEq::content_eq(&self.body, &other.body)
+            && ContentEq::content_eq(&self.declare, &other.declare)
+    }
+}
+
+impl ContentEq for AnnotationBody<'_> {
+    fn content_eq(&self, other: &Self) -> bool {
+        ContentEq::content_eq(&self.body, &other.body)
+    }
+}
+
+impl ContentEq for AnnotationElement<'_> {
+    fn content_eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::PropertyDefinition(a), Self::PropertyDefinition(b)) => a.content_eq(b),
             _ => false,
         }
     }

@@ -1979,6 +1979,16 @@ impl<'a> Format<'a> for AstNode<'a, Declaration<'a>> {
                     })
                     .fmt(f);
             }
+            Declaration::AnnotationDeclaration(inner) => {
+                allocator
+                    .alloc(AstNode::<AnnotationDeclaration> {
+                        inner,
+                        parent,
+                        allocator,
+                        following_span: self.following_span,
+                    })
+                    .fmt(f);
+            }
         }
     }
 }
@@ -5865,6 +5875,52 @@ impl<'a> Format<'a> for AstNode<'a, ArkUIChild<'a>> {
             ArkUIChild::Statement(inner) => {
                 allocator
                     .alloc(AstNode::<Statement> {
+                        inner,
+                        parent,
+                        allocator,
+                        following_span: self.following_span,
+                    })
+                    .fmt(f);
+            }
+        }
+    }
+}
+
+impl<'a> Format<'a> for AstNode<'a, AnnotationDeclaration<'a>> {
+    fn fmt(&self, f: &mut Formatter<'_, 'a>) {
+        let is_suppressed = f.comments().is_suppressed(self.span().start);
+        self.format_leading_comments(f);
+        if is_suppressed {
+            FormatSuppressedNode(self.span()).fmt(f);
+        } else {
+            self.write(f);
+        }
+        self.format_trailing_comments(f);
+    }
+}
+
+impl<'a> Format<'a> for AstNode<'a, AnnotationBody<'a>> {
+    fn fmt(&self, f: &mut Formatter<'_, 'a>) {
+        let is_suppressed = f.comments().is_suppressed(self.span().start);
+        self.format_leading_comments(f);
+        if is_suppressed {
+            FormatSuppressedNode(self.span()).fmt(f);
+        } else {
+            self.write(f);
+        }
+        self.format_trailing_comments(f);
+    }
+}
+
+impl<'a> Format<'a> for AstNode<'a, AnnotationElement<'a>> {
+    #[inline]
+    fn fmt(&self, f: &mut Formatter<'_, 'a>) {
+        let allocator = self.allocator;
+        let parent = self.parent;
+        match self.inner {
+            AnnotationElement::PropertyDefinition(inner) => {
+                allocator
+                    .alloc(AstNode::<PropertyDefinition> {
                         inner,
                         parent,
                         allocator,

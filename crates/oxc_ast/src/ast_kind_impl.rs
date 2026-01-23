@@ -612,6 +612,8 @@ impl AstKind<'_> {
             Self::StructStatement(_) => "StructStatement".into(),
             Self::StructBody(_) => "StructBody".into(),
             Self::ArkUIComponentExpression(_) => "ArkUIComponentExpression".into(),
+            Self::AnnotationDeclaration(_) => "AnnotationDeclaration".into(),
+            Self::AnnotationBody(_) => "AnnotationBody".into(),
         }
     }
 }

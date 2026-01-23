@@ -1333,6 +1333,8 @@ function deserializeStatement(pos) {
       return deserializeBoxWithStatement(pos + 8);
     case 19:
       return deserializeBoxStructStatement(pos + 8);
+    case 20:
+      return deserializeBoxAnnotationDeclaration(pos + 8);
     case 32:
       return deserializeBoxVariableDeclaration(pos + 8);
     case 33:
@@ -1413,6 +1415,8 @@ function deserializeDeclaration(pos) {
   switch (uint8[pos]) {
     case 19:
       return deserializeBoxStructStatement(pos + 8);
+    case 20:
+      return deserializeBoxAnnotationDeclaration(pos + 8);
     case 32:
       return deserializeBoxVariableDeclaration(pos + 8);
     case 33:
@@ -5130,6 +5134,48 @@ function deserializeArkUIChild(pos) {
   }
 }
 
+function deserializeAnnotationDeclaration(pos) {
+  let previousParent = parent,
+    node = (parent = {
+      type: "AnnotationDeclaration",
+      decorators: null,
+      id: null,
+      body: null,
+      declare: deserializeBool(pos + 76),
+      start: deserializeU32(pos),
+      end: deserializeU32(pos + 4),
+      parent,
+    });
+  node.decorators = deserializeVecDecorator(pos + 8);
+  node.id = deserializeBindingIdentifier(pos + 32);
+  node.body = deserializeBoxAnnotationBody(pos + 64);
+  parent = previousParent;
+  return node;
+}
+
+function deserializeAnnotationBody(pos) {
+  let previousParent = parent,
+    node = (parent = {
+      type: "AnnotationBody",
+      body: null,
+      start: deserializeU32(pos),
+      end: deserializeU32(pos + 4),
+      parent,
+    });
+  node.body = deserializeVecAnnotationElement(pos + 8);
+  parent = previousParent;
+  return node;
+}
+
+function deserializeAnnotationElement(pos) {
+  switch (uint8[pos]) {
+    case 0:
+      return deserializeBoxPropertyDefinition(pos + 8);
+    default:
+      throw Error(`Unexpected discriminant ${uint8[pos]} for AnnotationElement`);
+  }
+}
+
 function deserializeCommentKind(pos) {
   switch (uint8[pos]) {
     case 0:
@@ -6053,6 +6099,10 @@ function deserializeBoxStructStatement(pos) {
   return deserializeStructStatement(uint32[pos >> 2]);
 }
 
+function deserializeBoxAnnotationDeclaration(pos) {
+  return deserializeAnnotationDeclaration(uint32[pos >> 2]);
+}
+
 function deserializeVecVariableDeclarator(pos) {
   let arr = [],
     pos32 = pos >> 2;
@@ -6831,6 +6881,22 @@ function deserializeVecCallExpression(pos) {
 
 function deserializeBoxStatement(pos) {
   return deserializeStatement(uint32[pos >> 2]);
+}
+
+function deserializeBoxAnnotationBody(pos) {
+  return deserializeAnnotationBody(uint32[pos >> 2]);
+}
+
+function deserializeVecAnnotationElement(pos) {
+  let arr = [],
+    pos32 = pos >> 2;
+  pos = uint32[pos32];
+  let endPos = pos + uint32[pos32 + 2] * 16;
+  for (; pos !== endPos; ) {
+    arr.push(deserializeAnnotationElement(pos));
+    pos += 16;
+  }
+  return arr;
 }
 
 function deserializeOptionNameSpan(pos) {

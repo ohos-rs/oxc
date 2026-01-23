@@ -635,6 +635,7 @@ impl<'a> ParserImpl<'a> {
 
 #[cfg(test)]
 mod test {
+    use oxc_ast::ast::AnnotationElement;
     use std::path::Path;
 
     use oxc_ast::ast::{CommentKind, Expression, Statement, StructElement};
@@ -923,6 +924,62 @@ mod test {
             assert_eq!(struct_stmt.body.body.len(), 2); // property and method
         } else {
             panic!("Expected StructStatement");
+        }
+    }
+
+    #[test]
+    fn arkui_annotation_declaration() {
+        let allocator = Allocator::default();
+        let source_type = SourceType::ets();
+        let source = "@interface MyAnnotation {\n  value: string;\n  count: number;\n}";
+        let ret = Parser::new(&allocator, source, source_type).parse();
+        assert!(ret.errors.is_empty(), "Errors: {:?}", ret.errors);
+        assert_eq!(ret.program.body.len(), 1);
+        if let Statement::AnnotationDeclaration(annotation) = &ret.program.body[0] {
+            assert_eq!(annotation.id.name.as_str(), "MyAnnotation");
+            assert_eq!(annotation.body.body.len(), 2); // two properties
+        } else {
+            panic!("Expected AnnotationDeclaration, got: {:?}", ret.program.body[0]);
+        }
+    }
+
+    #[test]
+    fn arkui_annotation_declaration_with_default_value() {
+        let allocator = Allocator::default();
+        let source_type = SourceType::ets();
+        let source =
+            "@interface MyAnnotation {\n  value: string = 'default';\n  count: number = 10;\n}";
+        let ret = Parser::new(&allocator, source, source_type).parse();
+        assert!(ret.errors.is_empty(), "Errors: {:?}", ret.errors);
+        assert_eq!(ret.program.body.len(), 1);
+        if let Statement::AnnotationDeclaration(annotation) = &ret.program.body[0] {
+            assert_eq!(annotation.id.name.as_str(), "MyAnnotation");
+            assert_eq!(annotation.body.body.len(), 2);
+            // Check that both properties have default values
+            if let AnnotationElement::PropertyDefinition(prop1) = &annotation.body.body[0] {
+                assert!(prop1.value.is_some());
+            }
+            if let AnnotationElement::PropertyDefinition(prop2) = &annotation.body.body[1] {
+                assert!(prop2.value.is_some());
+            }
+        } else {
+            panic!("Expected AnnotationDeclaration");
+        }
+    }
+
+    #[test]
+    fn arkui_annotation_declaration_empty() {
+        let allocator = Allocator::default();
+        let source_type = SourceType::ets();
+        let source = "@interface EmptyAnnotation {}";
+        let ret = Parser::new(&allocator, source, source_type).parse();
+        assert!(ret.errors.is_empty(), "Errors: {:?}", ret.errors);
+        assert_eq!(ret.program.body.len(), 1);
+        if let Statement::AnnotationDeclaration(annotation) = &ret.program.body[0] {
+            assert_eq!(annotation.id.name.as_str(), "EmptyAnnotation");
+            assert_eq!(annotation.body.body.len(), 0);
+        } else {
+            panic!("Expected AnnotationDeclaration");
         }
     }
 

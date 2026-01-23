@@ -4630,6 +4630,62 @@ impl<'a> AstBuilder<'a> {
         ))
     }
 
+    /// Build a [`Declaration::AnnotationDeclaration`].
+    ///
+    /// This node contains an [`AnnotationDeclaration`] that will be stored in the memory arena.
+    ///
+    /// ## Parameters
+    /// * `span`: Span
+    /// * `decorators`: Decorators applied to the annotation (not used for @interface syntax).
+    /// * `id`: Annotation identifier, AKA the name
+    /// * `body`: Annotation body containing properties
+    /// * `declare`: Whether this annotation is marked with `declare`.
+    #[inline]
+    pub fn declaration_annotation<T1>(
+        self,
+        span: Span,
+        decorators: Vec<'a, Decorator<'a>>,
+        id: BindingIdentifier<'a>,
+        body: T1,
+        declare: bool,
+    ) -> Declaration<'a>
+    where
+        T1: IntoIn<'a, Box<'a, AnnotationBody<'a>>>,
+    {
+        Declaration::AnnotationDeclaration(
+            self.alloc_annotation_declaration(span, decorators, id, body, declare),
+        )
+    }
+
+    /// Build a [`Declaration::AnnotationDeclaration`] with `scope_id`.
+    ///
+    /// This node contains an [`AnnotationDeclaration`] that will be stored in the memory arena.
+    ///
+    /// ## Parameters
+    /// * `span`: Span
+    /// * `decorators`: Decorators applied to the annotation (not used for @interface syntax).
+    /// * `id`: Annotation identifier, AKA the name
+    /// * `body`: Annotation body containing properties
+    /// * `declare`: Whether this annotation is marked with `declare`.
+    /// * `scope_id`: Id of the scope created by the [`AnnotationDeclaration`], including
+    #[inline]
+    pub fn declaration_annotation_with_scope_id<T1>(
+        self,
+        span: Span,
+        decorators: Vec<'a, Decorator<'a>>,
+        id: BindingIdentifier<'a>,
+        body: T1,
+        declare: bool,
+        scope_id: ScopeId,
+    ) -> Declaration<'a>
+    where
+        T1: IntoIn<'a, Box<'a, AnnotationBody<'a>>>,
+    {
+        Declaration::AnnotationDeclaration(self.alloc_annotation_declaration_with_scope_id(
+            span, decorators, id, body, declare, scope_id,
+        ))
+    }
+
     /// Build a [`VariableDeclaration`].
     ///
     /// If you want the built node to be allocated in the memory arena,
@@ -15800,6 +15856,170 @@ impl<'a> AstBuilder<'a> {
             ),
             self.allocator,
         )
+    }
+
+    /// Build an [`AnnotationDeclaration`].
+    ///
+    /// If you want the built node to be allocated in the memory arena,
+    /// use [`AstBuilder::alloc_annotation_declaration`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: Span
+    /// * `decorators`: Decorators applied to the annotation (not used for @interface syntax).
+    /// * `id`: Annotation identifier, AKA the name
+    /// * `body`: Annotation body containing properties
+    /// * `declare`: Whether this annotation is marked with `declare`.
+    #[inline]
+    pub fn annotation_declaration<T1>(
+        self,
+        span: Span,
+        decorators: Vec<'a, Decorator<'a>>,
+        id: BindingIdentifier<'a>,
+        body: T1,
+        declare: bool,
+    ) -> AnnotationDeclaration<'a>
+    where
+        T1: IntoIn<'a, Box<'a, AnnotationBody<'a>>>,
+    {
+        AnnotationDeclaration {
+            span,
+            decorators,
+            id,
+            body: body.into_in(self.allocator),
+            declare,
+            scope_id: Default::default(),
+        }
+    }
+
+    /// Build an [`AnnotationDeclaration`], and store it in the memory arena.
+    ///
+    /// Returns a [`Box`] containing the newly-allocated node.
+    /// If you want a stack-allocated node, use [`AstBuilder::annotation_declaration`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: Span
+    /// * `decorators`: Decorators applied to the annotation (not used for @interface syntax).
+    /// * `id`: Annotation identifier, AKA the name
+    /// * `body`: Annotation body containing properties
+    /// * `declare`: Whether this annotation is marked with `declare`.
+    #[inline]
+    pub fn alloc_annotation_declaration<T1>(
+        self,
+        span: Span,
+        decorators: Vec<'a, Decorator<'a>>,
+        id: BindingIdentifier<'a>,
+        body: T1,
+        declare: bool,
+    ) -> Box<'a, AnnotationDeclaration<'a>>
+    where
+        T1: IntoIn<'a, Box<'a, AnnotationBody<'a>>>,
+    {
+        Box::new_in(
+            self.annotation_declaration(span, decorators, id, body, declare),
+            self.allocator,
+        )
+    }
+
+    /// Build an [`AnnotationDeclaration`] with `scope_id`.
+    ///
+    /// If you want the built node to be allocated in the memory arena,
+    /// use [`AstBuilder::alloc_annotation_declaration_with_scope_id`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: Span
+    /// * `decorators`: Decorators applied to the annotation (not used for @interface syntax).
+    /// * `id`: Annotation identifier, AKA the name
+    /// * `body`: Annotation body containing properties
+    /// * `declare`: Whether this annotation is marked with `declare`.
+    /// * `scope_id`: Id of the scope created by the [`AnnotationDeclaration`], including
+    #[inline]
+    pub fn annotation_declaration_with_scope_id<T1>(
+        self,
+        span: Span,
+        decorators: Vec<'a, Decorator<'a>>,
+        id: BindingIdentifier<'a>,
+        body: T1,
+        declare: bool,
+        scope_id: ScopeId,
+    ) -> AnnotationDeclaration<'a>
+    where
+        T1: IntoIn<'a, Box<'a, AnnotationBody<'a>>>,
+    {
+        AnnotationDeclaration {
+            span,
+            decorators,
+            id,
+            body: body.into_in(self.allocator),
+            declare,
+            scope_id: Cell::new(Some(scope_id)),
+        }
+    }
+
+    /// Build an [`AnnotationDeclaration`] with `scope_id`, and store it in the memory arena.
+    ///
+    /// Returns a [`Box`] containing the newly-allocated node.
+    /// If you want a stack-allocated node, use [`AstBuilder::annotation_declaration_with_scope_id`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: Span
+    /// * `decorators`: Decorators applied to the annotation (not used for @interface syntax).
+    /// * `id`: Annotation identifier, AKA the name
+    /// * `body`: Annotation body containing properties
+    /// * `declare`: Whether this annotation is marked with `declare`.
+    /// * `scope_id`: Id of the scope created by the [`AnnotationDeclaration`], including
+    #[inline]
+    pub fn alloc_annotation_declaration_with_scope_id<T1>(
+        self,
+        span: Span,
+        decorators: Vec<'a, Decorator<'a>>,
+        id: BindingIdentifier<'a>,
+        body: T1,
+        declare: bool,
+        scope_id: ScopeId,
+    ) -> Box<'a, AnnotationDeclaration<'a>>
+    where
+        T1: IntoIn<'a, Box<'a, AnnotationBody<'a>>>,
+    {
+        Box::new_in(
+            self.annotation_declaration_with_scope_id(
+                span, decorators, id, body, declare, scope_id,
+            ),
+            self.allocator,
+        )
+    }
+
+    /// Build an [`AnnotationBody`].
+    ///
+    /// If you want the built node to be allocated in the memory arena,
+    /// use [`AstBuilder::alloc_annotation_body`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: Span
+    /// * `body`: Elements within the annotation body
+    #[inline]
+    pub fn annotation_body(
+        self,
+        span: Span,
+        body: Vec<'a, AnnotationElement<'a>>,
+    ) -> AnnotationBody<'a> {
+        AnnotationBody { span, body }
+    }
+
+    /// Build an [`AnnotationBody`], and store it in the memory arena.
+    ///
+    /// Returns a [`Box`] containing the newly-allocated node.
+    /// If you want a stack-allocated node, use [`AstBuilder::annotation_body`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: Span
+    /// * `body`: Elements within the annotation body
+    #[inline]
+    pub fn alloc_annotation_body(
+        self,
+        span: Span,
+        body: Vec<'a, AnnotationElement<'a>>,
+    ) -> Box<'a, AnnotationBody<'a>> {
+        Box::new_in(self.annotation_body(span, body), self.allocator)
     }
 }
 

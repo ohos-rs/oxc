@@ -627,6 +627,7 @@ impl GetSpanMut for Statement<'_> {
             Self::TSGlobalDeclaration(it) => GetSpanMut::span_mut(&mut **it),
             Self::TSImportEqualsDeclaration(it) => GetSpanMut::span_mut(&mut **it),
             Self::StructStatement(it) => GetSpanMut::span_mut(&mut **it),
+            Self::AnnotationDeclaration(it) => GetSpanMut::span_mut(&mut **it),
             Self::ImportDeclaration(it) => GetSpanMut::span_mut(&mut **it),
             Self::LazyImportDeclaration(it) => GetSpanMut::span_mut(&mut **it),
             Self::ExportAllDeclaration(it) => GetSpanMut::span_mut(&mut **it),
@@ -672,6 +673,7 @@ impl GetSpanMut for Declaration<'_> {
             Self::TSGlobalDeclaration(it) => GetSpanMut::span_mut(&mut **it),
             Self::TSImportEqualsDeclaration(it) => GetSpanMut::span_mut(&mut **it),
             Self::StructStatement(it) => GetSpanMut::span_mut(&mut **it),
+            Self::AnnotationDeclaration(it) => GetSpanMut::span_mut(&mut **it),
         }
     }
 }
@@ -2251,6 +2253,28 @@ impl GetSpanMut for ArkUIChild<'_> {
             Self::Component(it) => GetSpanMut::span_mut(&mut **it),
             Self::Expression(it) => GetSpanMut::span_mut(&mut **it),
             Self::Statement(it) => GetSpanMut::span_mut(&mut **it),
+        }
+    }
+}
+
+impl GetSpanMut for AnnotationDeclaration<'_> {
+    #[inline]
+    fn span_mut(&mut self) -> &mut Span {
+        &mut self.span
+    }
+}
+
+impl GetSpanMut for AnnotationBody<'_> {
+    #[inline]
+    fn span_mut(&mut self) -> &mut Span {
+        &mut self.span
+    }
+}
+
+impl GetSpanMut for AnnotationElement<'_> {
+    fn span_mut(&mut self) -> &mut Span {
+        match self {
+            Self::PropertyDefinition(it) => GetSpanMut::span_mut(&mut **it),
         }
     }
 }

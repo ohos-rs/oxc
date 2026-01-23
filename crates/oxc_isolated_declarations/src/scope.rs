@@ -193,6 +193,9 @@ impl<'a> Visit<'a> for ScopeTree<'a> {
             Declaration::TSImportEqualsDeclaration(decl) => {
                 self.add_binding(decl.id.name.into(), KindFlags::Value);
             }
+            Declaration::AnnotationDeclaration(decl) => {
+                self.add_binding(decl.id.name.into(), KindFlags::Value);
+            }
             Declaration::StructStatement(decl) => {
                 self.add_binding(decl.id.name.into(), KindFlags::Value);
             }

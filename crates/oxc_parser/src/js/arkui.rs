@@ -2,6 +2,7 @@
 //!
 //! This module contains parsing logic for HarmonyOS ArkUI syntax including:
 //! - Struct declarations (`struct ComponentName { ... }`)
+//! - Annotation declarations (`annotation MyAnnotation { ... }`)
 //! - ArkUI component expressions (`Column() { ... }`)
 
 use oxc_allocator::{Box, CloneIn, Vec};
@@ -64,7 +65,7 @@ impl<'a> ParserImpl<'a> {
         let id = if self.cur_kind().is_binding_identifier() {
             self.parse_binding_identifier()
         } else {
-            self.unexpected()
+            self.unexpected::<BindingIdentifier<'a>>()
         };
 
         let type_parameters = if self.is_ts { self.parse_ts_type_parameters() } else { None };
@@ -82,6 +83,151 @@ impl<'a> ParserImpl<'a> {
         let declare = modifiers.contains(ModifierKind::Declare);
 
         self.ast.alloc_struct_statement(span, decorators, id, type_parameters, body, declare)
+    }
+
+    /// Parse an annotation statement
+    ///
+    /// ## Example
+    /// ```arkts
+    /// @interface MyAnnotation {
+    ///   value: string;
+    ///   count?: number;
+    /// }
+    /// ```
+    pub(crate) fn parse_annotation_statement(
+        &mut self,
+        start_span: u32,
+        stmt_ctx: StatementContext,
+        modifiers: &Modifiers<'a>,
+        decorators: Vec<'a, Decorator<'a>>,
+    ) -> Statement<'a> {
+        let decl = self.parse_annotation_declaration(start_span, modifiers, decorators);
+        if stmt_ctx.is_single_statement() {
+            self.error(diagnostics::class_declaration(Span::new(
+                decl.span.start,
+                decl.body.span.start,
+            )));
+        }
+        Statement::AnnotationDeclaration(decl)
+    }
+
+    /// Parse an annotation declaration
+    ///
+    /// Parses `@interface MyAnnotation { ... }` syntax
+    pub(crate) fn parse_annotation_declaration(
+        &mut self,
+        start_span: u32,
+        modifiers: &Modifiers<'a>,
+        decorators: Vec<'a, Decorator<'a>>,
+    ) -> Box<'a, AnnotationDeclaration<'a>> {
+        // We should be at `interface` after `@` was consumed
+        // Consume `interface` keyword
+        if self.at(Kind::Interface) {
+            self.bump_any();
+        } else {
+            self.unexpected::<()>();
+        }
+
+        // Move span start to @ position
+        let start_span = start_span;
+
+        let id = if self.cur_kind().is_binding_identifier() {
+            self.parse_binding_identifier()
+        } else {
+            self.unexpected::<BindingIdentifier<'a>>()
+        };
+
+        let body = self.parse_annotation_body();
+
+        self.verify_modifiers(
+            modifiers,
+            ModifierFlags::DECLARE | ModifierFlags::ABSTRACT,
+            true,
+            diagnostics::modifier_cannot_be_used_here,
+        );
+
+        let span = self.end_span(start_span);
+
+        let declare = modifiers.contains(ModifierKind::Declare);
+
+        self.ast.alloc_annotation_declaration(span, decorators, id, body, declare)
+    }
+
+    /// Parse annotation body containing properties
+    fn parse_annotation_body(&mut self) -> Box<'a, AnnotationBody<'a>> {
+        let span = self.start_span();
+        let annotation_elements =
+            self.parse_normal_list_breakable(Kind::LCurly, Kind::RCurly, |p| {
+                // Skip empty annotation element `;`
+                if p.eat(Kind::Semicolon) {
+                    while p.eat(Kind::Semicolon) {
+                        // consume multiple semicolons
+                    }
+                    if p.at(Kind::RCurly) {
+                        return None;
+                    }
+                }
+                Some(Self::parse_annotation_element(p))
+            });
+        self.ast.alloc_annotation_body(self.end_span(span), annotation_elements)
+    }
+
+    /// Parse an annotation element (property)
+    fn parse_annotation_element(&mut self) -> AnnotationElement<'a> {
+        let span = self.start_span();
+
+        let decorators = self.parse_decorators();
+        let modifiers = self.parse_modifiers(
+            /* permit_const_as_modifier */ true,
+            /* stop_on_start_of_class_static_block */ false,
+        );
+
+        self.verify_modifiers(
+            &modifiers,
+            !ModifierFlags::EXPORT,
+            false,
+            diagnostics::cannot_appear_on_class_elements,
+        );
+
+        // Parse property key
+        let (name, computed) = self.parse_property_name();
+
+        // Parse optional type annotation
+        let type_annotation = if self.is_ts && self.eat(Kind::Colon) {
+            let span = self.start_span();
+            let ts_type = self.parse_ts_type();
+            Some(self.ast.alloc_ts_type_annotation(self.end_span(span), ts_type))
+        } else {
+            None
+        };
+
+        // Parse optional initializer (default value)
+        let initializer = self
+            .eat(Kind::Eq)
+            .then(|| self.context(Context::In, Context::Yield | Context::Await, Self::parse_expr));
+
+        // Semicolon is optional in annotation bodies
+        let _ = self.eat(Kind::Semicolon);
+
+        let r#type = PropertyDefinitionType::PropertyDefinition;
+        let property_def = self.ast.alloc_property_definition(
+            self.end_span(span),
+            r#type,
+            decorators,
+            name,
+            type_annotation,
+            initializer,
+            computed,
+            modifiers.contains(ModifierKind::Static),
+            false, // declare
+            modifiers.contains(ModifierKind::Override),
+            false, // optional - not supported
+            false, // definite - not supported
+            modifiers.contains(ModifierKind::Readonly),
+            modifiers.accessibility(),
+        );
+
+        AnnotationElement::PropertyDefinition(property_def)
     }
 
     /// Parse struct body containing properties and methods

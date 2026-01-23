@@ -452,7 +452,8 @@ export type Declaration =
   | TSModuleDeclaration
   | TSGlobalDeclaration
   | TSImportEqualsDeclaration
-  | StructStatement;
+  | StructStatement
+  | AnnotationDeclaration;
 
 export interface VariableDeclaration extends Span {
   type: "VariableDeclaration";
@@ -1735,6 +1736,23 @@ export interface ArkUIComponentExpression extends Span {
 
 export type ArkUIChild = ArkUIComponentExpression | Expression | Statement;
 
+export interface AnnotationDeclaration extends Span {
+  type: "AnnotationDeclaration";
+  decorators: Array<Decorator>;
+  id: BindingIdentifier;
+  body: AnnotationBody;
+  declare?: boolean;
+  parent: Node;
+}
+
+export interface AnnotationBody extends Span {
+  type: "AnnotationBody";
+  body: Array<AnnotationElement>;
+  parent: Node;
+}
+
+export type AnnotationElement = PropertyDefinition;
+
 export type AssignmentOperator =
   | "="
   | "+="
@@ -1973,4 +1991,6 @@ export type Node =
   | StructStatement
   | StructBody
   | ArkUIComponentExpression
+  | AnnotationDeclaration
+  | AnnotationBody
   | ParamPattern;

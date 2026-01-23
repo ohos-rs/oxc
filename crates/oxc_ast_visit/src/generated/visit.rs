@@ -1235,6 +1235,21 @@ pub trait Visit<'a>: Sized {
     }
 
     #[inline]
+    fn visit_annotation_declaration(&mut self, it: &AnnotationDeclaration<'a>) {
+        walk_annotation_declaration(self, it);
+    }
+
+    #[inline]
+    fn visit_annotation_body(&mut self, it: &AnnotationBody<'a>) {
+        walk_annotation_body(self, it);
+    }
+
+    #[inline]
+    fn visit_annotation_element(&mut self, it: &AnnotationElement<'a>) {
+        walk_annotation_element(self, it);
+    }
+
+    #[inline]
     fn visit_span(&mut self, it: &Span) {
         walk_span(self, it);
     }
@@ -1390,6 +1405,11 @@ pub trait Visit<'a>: Sized {
     #[inline]
     fn visit_call_expressions(&mut self, it: &Vec<'a, CallExpression<'a>>) {
         walk_call_expressions(self, it);
+    }
+
+    #[inline]
+    fn visit_annotation_elements(&mut self, it: &Vec<'a, AnnotationElement<'a>>) {
+        walk_annotation_elements(self, it);
     }
 
     #[inline]
@@ -2143,6 +2163,7 @@ pub mod walk {
                 visitor.visit_ts_import_equals_declaration(it)
             }
             Declaration::StructStatement(it) => visitor.visit_struct_statement(it),
+            Declaration::AnnotationDeclaration(it) => visitor.visit_annotation_declaration(it),
         }
     }
 
@@ -4391,6 +4412,39 @@ pub mod walk {
     }
 
     #[inline]
+    pub fn walk_annotation_declaration<'a, V: Visit<'a>>(
+        visitor: &mut V,
+        it: &AnnotationDeclaration<'a>,
+    ) {
+        let kind = AstKind::AnnotationDeclaration(visitor.alloc(it));
+        visitor.enter_node(kind);
+        visitor.enter_scope(ScopeFlags::StrictMode, &it.scope_id);
+        visitor.visit_span(&it.span);
+        visitor.visit_decorators(&it.decorators);
+        visitor.visit_binding_identifier(&it.id);
+        visitor.visit_annotation_body(&it.body);
+        visitor.leave_scope();
+        visitor.leave_node(kind);
+    }
+
+    #[inline]
+    pub fn walk_annotation_body<'a, V: Visit<'a>>(visitor: &mut V, it: &AnnotationBody<'a>) {
+        let kind = AstKind::AnnotationBody(visitor.alloc(it));
+        visitor.enter_node(kind);
+        visitor.visit_span(&it.span);
+        visitor.visit_annotation_elements(&it.body);
+        visitor.leave_node(kind);
+    }
+
+    #[inline]
+    pub fn walk_annotation_element<'a, V: Visit<'a>>(visitor: &mut V, it: &AnnotationElement<'a>) {
+        // No `AstKind` for this type
+        match it {
+            AnnotationElement::PropertyDefinition(it) => visitor.visit_property_definition(it),
+        }
+    }
+
+    #[inline]
     pub fn walk_span<'a, V: Visit<'a>>(visitor: &mut V, it: &Span) {
         // No `AstKind` for this type
     }
@@ -4663,6 +4717,16 @@ pub mod walk {
     ) {
         for el in it {
             visitor.visit_call_expression(el);
+        }
+    }
+
+    #[inline]
+    pub fn walk_annotation_elements<'a, V: Visit<'a>>(
+        visitor: &mut V,
+        it: &Vec<'a, AnnotationElement<'a>>,
+    ) {
+        for el in it {
+            visitor.visit_annotation_element(el);
         }
     }
 

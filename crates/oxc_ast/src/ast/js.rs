@@ -1198,6 +1198,7 @@ pub enum Declaration<'a> {
     TSGlobalDeclaration(Box<'a, TSGlobalDeclaration<'a>>) = 39,
     TSImportEqualsDeclaration(Box<'a, TSImportEqualsDeclaration<'a>>) = 40,
     StructStatement(Box<'a, StructStatement<'a>>) = 19,
+    AnnotationDeclaration(Box<'a, AnnotationDeclaration<'a>>) = 20,
 }
 
 /// Macro for matching `Declaration`'s variants.
@@ -1214,6 +1215,7 @@ macro_rules! match_declaration {
             | $ty::TSGlobalDeclaration(_)
             | $ty::TSImportEqualsDeclaration(_)
             | $ty::StructStatement(_)
+            | $ty::AnnotationDeclaration(_)
     };
 }
 pub use match_declaration;

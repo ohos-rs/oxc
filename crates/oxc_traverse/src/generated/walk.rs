@@ -1425,7 +1425,8 @@ unsafe fn walk_statement<'a, State, Tr: Traverse<'a, State>>(
         | Statement::TSModuleDeclaration(_)
         | Statement::TSGlobalDeclaration(_)
         | Statement::TSImportEqualsDeclaration(_)
-        | Statement::StructStatement(_) => walk_declaration(traverser, node as *mut _, ctx),
+        | Statement::StructStatement(_)
+        | Statement::AnnotationDeclaration(_) => walk_declaration(traverser, node as *mut _, ctx),
         Statement::ImportDeclaration(_)
         | Statement::LazyImportDeclaration(_)
         | Statement::ExportAllDeclaration(_)
@@ -1528,6 +1529,9 @@ unsafe fn walk_declaration<'a, State, Tr: Traverse<'a, State>>(
         }
         Declaration::StructStatement(node) => {
             walk_struct_statement(traverser, (&mut **node) as *mut _, ctx)
+        }
+        Declaration::AnnotationDeclaration(node) => {
+            walk_annotation_declaration(traverser, (&mut **node) as *mut _, ctx)
         }
     }
     traverser.exit_declaration(&mut *node, ctx);
@@ -5966,6 +5970,77 @@ unsafe fn walk_ark_u_i_child<'a, State, Tr: Traverse<'a, State>>(
         ArkUIChild::Statement(node) => walk_statement(traverser, (&mut **node) as *mut _, ctx),
     }
     traverser.exit_ark_u_i_child(&mut *node, ctx);
+}
+
+unsafe fn walk_annotation_declaration<'a, State, Tr: Traverse<'a, State>>(
+    traverser: &mut Tr,
+    node: *mut AnnotationDeclaration<'a>,
+    ctx: &mut TraverseCtx<'a, State>,
+) {
+    traverser.enter_annotation_declaration(&mut *node, ctx);
+    let previous_scope_id = ctx.current_scope_id();
+    let current_scope_id = (*((node as *mut u8)
+        .add(ancestor::OFFSET_ANNOTATION_DECLARATION_SCOPE_ID)
+        as *mut Cell<Option<ScopeId>>))
+        .get()
+        .unwrap();
+    ctx.set_current_scope_id(current_scope_id);
+    let pop_token = ctx.push_stack(Ancestor::AnnotationDeclarationDecorators(
+        ancestor::AnnotationDeclarationWithoutDecorators(node, PhantomData),
+    ));
+    for item in &mut *((node as *mut u8).add(ancestor::OFFSET_ANNOTATION_DECLARATION_DECORATORS)
+        as *mut Vec<Decorator>)
+    {
+        walk_decorator(traverser, item as *mut _, ctx);
+    }
+    ctx.retag_stack(AncestorType::AnnotationDeclarationId);
+    walk_binding_identifier(
+        traverser,
+        (node as *mut u8).add(ancestor::OFFSET_ANNOTATION_DECLARATION_ID) as *mut BindingIdentifier,
+        ctx,
+    );
+    ctx.retag_stack(AncestorType::AnnotationDeclarationBody);
+    walk_annotation_body(
+        traverser,
+        (&mut **((node as *mut u8).add(ancestor::OFFSET_ANNOTATION_DECLARATION_BODY)
+            as *mut Box<AnnotationBody>)) as *mut _,
+        ctx,
+    );
+    ctx.pop_stack(pop_token);
+    ctx.set_current_scope_id(previous_scope_id);
+    traverser.exit_annotation_declaration(&mut *node, ctx);
+}
+
+unsafe fn walk_annotation_body<'a, State, Tr: Traverse<'a, State>>(
+    traverser: &mut Tr,
+    node: *mut AnnotationBody<'a>,
+    ctx: &mut TraverseCtx<'a, State>,
+) {
+    traverser.enter_annotation_body(&mut *node, ctx);
+    let pop_token = ctx.push_stack(Ancestor::AnnotationBodyBody(
+        ancestor::AnnotationBodyWithoutBody(node, PhantomData),
+    ));
+    for item in &mut *((node as *mut u8).add(ancestor::OFFSET_ANNOTATION_BODY_BODY)
+        as *mut Vec<AnnotationElement>)
+    {
+        walk_annotation_element(traverser, item as *mut _, ctx);
+    }
+    ctx.pop_stack(pop_token);
+    traverser.exit_annotation_body(&mut *node, ctx);
+}
+
+unsafe fn walk_annotation_element<'a, State, Tr: Traverse<'a, State>>(
+    traverser: &mut Tr,
+    node: *mut AnnotationElement<'a>,
+    ctx: &mut TraverseCtx<'a, State>,
+) {
+    traverser.enter_annotation_element(&mut *node, ctx);
+    match &mut *node {
+        AnnotationElement::PropertyDefinition(node) => {
+            walk_property_definition(traverser, (&mut **node) as *mut _, ctx)
+        }
+    }
+    traverser.exit_annotation_element(&mut *node, ctx);
 }
 
 unsafe fn walk_statements<'a, State, Tr: Traverse<'a, State>>(

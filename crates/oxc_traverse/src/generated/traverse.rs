@@ -3204,6 +3204,51 @@ pub trait Traverse<'a, State> {
     fn exit_ark_u_i_child(&mut self, node: &mut ArkUIChild<'a>, ctx: &mut TraverseCtx<'a, State>) {}
 
     #[inline]
+    fn enter_annotation_declaration(
+        &mut self,
+        node: &mut AnnotationDeclaration<'a>,
+        ctx: &mut TraverseCtx<'a, State>,
+    ) {
+    }
+    #[inline]
+    fn exit_annotation_declaration(
+        &mut self,
+        node: &mut AnnotationDeclaration<'a>,
+        ctx: &mut TraverseCtx<'a, State>,
+    ) {
+    }
+
+    #[inline]
+    fn enter_annotation_body(
+        &mut self,
+        node: &mut AnnotationBody<'a>,
+        ctx: &mut TraverseCtx<'a, State>,
+    ) {
+    }
+    #[inline]
+    fn exit_annotation_body(
+        &mut self,
+        node: &mut AnnotationBody<'a>,
+        ctx: &mut TraverseCtx<'a, State>,
+    ) {
+    }
+
+    #[inline]
+    fn enter_annotation_element(
+        &mut self,
+        node: &mut AnnotationElement<'a>,
+        ctx: &mut TraverseCtx<'a, State>,
+    ) {
+    }
+    #[inline]
+    fn exit_annotation_element(
+        &mut self,
+        node: &mut AnnotationElement<'a>,
+        ctx: &mut TraverseCtx<'a, State>,
+    ) {
+    }
+
+    #[inline]
     fn enter_statements(
         &mut self,
         node: &mut Vec<'a, Statement<'a>>,

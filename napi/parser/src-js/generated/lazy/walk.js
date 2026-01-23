@@ -187,6 +187,8 @@ import {
   StructStatement,
   StructBody,
   ArkUIComponentExpression,
+  AnnotationDeclaration,
+  AnnotationBody,
 } from "./constructors.js";
 
 export { walkProgram };
@@ -1535,6 +1537,9 @@ function walkStatement(pos, ast, visitors) {
     case 19:
       walkBoxStructStatement(pos + 8, ast, visitors);
       return;
+    case 20:
+      walkBoxAnnotationDeclaration(pos + 8, ast, visitors);
+      return;
     case 32:
       walkBoxVariableDeclaration(pos + 8, ast, visitors);
       return;
@@ -1613,6 +1618,9 @@ function walkDeclaration(pos, ast, visitors) {
   switch (ast.buffer[pos]) {
     case 19:
       walkBoxStructStatement(pos + 8, ast, visitors);
+      return;
+    case 20:
+      walkBoxAnnotationDeclaration(pos + 8, ast, visitors);
       return;
     case 32:
       walkBoxVariableDeclaration(pos + 8, ast, visitors);
@@ -4903,6 +4911,50 @@ function walkArkUIChild(pos, ast, visitors) {
   }
 }
 
+function walkAnnotationDeclaration(pos, ast, visitors) {
+  const enterExit = visitors[185];
+  let node,
+    enter,
+    exit = null;
+  if (enterExit !== null) {
+    ({ enter, exit } = enterExit);
+    node = new AnnotationDeclaration(pos, ast);
+    if (enter !== null) enter(node);
+  }
+
+  walkVecDecorator(pos + 8, ast, visitors);
+  walkBindingIdentifier(pos + 32, ast, visitors);
+  walkBoxAnnotationBody(pos + 64, ast, visitors);
+
+  if (exit !== null) exit(node);
+}
+
+function walkAnnotationBody(pos, ast, visitors) {
+  const enterExit = visitors[186];
+  let node,
+    enter,
+    exit = null;
+  if (enterExit !== null) {
+    ({ enter, exit } = enterExit);
+    node = new AnnotationBody(pos, ast);
+    if (enter !== null) enter(node);
+  }
+
+  walkVecAnnotationElement(pos + 8, ast, visitors);
+
+  if (exit !== null) exit(node);
+}
+
+function walkAnnotationElement(pos, ast, visitors) {
+  switch (ast.buffer[pos]) {
+    case 0:
+      walkBoxPropertyDefinition(pos + 8, ast, visitors);
+      return;
+    default:
+      throw new Error(`Unexpected discriminant ${ast.buffer[pos]} for AnnotationElement`);
+  }
+}
+
 function walkOptionHashbang(pos, ast, visitors) {
   if (!(ast.buffer.uint32[(pos + 8) >> 2] === 0 && ast.buffer.uint32[(pos + 12) >> 2] === 0))
     walkHashbang(pos, ast, visitors);
@@ -5331,6 +5383,10 @@ function walkBoxTSImportEqualsDeclaration(pos, ast, visitors) {
 
 function walkBoxStructStatement(pos, ast, visitors) {
   return walkStructStatement(ast.buffer.uint32[pos >> 2], ast, visitors);
+}
+
+function walkBoxAnnotationDeclaration(pos, ast, visitors) {
+  return walkAnnotationDeclaration(ast.buffer.uint32[pos >> 2], ast, visitors);
 }
 
 function walkVecVariableDeclarator(pos, ast, visitors) {
@@ -6040,4 +6096,19 @@ function walkVecCallExpression(pos, ast, visitors) {
 
 function walkBoxStatement(pos, ast, visitors) {
   return walkStatement(ast.buffer.uint32[pos >> 2], ast, visitors);
+}
+
+function walkBoxAnnotationBody(pos, ast, visitors) {
+  return walkAnnotationBody(ast.buffer.uint32[pos >> 2], ast, visitors);
+}
+
+function walkVecAnnotationElement(pos, ast, visitors) {
+  const { uint32 } = ast.buffer,
+    pos32 = pos >> 2;
+  pos = uint32[pos32];
+  const endPos = pos + uint32[pos32 + 2] * 16;
+  while (pos < endPos) {
+    walkAnnotationElement(pos, ast, visitors);
+    pos += 16;
+  }
 }

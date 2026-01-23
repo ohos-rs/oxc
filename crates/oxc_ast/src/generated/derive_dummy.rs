@@ -3012,3 +3012,37 @@ impl<'a> Dummy<'a> for ArkUIChild<'a> {
         Self::Expression(Dummy::dummy(allocator))
     }
 }
+
+impl<'a> Dummy<'a> for AnnotationDeclaration<'a> {
+    /// Create a dummy [`AnnotationDeclaration`].
+    ///
+    /// Has cost of making 1 allocation (32 bytes).
+    fn dummy(allocator: &'a Allocator) -> Self {
+        Self {
+            span: Dummy::dummy(allocator),
+            decorators: Dummy::dummy(allocator),
+            id: Dummy::dummy(allocator),
+            body: Dummy::dummy(allocator),
+            declare: Dummy::dummy(allocator),
+            scope_id: Dummy::dummy(allocator),
+        }
+    }
+}
+
+impl<'a> Dummy<'a> for AnnotationBody<'a> {
+    /// Create a dummy [`AnnotationBody`].
+    ///
+    /// Does not allocate any data into arena.
+    fn dummy(allocator: &'a Allocator) -> Self {
+        Self { span: Dummy::dummy(allocator), body: Dummy::dummy(allocator) }
+    }
+}
+
+impl<'a> Dummy<'a> for AnnotationElement<'a> {
+    /// Create a dummy [`AnnotationElement`].
+    ///
+    /// Has cost of making 2 allocations (96 bytes).
+    fn dummy(allocator: &'a Allocator) -> Self {
+        Self::PropertyDefinition(Dummy::dummy(allocator))
+    }
+}

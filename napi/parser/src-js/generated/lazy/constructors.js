@@ -2713,6 +2713,8 @@ function constructStatement(pos, ast) {
       return constructBoxWithStatement(pos + 8, ast);
     case 19:
       return constructBoxStructStatement(pos + 8, ast);
+    case 20:
+      return constructBoxAnnotationDeclaration(pos + 8, ast);
     case 32:
       return constructBoxVariableDeclaration(pos + 8, ast);
     case 33:
@@ -2904,6 +2906,8 @@ function constructDeclaration(pos, ast) {
   switch (ast.buffer[pos]) {
     case 19:
       return constructBoxStructStatement(pos + 8, ast);
+    case 20:
+      return constructBoxAnnotationDeclaration(pos + 8, ast);
     case 32:
       return constructBoxVariableDeclaration(pos + 8, ast);
     case 33:
@@ -12129,6 +12133,129 @@ function constructArkUIChild(pos, ast) {
   }
 }
 
+export class AnnotationDeclaration {
+  type = "AnnotationDeclaration";
+  #internal;
+
+  constructor(pos, ast) {
+    if (ast?.token !== TOKEN) constructorError();
+
+    const { nodes } = ast;
+    const cached = nodes.get(pos);
+    if (cached !== void 0) return cached;
+
+    this.#internal = { pos, ast, $decorators: void 0 };
+    nodes.set(pos, this);
+  }
+
+  get start() {
+    const internal = this.#internal;
+    return constructU32(internal.pos, internal.ast);
+  }
+
+  get end() {
+    const internal = this.#internal;
+    return constructU32(internal.pos + 4, internal.ast);
+  }
+
+  get decorators() {
+    const internal = this.#internal,
+      cached = internal.$decorators;
+    if (cached !== void 0) return cached;
+    return (internal.$decorators = constructVecDecorator(internal.pos + 8, internal.ast));
+  }
+
+  get id() {
+    const internal = this.#internal;
+    return new BindingIdentifier(internal.pos + 32, internal.ast);
+  }
+
+  get body() {
+    const internal = this.#internal;
+    return constructBoxAnnotationBody(internal.pos + 64, internal.ast);
+  }
+
+  get declare() {
+    const internal = this.#internal;
+    return constructBool(internal.pos + 76, internal.ast);
+  }
+
+  toJSON() {
+    return {
+      type: "AnnotationDeclaration",
+      start: this.start,
+      end: this.end,
+      decorators: this.decorators,
+      id: this.id,
+      body: this.body,
+      declare: this.declare,
+    };
+  }
+
+  [inspectSymbol]() {
+    return Object.setPrototypeOf(this.toJSON(), DebugAnnotationDeclaration.prototype);
+  }
+}
+
+const DebugAnnotationDeclaration = class AnnotationDeclaration {};
+
+export class AnnotationBody {
+  type = "AnnotationBody";
+  #internal;
+
+  constructor(pos, ast) {
+    if (ast?.token !== TOKEN) constructorError();
+
+    const { nodes } = ast;
+    const cached = nodes.get(pos);
+    if (cached !== void 0) return cached;
+
+    this.#internal = { pos, ast, $body: void 0 };
+    nodes.set(pos, this);
+  }
+
+  get start() {
+    const internal = this.#internal;
+    return constructU32(internal.pos, internal.ast);
+  }
+
+  get end() {
+    const internal = this.#internal;
+    return constructU32(internal.pos + 4, internal.ast);
+  }
+
+  get body() {
+    const internal = this.#internal,
+      cached = internal.$body;
+    if (cached !== void 0) return cached;
+    return (internal.$body = constructVecAnnotationElement(internal.pos + 8, internal.ast));
+  }
+
+  toJSON() {
+    return {
+      type: "AnnotationBody",
+      start: this.start,
+      end: this.end,
+      body: this.body,
+    };
+  }
+
+  [inspectSymbol]() {
+    return Object.setPrototypeOf(this.toJSON(), DebugAnnotationBody.prototype);
+  }
+}
+
+const DebugAnnotationBody = class AnnotationBody {};
+
+function constructAnnotationElement(pos, ast) {
+  switch (ast.buffer[pos]) {
+    case 0:
+      return constructBoxPropertyDefinition(pos + 8, ast);
+    default:
+      throw new Error(`Unexpected discriminant ${ast.buffer[pos]} for AnnotationElement`);
+  }
+}
+
 function constructCommentKind(pos, ast) {
   switch (ast.buffer[pos]) {
     case 0:
@@ -13500,6 +13627,10 @@ function constructBoxStructStatement(pos, ast) {
   return new StructStatement(ast.buffer.uint32[pos >> 2], ast);
 }
 
+function constructBoxAnnotationDeclaration(pos, ast) {
+  return new AnnotationDeclaration(ast.buffer.uint32[pos >> 2], ast);
+}
+
 function constructVecVariableDeclarator(pos, ast) {
   const { uint32 } = ast.buffer,
     pos32 = pos >> 2;
@@ -14200,6 +14331,16 @@ function constructCallExpression(pos, ast) {
 
 function constructBoxStatement(pos, ast) {
   return constructStatement(ast.buffer.uint32[pos >> 2], ast);
+}
+
+function constructBoxAnnotationBody(pos, ast) {
+  return new AnnotationBody(ast.buffer.uint32[pos >> 2], ast);
+}
+
+function constructVecAnnotationElement(pos, ast) {
+  const { uint32 } = ast.buffer,
+    pos32 = pos >> 2;
+  return new NodeArray(uint32[pos32], uint32[pos32 + 2], 16, constructAnnotationElement, ast);
 }
 
 function constructU64(pos, ast) {

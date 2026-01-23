@@ -2,6 +2,7 @@
 //!
 //! This module contains AST node definitions for HarmonyOS ArkUI syntax including:
 //! - Struct declarations (`struct ComponentName { ... }`)
+//! - Annotation declarations (`annotation MyAnnotation { ... }`)
 //! - ArkUI component expressions (`Column() { ... }`)
 //!
 //! ArkUI is a declarative UI framework for HarmonyOS applications.
@@ -190,4 +191,70 @@ pub enum ArkUIChild<'a> {
     Expression(Box<'a, Expression<'a>>) = 1,
     /// A statement (for control flow like if, for, etc.)
     Statement(Box<'a, Statement<'a>>) = 2,
+}
+
+/// Annotation Declaration Statement
+///
+/// Represents an ArkTS annotation declaration, which is used to define custom annotations.
+///
+/// ## Example
+/// ```arkts
+/// @interface MyAnnotation {
+///   value: string;
+///   count: number = 10;
+/// }
+/// ```
+#[ast(visit)]
+#[scope(flags = ScopeFlags::StrictMode)]
+#[derive(Debug)]
+#[generate_derive(CloneIn, Dummy, TakeIn, GetSpan, GetSpanMut, ContentEq, ESTree, UnstableAddress)]
+pub struct AnnotationDeclaration<'a> {
+    /// Span
+    pub span: Span,
+    /// Decorators applied to the annotation (not used for @interface syntax).
+    pub decorators: Vec<'a, Decorator<'a>>,
+    /// Annotation identifier, AKA the name
+    pub id: BindingIdentifier<'a>,
+    /// Annotation body containing properties
+    pub body: Box<'a, AnnotationBody<'a>>,
+    /// Whether this annotation is marked with `declare`.
+    #[ts]
+    pub declare: bool,
+    /// Id of the scope created by the [`AnnotationDeclaration`], including
+    /// statements within the [`AnnotationBody`].
+    pub scope_id: Cell<Option<ScopeId>>,
+}
+
+/// Annotation Body
+///
+/// Contains the elements (properties) within an annotation declaration.
+#[ast(visit)]
+#[derive(Debug)]
+#[generate_derive(CloneIn, Dummy, TakeIn, GetSpan, GetSpanMut, ContentEq, ESTree, UnstableAddress)]
+pub struct AnnotationBody<'a> {
+    /// Span
+    pub span: Span,
+    /// Elements within the annotation body
+    pub body: Vec<'a, AnnotationElement<'a>>,
+}
+
+/// Annotation Body Element
+///
+/// Represents an element within an annotation body, which can be:
+/// - Property definitions
+///
+/// ## Example
+/// ```arkts
+/// annotation MyAnnotation {
+///   value: string;      // AnnotationElement::PropertyDefinition
+///   count?: number;     // AnnotationElement::PropertyDefinition
+/// }
+/// ```
+#[ast(visit)]
+#[builder(skip)]
+#[derive(Debug)]
+#[generate_derive(CloneIn, Dummy, TakeIn, GetSpan, GetSpanMut, GetAddress, ContentEq, ESTree)]
+pub enum AnnotationElement<'a> {
+    /// Property definitions
+    PropertyDefinition(Box<'a, PropertyDefinition<'a>>) = 0,
 }

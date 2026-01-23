@@ -1839,12 +1839,56 @@ impl<'a> FormatWrite<'a> for AstNode<'a, StructBody<'a>> {
     }
 }
 
+impl<'a> FormatWrite<'a> for AstNode<'a, AnnotationDeclaration<'a>> {
+    fn write(&self, f: &mut Formatter<'_, 'a>) {
+        let decorators = self.decorators();
+        let id = self.id();
+        let body = self.body();
+        let is_declare = self.declare;
+
+        // Decorators are handled differently depending on the parent context
+        // When the annotation is exported, the export statement handles decorator formatting
+        // to ensure proper placement relative to the export keyword
+        if !matches!(
+            self.parent,
+            AstNodes::ExportNamedDeclaration(_) | AstNodes::ExportDefaultDeclaration(_)
+        ) {
+            // For non-exported annotations, format decorators normally
+            write!(f, decorators);
+        }
+
+        if is_declare {
+            write!(f, ["declare", space()]);
+        }
+
+        write!(f, ["@", "interface", space(), id, space(), body]);
+    }
+}
+
+impl<'a> FormatWrite<'a> for AstNode<'a, AnnotationBody<'a>> {
+    fn write(&self, f: &mut Formatter<'_, 'a>) {
+        write!(f, ["{", block_indent(&self.body()), "}"]);
+    }
+}
+
 impl<'a> Format<'a> for AstNode<'a, Vec<'a, StructElement<'a>>> {
     fn fmt(&self, f: &mut Formatter<'_, 'a>) {
         // Join struct elements with hard line breaks between them
         let mut join = f.join_nodes_with_hardline();
         // Iterate through pairs of consecutive elements to handle semicolons properly
         // Use the same pattern as ClassElement - iter.peek().copied() should work
+        let mut iter = self.iter().peekable();
+        while let Some(element) = iter.next() {
+            join.entry(element.span(), &(element, iter.peek().copied()));
+        }
+    }
+}
+
+impl<'a> Format<'a> for AstNode<'a, Vec<'a, AnnotationElement<'a>>> {
+    fn fmt(&self, f: &mut Formatter<'_, 'a>) {
+        // Join annotation elements with hard line breaks between them
+        let mut join = f.join_nodes_with_hardline();
+        // Iterate through pairs of consecutive elements to handle semicolons properly
         let mut iter = self.iter().peekable();
         while let Some(element) = iter.next() {
             join.entry(element.span(), &(element, iter.peek().copied()));
@@ -1913,6 +1957,61 @@ impl<'a> Format<'a> for FormatStructElementWithSemicolon<'a, '_> {
 impl<'a> Format<'a> for (&AstNode<'a, StructElement<'a>>, Option<&AstNode<'a, StructElement<'a>>>) {
     fn fmt(&self, f: &mut Formatter<'_, 'a>) {
         FormatStructElementWithSemicolon::new(self.0, self.1).fmt(f);
+    }
+}
+
+// Helper struct for formatting AnnotationElement with semicolon handling
+struct FormatAnnotationElementWithSemicolon<'a, 'b> {
+    element: &'b AstNode<'a, AnnotationElement<'a>>,
+    next_element: Option<&'b AstNode<'a, AnnotationElement<'a>>>,
+}
+
+impl<'a, 'b> FormatAnnotationElementWithSemicolon<'a, 'b> {
+    fn new(
+        element: &'b AstNode<'a, AnnotationElement<'a>>,
+        next_element: Option<&'b AstNode<'a, AnnotationElement<'a>>>,
+    ) -> Self {
+        Self { element, next_element }
+    }
+
+    fn needs_semicolon(&self) -> bool {
+        let Self { element, next_element, .. } = self;
+
+        // AnnotationElement currently only has PropertyDefinition variant
+        let AnnotationElement::PropertyDefinition(def) = element.as_ref();
+
+        if def.value.is_none() && def.type_annotation.is_none() {
+            return true;
+        }
+
+        let Some(next_element) = next_element else { return false };
+        matches!(next_element.as_ref(), AnnotationElement::PropertyDefinition(_))
+    }
+}
+
+impl<'a> Format<'a> for FormatAnnotationElementWithSemicolon<'a, '_> {
+    fn fmt(&self, f: &mut Formatter<'_, 'a>) {
+        let needs_semi = matches!(self.element.as_ref(), AnnotationElement::PropertyDefinition(_));
+
+        let needs_semi = needs_semi
+            && match f.options().semicolons {
+                Semicolons::Always => true,
+                Semicolons::AsNeeded => self.needs_semicolon(),
+            };
+
+        if needs_semi {
+            write!(f, [FormatNodeWithoutTrailingComments(self.element), ";"]);
+        } else {
+            self.element.fmt(f);
+        }
+    }
+}
+
+impl<'a> Format<'a>
+    for (&AstNode<'a, AnnotationElement<'a>>, Option<&AstNode<'a, AnnotationElement<'a>>>)
+{
+    fn fmt(&self, f: &mut Formatter<'_, 'a>) {
+        FormatAnnotationElementWithSemicolon::new(self.0, self.1).fmt(f);
     }
 }
 

@@ -1136,7 +1136,9 @@ impl<'a> Declaration<'a> {
                     None
                 }
             }
-            Declaration::TSGlobalDeclaration(_) | Declaration::VariableDeclaration(_) => None,
+            Declaration::TSGlobalDeclaration(_)
+            | Declaration::VariableDeclaration(_)
+            | Declaration::AnnotationDeclaration(_) => None,
         }
     }
 
@@ -1152,6 +1154,7 @@ impl<'a> Declaration<'a> {
             Declaration::TSGlobalDeclaration(decl) => decl.declare,
             Declaration::TSInterfaceDeclaration(decl) => decl.declare,
             Declaration::StructStatement(decl) => decl.declare,
+            Declaration::AnnotationDeclaration(decl) => decl.declare,
             Declaration::TSImportEqualsDeclaration(_) => false,
         }
     }

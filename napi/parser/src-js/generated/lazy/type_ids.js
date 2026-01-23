@@ -190,7 +190,9 @@ export const NODE_TYPE_IDS_MAP = new Map([
   ["StructStatement", 182],
   ["StructBody", 183],
   ["ArkUIComponentExpression", 184],
+  ["AnnotationDeclaration", 185],
+  ["AnnotationBody", 186],
 ]);
 
-export const NODE_TYPES_COUNT = 185;
+export const NODE_TYPES_COUNT = 187;
 export const LEAF_NODE_TYPES_COUNT = 38;
