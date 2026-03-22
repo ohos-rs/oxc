@@ -1,8 +1,8 @@
-commit: 6ef16ca4
+commit: 31b3d950
 
 semantic_babel Summary:
-AST Parsed     : 2221/2221 (100.00%)
-Positive Passed: 2022/2221 (91.04%)
+AST Parsed     : 2232/2232 (100.00%)
+Positive Passed: 2030/2232 (90.95%)
 semantic Error: tasks/coverage/babel/packages/babel-parser/test/fixtures/comments/decorators/decorators-after-export/input.js
 Symbol span mismatch for "C":
 after transform: SymbolId(0): Span { start: 65, end: 66 }
@@ -24,6 +24,17 @@ rebuilt        : SymbolId(2): Span { start: 65, end: 66 }
 Symbol flags mismatch for "_default":
 after transform: SymbolId(3): SymbolFlags(Class)
 rebuilt        : SymbolId(3): SymbolFlags(BlockScopedVariable)
+
+semantic Error: tasks/coverage/babel/packages/babel-parser/test/fixtures/comments/typescript/TSEnumBody-trailing-comma/input.ts
+Bindings mismatch:
+after transform: ScopeId(1): ["A", "E"]
+rebuilt        : ScopeId(1): ["E"]
+Scope flags mismatch:
+after transform: ScopeId(1): ScopeFlags(0x0)
+rebuilt        : ScopeId(1): ScopeFlags(Function)
+Symbol flags mismatch for "E":
+after transform: SymbolId(0): SymbolFlags(RegularEnum)
+rebuilt        : SymbolId(0): SymbolFlags(FunctionScopedVariable)
 
 semantic Error: tasks/coverage/babel/packages/babel-parser/test/fixtures/core/sourcetype-unambiguous/typescript-type-only/input.ts
 Bindings mismatch:
@@ -209,6 +220,11 @@ Unresolved references mismatch:
 after transform: ["v"]
 rebuilt        : []
 
+semantic Error: tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/arrow-function/async-call-in-conditional/input.ts
+Unresolved references mismatch:
+after transform: ["a", "arguments", "async", "b"]
+rebuilt        : ["a", "arguments", "async"]
+
 semantic Error: tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/arrow-function/async-generic-false-positive/input.ts
 Unresolved references mismatch:
 after transform: ["T", "async"]
@@ -331,6 +347,11 @@ Unresolved references mismatch:
 after transform: ["T", "f"]
 rebuilt        : ["f"]
 
+semantic Error: tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/class/extends-expression-assertion/input.ts
+Unresolved references mismatch:
+after transform: ["Array", "B", "D", "T"]
+rebuilt        : ["B"]
+
 semantic Error: tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/class/extends-implements/input.ts
 Unresolved references mismatch:
 after transform: ["T", "X", "f"]
@@ -367,6 +388,7 @@ Function implementation is missing or not immediately following the declaration.
 Function implementation is missing or not immediately following the declaration.
 
 semantic Error: tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/class/modifiers-override/input.ts
+An implementation cannot be declared in ambient contexts.
 Identifier `show` has already been declared
 Identifier `size` has already been declared
 
@@ -649,12 +671,7 @@ rebuilt        : ScopeId(0): []
 
 semantic Error: tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/import/type-asi/input.ts
 Bindings mismatch:
-after transform: ScopeId(0): ["A", "B", "a", "b"]
-rebuilt        : ScopeId(0): []
-
-semantic Error: tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/import/type-equals-require/input.ts
-Bindings mismatch:
-after transform: ScopeId(0): ["a"]
+after transform: ScopeId(0): ["B", "b"]
 rebuilt        : ScopeId(0): []
 
 semantic Error: tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/interface/extends/input.ts
@@ -733,7 +750,9 @@ after transform: SymbolId(1): SymbolFlags(RegularEnum)
 rebuilt        : SymbolId(0): SymbolFlags(BlockScopedVariable)
 
 semantic Error: tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/regression/nested-extends-in-arrow-type-param/input.ts
-Expected `,` or `)` but found `extends`
+Unresolved references mismatch:
+after transform: ["A", "B", "C", "D", "E", "F", "G"]
+rebuilt        : []
 
 semantic Error: tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/regression/nested-extends-in-arrow-type-return/input.ts
 Unresolved references mismatch:
@@ -822,7 +841,7 @@ after transform: ScopeId(0): ["foo"]
 rebuilt        : ScopeId(0): []
 
 semantic Error: tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/scope/namespace-declaration-var-2/input.js
-Namespaces exporting non-const are not supported by Babel. Change to const or see: https://babeljs.io/docs/en/babel-plugin-transform-typescript
+Namespaces exporting non-const are not supported by Oxc. Change to const or see: https://oxc.rs/docs/guide/usage/transformer/typescript.html#partial-namespace-support
 
 semantic Error: tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/scope/redeclaration-class-interface/input.ts
 Bindings mismatch:
@@ -1280,6 +1299,16 @@ Unresolved references mismatch:
 after transform: ["A", "T"]
 rebuilt        : ["A"]
 
+semantic Error: tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/type-arguments/super-type-arguments/input.ts
+Unresolved references mismatch:
+after transform: ["B", "T"]
+rebuilt        : ["B"]
+
+semantic Error: tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/type-arguments/super-type-arguments-comments/input.ts
+Unresolved references mismatch:
+after transform: ["B", "T"]
+rebuilt        : ["B"]
+
 semantic Error: tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/type-arguments/tagged-template/input.ts
 Unresolved references mismatch:
 after transform: ["T", "f"]
@@ -1295,14 +1324,10 @@ Unresolved references mismatch:
 after transform: ["T", "f", "x"]
 rebuilt        : ["f", "x"]
 
-semantic Error: tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/type-arguments-bit-shift-left-like/class-heritage/input.ts
-Expected `{` but found `<<`
-
 semantic Error: tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/type-arguments-bit-shift-left-like/interface-heritage/input.ts
-Expected `{` but found `<<`
-
-semantic Error: tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/type-arguments-bit-shift-left-like/jsx-opening-element/input.tsx
-Unexpected token
+Unresolved references mismatch:
+after transform: ["f"]
+rebuilt        : []
 
 semantic Error: tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/type-only-import-export-specifiers/export-type-only-as-as-keyword/input.ts
 Unresolved references mismatch:
@@ -1377,6 +1402,9 @@ semantic Error: tasks/coverage/babel/packages/babel-parser/test/fixtures/typescr
 Unresolved references mismatch:
 after transform: ["bar"]
 rebuilt        : []
+
+semantic Error: tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/types/literal-string-4/input.ts
+'infer' declarations are only permitted in the 'extends' clause of a conditional type.
 
 semantic Error: tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/types/mapped-as/input.ts
 Unresolved references mismatch:

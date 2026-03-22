@@ -1,4 +1,4 @@
-use std::{borrow::Cow, ops::Deref};
+use std::{borrow::Cow, cell::Cell, ops::Deref};
 
 use oxc_allocator::{Address, UnstableAddress};
 use oxc_ast::{AstKind, ast::*};
@@ -10,6 +10,7 @@ use oxc_diagnostics::OxcDiagnostic;
 use oxc_macros::declare_oxc_lint;
 use oxc_semantic::ScopeFlags;
 use oxc_span::{CompactStr, GetSpan, Ident, Span};
+use oxc_syntax::node::NodeId;
 use rustc_hash::FxHashMap;
 use schemars::JsonSchema;
 use serde::Deserialize;
@@ -23,15 +24,23 @@ use crate::{
 };
 
 fn func_missing_return_type(fn_span: Span) -> OxcDiagnostic {
-    OxcDiagnostic::warn("Missing return type on function").with_label(fn_span)
+    OxcDiagnostic::warn("Missing return type on function")
+        .with_help("Define an explicit return type for the function.")
+        .with_label(fn_span)
 }
 
 fn func_missing_argument_type(param_span: Span) -> OxcDiagnostic {
-    OxcDiagnostic::warn("Missing argument type on function").with_label(param_span)
+    OxcDiagnostic::warn("Missing argument type on function")
+        .with_help("Define an explicit argument type for each argument.")
+        .with_label(param_span)
 }
 
 fn func_argument_is_explicitly_any(param_span: Span) -> OxcDiagnostic {
-    OxcDiagnostic::warn("Argument is explicitly typed as `any`").with_label(param_span)
+    OxcDiagnostic::warn("Argument is explicitly typed as `any`")
+        .with_help(
+            "Avoid explicit `any` at module boundaries; prefer `unknown` and narrow before use.",
+        )
+        .with_label(param_span)
 }
 
 #[derive(Debug, Default, Clone, Deserialize)]
@@ -234,7 +243,10 @@ impl ExplicitModuleBoundaryTypes {
                 Self::run_on_identifier_reference(ctx, id, &mut checker);
             }
             Expression::ArrowFunctionExpression(arrow) => {
-                walk::walk_arrow_function_expression(&mut checker, arrow);
+                checker.visit_arrow_function_expression(arrow);
+            }
+            Expression::FunctionExpression(func) => {
+                checker.visit_function(func, ScopeFlags::Function);
             }
             // const foo = arg => arg;
             // export default [foo];
@@ -331,7 +343,11 @@ impl<'a, 'c> ExplicitTypesChecker<'a, 'c> {
 
     fn with_target_binding(&mut self, binding: Option<&BindingIdentifier<'a>>) -> bool {
         if let Some(id) = binding {
-            self.target_symbol.replace(IdentifierName { name: id.name, span: id.span });
+            self.target_symbol.replace(IdentifierName {
+                span: id.span,
+                node_id: Cell::new(NodeId::DUMMY),
+                name: id.name,
+            });
             true
         } else {
             false
@@ -342,7 +358,11 @@ impl<'a, 'c> ExplicitTypesChecker<'a, 'c> {
             return false;
         };
         if let Some(Cow::Borrowed(name)) = id.static_name() {
-            self.target_symbol.replace(IdentifierName { name: Ident::from(name), span: id.span() });
+            self.target_symbol.replace(IdentifierName {
+                span: id.span(),
+                node_id: Cell::new(NodeId::DUMMY),
+                name: Ident::from(name),
+            });
             true
         } else {
             false
@@ -545,7 +565,9 @@ impl<'a> Visit<'a> for ExplicitTypesChecker<'a, '_> {
 
         match get_typed_inner_expression(init) {
             // we consider these well-typed
-            Expression::TSAsExpression(_) | Expression::TSTypeAssertion(_) => {}
+            Expression::TSAsExpression(_)
+            | Expression::TSTypeAssertion(_)
+            | Expression::TSSatisfiesExpression(_) => {}
             expr if expr.is_literal() => {}
             expr => {
                 self.with_target_binding(Some(binding));
@@ -559,6 +581,16 @@ impl<'a> Visit<'a> for ExplicitTypesChecker<'a, '_> {
         // ignore
     }
 
+    fn visit_new_expression(&mut self, it: &NewExpression<'a>) {
+        // Constructor arguments are implementation details of the exported value,
+        // not part of the module boundary. Still inspect the callee so class
+        // expressions used with `new` continue to be checked.
+        self.visit_expression(&it.callee);
+        if let Some(type_arguments) = &it.type_arguments {
+            self.visit_ts_type_parameter_instantiation(type_arguments);
+        }
+    }
+
     fn visit_jsx_element(&mut self, _it: &JSXElement<'a>) {
         // ignore
     }
@@ -570,8 +602,8 @@ impl<'a> Visit<'a> for ExplicitTypesChecker<'a, '_> {
     }
 
     fn visit_class_element(&mut self, el: &ClassElement<'a>) {
-        // dont check non-public members
-        if el.accessibility().is_some_and(|a| a != TSAccessibility::Public)
+        // only skip private members
+        if el.accessibility().is_some_and(|a| a == TSAccessibility::Private)
             || el.property_key().is_some_and(|key| matches!(key, PropertyKey::PrivateIdentifier(_)))
         {
             return;
@@ -675,6 +707,27 @@ impl<'a> Visit<'a> for ExplicitTypesChecker<'a, '_> {
 
         self.ctx.diagnostic(func_missing_argument_type(it.span));
     }
+
+    fn visit_ts_as_expression(&mut self, it: &TSAsExpression<'a>) {
+        if is_wrapped_function_expression(&it.expression) {
+            return;
+        }
+        walk::walk_ts_as_expression(self, it);
+    }
+
+    fn visit_ts_satisfies_expression(&mut self, it: &TSSatisfiesExpression<'a>) {
+        if is_wrapped_function_expression(&it.expression) {
+            return;
+        }
+        walk::walk_ts_satisfies_expression(self, it);
+    }
+
+    fn visit_ts_type_assertion(&mut self, it: &TSTypeAssertion<'a>) {
+        if is_wrapped_function_expression(&it.expression) {
+            return;
+        }
+        walk::walk_ts_type_assertion(self, it);
+    }
 }
 
 /// like [`Expression::get_inner_expression`], but does not skip over most ts syntax
@@ -684,6 +737,13 @@ fn get_typed_inner_expression<'a, 'e>(expr: &'e Expression<'a>) -> &'e Expressio
         Expression::TSNonNullExpression(expr) => get_typed_inner_expression(&expr.expression),
         _ => expr,
     }
+}
+
+fn is_wrapped_function_expression(expr: &Expression<'_>) -> bool {
+    matches!(
+        get_typed_inner_expression(expr),
+        Expression::ArrowFunctionExpression(_) | Expression::FunctionExpression(_)
+    )
 }
 
 #[cfg(test)]
@@ -795,6 +855,17 @@ mod test {
               }
               private arrow = one => 'arrow';
               private abstract abs(one);
+            }
+            ",
+                None,
+            ),
+            (
+                "
+            export class Test {
+              protected method(one: string): string {
+                return one;
+              }
+              protected arrow = (one: string): string => one;
             }
             ",
                 None,
@@ -1510,6 +1581,38 @@ mod test {
                 "function Test(): void { const _x = () => { }; } function Test2() { return (): void => { }; } export { Test2 };",
                 None,
             ),
+            (
+                "
+            export const widgetSettingsDeserializer = new JsonInterfaceDeserializer<WidgetSettings, SupportedWidget>(
+              raw => raw.widgetSpecificationId as SupportedWidget
+            );
+            ",
+                None,
+            ),
+            (
+                "type F = (x: number) => number; export const f = (x => x) satisfies F;",
+                None,
+            ),
+            (
+                "
+            type F = () => number;
+
+            export const OBJ = {
+              f: (() => 42) satisfies F,
+            };
+            ",
+                None,
+            ),
+            (
+                "
+            type F = () => number;
+
+            export class Class {
+              g = (() => 42) satisfies F;
+            }
+            ",
+                None,
+            ),
         ];
 
         let fail = vec![
@@ -1546,6 +1649,17 @@ mod test {
 
               static d = () => {};
               static e = function () {};
+            }
+            ",
+                None,
+            ),
+            (
+                "
+            export class Test {
+              protected method(one: string) {
+                return one;
+              }
+              protected arrow = (one: string) => one;
             }
             ",
                 None,
@@ -1994,6 +2108,23 @@ mod test {
                 None,
             ),
             ("function App() { return 42; } export default App", None),
+            (
+                "
+            export default ({
+                a,
+                b,
+                c,
+            }: {
+                a: string;
+                b: string;
+                c: string;
+            }) => {
+                return `${a} ${b} ${c}`;
+            };
+            ",
+                None,
+            ),
+            ("export default (function() { return 'test'; });", None),
         ];
 
         Tester::new(

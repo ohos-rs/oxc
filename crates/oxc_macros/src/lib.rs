@@ -1,5 +1,4 @@
 //! Macros for declaring lints and secret scanners.
-#![warn(missing_docs)]
 use proc_macro::TokenStream;
 use syn::parse_macro_input;
 
@@ -71,7 +70,7 @@ mod declare_oxc_lint;
 ///
 /// # Example
 ///
-/// ```
+/// ```rust,ignore
 /// use oxc_macros::declare_oxc_lint;
 ///
 /// #[derive(Debug, Default, Clone)]

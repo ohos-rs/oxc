@@ -7,7 +7,10 @@ use oxc_span::GetSpan;
 
 use crate::{
     ast_nodes::AstNode,
-    formatter::{Format, Formatter},
+    formatter::{
+        Format, Formatter,
+        trivia::{format_leading_comments, format_trailing_comments},
+    },
     parentheses::NeedsParentheses,
     print::{FormatFunctionOptions, FormatJsArrowFunctionExpressionOptions, FormatWrite},
     utils::{suppressed::FormatSuppressedNode, typecast::format_type_cast_comment_node},
@@ -22,6 +25,17 @@ impl<'a> Format<'a> for AstNode<'a, Program<'a>> {
 impl<'a> Format<'a> for AstNode<'a, Expression<'a>> {
     #[inline]
     fn fmt(&self, f: &mut Formatter<'_, 'a>) {
+        if f.comments().has_trailing_suppression_comment(self.span().end) {
+            format_leading_comments(self.span()).fmt(f);
+            FormatSuppressedNode(self.span()).fmt(f);
+            format_trailing_comments(
+                self.parent.span(),
+                self.inner.span(),
+                self.following_span_start,
+            )
+            .fmt(f);
+            return;
+        }
         let allocator = self.allocator;
         let parent = self.parent;
         match self.inner {
@@ -1625,6 +1639,19 @@ impl<'a> Format<'a> for AstNode<'a, ParenthesizedExpression<'a>> {
 impl<'a> Format<'a> for AstNode<'a, Statement<'a>> {
     #[inline]
     fn fmt(&self, f: &mut Formatter<'_, 'a>) {
+        if !matches!(self.inner, Statement::ExpressionStatement(_))
+            && f.comments().has_trailing_suppression_comment(self.span().end)
+        {
+            format_leading_comments(self.span()).fmt(f);
+            FormatSuppressedNode(self.span()).fmt(f);
+            format_trailing_comments(
+                self.parent.span(),
+                self.inner.span(),
+                self.following_span_start,
+            )
+            .fmt(f);
+            return;
+        }
         let allocator = self.allocator;
         let parent = self.parent;
         match self.inner {
@@ -5615,10 +5642,19 @@ impl<'a> Format<'a> for AstNode<'a, TSModuleReference<'a>> {
                     })
                     .fmt(f);
             }
-            it @ match_ts_type_name!(TSModuleReference) => {
-                let inner = it.to_ts_type_name();
+            TSModuleReference::IdentifierReference(inner) => {
                 allocator
-                    .alloc(AstNode::<'a, TSTypeName> {
+                    .alloc(AstNode::<IdentifierReference> {
+                        inner,
+                        parent,
+                        allocator,
+                        following_span_start: self.following_span_start,
+                    })
+                    .fmt(f);
+            }
+            TSModuleReference::QualifiedName(inner) => {
+                allocator
+                    .alloc(AstNode::<TSQualifiedName> {
                         inner,
                         parent,
                         allocator,

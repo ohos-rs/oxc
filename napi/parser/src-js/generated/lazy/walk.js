@@ -204,8 +204,8 @@ function walkProgram(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkOptionHashbang(pos + 48, ast, visitors);
-  walkVecStatement(pos + 96, ast, visitors);
+  walkOptionHashbang(pos + 56, ast, visitors);
+  walkVecStatement(pos + 112, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -388,7 +388,7 @@ function walkArrayExpression(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkVecArrayExpressionElement(pos + 8, ast, visitors);
+  walkVecArrayExpressionElement(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -557,7 +557,7 @@ function walkObjectExpression(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkVecObjectPropertyKind(pos + 8, ast, visitors);
+  walkVecObjectPropertyKind(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -586,8 +586,8 @@ function walkObjectProperty(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkPropertyKey(pos + 8, ast, visitors);
-  walkExpression(pos + 24, ast, visitors);
+  walkPropertyKey(pos + 16, ast, visitors);
+  walkExpression(pos + 32, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -751,8 +751,8 @@ function walkTemplateLiteral(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkVecTemplateElement(pos + 8, ast, visitors);
-  walkVecExpression(pos + 32, ast, visitors);
+  walkVecTemplateElement(pos + 16, ast, visitors);
+  walkVecExpression(pos + 40, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -768,9 +768,9 @@ function walkTaggedTemplateExpression(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkExpression(pos + 8, ast, visitors);
-  walkOptionBoxTSTypeParameterInstantiation(pos + 24, ast, visitors);
-  walkTemplateLiteral(pos + 32, ast, visitors);
+  walkExpression(pos + 16, ast, visitors);
+  walkOptionBoxTSTypeParameterInstantiation(pos + 32, ast, visitors);
+  walkTemplateLiteral(pos + 40, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -791,8 +791,8 @@ function walkComputedMemberExpression(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkExpression(pos + 8, ast, visitors);
-  walkExpression(pos + 24, ast, visitors);
+  walkExpression(pos + 16, ast, visitors);
+  walkExpression(pos + 32, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -808,8 +808,8 @@ function walkStaticMemberExpression(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkExpression(pos + 8, ast, visitors);
-  walkIdentifierName(pos + 24, ast, visitors);
+  walkExpression(pos + 16, ast, visitors);
+  walkIdentifierName(pos + 32, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -825,8 +825,8 @@ function walkPrivateFieldExpression(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkExpression(pos + 8, ast, visitors);
-  walkPrivateIdentifier(pos + 24, ast, visitors);
+  walkExpression(pos + 16, ast, visitors);
+  walkPrivateIdentifier(pos + 32, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -860,9 +860,9 @@ function walkCallExpression(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkExpression(pos + 8, ast, visitors);
-  walkOptionBoxTSTypeParameterInstantiation(pos + 24, ast, visitors);
-  walkVecArgument(pos + 32, ast, visitors);
+  walkExpression(pos + 16, ast, visitors);
+  walkOptionBoxTSTypeParameterInstantiation(pos + 32, ast, visitors);
+  walkVecArgument(pos + 40, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -878,9 +878,9 @@ function walkNewExpression(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkExpression(pos + 8, ast, visitors);
-  walkOptionBoxTSTypeParameterInstantiation(pos + 24, ast, visitors);
-  walkVecArgument(pos + 32, ast, visitors);
+  walkExpression(pos + 16, ast, visitors);
+  walkOptionBoxTSTypeParameterInstantiation(pos + 32, ast, visitors);
+  walkVecArgument(pos + 40, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -896,8 +896,8 @@ function walkMetaProperty(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkIdentifierName(pos + 8, ast, visitors);
-  walkIdentifierName(pos + 32, ast, visitors);
+  walkIdentifierName(pos + 16, ast, visitors);
+  walkIdentifierName(pos + 48, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -913,7 +913,7 @@ function walkSpreadElement(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkExpression(pos + 8, ast, visitors);
+  walkExpression(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -1074,7 +1074,7 @@ function walkUpdateExpression(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkSimpleAssignmentTarget(pos + 8, ast, visitors);
+  walkSimpleAssignmentTarget(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -1090,7 +1090,7 @@ function walkUnaryExpression(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkExpression(pos + 8, ast, visitors);
+  walkExpression(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -1106,8 +1106,8 @@ function walkBinaryExpression(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkExpression(pos + 8, ast, visitors);
-  walkExpression(pos + 24, ast, visitors);
+  walkExpression(pos + 16, ast, visitors);
+  walkExpression(pos + 32, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -1123,8 +1123,8 @@ function walkPrivateInExpression(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkPrivateIdentifier(pos + 8, ast, visitors);
-  walkExpression(pos + 32, ast, visitors);
+  walkPrivateIdentifier(pos + 16, ast, visitors);
+  walkExpression(pos + 48, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -1140,8 +1140,8 @@ function walkLogicalExpression(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkExpression(pos + 8, ast, visitors);
-  walkExpression(pos + 24, ast, visitors);
+  walkExpression(pos + 16, ast, visitors);
+  walkExpression(pos + 32, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -1157,9 +1157,9 @@ function walkConditionalExpression(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkExpression(pos + 8, ast, visitors);
-  walkExpression(pos + 24, ast, visitors);
-  walkExpression(pos + 40, ast, visitors);
+  walkExpression(pos + 16, ast, visitors);
+  walkExpression(pos + 32, ast, visitors);
+  walkExpression(pos + 48, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -1175,8 +1175,8 @@ function walkAssignmentExpression(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkAssignmentTarget(pos + 8, ast, visitors);
-  walkExpression(pos + 24, ast, visitors);
+  walkAssignmentTarget(pos + 16, ast, visitors);
+  walkExpression(pos + 32, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -1260,7 +1260,7 @@ function walkArrayAssignmentTarget(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkVecOptionAssignmentTargetMaybeDefault(pos + 8, ast, visitors);
+  walkVecOptionAssignmentTargetMaybeDefault(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -1276,7 +1276,7 @@ function walkObjectAssignmentTarget(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkVecAssignmentTargetProperty(pos + 8, ast, visitors);
+  walkVecAssignmentTargetProperty(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -1334,8 +1334,8 @@ function walkAssignmentTargetWithDefault(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkAssignmentTarget(pos + 8, ast, visitors);
-  walkExpression(pos + 24, ast, visitors);
+  walkAssignmentTarget(pos + 16, ast, visitors);
+  walkExpression(pos + 32, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -1364,8 +1364,8 @@ function walkAssignmentTargetPropertyIdentifier(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkIdentifierReference(pos + 8, ast, visitors);
-  walkOptionExpression(pos + 40, ast, visitors);
+  walkIdentifierReference(pos + 16, ast, visitors);
+  walkOptionExpression(pos + 48, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -1381,8 +1381,8 @@ function walkAssignmentTargetPropertyProperty(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkPropertyKey(pos + 8, ast, visitors);
-  walkAssignmentTargetMaybeDefault(pos + 24, ast, visitors);
+  walkPropertyKey(pos + 16, ast, visitors);
+  walkAssignmentTargetMaybeDefault(pos + 32, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -1398,7 +1398,7 @@ function walkSequenceExpression(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkVecExpression(pos + 8, ast, visitors);
+  walkVecExpression(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -1419,7 +1419,7 @@ function walkAwaitExpression(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkExpression(pos + 8, ast, visitors);
+  walkExpression(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -1435,7 +1435,7 @@ function walkChainExpression(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkChainElement(pos + 8, ast, visitors);
+  walkChainElement(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -1473,7 +1473,7 @@ function walkParenthesizedExpression(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkExpression(pos + 8, ast, visitors);
+  walkExpression(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -1609,7 +1609,7 @@ function walkBlockStatement(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkVecStatement(pos + 8, ast, visitors);
+  walkVecStatement(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -1665,7 +1665,7 @@ function walkVariableDeclaration(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkVecVariableDeclarator(pos + 8, ast, visitors);
+  walkVecVariableDeclarator(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -1681,8 +1681,8 @@ function walkVariableDeclarator(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkBindingPattern(pos + 8, ast, visitors);
-  walkOptionExpression(pos + 32, ast, visitors);
+  walkBindingPattern(pos + 16, ast, visitors);
+  walkOptionExpression(pos + 40, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -1703,7 +1703,7 @@ function walkExpressionStatement(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkExpression(pos + 8, ast, visitors);
+  walkExpression(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -1719,9 +1719,9 @@ function walkIfStatement(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkExpression(pos + 8, ast, visitors);
-  walkStatement(pos + 24, ast, visitors);
-  walkOptionStatement(pos + 40, ast, visitors);
+  walkExpression(pos + 16, ast, visitors);
+  walkStatement(pos + 32, ast, visitors);
+  walkOptionStatement(pos + 48, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -1737,8 +1737,8 @@ function walkDoWhileStatement(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkStatement(pos + 8, ast, visitors);
-  walkExpression(pos + 24, ast, visitors);
+  walkStatement(pos + 16, ast, visitors);
+  walkExpression(pos + 32, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -1754,8 +1754,8 @@ function walkWhileStatement(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkExpression(pos + 8, ast, visitors);
-  walkStatement(pos + 24, ast, visitors);
+  walkExpression(pos + 16, ast, visitors);
+  walkStatement(pos + 32, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -1771,10 +1771,10 @@ function walkForStatement(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkOptionForStatementInit(pos + 8, ast, visitors);
-  walkOptionExpression(pos + 24, ast, visitors);
-  walkOptionExpression(pos + 40, ast, visitors);
-  walkStatement(pos + 56, ast, visitors);
+  walkOptionForStatementInit(pos + 16, ast, visitors);
+  walkOptionExpression(pos + 32, ast, visitors);
+  walkOptionExpression(pos + 48, ast, visitors);
+  walkStatement(pos + 64, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -1935,9 +1935,9 @@ function walkForInStatement(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkForStatementLeft(pos + 8, ast, visitors);
-  walkExpression(pos + 24, ast, visitors);
-  walkStatement(pos + 40, ast, visitors);
+  walkForStatementLeft(pos + 16, ast, visitors);
+  walkExpression(pos + 32, ast, visitors);
+  walkStatement(pos + 48, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -1993,9 +1993,9 @@ function walkForOfStatement(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkForStatementLeft(pos + 8, ast, visitors);
-  walkExpression(pos + 24, ast, visitors);
-  walkStatement(pos + 40, ast, visitors);
+  walkForStatementLeft(pos + 16, ast, visitors);
+  walkExpression(pos + 32, ast, visitors);
+  walkStatement(pos + 48, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -2011,7 +2011,7 @@ function walkContinueStatement(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkOptionLabelIdentifier(pos + 8, ast, visitors);
+  walkOptionLabelIdentifier(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -2027,7 +2027,7 @@ function walkBreakStatement(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkOptionLabelIdentifier(pos + 8, ast, visitors);
+  walkOptionLabelIdentifier(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -2043,7 +2043,7 @@ function walkReturnStatement(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkOptionExpression(pos + 8, ast, visitors);
+  walkOptionExpression(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -2059,8 +2059,8 @@ function walkWithStatement(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkExpression(pos + 8, ast, visitors);
-  walkStatement(pos + 24, ast, visitors);
+  walkExpression(pos + 16, ast, visitors);
+  walkStatement(pos + 32, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -2076,8 +2076,8 @@ function walkSwitchStatement(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkExpression(pos + 8, ast, visitors);
-  walkVecSwitchCase(pos + 24, ast, visitors);
+  walkExpression(pos + 16, ast, visitors);
+  walkVecSwitchCase(pos + 32, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -2093,8 +2093,8 @@ function walkSwitchCase(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkOptionExpression(pos + 8, ast, visitors);
-  walkVecStatement(pos + 24, ast, visitors);
+  walkOptionExpression(pos + 16, ast, visitors);
+  walkVecStatement(pos + 32, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -2110,8 +2110,8 @@ function walkLabeledStatement(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkLabelIdentifier(pos + 8, ast, visitors);
-  walkStatement(pos + 32, ast, visitors);
+  walkLabelIdentifier(pos + 16, ast, visitors);
+  walkStatement(pos + 48, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -2127,7 +2127,7 @@ function walkThrowStatement(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkExpression(pos + 8, ast, visitors);
+  walkExpression(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -2143,9 +2143,9 @@ function walkTryStatement(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkBoxBlockStatement(pos + 8, ast, visitors);
-  walkOptionBoxCatchClause(pos + 16, ast, visitors);
-  walkOptionBoxBlockStatement(pos + 24, ast, visitors);
+  walkBoxBlockStatement(pos + 16, ast, visitors);
+  walkOptionBoxCatchClause(pos + 24, ast, visitors);
+  walkOptionBoxBlockStatement(pos + 32, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -2161,14 +2161,14 @@ function walkCatchClause(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkOptionCatchParameter(pos + 8, ast, visitors);
-  walkBoxBlockStatement(pos + 40, ast, visitors);
+  walkOptionCatchParameter(pos + 16, ast, visitors);
+  walkBoxBlockStatement(pos + 56, ast, visitors);
 
   if (exit !== null) exit(node);
 }
 
 function walkCatchParameter(pos, ast, visitors) {
-  walkBindingPattern(pos + 8, ast, visitors);
+  walkBindingPattern(pos + 16, ast, visitors);
 }
 
 function walkDebuggerStatement(pos, ast, visitors) {
@@ -2206,8 +2206,8 @@ function walkAssignmentPattern(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkBindingPattern(pos + 8, ast, visitors);
-  walkExpression(pos + 24, ast, visitors);
+  walkBindingPattern(pos + 16, ast, visitors);
+  walkExpression(pos + 32, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -2223,7 +2223,7 @@ function walkObjectPattern(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkVecBindingProperty(pos + 8, ast, visitors);
+  walkVecBindingProperty(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -2239,8 +2239,8 @@ function walkBindingProperty(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkPropertyKey(pos + 8, ast, visitors);
-  walkBindingPattern(pos + 24, ast, visitors);
+  walkPropertyKey(pos + 16, ast, visitors);
+  walkBindingPattern(pos + 32, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -2256,7 +2256,7 @@ function walkArrayPattern(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkVecOptionBindingPattern(pos + 8, ast, visitors);
+  walkVecOptionBindingPattern(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -2272,12 +2272,12 @@ function walkFunction(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkVecDecorator(pos + 8, ast, visitors);
-  walkOptionBindingIdentifier(pos + 32, ast, visitors);
-  walkOptionBoxTSTypeParameterDeclaration(pos + 64, ast, visitors);
-  walkBoxFormalParameters(pos + 80, ast, visitors);
-  walkOptionBoxTSTypeAnnotation(pos + 88, ast, visitors);
-  walkOptionBoxFunctionBody(pos + 96, ast, visitors);
+  walkVecDecorator(pos + 16, ast, visitors);
+  walkOptionBindingIdentifier(pos + 40, ast, visitors);
+  walkOptionBoxTSTypeParameterDeclaration(pos + 72, ast, visitors);
+  walkBoxFormalParameters(pos + 88, ast, visitors);
+  walkOptionBoxTSTypeAnnotation(pos + 96, ast, visitors);
+  walkOptionBoxFunctionBody(pos + 104, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -2293,16 +2293,16 @@ function walkFormalParameters(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkVecFormalParameter(pos + 8, ast, visitors);
+  walkVecFormalParameter(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
 
 function walkFormalParameter(pos, ast, visitors) {
-  walkVecDecorator(pos + 8, ast, visitors);
-  walkBindingPattern(pos + 32, ast, visitors);
-  walkOptionBoxTSTypeAnnotation(pos + 48, ast, visitors);
-  walkOptionBoxExpression(pos + 56, ast, visitors);
+  walkVecDecorator(pos + 16, ast, visitors);
+  walkBindingPattern(pos + 40, ast, visitors);
+  walkOptionBoxTSTypeAnnotation(pos + 56, ast, visitors);
+  walkOptionBoxExpression(pos + 64, ast, visitors);
 }
 
 function walkFunctionBody(pos, ast, visitors) {
@@ -2316,7 +2316,7 @@ function walkFunctionBody(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkVecStatement(pos + 32, ast, visitors);
+  walkVecStatement(pos + 40, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -2332,10 +2332,10 @@ function walkArrowFunctionExpression(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkOptionBoxTSTypeParameterDeclaration(pos + 8, ast, visitors);
-  walkBoxFormalParameters(pos + 16, ast, visitors);
-  walkOptionBoxTSTypeAnnotation(pos + 24, ast, visitors);
-  walkBoxFunctionBody(pos + 32, ast, visitors);
+  walkOptionBoxTSTypeParameterDeclaration(pos + 16, ast, visitors);
+  walkBoxFormalParameters(pos + 24, ast, visitors);
+  walkOptionBoxTSTypeAnnotation(pos + 32, ast, visitors);
+  walkBoxFunctionBody(pos + 40, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -2351,7 +2351,7 @@ function walkYieldExpression(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkOptionExpression(pos + 8, ast, visitors);
+  walkOptionExpression(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -2367,13 +2367,13 @@ function walkClass(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkVecDecorator(pos + 8, ast, visitors);
-  walkOptionBindingIdentifier(pos + 32, ast, visitors);
-  walkOptionBoxTSTypeParameterDeclaration(pos + 64, ast, visitors);
-  walkOptionExpression(pos + 72, ast, visitors);
-  walkOptionBoxTSTypeParameterInstantiation(pos + 88, ast, visitors);
-  walkVecTSClassImplements(pos + 96, ast, visitors);
-  walkBoxClassBody(pos + 120, ast, visitors);
+  walkVecDecorator(pos + 16, ast, visitors);
+  walkOptionBindingIdentifier(pos + 40, ast, visitors);
+  walkOptionBoxTSTypeParameterDeclaration(pos + 72, ast, visitors);
+  walkOptionExpression(pos + 80, ast, visitors);
+  walkOptionBoxTSTypeParameterInstantiation(pos + 96, ast, visitors);
+  walkVecTSClassImplements(pos + 104, ast, visitors);
+  walkBoxClassBody(pos + 128, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -2389,7 +2389,7 @@ function walkClassBody(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkVecClassElement(pos + 8, ast, visitors);
+  walkVecClassElement(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -2427,9 +2427,9 @@ function walkMethodDefinition(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkVecDecorator(pos + 8, ast, visitors);
-  walkPropertyKey(pos + 32, ast, visitors);
-  walkBoxFunction(pos + 48, ast, visitors);
+  walkVecDecorator(pos + 16, ast, visitors);
+  walkPropertyKey(pos + 40, ast, visitors);
+  walkBoxFunction(pos + 56, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -2445,10 +2445,10 @@ function walkPropertyDefinition(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkVecDecorator(pos + 8, ast, visitors);
-  walkPropertyKey(pos + 32, ast, visitors);
-  walkOptionBoxTSTypeAnnotation(pos + 48, ast, visitors);
-  walkOptionExpression(pos + 56, ast, visitors);
+  walkVecDecorator(pos + 16, ast, visitors);
+  walkPropertyKey(pos + 40, ast, visitors);
+  walkOptionBoxTSTypeAnnotation(pos + 56, ast, visitors);
+  walkOptionExpression(pos + 64, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -2469,7 +2469,7 @@ function walkStaticBlock(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkVecStatement(pos + 8, ast, visitors);
+  walkVecStatement(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -2485,10 +2485,10 @@ function walkAccessorProperty(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkVecDecorator(pos + 8, ast, visitors);
-  walkPropertyKey(pos + 32, ast, visitors);
-  walkOptionBoxTSTypeAnnotation(pos + 48, ast, visitors);
-  walkOptionExpression(pos + 56, ast, visitors);
+  walkVecDecorator(pos + 16, ast, visitors);
+  walkPropertyKey(pos + 40, ast, visitors);
+  walkOptionBoxTSTypeAnnotation(pos + 56, ast, visitors);
+  walkOptionExpression(pos + 64, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -2504,8 +2504,8 @@ function walkImportExpression(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkExpression(pos + 8, ast, visitors);
-  walkOptionExpression(pos + 24, ast, visitors);
+  walkExpression(pos + 16, ast, visitors);
+  walkOptionExpression(pos + 32, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -2521,9 +2521,9 @@ function walkImportDeclaration(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkOptionVecImportDeclarationSpecifier(pos + 8, ast, visitors);
-  walkStringLiteral(pos + 32, ast, visitors);
-  walkOptionBoxWithClause(pos + 80, ast, visitors);
+  walkOptionVecImportDeclarationSpecifier(pos + 16, ast, visitors);
+  walkStringLiteral(pos + 40, ast, visitors);
+  walkOptionBoxWithClause(pos + 88, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -2573,8 +2573,8 @@ function walkImportSpecifier(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkModuleExportName(pos + 8, ast, visitors);
-  walkBindingIdentifier(pos + 64, ast, visitors);
+  walkModuleExportName(pos + 16, ast, visitors);
+  walkBindingIdentifier(pos + 72, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -2590,7 +2590,7 @@ function walkImportDefaultSpecifier(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkBindingIdentifier(pos + 8, ast, visitors);
+  walkBindingIdentifier(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -2606,13 +2606,13 @@ function walkImportNamespaceSpecifier(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkBindingIdentifier(pos + 8, ast, visitors);
+  walkBindingIdentifier(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
 
 function walkWithClause(pos, ast, visitors) {
-  walkVecImportAttribute(pos + 8, ast, visitors);
+  walkVecImportAttribute(pos + 16, ast, visitors);
 }
 
 function walkImportAttribute(pos, ast, visitors) {
@@ -2626,8 +2626,8 @@ function walkImportAttribute(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkImportAttributeKey(pos + 8, ast, visitors);
-  walkStringLiteral(pos + 64, ast, visitors);
+  walkImportAttributeKey(pos + 16, ast, visitors);
+  walkStringLiteral(pos + 72, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -2656,11 +2656,11 @@ function walkExportNamedDeclaration(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkVecDecorator(pos + 8, ast, visitors);
-  walkOptionDeclaration(pos + 32, ast, visitors);
-  walkVecExportSpecifier(pos + 48, ast, visitors);
-  walkOptionStringLiteral(pos + 72, ast, visitors);
-  walkOptionBoxWithClause(pos + 120, ast, visitors);
+  walkVecDecorator(pos + 16, ast, visitors);
+  walkOptionDeclaration(pos + 40, ast, visitors);
+  walkVecExportSpecifier(pos + 56, ast, visitors);
+  walkOptionStringLiteral(pos + 80, ast, visitors);
+  walkOptionBoxWithClause(pos + 128, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -2676,7 +2676,7 @@ function walkExportDefaultDeclaration(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkExportDefaultDeclarationKind(pos + 8, ast, visitors);
+  walkExportDefaultDeclarationKind(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -2692,9 +2692,9 @@ function walkExportAllDeclaration(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkOptionModuleExportName(pos + 8, ast, visitors);
-  walkStringLiteral(pos + 64, ast, visitors);
-  walkOptionBoxWithClause(pos + 112, ast, visitors);
+  walkOptionModuleExportName(pos + 16, ast, visitors);
+  walkStringLiteral(pos + 72, ast, visitors);
+  walkOptionBoxWithClause(pos + 120, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -2710,8 +2710,8 @@ function walkExportSpecifier(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkModuleExportName(pos + 8, ast, visitors);
-  walkModuleExportName(pos + 64, ast, visitors);
+  walkModuleExportName(pos + 16, ast, visitors);
+  walkModuleExportName(pos + 72, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -2899,8 +2899,8 @@ function walkV8IntrinsicExpression(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkIdentifierName(pos + 8, ast, visitors);
-  walkVecArgument(pos + 32, ast, visitors);
+  walkIdentifierName(pos + 16, ast, visitors);
+  walkVecArgument(pos + 48, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -2946,9 +2946,9 @@ function walkJSXElement(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkBoxJSXOpeningElement(pos + 8, ast, visitors);
-  walkVecJSXChild(pos + 16, ast, visitors);
-  walkOptionBoxJSXClosingElement(pos + 40, ast, visitors);
+  walkBoxJSXOpeningElement(pos + 16, ast, visitors);
+  walkVecJSXChild(pos + 24, ast, visitors);
+  walkOptionBoxJSXClosingElement(pos + 48, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -2964,9 +2964,9 @@ function walkJSXOpeningElement(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkJSXElementName(pos + 8, ast, visitors);
-  walkOptionBoxTSTypeParameterInstantiation(pos + 24, ast, visitors);
-  walkVecJSXAttributeItem(pos + 32, ast, visitors);
+  walkJSXElementName(pos + 16, ast, visitors);
+  walkOptionBoxTSTypeParameterInstantiation(pos + 32, ast, visitors);
+  walkVecJSXAttributeItem(pos + 40, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -2982,7 +2982,7 @@ function walkJSXClosingElement(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkJSXElementName(pos + 8, ast, visitors);
+  walkJSXElementName(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -2998,9 +2998,9 @@ function walkJSXFragment(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkJSXOpeningFragment(pos + 8, ast, visitors);
-  walkVecJSXChild(pos + 16, ast, visitors);
-  walkJSXClosingFragment(pos + 40, ast, visitors);
+  walkJSXOpeningFragment(pos + 16, ast, visitors);
+  walkVecJSXChild(pos + 32, ast, visitors);
+  walkJSXClosingFragment(pos + 56, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -3048,8 +3048,8 @@ function walkJSXNamespacedName(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkJSXIdentifier(pos + 8, ast, visitors);
-  walkJSXIdentifier(pos + 32, ast, visitors);
+  walkJSXIdentifier(pos + 16, ast, visitors);
+  walkJSXIdentifier(pos + 48, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -3065,8 +3065,8 @@ function walkJSXMemberExpression(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkJSXMemberExpressionObject(pos + 8, ast, visitors);
-  walkJSXIdentifier(pos + 24, ast, visitors);
+  walkJSXMemberExpressionObject(pos + 16, ast, visitors);
+  walkJSXIdentifier(pos + 32, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -3098,7 +3098,7 @@ function walkJSXExpressionContainer(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkJSXExpression(pos + 8, ast, visitors);
+  walkJSXExpression(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -3277,8 +3277,8 @@ function walkJSXAttribute(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkJSXAttributeName(pos + 8, ast, visitors);
-  walkOptionJSXAttributeValue(pos + 24, ast, visitors);
+  walkJSXAttributeName(pos + 16, ast, visitors);
+  walkOptionJSXAttributeValue(pos + 32, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -3294,7 +3294,7 @@ function walkJSXSpreadAttribute(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkExpression(pos + 8, ast, visitors);
+  walkExpression(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -3369,7 +3369,7 @@ function walkJSXSpreadChild(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkExpression(pos + 8, ast, visitors);
+  walkExpression(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -3390,8 +3390,8 @@ function walkTSEnumDeclaration(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkBindingIdentifier(pos + 8, ast, visitors);
-  walkTSEnumBody(pos + 40, ast, visitors);
+  walkBindingIdentifier(pos + 16, ast, visitors);
+  walkTSEnumBody(pos + 48, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -3407,7 +3407,7 @@ function walkTSEnumBody(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkVecTSEnumMember(pos + 8, ast, visitors);
+  walkVecTSEnumMember(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -3423,8 +3423,8 @@ function walkTSEnumMember(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkTSEnumMemberName(pos + 8, ast, visitors);
-  walkOptionExpression(pos + 24, ast, visitors);
+  walkTSEnumMemberName(pos + 16, ast, visitors);
+  walkOptionExpression(pos + 32, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -3459,7 +3459,7 @@ function walkTSTypeAnnotation(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkTSType(pos + 8, ast, visitors);
+  walkTSType(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -3475,7 +3475,7 @@ function walkTSLiteralType(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkTSLiteral(pos + 8, ast, visitors);
+  walkTSLiteral(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -3634,10 +3634,10 @@ function walkTSConditionalType(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkTSType(pos + 8, ast, visitors);
-  walkTSType(pos + 24, ast, visitors);
-  walkTSType(pos + 40, ast, visitors);
-  walkTSType(pos + 56, ast, visitors);
+  walkTSType(pos + 16, ast, visitors);
+  walkTSType(pos + 32, ast, visitors);
+  walkTSType(pos + 48, ast, visitors);
+  walkTSType(pos + 64, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -3653,7 +3653,7 @@ function walkTSUnionType(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkVecTSType(pos + 8, ast, visitors);
+  walkVecTSType(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -3669,7 +3669,7 @@ function walkTSIntersectionType(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkVecTSType(pos + 8, ast, visitors);
+  walkVecTSType(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -3685,7 +3685,7 @@ function walkTSParenthesizedType(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkTSType(pos + 8, ast, visitors);
+  walkTSType(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -3701,7 +3701,7 @@ function walkTSTypeOperator(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkTSType(pos + 8, ast, visitors);
+  walkTSType(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -3717,7 +3717,7 @@ function walkTSArrayType(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkTSType(pos + 8, ast, visitors);
+  walkTSType(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -3733,8 +3733,8 @@ function walkTSIndexedAccessType(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkTSType(pos + 8, ast, visitors);
-  walkTSType(pos + 24, ast, visitors);
+  walkTSType(pos + 16, ast, visitors);
+  walkTSType(pos + 32, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -3750,7 +3750,7 @@ function walkTSTupleType(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkVecTSTupleElement(pos + 8, ast, visitors);
+  walkVecTSTupleElement(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -3766,8 +3766,8 @@ function walkTSNamedTupleMember(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkIdentifierName(pos + 8, ast, visitors);
-  walkTSTupleElement(pos + 32, ast, visitors);
+  walkIdentifierName(pos + 16, ast, visitors);
+  walkTSTupleElement(pos + 48, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -3783,7 +3783,7 @@ function walkTSOptionalType(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkTSType(pos + 8, ast, visitors);
+  walkTSType(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -3799,7 +3799,7 @@ function walkTSRestType(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkTSType(pos + 8, ast, visitors);
+  walkTSType(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -4009,8 +4009,8 @@ function walkTSTypeReference(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkTSTypeName(pos + 8, ast, visitors);
-  walkOptionBoxTSTypeParameterInstantiation(pos + 24, ast, visitors);
+  walkTSTypeName(pos + 16, ast, visitors);
+  walkOptionBoxTSTypeParameterInstantiation(pos + 32, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -4042,8 +4042,8 @@ function walkTSQualifiedName(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkTSTypeName(pos + 8, ast, visitors);
-  walkIdentifierName(pos + 24, ast, visitors);
+  walkTSTypeName(pos + 16, ast, visitors);
+  walkIdentifierName(pos + 32, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -4059,7 +4059,7 @@ function walkTSTypeParameterInstantiation(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkVecTSType(pos + 8, ast, visitors);
+  walkVecTSType(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -4075,9 +4075,9 @@ function walkTSTypeParameter(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkBindingIdentifier(pos + 8, ast, visitors);
-  walkOptionTSType(pos + 40, ast, visitors);
-  walkOptionTSType(pos + 56, ast, visitors);
+  walkBindingIdentifier(pos + 16, ast, visitors);
+  walkOptionTSType(pos + 48, ast, visitors);
+  walkOptionTSType(pos + 64, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -4093,7 +4093,7 @@ function walkTSTypeParameterDeclaration(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkVecTSTypeParameter(pos + 8, ast, visitors);
+  walkVecTSTypeParameter(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -4109,9 +4109,9 @@ function walkTSTypeAliasDeclaration(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkBindingIdentifier(pos + 8, ast, visitors);
-  walkOptionBoxTSTypeParameterDeclaration(pos + 40, ast, visitors);
-  walkTSType(pos + 48, ast, visitors);
+  walkBindingIdentifier(pos + 16, ast, visitors);
+  walkOptionBoxTSTypeParameterDeclaration(pos + 48, ast, visitors);
+  walkTSType(pos + 56, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -4127,8 +4127,8 @@ function walkTSClassImplements(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkTSTypeName(pos + 8, ast, visitors);
-  walkOptionBoxTSTypeParameterInstantiation(pos + 24, ast, visitors);
+  walkTSTypeName(pos + 16, ast, visitors);
+  walkOptionBoxTSTypeParameterInstantiation(pos + 32, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -4144,10 +4144,10 @@ function walkTSInterfaceDeclaration(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkBindingIdentifier(pos + 8, ast, visitors);
-  walkOptionBoxTSTypeParameterDeclaration(pos + 40, ast, visitors);
-  walkVecTSInterfaceHeritage(pos + 48, ast, visitors);
-  walkBoxTSInterfaceBody(pos + 72, ast, visitors);
+  walkBindingIdentifier(pos + 16, ast, visitors);
+  walkOptionBoxTSTypeParameterDeclaration(pos + 48, ast, visitors);
+  walkVecTSInterfaceHeritage(pos + 56, ast, visitors);
+  walkBoxTSInterfaceBody(pos + 80, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -4163,7 +4163,7 @@ function walkTSInterfaceBody(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkVecTSSignature(pos + 8, ast, visitors);
+  walkVecTSSignature(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -4179,8 +4179,8 @@ function walkTSPropertySignature(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkPropertyKey(pos + 8, ast, visitors);
-  walkOptionBoxTSTypeAnnotation(pos + 24, ast, visitors);
+  walkPropertyKey(pos + 16, ast, visitors);
+  walkOptionBoxTSTypeAnnotation(pos + 32, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -4218,8 +4218,8 @@ function walkTSIndexSignature(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkVecTSIndexSignatureName(pos + 8, ast, visitors);
-  walkBoxTSTypeAnnotation(pos + 32, ast, visitors);
+  walkVecTSIndexSignatureName(pos + 16, ast, visitors);
+  walkBoxTSTypeAnnotation(pos + 40, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -4235,9 +4235,9 @@ function walkTSCallSignatureDeclaration(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkOptionBoxTSTypeParameterDeclaration(pos + 8, ast, visitors);
-  walkBoxFormalParameters(pos + 24, ast, visitors);
-  walkOptionBoxTSTypeAnnotation(pos + 32, ast, visitors);
+  walkOptionBoxTSTypeParameterDeclaration(pos + 16, ast, visitors);
+  walkBoxFormalParameters(pos + 32, ast, visitors);
+  walkOptionBoxTSTypeAnnotation(pos + 40, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -4253,10 +4253,10 @@ function walkTSMethodSignature(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkPropertyKey(pos + 8, ast, visitors);
-  walkOptionBoxTSTypeParameterDeclaration(pos + 24, ast, visitors);
-  walkBoxFormalParameters(pos + 40, ast, visitors);
-  walkOptionBoxTSTypeAnnotation(pos + 48, ast, visitors);
+  walkPropertyKey(pos + 16, ast, visitors);
+  walkOptionBoxTSTypeParameterDeclaration(pos + 32, ast, visitors);
+  walkBoxFormalParameters(pos + 48, ast, visitors);
+  walkOptionBoxTSTypeAnnotation(pos + 56, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -4272,9 +4272,9 @@ function walkTSConstructSignatureDeclaration(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkOptionBoxTSTypeParameterDeclaration(pos + 8, ast, visitors);
-  walkBoxFormalParameters(pos + 16, ast, visitors);
-  walkOptionBoxTSTypeAnnotation(pos + 24, ast, visitors);
+  walkOptionBoxTSTypeParameterDeclaration(pos + 16, ast, visitors);
+  walkBoxFormalParameters(pos + 24, ast, visitors);
+  walkOptionBoxTSTypeAnnotation(pos + 32, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -4290,7 +4290,7 @@ function walkTSIndexSignatureName(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkBoxTSTypeAnnotation(pos + 24, ast, visitors);
+  walkBoxTSTypeAnnotation(pos + 32, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -4306,8 +4306,8 @@ function walkTSInterfaceHeritage(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkExpression(pos + 8, ast, visitors);
-  walkOptionBoxTSTypeParameterInstantiation(pos + 24, ast, visitors);
+  walkExpression(pos + 16, ast, visitors);
+  walkOptionBoxTSTypeParameterInstantiation(pos + 32, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -4323,8 +4323,8 @@ function walkTSTypePredicate(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkTSTypePredicateName(pos + 8, ast, visitors);
-  walkOptionBoxTSTypeAnnotation(pos + 24, ast, visitors);
+  walkTSTypePredicateName(pos + 16, ast, visitors);
+  walkOptionBoxTSTypeAnnotation(pos + 40, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -4353,8 +4353,8 @@ function walkTSModuleDeclaration(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkTSModuleDeclarationName(pos + 8, ast, visitors);
-  walkOptionTSModuleDeclarationBody(pos + 64, ast, visitors);
+  walkTSModuleDeclarationName(pos + 16, ast, visitors);
+  walkOptionTSModuleDeclarationBody(pos + 72, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -4396,7 +4396,7 @@ function walkTSGlobalDeclaration(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkTSModuleBlock(pos + 16, ast, visitors);
+  walkTSModuleBlock(pos + 24, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -4412,7 +4412,7 @@ function walkTSModuleBlock(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkVecStatement(pos + 32, ast, visitors);
+  walkVecStatement(pos + 40, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -4428,7 +4428,7 @@ function walkTSTypeLiteral(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkVecTSSignature(pos + 8, ast, visitors);
+  walkVecTSSignature(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -4444,7 +4444,7 @@ function walkTSInferType(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkBoxTSTypeParameter(pos + 8, ast, visitors);
+  walkBoxTSTypeParameter(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -4460,8 +4460,8 @@ function walkTSTypeQuery(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkTSTypeQueryExprName(pos + 8, ast, visitors);
-  walkOptionBoxTSTypeParameterInstantiation(pos + 24, ast, visitors);
+  walkTSTypeQueryExprName(pos + 16, ast, visitors);
+  walkOptionBoxTSTypeParameterInstantiation(pos + 32, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -4496,10 +4496,10 @@ function walkTSImportType(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkStringLiteral(pos + 8, ast, visitors);
-  walkOptionBoxObjectExpression(pos + 56, ast, visitors);
-  walkOptionTSImportTypeQualifier(pos + 64, ast, visitors);
-  walkOptionBoxTSTypeParameterInstantiation(pos + 80, ast, visitors);
+  walkStringLiteral(pos + 16, ast, visitors);
+  walkOptionBoxObjectExpression(pos + 64, ast, visitors);
+  walkOptionTSImportTypeQualifier(pos + 72, ast, visitors);
+  walkOptionBoxTSTypeParameterInstantiation(pos + 88, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -4528,8 +4528,8 @@ function walkTSImportTypeQualifiedName(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkTSImportTypeQualifier(pos + 8, ast, visitors);
-  walkIdentifierName(pos + 24, ast, visitors);
+  walkTSImportTypeQualifier(pos + 16, ast, visitors);
+  walkIdentifierName(pos + 32, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -4545,9 +4545,9 @@ function walkTSFunctionType(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkOptionBoxTSTypeParameterDeclaration(pos + 8, ast, visitors);
-  walkBoxFormalParameters(pos + 24, ast, visitors);
-  walkBoxTSTypeAnnotation(pos + 32, ast, visitors);
+  walkOptionBoxTSTypeParameterDeclaration(pos + 16, ast, visitors);
+  walkBoxFormalParameters(pos + 32, ast, visitors);
+  walkBoxTSTypeAnnotation(pos + 40, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -4563,9 +4563,9 @@ function walkTSConstructorType(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkOptionBoxTSTypeParameterDeclaration(pos + 8, ast, visitors);
-  walkBoxFormalParameters(pos + 16, ast, visitors);
-  walkBoxTSTypeAnnotation(pos + 24, ast, visitors);
+  walkOptionBoxTSTypeParameterDeclaration(pos + 16, ast, visitors);
+  walkBoxFormalParameters(pos + 24, ast, visitors);
+  walkBoxTSTypeAnnotation(pos + 32, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -4581,10 +4581,10 @@ function walkTSMappedType(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkBindingIdentifier(pos + 8, ast, visitors);
-  walkTSType(pos + 40, ast, visitors);
-  walkOptionTSType(pos + 56, ast, visitors);
-  walkOptionTSType(pos + 72, ast, visitors);
+  walkBindingIdentifier(pos + 16, ast, visitors);
+  walkTSType(pos + 48, ast, visitors);
+  walkOptionTSType(pos + 64, ast, visitors);
+  walkOptionTSType(pos + 80, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -4600,8 +4600,8 @@ function walkTSTemplateLiteralType(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkVecTemplateElement(pos + 8, ast, visitors);
-  walkVecTSType(pos + 32, ast, visitors);
+  walkVecTemplateElement(pos + 16, ast, visitors);
+  walkVecTSType(pos + 40, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -4617,8 +4617,8 @@ function walkTSAsExpression(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkExpression(pos + 8, ast, visitors);
-  walkTSType(pos + 24, ast, visitors);
+  walkExpression(pos + 16, ast, visitors);
+  walkTSType(pos + 32, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -4634,8 +4634,8 @@ function walkTSSatisfiesExpression(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkExpression(pos + 8, ast, visitors);
-  walkTSType(pos + 24, ast, visitors);
+  walkExpression(pos + 16, ast, visitors);
+  walkTSType(pos + 32, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -4651,8 +4651,8 @@ function walkTSTypeAssertion(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkTSType(pos + 8, ast, visitors);
-  walkExpression(pos + 24, ast, visitors);
+  walkTSType(pos + 16, ast, visitors);
+  walkExpression(pos + 32, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -4668,8 +4668,8 @@ function walkTSImportEqualsDeclaration(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkBindingIdentifier(pos + 8, ast, visitors);
-  walkTSModuleReference(pos + 40, ast, visitors);
+  walkBindingIdentifier(pos + 16, ast, visitors);
+  walkTSModuleReference(pos + 48, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -4677,16 +4677,13 @@ function walkTSImportEqualsDeclaration(pos, ast, visitors) {
 function walkTSModuleReference(pos, ast, visitors) {
   switch (ast.buffer[pos]) {
     case 0:
-      walkBoxIdentifierReference(pos + 8, ast, visitors);
+      walkBoxTSExternalModuleReference(pos + 8, ast, visitors);
       return;
     case 1:
-      walkBoxTSQualifiedName(pos + 8, ast, visitors);
+      walkBoxIdentifierReference(pos + 8, ast, visitors);
       return;
     case 2:
-      walkBoxThisExpression(pos + 8, ast, visitors);
-      return;
-    case 3:
-      walkBoxTSExternalModuleReference(pos + 8, ast, visitors);
+      walkBoxTSQualifiedName(pos + 8, ast, visitors);
       return;
     default:
       throw new Error(`Unexpected discriminant ${ast.buffer[pos]} for TSModuleReference`);
@@ -4704,7 +4701,7 @@ function walkTSExternalModuleReference(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkStringLiteral(pos + 8, ast, visitors);
+  walkStringLiteral(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -4720,7 +4717,7 @@ function walkTSNonNullExpression(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkExpression(pos + 8, ast, visitors);
+  walkExpression(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -4736,7 +4733,7 @@ function walkDecorator(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkExpression(pos + 8, ast, visitors);
+  walkExpression(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -4752,7 +4749,7 @@ function walkTSExportAssignment(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkExpression(pos + 8, ast, visitors);
+  walkExpression(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -4768,7 +4765,7 @@ function walkTSNamespaceExportDeclaration(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkIdentifierName(pos + 8, ast, visitors);
+  walkIdentifierName(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -4784,8 +4781,8 @@ function walkTSInstantiationExpression(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkExpression(pos + 8, ast, visitors);
-  walkBoxTSTypeParameterInstantiation(pos + 24, ast, visitors);
+  walkExpression(pos + 16, ast, visitors);
+  walkBoxTSTypeParameterInstantiation(pos + 32, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -4801,7 +4798,7 @@ function walkJSDocNullableType(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkTSType(pos + 8, ast, visitors);
+  walkTSType(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -4817,7 +4814,7 @@ function walkJSDocNonNullableType(pos, ast, visitors) {
     if (enter !== null) enter(node);
   }
 
-  walkTSType(pos + 8, ast, visitors);
+  walkTSType(pos + 16, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -4956,7 +4953,7 @@ function walkAnnotationElement(pos, ast, visitors) {
 }
 
 function walkOptionHashbang(pos, ast, visitors) {
-  if (!(ast.buffer.uint32[(pos + 8) >> 2] === 0 && ast.buffer.uint32[(pos + 12) >> 2] === 0))
+  if (!(ast.buffer.uint32[(pos + 16) >> 2] === 0 && ast.buffer.uint32[(pos + 20) >> 2] === 0))
     walkHashbang(pos, ast, visitors);
 }
 
@@ -5143,10 +5140,10 @@ function walkVecArrayExpressionElement(pos, ast, visitors) {
   const { uint32 } = ast.buffer,
     pos32 = pos >> 2;
   pos = uint32[pos32];
-  const endPos = pos + uint32[pos32 + 2] * 16;
+  const endPos = pos + uint32[pos32 + 2] * 24;
   while (pos < endPos) {
     walkArrayExpressionElement(pos, ast, visitors);
-    pos += 16;
+    pos += 24;
   }
 }
 
@@ -5418,7 +5415,7 @@ function walkOptionForStatementInit(pos, ast, visitors) {
 }
 
 function walkOptionLabelIdentifier(pos, ast, visitors) {
-  if (!(ast.buffer.uint32[(pos + 8) >> 2] === 0 && ast.buffer.uint32[(pos + 12) >> 2] === 0))
+  if (!(ast.buffer.uint32[(pos + 16) >> 2] === 0 && ast.buffer.uint32[(pos + 20) >> 2] === 0))
     walkLabelIdentifier(pos, ast, visitors);
 }
 
@@ -5426,10 +5423,10 @@ function walkVecSwitchCase(pos, ast, visitors) {
   const { uint32 } = ast.buffer,
     pos32 = pos >> 2;
   pos = uint32[pos32];
-  const endPos = pos + uint32[pos32 + 2] * 48;
+  const endPos = pos + uint32[pos32 + 2] * 56;
   while (pos < endPos) {
     walkSwitchCase(pos, ast, visitors);
-    pos += 48;
+    pos += 56;
   }
 }
 
@@ -5448,7 +5445,7 @@ function walkOptionBoxBlockStatement(pos, ast, visitors) {
 }
 
 function walkOptionCatchParameter(pos, ast, visitors) {
-  if (!(ast.buffer[pos + 8] === 4)) walkCatchParameter(pos, ast, visitors);
+  if (!(ast.buffer[pos + 16] === 4)) walkCatchParameter(pos, ast, visitors);
 }
 
 function walkBoxBindingIdentifier(pos, ast, visitors) {
@@ -5497,15 +5494,15 @@ function walkVecDecorator(pos, ast, visitors) {
   const { uint32 } = ast.buffer,
     pos32 = pos >> 2;
   pos = uint32[pos32];
-  const endPos = pos + uint32[pos32 + 2] * 24;
+  const endPos = pos + uint32[pos32 + 2] * 32;
   while (pos < endPos) {
     walkDecorator(pos, ast, visitors);
-    pos += 24;
+    pos += 32;
   }
 }
 
 function walkOptionBindingIdentifier(pos, ast, visitors) {
-  if (!(ast.buffer.uint32[(pos + 8) >> 2] === 0 && ast.buffer.uint32[(pos + 12) >> 2] === 0))
+  if (!(ast.buffer.uint32[(pos + 16) >> 2] === 0 && ast.buffer.uint32[(pos + 20) >> 2] === 0))
     walkBindingIdentifier(pos, ast, visitors);
 }
 
@@ -5555,10 +5552,10 @@ function walkVecTSClassImplements(pos, ast, visitors) {
   const { uint32 } = ast.buffer,
     pos32 = pos >> 2;
   pos = uint32[pos32];
-  const endPos = pos + uint32[pos32 + 2] * 32;
+  const endPos = pos + uint32[pos32 + 2] * 40;
   while (pos < endPos) {
     walkTSClassImplements(pos, ast, visitors);
-    pos += 32;
+    pos += 40;
   }
 }
 
@@ -5666,10 +5663,10 @@ function walkVecImportAttribute(pos, ast, visitors) {
   const { uint32 } = ast.buffer,
     pos32 = pos >> 2;
   pos = uint32[pos32];
-  const endPos = pos + uint32[pos32 + 2] * 112;
+  const endPos = pos + uint32[pos32 + 2] * 120;
   while (pos < endPos) {
     walkImportAttribute(pos, ast, visitors);
-    pos += 112;
+    pos += 120;
   }
 }
 
@@ -5689,7 +5686,7 @@ function walkVecExportSpecifier(pos, ast, visitors) {
 }
 
 function walkOptionStringLiteral(pos, ast, visitors) {
-  if (!(ast.buffer[pos + 40] === 2)) walkStringLiteral(pos, ast, visitors);
+  if (!(ast.buffer[pos + 12] === 2)) walkStringLiteral(pos, ast, visitors);
 }
 
 function walkOptionModuleExportName(pos, ast, visitors) {
@@ -5771,10 +5768,10 @@ function walkVecTSEnumMember(pos, ast, visitors) {
   const { uint32 } = ast.buffer,
     pos32 = pos >> 2;
   pos = uint32[pos32];
-  const endPos = pos + uint32[pos32 + 2] * 40;
+  const endPos = pos + uint32[pos32 + 2] * 48;
   while (pos < endPos) {
     walkTSEnumMember(pos, ast, visitors);
-    pos += 40;
+    pos += 48;
   }
 }
 
@@ -5979,10 +5976,10 @@ function walkVecTSInterfaceHeritage(pos, ast, visitors) {
   const { uint32 } = ast.buffer,
     pos32 = pos >> 2;
   pos = uint32[pos32];
-  const endPos = pos + uint32[pos32 + 2] * 32;
+  const endPos = pos + uint32[pos32 + 2] * 40;
   while (pos < endPos) {
     walkTSInterfaceHeritage(pos, ast, visitors);
-    pos += 32;
+    pos += 40;
   }
 }
 
@@ -6021,10 +6018,10 @@ function walkVecTSIndexSignatureName(pos, ast, visitors) {
   const { uint32 } = ast.buffer,
     pos32 = pos >> 2;
   pos = uint32[pos32];
-  const endPos = pos + uint32[pos32 + 2] * 32;
+  const endPos = pos + uint32[pos32 + 2] * 40;
   while (pos < endPos) {
     walkTSIndexSignatureName(pos, ast, visitors);
-    pos += 32;
+    pos += 40;
   }
 }
 

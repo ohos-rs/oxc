@@ -2149,7 +2149,6 @@ impl GetSpan for TSModuleReference<'_> {
             Self::ExternalModuleReference(it) => GetSpan::span(&**it),
             Self::IdentifierReference(it) => GetSpan::span(&**it),
             Self::QualifiedName(it) => GetSpan::span(&**it),
-            Self::ThisExpression(it) => GetSpan::span(&**it),
         }
     }
 }

@@ -27,7 +27,6 @@ static TS_ERROR_CODES: Lazy<Regex> =
 // Returns matches for @ts-ignore or @ts-expect-error in comments (// or /* */)
 static TS_IGNORE_PATTERN: Lazy<Regex> = lazy_regex!(r"(?://|/\*).*?(@ts-ignore|@ts-expect-error)");
 
-#[expect(unused)]
 #[derive(Debug)]
 pub struct CompilerSettings {
     pub modules: Vec<String>,
@@ -43,6 +42,7 @@ pub struct CompilerSettings {
     pub preserve_const_enums: Vec<bool>,
     pub use_define_for_class_fields: Vec<bool>,
     pub experimental_decorators: Vec<bool>,
+    pub module_detection: Vec<String>, // "auto", "legacy", "force"
 }
 
 impl CompilerSettings {
@@ -82,6 +82,7 @@ impl CompilerSettings {
                 .filter(|&v| v == "*")
                 .map(|_| vec![true, false])
                 .unwrap_or_default(),
+            module_detection: Self::split_value_options(options.get("moduledetection")),
         }
     }
 
@@ -167,8 +168,8 @@ impl TestCaseContent {
         });
 
         let settings = CompilerSettings::new(&current_file_options);
+        let package_json_types = Self::collect_package_json_types(&test_unit_data);
 
-        let is_module = test_unit_data.len() > 1;
         let test_unit_data = test_unit_data
             .into_iter()
             // Some snapshot units contain an invalid file with just a message, not even a comment!
@@ -193,7 +194,7 @@ impl TestCaseContent {
             })
             .filter_map(|mut unit| {
                 let mut source_type = Self::get_source_type(Path::new(&unit.name), &settings)?;
-                if is_module {
+                if Self::is_forced_module(&settings, &unit.name, &package_json_types) {
                     source_type = source_type.with_module(true);
                 }
                 unit.source_type = source_type;
@@ -228,6 +229,97 @@ impl TestCaseContent {
             .with_jsx(!options.jsx.is_empty())
             .with_unambiguous(true);
         Some(source_type)
+    }
+
+    /// Should this file be forced into module mode?
+    ///
+    /// Matches TypeScript's `moduleDetection` behavior:
+    /// * `force` — every non-declaration file is a module
+    /// * `legacy` — only files with import/export are modules (handled by the parser's unambiguous mode)
+    /// * `auto` (default) — like legacy, plus JSX-with-react-jsx and package.json `"type":"module"` checks
+    ///
+    /// When `moduleDetection` is unset, node-style modules (`node16`..`nodenext`) default to `force`.
+    /// <https://github.com/microsoft/TypeScript/blob/6f06eb1b27a6495b209e8be79036f3b2ea92cd0b/src/compiler/utilities.ts#L9035-L9047>
+    fn is_forced_module(
+        settings: &CompilerSettings,
+        filename: &str,
+        package_json_types: &FxHashMap<String, Option<String>>,
+    ) -> bool {
+        if filename.ends_with(".d.ts")
+            || filename.ends_with(".d.mts")
+            || filename.ends_with(".d.cts")
+        {
+            return false;
+        }
+
+        let is_node_esm = settings
+            .modules
+            .iter()
+            .any(|m| matches!(m.as_str(), "node16" | "node18" | "node20" | "nodenext"));
+
+        match settings.module_detection.first().map(String::as_str) {
+            Some("force") => true,
+            Some("legacy") => false,
+            // Unset: node-style modules default to "force", everything else to "auto"
+            None if is_node_esm => true,
+            // "auto" (explicit or default fallthrough)
+            _ => {
+                let ext = Path::new(filename).extension();
+                let is_jsx = ext.is_some_and(|e| {
+                    e.eq_ignore_ascii_case("jsx") || e.eq_ignore_ascii_case("tsx")
+                });
+                // react-jsx JSX files are always modules
+                if is_jsx && settings.jsx.first().is_some_and(|j| j == "react-jsx") {
+                    return true;
+                }
+                // Node-style modules: nearest package.json "type":"module" → module
+                is_node_esm
+                    && Self::find_package_type(filename, package_json_types) == Some("module")
+            }
+        }
+    }
+
+    /// Walk ancestor directories of `filename` looking for a `package.json`,
+    /// and return its `"type"` field value (e.g. `Some("module")`).
+    fn find_package_type<'a>(
+        filename: &str,
+        package_json_types: &'a FxHashMap<String, Option<String>>,
+    ) -> Option<&'a str> {
+        let mut dir = Path::new(filename)
+            .parent()
+            .map(|p| p.to_string_lossy().into_owned())
+            .unwrap_or_default();
+        loop {
+            if let Some(type_value) = package_json_types.get(&dir) {
+                return type_value.as_deref();
+            }
+            match dir.rfind('/') {
+                Some(pos) => dir.truncate(pos),
+                None if !dir.is_empty() => dir.clear(),
+                None => break,
+            }
+        }
+        None
+    }
+
+    /// Collect `"type"` fields from all `package.json` test units.
+    /// Returns a map from directory path to the `"type"` value.
+    fn collect_package_json_types(units: &[TestUnitData]) -> FxHashMap<String, Option<String>> {
+        units
+            .iter()
+            .filter(|unit| Path::new(&unit.name).file_name().is_some_and(|f| f == "package.json"))
+            .map(|unit| {
+                let dir = Path::new(&unit.name)
+                    .parent()
+                    .map(|p| p.to_string_lossy().into_owned())
+                    .unwrap_or_default();
+                let type_value: Option<String> =
+                    serde_json::from_str::<serde_json::Value>(&unit.content)
+                        .ok()
+                        .and_then(|v| v.get("type")?.as_str().map(String::from));
+                (dir, type_value)
+            })
+            .collect()
     }
 
     // TypeScript error files can be:
@@ -298,7 +390,11 @@ impl TestCaseContent {
     }
 }
 
-#[derive(Debug, Clone, Default)]
+// ================================
+// Baseline types for transpile tests
+// ================================
+
+#[derive(Debug, Default)]
 pub struct Baseline {
     pub name: String,
     pub original: String,
@@ -310,7 +406,7 @@ pub struct Baseline {
 impl Baseline {
     pub fn print_oxc(&mut self) {
         let allocator = Allocator::default();
-        let source_type = SourceType::from_path(Path::new(&self.name)).unwrap();
+        let source_type = SourceType::from_path(Path::new(&self.name)).unwrap_or_default();
         let ret = Parser::new(&allocator, &self.original, source_type).parse();
         let printed = Codegen::new().build(&ret.program).code;
         self.oxc_printed = printed;
@@ -332,16 +428,15 @@ pub struct BaselineFile {
 
 impl BaselineFile {
     pub fn print(&self) -> String {
-        self.files.iter().map(|f| f.oxc_printed.clone()).collect::<Vec<_>>().join("\n")
+        self.files.iter().map(|f| f.oxc_printed.as_str()).collect::<Vec<_>>().join("\n")
     }
 
     pub fn snapshot(&self) -> String {
         self.files
             .iter()
             .map(|f| {
-                let printed = f.oxc_printed.clone();
                 let diagnostics = f.get_oxc_diagnostic();
-                format!("//// [{}] ////\n{}{}", f.name, printed, diagnostics)
+                format!("//// [{}] ////\n{}{}", f.name, f.oxc_printed, diagnostics)
             })
             .collect::<Vec<_>>()
             .join("\n")
@@ -366,7 +461,7 @@ impl BaselineFile {
                 }
                 continue;
             }
-            let last = files.last_mut().unwrap();
+            let Some(last) = files.last_mut() else { continue };
             if is_diagnostic {
                 // Skip details of the diagnostic
                 if line.is_empty() {
@@ -382,6 +477,7 @@ impl BaselineFile {
             }
         }
 
+        // Regenerate content through oxc's codegen for consistent formatting
         for file in &mut files {
             file.print_oxc();
         }

@@ -10,14 +10,14 @@ use oxc_ast::{NONE, ast::*};
 use oxc_span::Span;
 
 use crate::{
-    Context, ParserImpl, StatementContext, diagnostics,
+    Context, ParserConfig as Config, ParserImpl, StatementContext, diagnostics,
     lexer::Kind,
     modifiers::{ModifierFlags, ModifierKind, Modifiers},
 };
 
 use super::FunctionKind;
 
-impl<'a> ParserImpl<'a> {
+impl<'a, C: Config> ParserImpl<'a, C> {
     /// Parse a struct statement
     ///
     /// ## Example

@@ -82,7 +82,7 @@ fn diff(before: &StatsCollector, after: &StatsCollector) -> Option<String> {
 
         // Sometimes, formatter trims trailing whitespaces.
         // e.g.
-        // ```
+        // ```text
         // // if extra whitespaces here ->
         // ```
         // (rustfmt also removes...)
@@ -90,7 +90,7 @@ fn diff(before: &StatsCollector, after: &StatsCollector) -> Option<String> {
         //
         // Sometimes, line comments are merged.
         // e.g.
-        // ```
+        // ```text
         // for (x
         // in //a
         // y); //b
@@ -229,7 +229,7 @@ impl StatsCollector {
 
         // `JSXText` with only whitespace can be safely removed.
         // e.g.
-        // ```
+        // ```text
         // return (
         //   <div>
         //     {children}
@@ -263,6 +263,12 @@ impl StatsCollector {
         }
 
         let count_key = match kind {
+            // `TemplateLiteral` content may change when formatted as embedded template (html, css, etc.).
+            // The number of quasis is already tracked via `TemplateElement` nodes,
+            // so we only need to count `TemplateLiteral` instances without content.
+            AstKind::TemplateLiteral(t) => {
+                format!("TEMPLATE_LITERAL({},{})", t.quasis.len(), t.expressions.len())
+            }
             // `JSXText` may contain redundant whitespaces.
             // e.g. `<p>World    </p>` -> `<p>World </p>`
             // Redundant whitespaces can be truncated even if they are inside.

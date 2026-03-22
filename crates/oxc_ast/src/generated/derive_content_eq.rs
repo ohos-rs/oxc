@@ -1127,7 +1127,8 @@ impl ContentEq for FormalParameterKind {
 
 impl ContentEq for FormalParameterRest<'_> {
     fn content_eq(&self, other: &Self) -> bool {
-        ContentEq::content_eq(&self.rest, &other.rest)
+        ContentEq::content_eq(&self.decorators, &other.decorators)
+            && ContentEq::content_eq(&self.rest, &other.rest)
             && ContentEq::content_eq(&self.type_annotation, &other.type_annotation)
     }
 }
@@ -2489,7 +2490,6 @@ impl ContentEq for TSModuleReference<'_> {
             (Self::ExternalModuleReference(a), Self::ExternalModuleReference(b)) => a.content_eq(b),
             (Self::IdentifierReference(a), Self::IdentifierReference(b)) => a.content_eq(b),
             (Self::QualifiedName(a), Self::QualifiedName(b)) => a.content_eq(b),
-            (Self::ThisExpression(a), Self::ThisExpression(b)) => a.content_eq(b),
             _ => false,
         }
     }
@@ -2555,6 +2555,34 @@ impl ContentEq for JSDocNonNullableType<'_> {
 impl ContentEq for JSDocUnknownType {
     fn content_eq(&self, _: &Self) -> bool {
         true
+    }
+}
+
+impl ContentEq for CommentKind {
+    fn content_eq(&self, other: &Self) -> bool {
+        self == other
+    }
+}
+
+impl ContentEq for CommentPosition {
+    fn content_eq(&self, other: &Self) -> bool {
+        self == other
+    }
+}
+
+impl ContentEq for CommentContent {
+    fn content_eq(&self, other: &Self) -> bool {
+        self == other
+    }
+}
+
+impl ContentEq for Comment {
+    fn content_eq(&self, other: &Self) -> bool {
+        ContentEq::content_eq(&self.attached_to, &other.attached_to)
+            && ContentEq::content_eq(&self.kind, &other.kind)
+            && ContentEq::content_eq(&self.position, &other.position)
+            && ContentEq::content_eq(&self.newlines, &other.newlines)
+            && ContentEq::content_eq(&self.content, &other.content)
     }
 }
 
@@ -2626,33 +2654,5 @@ impl ContentEq for AnnotationElement<'_> {
             (Self::PropertyDefinition(a), Self::PropertyDefinition(b)) => a.content_eq(b),
             _ => false,
         }
-    }
-}
-
-impl ContentEq for CommentKind {
-    fn content_eq(&self, other: &Self) -> bool {
-        self == other
-    }
-}
-
-impl ContentEq for CommentPosition {
-    fn content_eq(&self, other: &Self) -> bool {
-        self == other
-    }
-}
-
-impl ContentEq for CommentContent {
-    fn content_eq(&self, other: &Self) -> bool {
-        self == other
-    }
-}
-
-impl ContentEq for Comment {
-    fn content_eq(&self, other: &Self) -> bool {
-        ContentEq::content_eq(&self.attached_to, &other.attached_to)
-            && ContentEq::content_eq(&self.kind, &other.kind)
-            && ContentEq::content_eq(&self.position, &other.position)
-            && ContentEq::content_eq(&self.newlines, &other.newlines)
-            && ContentEq::content_eq(&self.content, &other.content)
     }
 }

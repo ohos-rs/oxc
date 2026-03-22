@@ -1,6 +1,6 @@
 import assert from "node:assert";
 
-import type { Plugin, Rule } from "#oxlint";
+import type { Plugin, Rule } from "#oxlint/plugins";
 
 const STANDARD_TOKEN_KEYS = new Set(["type", "value", "start", "end", "range", "loc"]);
 
@@ -12,6 +12,9 @@ const rule: Rule = {
     const { tokensAndComments } = sourceCode;
 
     const { ast } = sourceCode;
+
+    // Ensure that `bom.js` does have a BOM (guarding against it being accidentally removed by e.g. formatting)
+    if (context.filename.endsWith("bom.js")) assert(sourceCode.hasBOM);
 
     for (const tokenOrComment of tokensAndComments) {
       // Check getting `range` / `loc` properties twice results in same objects
@@ -84,6 +87,15 @@ const rule: Rule = {
       }
 
       context.report({ message, node: token });
+    }
+
+    // Check `JSON.stringify` on tokens includes `loc`
+    const firstToken = ast.tokens[0];
+    if (firstToken) {
+      context.report({
+        message: `Token JSON.stringify:\n${JSON.stringify(firstToken, null, 2)}`,
+        node: firstToken,
+      });
     }
 
     return {};

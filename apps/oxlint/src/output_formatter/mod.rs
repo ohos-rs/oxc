@@ -15,6 +15,7 @@ use checkstyle::CheckStyleOutputFormatter;
 use github::GithubOutputFormatter;
 use gitlab::GitlabOutputFormatter;
 use junit::JUnitOutputFormatter;
+use rustc_hash::FxHashSet;
 use stylish::StylishOutputFormatter;
 use unix::UnixOutputFormatter;
 
@@ -72,7 +73,7 @@ pub struct LintCommandInfo {
 /// The Formatter is then managed by [`OutputFormatter`].
 trait InternalFormatter {
     /// Print all available rules by oxlint
-    fn all_rules(&self) -> Option<String> {
+    fn all_rules(&self, _enabled_rules: FxHashSet<&str>) -> Option<String> {
         None
     }
 
@@ -110,8 +111,8 @@ impl OutputFormatter {
 
     /// Print all available rules by oxlint
     /// See [`InternalFormatter::all_rules`] for more details.
-    pub fn all_rules(&self) -> Option<String> {
-        self.internal.all_rules()
+    pub fn all_rules(&self, enabled_rules: FxHashSet<&str>) -> Option<String> {
+        self.internal.all_rules(enabled_rules)
     }
 
     /// At the end of the Lint command we may output extra information.
@@ -130,7 +131,7 @@ impl OutputFormatter {
 mod test {
     use crate::tester::Tester;
 
-    const TEST_CWD: &str = "fixtures/output_formatter_diagnostic";
+    const TEST_CWD: &str = "fixtures/cli/output_formatter_diagnostic";
 
     #[test]
     fn test_output_formatter_diagnostic_formats() {
@@ -175,6 +176,33 @@ mod test {
 
         for fmt in &formats {
             let args_vec = [format!("--format={fmt}"), "ok.js".to_string()];
+            let args_ref: Vec<&str> = args_vec.iter().map(std::string::String::as_str).collect();
+            Tester::new().with_cwd(TEST_CWD.into()).test_and_snapshot(&args_ref);
+        }
+    }
+
+    // Regression test for https://github.com/oxc-project/oxc/issues/19588
+    // Parser errors with colons in their message (e.g. 'Expected `;` but found `:`')
+    // were being truncated to just the character after the first colon.
+    #[test]
+    fn test_output_formatter_diagnostic_formats_with_parser_error() {
+        let mut formats: Vec<&str> =
+            vec!["checkstyle", "default", "github", "junit", "stylish", "unix"];
+
+        // disabled for windows
+        // json will output the offset which will be different for windows
+        // when there are multiple lines (`\r\n` vs `\n`)
+        if cfg!(not(target_os = "windows")) {
+            formats.push("json");
+        }
+
+        // Exclude `gitlab` on big-endian systems because fingerprints differ there
+        if cfg!(not(target_endian = "big")) {
+            formats.push("gitlab");
+        }
+
+        for fmt in &formats {
+            let args_vec = [format!("--format={fmt}"), "parser-error.js".to_string()];
             let args_ref: Vec<&str> = args_vec.iter().map(std::string::String::as_str).collect();
             Tester::new().with_cwd(TEST_CWD.into()).test_and_snapshot(&args_ref);
         }

@@ -384,7 +384,7 @@ impl<'a> ModuleRecordBuilder<'a> {
         self.module_record.has_module_syntax = true;
     }
 
-    pub fn found_ts_export(&mut self) {
+    pub fn set_module_syntax(&mut self) {
         self.module_record.has_module_syntax = true;
     }
 }

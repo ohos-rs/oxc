@@ -1,5 +1,3 @@
 transformer_misc Summary:
-AST Parsed     : 64/64 (100.00%)
-Positive Passed: 63/64 (98.44%)
-Mismatch: tasks/coverage/misc/pass/babel-16776-s.js
-
+AST Parsed     : 65/65 (100.00%)
+Positive Passed: 65/65 (100.00%)

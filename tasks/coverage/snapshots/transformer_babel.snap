@@ -1,7 +1,9 @@
-commit: 6ef16ca4
+commit: 31b3d950
 
 transformer_babel Summary:
-AST Parsed     : 2221/2221 (100.00%)
-Positive Passed: 2220/2221 (99.95%)
+AST Parsed     : 2232/2232 (100.00%)
+Positive Passed: 2230/2232 (99.91%)
 Mismatch: tasks/coverage/babel/packages/babel-parser/test/fixtures/core/opts/allowYieldOutsideFunction-true-2/input.js
+
+Mismatch: tasks/coverage/babel/packages/babel-parser/test/fixtures/es2022/class-properties/new-target/input.js
 

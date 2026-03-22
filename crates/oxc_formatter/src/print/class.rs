@@ -151,6 +151,9 @@ impl<'a> FormatWrite<'a> for AstNode<'a, MethodDefinition<'a>> {
 
             if let Some(body) = &value.body() {
                 write!(f, body);
+            } else {
+                let comments = f.context().comments().comments_before(self.span.end);
+                write!(f, FormatTrailingComments::Comments(comments));
             }
             if self.r#type().is_abstract()
                 || matches!(value.r#type, FunctionType::TSEmptyBodyFunctionExpression)
@@ -199,34 +202,7 @@ impl<'a> FormatWrite<'a> for AstNode<'a, StaticBlock<'a>> {
 
 impl<'a> FormatWrite<'a> for AstNode<'a, AccessorProperty<'a>> {
     fn write(&self, f: &mut Formatter<'_, 'a>) {
-        write!(f, [self.decorators()]);
-
-        if let Some(accessibility) = self.accessibility() {
-            write!(f, [accessibility.as_str(), space()]);
-        }
-        if self.r#static {
-            write!(f, ["static", space()]);
-        }
-        if self.r#type.is_abstract() {
-            write!(f, ["abstract", space()]);
-        }
-        if self.r#override {
-            write!(f, ["override", space()]);
-        }
-        write!(f, ["accessor", space()]);
-        if self.computed {
-            write!(f, "[");
-        }
-        write!(f, self.key());
-        if self.computed {
-            write!(f, "]");
-        }
-        if let Some(type_annotation) = &self.type_annotation() {
-            write!(f, type_annotation);
-        }
-        if let Some(value) = &self.value() {
-            write!(f, [space(), "=", space(), value]);
-        }
+        AssignmentLike::AccessorProperty(self).fmt(f);
     }
 }
 
@@ -445,12 +421,12 @@ impl<'a> Format<'a> for FormatClass<'a, '_> {
                 });
 
                 let format_extends =
-                    format_with(|f| write!(f, [space(), "extends", space(), &format_super]));
+                    format_with(|f| write!(f, ["extends", space(), &format_super]));
 
                 if group_mode {
                     write!(f, [soft_line_break_or_space(), group(&format_extends)]);
                 } else {
-                    write!(f, format_extends);
+                    write!(f, [space(), format_extends]);
                 }
             }
 
@@ -646,7 +622,10 @@ impl<'a> Format<'a> for FormatClassElementWithSemicolon<'a, '_> {
             && match f.options().semicolons {
                 Semicolons::Always => true,
                 Semicolons::AsNeeded => self.needs_semicolon(),
-            };
+            }
+            // Don't add semicolon if the element is suppressed (has `oxfmt-ignore`),
+            // because the suppressed source text already includes the original semicolon.
+            && !f.comments().is_suppressed(self.element.span().start);
 
         if needs_semi {
             write!(f, [FormatNodeWithoutTrailingComments(self.element), ";"]);

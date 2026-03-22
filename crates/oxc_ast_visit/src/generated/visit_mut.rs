@@ -629,8 +629,8 @@ pub trait VisitMut<'a>: Sized {
     }
 
     #[inline]
-    fn visit_v_8_intrinsic_expression(&mut self, it: &mut V8IntrinsicExpression<'a>) {
-        walk_v_8_intrinsic_expression(self, it);
+    fn visit_v8_intrinsic_expression(&mut self, it: &mut V8IntrinsicExpression<'a>) {
+        walk_v8_intrinsic_expression(self, it);
     }
 
     #[inline]
@@ -1489,7 +1489,7 @@ pub mod walk_mut {
             Expression::TSInstantiationExpression(it) => {
                 visitor.visit_ts_instantiation_expression(it)
             }
-            Expression::V8IntrinsicExpression(it) => visitor.visit_v_8_intrinsic_expression(it),
+            Expression::V8IntrinsicExpression(it) => visitor.visit_v8_intrinsic_expression(it),
             Expression::ArkUIComponentExpression(it) => {
                 visitor.visit_ark_ui_component_expression(it)
             }
@@ -2676,6 +2676,7 @@ pub mod walk_mut {
         let kind = AstType::FormalParameterRest;
         visitor.enter_node(kind);
         visitor.visit_span(&mut it.span);
+        visitor.visit_decorators(&mut it.decorators);
         visitor.visit_binding_rest_element(&mut it.rest);
         if let Some(type_annotation) = &mut it.type_annotation {
             visitor.visit_ts_type_annotation(type_annotation);
@@ -3127,7 +3128,7 @@ pub mod walk_mut {
     }
 
     #[inline]
-    pub fn walk_v_8_intrinsic_expression<'a, V: VisitMut<'a>>(
+    pub fn walk_v8_intrinsic_expression<'a, V: VisitMut<'a>>(
         visitor: &mut V,
         it: &mut V8IntrinsicExpression<'a>,
     ) {
@@ -4466,9 +4467,8 @@ pub mod walk_mut {
             TSModuleReference::ExternalModuleReference(it) => {
                 visitor.visit_ts_external_module_reference(it)
             }
-            match_ts_type_name!(TSModuleReference) => {
-                visitor.visit_ts_type_name(it.to_ts_type_name_mut())
-            }
+            TSModuleReference::IdentifierReference(it) => visitor.visit_identifier_reference(it),
+            TSModuleReference::QualifiedName(it) => visitor.visit_ts_qualified_name(it),
         }
     }
 

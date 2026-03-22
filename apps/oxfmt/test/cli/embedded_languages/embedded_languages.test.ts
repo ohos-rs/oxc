@@ -6,17 +6,23 @@ const fixturesDir = join(import.meta.dirname, "fixtures");
 const languages = ["css.js", "graphql.js", "html.js", "markdown.js", "angular.ts"];
 
 describe("embedded_languages", () => {
-  describe.each(languages)("%s", (lang) => {
-    it("should format (auto)", async () => {
-      const snapshot = await runWriteModeAndSnapshot(fixturesDir, [lang]);
-      expect(snapshot).toMatchSnapshot();
-    });
+  it.each(languages)(`should format %s (auto)`, async (lang) => {
+    const snapshot = await runWriteModeAndSnapshot(fixturesDir, [lang]);
+    expect(snapshot).toMatchSnapshot();
   });
 
   it("should not format any language (off)", async () => {
     const snapshot = await runWriteModeAndSnapshot(fixturesDir, languages, [
       "--config",
       "off_embedded.json",
+    ]);
+    expect(snapshot).toMatchSnapshot();
+  });
+
+  it("should format with CLRF", async () => {
+    const snapshot = await runWriteModeAndSnapshot(fixturesDir, languages, [
+      "--config",
+      "crlf_embedded.json",
     ]);
     expect(snapshot).toMatchSnapshot();
   });

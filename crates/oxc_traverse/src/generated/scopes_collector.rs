@@ -73,7 +73,7 @@ impl<'a> Visit<'a> for ChildScopeCollector {
             Expression::TSTypeAssertion(it) => self.visit_ts_type_assertion(it),
             Expression::TSNonNullExpression(it) => self.visit_ts_non_null_expression(it),
             Expression::TSInstantiationExpression(it) => self.visit_ts_instantiation_expression(it),
-            Expression::V8IntrinsicExpression(it) => self.visit_v_8_intrinsic_expression(it),
+            Expression::V8IntrinsicExpression(it) => self.visit_v8_intrinsic_expression(it),
             Expression::ArkUIComponentExpression(it) => self.visit_ark_ui_component_expression(it),
             Expression::LeadingDotExpression(it) => self.visit_leading_dot_expression(it),
             Expression::ComputedMemberExpression(it) => self.visit_computed_member_expression(it),
@@ -177,7 +177,7 @@ impl<'a> Visit<'a> for ChildScopeCollector {
                 self.visit_ts_instantiation_expression(it)
             }
             ArrayExpressionElement::V8IntrinsicExpression(it) => {
-                self.visit_v_8_intrinsic_expression(it)
+                self.visit_v8_intrinsic_expression(it)
             }
             ArrayExpressionElement::ArkUIComponentExpression(it) => {
                 self.visit_ark_ui_component_expression(it)
@@ -263,7 +263,7 @@ impl<'a> Visit<'a> for ChildScopeCollector {
             PropertyKey::TSInstantiationExpression(it) => {
                 self.visit_ts_instantiation_expression(it)
             }
-            PropertyKey::V8IntrinsicExpression(it) => self.visit_v_8_intrinsic_expression(it),
+            PropertyKey::V8IntrinsicExpression(it) => self.visit_v8_intrinsic_expression(it),
             PropertyKey::ArkUIComponentExpression(it) => self.visit_ark_ui_component_expression(it),
             PropertyKey::LeadingDotExpression(it) => self.visit_leading_dot_expression(it),
             PropertyKey::ComputedMemberExpression(it) => self.visit_computed_member_expression(it),
@@ -394,7 +394,7 @@ impl<'a> Visit<'a> for ChildScopeCollector {
             Argument::TSTypeAssertion(it) => self.visit_ts_type_assertion(it),
             Argument::TSNonNullExpression(it) => self.visit_ts_non_null_expression(it),
             Argument::TSInstantiationExpression(it) => self.visit_ts_instantiation_expression(it),
-            Argument::V8IntrinsicExpression(it) => self.visit_v_8_intrinsic_expression(it),
+            Argument::V8IntrinsicExpression(it) => self.visit_v8_intrinsic_expression(it),
             Argument::ArkUIComponentExpression(it) => self.visit_ark_ui_component_expression(it),
             Argument::LeadingDotExpression(it) => self.visit_leading_dot_expression(it),
             Argument::ComputedMemberExpression(it) => self.visit_computed_member_expression(it),
@@ -789,7 +789,7 @@ impl<'a> Visit<'a> for ChildScopeCollector {
             ForStatementInit::TSInstantiationExpression(it) => {
                 self.visit_ts_instantiation_expression(it)
             }
-            ForStatementInit::V8IntrinsicExpression(it) => self.visit_v_8_intrinsic_expression(it),
+            ForStatementInit::V8IntrinsicExpression(it) => self.visit_v8_intrinsic_expression(it),
             ForStatementInit::ArkUIComponentExpression(it) => {
                 self.visit_ark_ui_component_expression(it)
             }
@@ -997,6 +997,7 @@ impl<'a> Visit<'a> for ChildScopeCollector {
 
     #[inline]
     fn visit_formal_parameter_rest(&mut self, it: &FormalParameterRest<'a>) {
+        self.visit_decorators(&it.decorators);
         self.visit_binding_rest_element(&it.rest);
         if let Some(type_annotation) = &it.type_annotation {
             self.visit_ts_type_annotation(type_annotation);
@@ -1242,7 +1243,7 @@ impl<'a> Visit<'a> for ChildScopeCollector {
                 self.visit_ts_instantiation_expression(it)
             }
             ExportDefaultDeclarationKind::V8IntrinsicExpression(it) => {
-                self.visit_v_8_intrinsic_expression(it)
+                self.visit_v8_intrinsic_expression(it)
             }
             ExportDefaultDeclarationKind::ArkUIComponentExpression(it) => {
                 self.visit_ark_ui_component_expression(it)
@@ -1281,7 +1282,7 @@ impl<'a> Visit<'a> for ChildScopeCollector {
     }
 
     #[inline]
-    fn visit_v_8_intrinsic_expression(&mut self, it: &V8IntrinsicExpression<'a>) {
+    fn visit_v8_intrinsic_expression(&mut self, it: &V8IntrinsicExpression<'a>) {
         self.visit_arguments(&it.arguments);
     }
 
@@ -1412,7 +1413,7 @@ impl<'a> Visit<'a> for ChildScopeCollector {
             JSXExpression::TSInstantiationExpression(it) => {
                 self.visit_ts_instantiation_expression(it)
             }
-            JSXExpression::V8IntrinsicExpression(it) => self.visit_v_8_intrinsic_expression(it),
+            JSXExpression::V8IntrinsicExpression(it) => self.visit_v8_intrinsic_expression(it),
             JSXExpression::ArkUIComponentExpression(it) => {
                 self.visit_ark_ui_component_expression(it)
             }

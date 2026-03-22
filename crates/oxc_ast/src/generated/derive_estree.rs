@@ -910,7 +910,13 @@ impl ESTree for VariableDeclarationKind {
 
 impl ESTree for VariableDeclarator<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) {
-        crate::serialize::js::VariableDeclaratorConverter(self).serialize(serializer)
+        let mut state = serializer.serialize_struct();
+        state.serialize_field("type", &JsonSafeString("VariableDeclarator"));
+        state.serialize_field("id", &crate::serialize::js::VariableDeclaratorId(self));
+        state.serialize_field("init", &self.init);
+        state.serialize_ts_field("definite", &self.definite);
+        state.serialize_span(self.span);
+        state.end();
     }
 }
 
@@ -3159,7 +3165,6 @@ impl ESTree for TSModuleReference<'_> {
             Self::ExternalModuleReference(it) => it.serialize(serializer),
             Self::IdentifierReference(it) => it.serialize(serializer),
             Self::QualifiedName(it) => it.serialize(serializer),
-            Self::ThisExpression(it) => it.serialize(serializer),
         }
     }
 }
@@ -3265,6 +3270,26 @@ impl ESTree for JSDocUnknownType {
     }
 }
 
+impl ESTree for CommentKind {
+    fn serialize<S: Serializer>(&self, serializer: S) {
+        match self {
+            Self::Line => JsonSafeString("Line").serialize(serializer),
+            Self::SingleLineBlock => JsonSafeString("Block").serialize(serializer),
+            Self::MultiLineBlock => JsonSafeString("Block").serialize(serializer),
+        }
+    }
+}
+
+impl ESTree for Comment {
+    fn serialize<S: Serializer>(&self, serializer: S) {
+        let mut state = serializer.serialize_struct();
+        state.serialize_field("type", &self.kind);
+        state.serialize_field("value", &crate::serialize::CommentValue(self));
+        state.serialize_span(self.span);
+        state.end();
+    }
+}
+
 impl ESTree for StructStatement<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) {
         let mut state = serializer.serialize_struct();
@@ -3350,25 +3375,5 @@ impl ESTree for AnnotationElement<'_> {
         match self {
             Self::PropertyDefinition(it) => it.serialize(serializer),
         }
-    }
-}
-
-impl ESTree for CommentKind {
-    fn serialize<S: Serializer>(&self, serializer: S) {
-        match self {
-            Self::Line => JsonSafeString("Line").serialize(serializer),
-            Self::SingleLineBlock => JsonSafeString("Block").serialize(serializer),
-            Self::MultiLineBlock => JsonSafeString("Block").serialize(serializer),
-        }
-    }
-}
-
-impl ESTree for Comment {
-    fn serialize<S: Serializer>(&self, serializer: S) {
-        let mut state = serializer.serialize_struct();
-        state.serialize_field("type", &self.kind);
-        state.serialize_field("value", &crate::serialize::CommentValue(self));
-        state.serialize_span(self.span);
-        state.end();
     }
 }

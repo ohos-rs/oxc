@@ -182,11 +182,25 @@ impl TestCase {
 }
 
 fn format_code_snippet(code: &str) -> String {
+    // Replace tabs at the start of lines with spaces (4 spaces per tab)
+    let code = if code.contains('\t') {
+        code.lines()
+            .map(|line| {
+                let trimmed_start = line.trim_start_matches('\t');
+                let tab_count = line.len() - trimmed_start.len();
+                format!("{}{}", "    ".repeat(tab_count), trimmed_start)
+            })
+            .collect::<Vec<_>>()
+            .join("\n")
+    } else {
+        code.to_string()
+    };
+
     let code = if code.contains('\n') {
         // Use 12 space characters after the newline.
         code.replace('\n', "\n            ").replace('\\', "\\\\").replace('\"', "\\\"")
     } else {
-        code.to_string()
+        code
     };
 
     // Do not quote strings that are already raw strings
@@ -1426,7 +1440,7 @@ fn main() {
         RuleKind::Node => format!("{NODE_TEST_PATH}/{kebab_rule_name}.js"),
         RuleKind::Promise => format!("{PROMISE_TEST_PATH}/{kebab_rule_name}.js"),
         RuleKind::Vitest => format!("{VITEST_TEST_PATH}/{kebab_rule_name}.test.ts"),
-        RuleKind::Vue => format!("{VUE_TEST_PATH}/{kebab_rule_name}.js"),
+        RuleKind::Vue => format!("{VUE_TEST_PATH}/{kebab_rule_name}.test.ts"),
         RuleKind::Oxc => String::new(),
     };
     let rule_src_path = match rule_kind {
