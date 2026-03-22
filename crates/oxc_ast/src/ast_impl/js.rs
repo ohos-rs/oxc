@@ -1106,6 +1106,9 @@ impl<'a> Declaration<'a> {
             Self::VariableDeclaration(decl) => decl.is_typescript_syntax(),
             Self::FunctionDeclaration(func) => func.is_typescript_syntax(),
             Self::ClassDeclaration(class) => class.is_typescript_syntax(),
+            // ArkTS / ArkUI declarations are not TypeScript syntax, but they can be marked `declare`.
+            Self::StructStatement(decl) => decl.declare,
+            Self::AnnotationDeclaration(decl) => decl.declare,
             _ => true,
         }
     }
@@ -1128,6 +1131,7 @@ impl<'a> Declaration<'a> {
             Declaration::TSEnumDeclaration(decl) => Some(&decl.id),
             Declaration::TSImportEqualsDeclaration(decl) => Some(&decl.id),
             Declaration::StructStatement(decl) => Some(&decl.id),
+            Declaration::AnnotationDeclaration(decl) => Some(&decl.id),
             Declaration::TSModuleDeclaration(decl) => {
                 if let TSModuleDeclarationName::Identifier(ident) = &decl.id {
                     Some(ident)
@@ -1137,7 +1141,7 @@ impl<'a> Declaration<'a> {
             }
             Declaration::TSGlobalDeclaration(_)
             | Declaration::VariableDeclaration(_)
-            | Declaration::AnnotationDeclaration(_) => None,
+            => None,
         }
     }
 

@@ -1,6 +1,6 @@
 //! [`ESTreeKind`] — compact token kind for raw transfer to JS.
 //!
-//! Maps the full [`Kind`] enum (169 variants) to a small set of 12 ESTree token types.
+//! Maps the full [`Kind`] enum (see `KINDS_LEN`) to a small set of 12 ESTree token types.
 //!
 //! ## How it works
 //!
@@ -36,8 +36,9 @@ pub enum ESTreeKind {
 
 const KINDS_LEN: usize = Kind::VARIANTS.len();
 
-// Verify number of `Kind` variants, so we catch if new variants are added
-const _: () = assert!(KINDS_LEN == 169);
+// Verify number of `Kind` variants, so we catch if new variants are added.
+// This fork adds ArkTS/ArkUI-specific `Kind` variants.
+const _: () = assert!(KINDS_LEN == 171);
 
 // Verify that the `Kind` discriminants we rely on for `to_kind` haven't shifted.
 // If any of these assertions fail, the `to_kind` mapping needs updating.

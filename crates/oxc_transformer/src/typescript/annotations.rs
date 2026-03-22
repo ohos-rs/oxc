@@ -539,6 +539,9 @@ impl<'a> TypeScriptAnnotations<'a> {
                 }
                 keep
             }
+            // ArkTS / ArkUI declarations. Keep them unless they're `declare`-only.
+            Declaration::StructStatement(struct_decl) => !struct_decl.declare,
+            Declaration::AnnotationDeclaration(annotation_decl) => !annotation_decl.declare,
         }
     }
 
