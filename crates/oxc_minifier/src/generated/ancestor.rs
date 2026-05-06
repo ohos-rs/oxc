@@ -3656,6 +3656,8 @@ impl<'a, 't> GetAddress for PrivateFieldExpressionWithoutField<'a, 't> {
     }
 }
 
+pub(crate) const OFFSET_LEADING_DOT_EXPRESSION_NODE_ID: usize =
+    offset_of!(LeadingDotExpression, node_id);
 pub(crate) const OFFSET_LEADING_DOT_EXPRESSION_SPAN: usize = offset_of!(LeadingDotExpression, span);
 pub(crate) const OFFSET_LEADING_DOT_EXPRESSION_OPTIONAL: usize =
     offset_of!(LeadingDotExpression, optional);
@@ -3674,6 +3676,14 @@ pub struct LeadingDotExpressionWithoutTypeArguments<'a, 't>(
 );
 
 impl<'a, 't> LeadingDotExpressionWithoutTypeArguments<'a, 't> {
+    #[inline]
+    pub fn node_id(self) -> &'t Cell<NodeId> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_LEADING_DOT_EXPRESSION_NODE_ID)
+                as *const Cell<NodeId>)
+        }
+    }
+
     #[inline]
     pub fn span(self) -> &'t Span {
         unsafe { &*((self.0 as *const u8).add(OFFSET_LEADING_DOT_EXPRESSION_SPAN) as *const Span) }
@@ -3719,6 +3729,14 @@ pub struct LeadingDotExpressionWithoutArguments<'a, 't>(
 
 impl<'a, 't> LeadingDotExpressionWithoutArguments<'a, 't> {
     #[inline]
+    pub fn node_id(self) -> &'t Cell<NodeId> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_LEADING_DOT_EXPRESSION_NODE_ID)
+                as *const Cell<NodeId>)
+        }
+    }
+
+    #[inline]
     pub fn span(self) -> &'t Span {
         unsafe { &*((self.0 as *const u8).add(OFFSET_LEADING_DOT_EXPRESSION_SPAN) as *const Span) }
     }
@@ -3762,6 +3780,14 @@ pub struct LeadingDotExpressionWithoutExpression<'a, 't>(
 );
 
 impl<'a, 't> LeadingDotExpressionWithoutExpression<'a, 't> {
+    #[inline]
+    pub fn node_id(self) -> &'t Cell<NodeId> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_LEADING_DOT_EXPRESSION_NODE_ID)
+                as *const Cell<NodeId>)
+        }
+    }
+
     #[inline]
     pub fn span(self) -> &'t Span {
         unsafe { &*((self.0 as *const u8).add(OFFSET_LEADING_DOT_EXPRESSION_SPAN) as *const Span) }
@@ -5474,8 +5500,8 @@ impl<'a, 't> DirectiveWithoutExpression<'a, 't> {
     }
 
     #[inline]
-    pub fn directive(self) -> &'t Atom<'a> {
-        unsafe { &*((self.0 as *const u8).add(OFFSET_DIRECTIVE_DIRECTIVE) as *const Atom<'a>) }
+    pub fn directive(self) -> &'t Str<'a> {
+        unsafe { &*((self.0 as *const u8).add(OFFSET_DIRECTIVE_DIRECTIVE) as *const Str<'a>) }
     }
 }
 
@@ -11702,6 +11728,8 @@ impl<'a, 't> GetAddress for ImportDeclarationWithoutWithClause<'a, 't> {
     }
 }
 
+pub(crate) const OFFSET_LAZY_IMPORT_DECLARATION_NODE_ID: usize =
+    offset_of!(LazyImportDeclaration, node_id);
 pub(crate) const OFFSET_LAZY_IMPORT_DECLARATION_SPAN: usize =
     offset_of!(LazyImportDeclaration, span);
 pub(crate) const OFFSET_LAZY_IMPORT_DECLARATION_SPECIFIERS: usize =
@@ -11719,6 +11747,14 @@ pub struct LazyImportDeclarationWithoutSpecifiers<'a, 't>(
 );
 
 impl<'a, 't> LazyImportDeclarationWithoutSpecifiers<'a, 't> {
+    #[inline]
+    pub fn node_id(self) -> &'t Cell<NodeId> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_LAZY_IMPORT_DECLARATION_NODE_ID)
+                as *const Cell<NodeId>)
+        }
+    }
+
     #[inline]
     pub fn span(self) -> &'t Span {
         unsafe { &*((self.0 as *const u8).add(OFFSET_LAZY_IMPORT_DECLARATION_SPAN) as *const Span) }
@@ -11757,6 +11793,14 @@ pub struct LazyImportDeclarationWithoutSource<'a, 't>(
 
 impl<'a, 't> LazyImportDeclarationWithoutSource<'a, 't> {
     #[inline]
+    pub fn node_id(self) -> &'t Cell<NodeId> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_LAZY_IMPORT_DECLARATION_NODE_ID)
+                as *const Cell<NodeId>)
+        }
+    }
+
+    #[inline]
     pub fn span(self) -> &'t Span {
         unsafe { &*((self.0 as *const u8).add(OFFSET_LAZY_IMPORT_DECLARATION_SPAN) as *const Span) }
     }
@@ -11793,6 +11837,14 @@ pub struct LazyImportDeclarationWithoutWithClause<'a, 't>(
 );
 
 impl<'a, 't> LazyImportDeclarationWithoutWithClause<'a, 't> {
+    #[inline]
+    pub fn node_id(self) -> &'t Cell<NodeId> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_LAZY_IMPORT_DECLARATION_NODE_ID)
+                as *const Cell<NodeId>)
+        }
+    }
+
     #[inline]
     pub fn span(self) -> &'t Span {
         unsafe { &*((self.0 as *const u8).add(OFFSET_LAZY_IMPORT_DECLARATION_SPAN) as *const Span) }
@@ -16843,9 +16895,9 @@ impl<'a, 't> TSIndexSignatureNameWithoutTypeAnnotation<'a, 't> {
     }
 
     #[inline]
-    pub fn name(self) -> &'t Atom<'a> {
+    pub fn name(self) -> &'t Str<'a> {
         unsafe {
-            &*((self.0 as *const u8).add(OFFSET_TS_INDEX_SIGNATURE_NAME_NAME) as *const Atom<'a>)
+            &*((self.0 as *const u8).add(OFFSET_TS_INDEX_SIGNATURE_NAME_NAME) as *const Str<'a>)
         }
     }
 }
@@ -19269,6 +19321,7 @@ impl<'a, 't> GetAddress for JSDocNonNullableTypeWithoutTypeAnnotation<'a, 't> {
     }
 }
 
+pub(crate) const OFFSET_STRUCT_STATEMENT_NODE_ID: usize = offset_of!(StructStatement, node_id);
 pub(crate) const OFFSET_STRUCT_STATEMENT_SPAN: usize = offset_of!(StructStatement, span);
 pub(crate) const OFFSET_STRUCT_STATEMENT_DECORATORS: usize =
     offset_of!(StructStatement, decorators);
@@ -19287,6 +19340,13 @@ pub struct StructStatementWithoutDecorators<'a, 't>(
 );
 
 impl<'a, 't> StructStatementWithoutDecorators<'a, 't> {
+    #[inline]
+    pub fn node_id(self) -> &'t Cell<NodeId> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_NODE_ID) as *const Cell<NodeId>)
+        }
+    }
+
     #[inline]
     pub fn span(self) -> &'t Span {
         unsafe { &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_SPAN) as *const Span) }
@@ -19346,6 +19406,13 @@ pub struct StructStatementWithoutId<'a, 't>(
 
 impl<'a, 't> StructStatementWithoutId<'a, 't> {
     #[inline]
+    pub fn node_id(self) -> &'t Cell<NodeId> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_NODE_ID) as *const Cell<NodeId>)
+        }
+    }
+
+    #[inline]
     pub fn span(self) -> &'t Span {
         unsafe { &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_SPAN) as *const Span) }
     }
@@ -19403,6 +19470,13 @@ pub struct StructStatementWithoutTypeParameters<'a, 't>(
 );
 
 impl<'a, 't> StructStatementWithoutTypeParameters<'a, 't> {
+    #[inline]
+    pub fn node_id(self) -> &'t Cell<NodeId> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_NODE_ID) as *const Cell<NodeId>)
+        }
+    }
+
     #[inline]
     pub fn span(self) -> &'t Span {
         unsafe { &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_SPAN) as *const Span) }
@@ -19462,6 +19536,13 @@ pub struct StructStatementWithoutBody<'a, 't>(
 
 impl<'a, 't> StructStatementWithoutBody<'a, 't> {
     #[inline]
+    pub fn node_id(self) -> &'t Cell<NodeId> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_NODE_ID) as *const Cell<NodeId>)
+        }
+    }
+
+    #[inline]
     pub fn span(self) -> &'t Span {
         unsafe { &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_SPAN) as *const Span) }
     }
@@ -19511,6 +19592,7 @@ impl<'a, 't> GetAddress for StructStatementWithoutBody<'a, 't> {
     }
 }
 
+pub(crate) const OFFSET_STRUCT_BODY_NODE_ID: usize = offset_of!(StructBody, node_id);
 pub(crate) const OFFSET_STRUCT_BODY_SPAN: usize = offset_of!(StructBody, span);
 pub(crate) const OFFSET_STRUCT_BODY_BODY: usize = offset_of!(StructBody, body);
 
@@ -19522,6 +19604,11 @@ pub struct StructBodyWithoutBody<'a, 't>(
 );
 
 impl<'a, 't> StructBodyWithoutBody<'a, 't> {
+    #[inline]
+    pub fn node_id(self) -> &'t Cell<NodeId> {
+        unsafe { &*((self.0 as *const u8).add(OFFSET_STRUCT_BODY_NODE_ID) as *const Cell<NodeId>) }
+    }
+
     #[inline]
     pub fn span(self) -> &'t Span {
         unsafe { &*((self.0 as *const u8).add(OFFSET_STRUCT_BODY_SPAN) as *const Span) }
@@ -19535,6 +19622,8 @@ impl<'a, 't> GetAddress for StructBodyWithoutBody<'a, 't> {
     }
 }
 
+pub(crate) const OFFSET_ARK_UI_COMPONENT_EXPRESSION_NODE_ID: usize =
+    offset_of!(ArkUIComponentExpression, node_id);
 pub(crate) const OFFSET_ARK_UI_COMPONENT_EXPRESSION_SPAN: usize =
     offset_of!(ArkUIComponentExpression, span);
 pub(crate) const OFFSET_ARK_UI_COMPONENT_EXPRESSION_CALLEE: usize =
@@ -19556,6 +19645,14 @@ pub struct ArkUIComponentExpressionWithoutCallee<'a, 't>(
 );
 
 impl<'a, 't> ArkUIComponentExpressionWithoutCallee<'a, 't> {
+    #[inline]
+    pub fn node_id(self) -> &'t Cell<NodeId> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_ARK_UI_COMPONENT_EXPRESSION_NODE_ID)
+                as *const Cell<NodeId>)
+        }
+    }
+
     #[inline]
     pub fn span(self) -> &'t Span {
         unsafe {
@@ -19612,6 +19709,14 @@ pub struct ArkUIComponentExpressionWithoutTypeArguments<'a, 't>(
 
 impl<'a, 't> ArkUIComponentExpressionWithoutTypeArguments<'a, 't> {
     #[inline]
+    pub fn node_id(self) -> &'t Cell<NodeId> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_ARK_UI_COMPONENT_EXPRESSION_NODE_ID)
+                as *const Cell<NodeId>)
+        }
+    }
+
+    #[inline]
     pub fn span(self) -> &'t Span {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_ARK_UI_COMPONENT_EXPRESSION_SPAN) as *const Span)
@@ -19666,6 +19771,14 @@ pub struct ArkUIComponentExpressionWithoutArguments<'a, 't>(
 );
 
 impl<'a, 't> ArkUIComponentExpressionWithoutArguments<'a, 't> {
+    #[inline]
+    pub fn node_id(self) -> &'t Cell<NodeId> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_ARK_UI_COMPONENT_EXPRESSION_NODE_ID)
+                as *const Cell<NodeId>)
+        }
+    }
+
     #[inline]
     pub fn span(self) -> &'t Span {
         unsafe {
@@ -19722,6 +19835,14 @@ pub struct ArkUIComponentExpressionWithoutChildren<'a, 't>(
 
 impl<'a, 't> ArkUIComponentExpressionWithoutChildren<'a, 't> {
     #[inline]
+    pub fn node_id(self) -> &'t Cell<NodeId> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_ARK_UI_COMPONENT_EXPRESSION_NODE_ID)
+                as *const Cell<NodeId>)
+        }
+    }
+
+    #[inline]
     pub fn span(self) -> &'t Span {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_ARK_UI_COMPONENT_EXPRESSION_SPAN) as *const Span)
@@ -19777,6 +19898,14 @@ pub struct ArkUIComponentExpressionWithoutChainExpressions<'a, 't>(
 
 impl<'a, 't> ArkUIComponentExpressionWithoutChainExpressions<'a, 't> {
     #[inline]
+    pub fn node_id(self) -> &'t Cell<NodeId> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_ARK_UI_COMPONENT_EXPRESSION_NODE_ID)
+                as *const Cell<NodeId>)
+        }
+    }
+
+    #[inline]
     pub fn span(self) -> &'t Span {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_ARK_UI_COMPONENT_EXPRESSION_SPAN) as *const Span)
@@ -19823,6 +19952,8 @@ impl<'a, 't> GetAddress for ArkUIComponentExpressionWithoutChainExpressions<'a, 
     }
 }
 
+pub(crate) const OFFSET_ANNOTATION_DECLARATION_NODE_ID: usize =
+    offset_of!(AnnotationDeclaration, node_id);
 pub(crate) const OFFSET_ANNOTATION_DECLARATION_SPAN: usize =
     offset_of!(AnnotationDeclaration, span);
 pub(crate) const OFFSET_ANNOTATION_DECLARATION_DECORATORS: usize =
@@ -19843,6 +19974,14 @@ pub struct AnnotationDeclarationWithoutDecorators<'a, 't>(
 );
 
 impl<'a, 't> AnnotationDeclarationWithoutDecorators<'a, 't> {
+    #[inline]
+    pub fn node_id(self) -> &'t Cell<NodeId> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_ANNOTATION_DECLARATION_NODE_ID)
+                as *const Cell<NodeId>)
+        }
+    }
+
     #[inline]
     pub fn span(self) -> &'t Span {
         unsafe { &*((self.0 as *const u8).add(OFFSET_ANNOTATION_DECLARATION_SPAN) as *const Span) }
@@ -19896,6 +20035,14 @@ pub struct AnnotationDeclarationWithoutId<'a, 't>(
 
 impl<'a, 't> AnnotationDeclarationWithoutId<'a, 't> {
     #[inline]
+    pub fn node_id(self) -> &'t Cell<NodeId> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_ANNOTATION_DECLARATION_NODE_ID)
+                as *const Cell<NodeId>)
+        }
+    }
+
+    #[inline]
     pub fn span(self) -> &'t Span {
         unsafe { &*((self.0 as *const u8).add(OFFSET_ANNOTATION_DECLARATION_SPAN) as *const Span) }
     }
@@ -19948,6 +20095,14 @@ pub struct AnnotationDeclarationWithoutBody<'a, 't>(
 
 impl<'a, 't> AnnotationDeclarationWithoutBody<'a, 't> {
     #[inline]
+    pub fn node_id(self) -> &'t Cell<NodeId> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_ANNOTATION_DECLARATION_NODE_ID)
+                as *const Cell<NodeId>)
+        }
+    }
+
+    #[inline]
     pub fn span(self) -> &'t Span {
         unsafe { &*((self.0 as *const u8).add(OFFSET_ANNOTATION_DECLARATION_SPAN) as *const Span) }
     }
@@ -19991,6 +20146,7 @@ impl<'a, 't> GetAddress for AnnotationDeclarationWithoutBody<'a, 't> {
     }
 }
 
+pub(crate) const OFFSET_ANNOTATION_BODY_NODE_ID: usize = offset_of!(AnnotationBody, node_id);
 pub(crate) const OFFSET_ANNOTATION_BODY_SPAN: usize = offset_of!(AnnotationBody, span);
 pub(crate) const OFFSET_ANNOTATION_BODY_BODY: usize = offset_of!(AnnotationBody, body);
 
@@ -20002,6 +20158,13 @@ pub struct AnnotationBodyWithoutBody<'a, 't>(
 );
 
 impl<'a, 't> AnnotationBodyWithoutBody<'a, 't> {
+    #[inline]
+    pub fn node_id(self) -> &'t Cell<NodeId> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_ANNOTATION_BODY_NODE_ID) as *const Cell<NodeId>)
+        }
+    }
+
     #[inline]
     pub fn span(self) -> &'t Span {
         unsafe { &*((self.0 as *const u8).add(OFFSET_ANNOTATION_BODY_SPAN) as *const Span) }

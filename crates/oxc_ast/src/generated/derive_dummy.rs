@@ -19,7 +19,7 @@ impl<'a> Dummy<'a> for Program<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             source_type: Dummy::dummy(allocator),
             source_text: Dummy::dummy(allocator),
@@ -47,7 +47,7 @@ impl<'a> Dummy<'a> for IdentifierName<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             name: Dummy::dummy(allocator),
         }
@@ -60,7 +60,7 @@ impl<'a> Dummy<'a> for IdentifierReference<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             name: Dummy::dummy(allocator),
             reference_id: Dummy::dummy(allocator),
@@ -74,7 +74,7 @@ impl<'a> Dummy<'a> for BindingIdentifier<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             name: Dummy::dummy(allocator),
             symbol_id: Dummy::dummy(allocator),
@@ -88,7 +88,7 @@ impl<'a> Dummy<'a> for LabelIdentifier<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             name: Dummy::dummy(allocator),
         }
@@ -100,7 +100,7 @@ impl<'a> Dummy<'a> for ThisExpression {
     ///
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
-        Self { node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY), span: Dummy::dummy(allocator) }
+        Self { node_id: Dummy::dummy(allocator), span: Dummy::dummy(allocator) }
     }
 }
 
@@ -110,7 +110,7 @@ impl<'a> Dummy<'a> for ArrayExpression<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             elements: Dummy::dummy(allocator),
         }
@@ -120,7 +120,7 @@ impl<'a> Dummy<'a> for ArrayExpression<'a> {
 impl<'a> Dummy<'a> for ArrayExpressionElement<'a> {
     /// Create a dummy [`ArrayExpressionElement`].
     ///
-    /// Does not allocate any data into arena.
+    /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self::Elision(Dummy::dummy(allocator))
     }
@@ -131,7 +131,7 @@ impl<'a> Dummy<'a> for Elision {
     ///
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
-        Self { node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY), span: Dummy::dummy(allocator) }
+        Self { node_id: Dummy::dummy(allocator), span: Dummy::dummy(allocator) }
     }
 }
 
@@ -141,7 +141,7 @@ impl<'a> Dummy<'a> for ObjectExpression<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             properties: Dummy::dummy(allocator),
         }
@@ -163,7 +163,7 @@ impl<'a> Dummy<'a> for ObjectProperty<'a> {
     /// Has cost of making 2 allocations (32 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             kind: Dummy::dummy(allocator),
             key: Dummy::dummy(allocator),
@@ -200,7 +200,7 @@ impl<'a> Dummy<'a> for TemplateLiteral<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             quasis: Dummy::dummy(allocator),
             expressions: Dummy::dummy(allocator),
@@ -214,7 +214,7 @@ impl<'a> Dummy<'a> for TaggedTemplateExpression<'a> {
     /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             tag: Dummy::dummy(allocator),
             type_arguments: Dummy::dummy(allocator),
@@ -229,7 +229,7 @@ impl<'a> Dummy<'a> for TemplateElement<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             value: Dummy::dummy(allocator),
             tail: Dummy::dummy(allocator),
@@ -262,7 +262,7 @@ impl<'a> Dummy<'a> for ComputedMemberExpression<'a> {
     /// Has cost of making 2 allocations (32 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             object: Dummy::dummy(allocator),
             expression: Dummy::dummy(allocator),
@@ -277,7 +277,7 @@ impl<'a> Dummy<'a> for StaticMemberExpression<'a> {
     /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             object: Dummy::dummy(allocator),
             property: Dummy::dummy(allocator),
@@ -292,7 +292,7 @@ impl<'a> Dummy<'a> for PrivateFieldExpression<'a> {
     /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             object: Dummy::dummy(allocator),
             field: Dummy::dummy(allocator),
@@ -307,6 +307,7 @@ impl<'a> Dummy<'a> for LeadingDotExpression<'a> {
     /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             optional: Dummy::dummy(allocator),
             type_arguments: Dummy::dummy(allocator),
@@ -322,7 +323,7 @@ impl<'a> Dummy<'a> for CallExpression<'a> {
     /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             callee: Dummy::dummy(allocator),
             type_arguments: Dummy::dummy(allocator),
@@ -339,7 +340,7 @@ impl<'a> Dummy<'a> for NewExpression<'a> {
     /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             callee: Dummy::dummy(allocator),
             type_arguments: Dummy::dummy(allocator),
@@ -355,7 +356,7 @@ impl<'a> Dummy<'a> for MetaProperty<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             meta: Dummy::dummy(allocator),
             property: Dummy::dummy(allocator),
@@ -369,7 +370,7 @@ impl<'a> Dummy<'a> for SpreadElement<'a> {
     /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             argument: Dummy::dummy(allocator),
         }
@@ -391,7 +392,7 @@ impl<'a> Dummy<'a> for UpdateExpression<'a> {
     /// Has cost of making 1 allocation (32 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             operator: Dummy::dummy(allocator),
             prefix: Dummy::dummy(allocator),
@@ -406,7 +407,7 @@ impl<'a> Dummy<'a> for UnaryExpression<'a> {
     /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             operator: Dummy::dummy(allocator),
             argument: Dummy::dummy(allocator),
@@ -420,7 +421,7 @@ impl<'a> Dummy<'a> for BinaryExpression<'a> {
     /// Has cost of making 2 allocations (32 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             left: Dummy::dummy(allocator),
             operator: Dummy::dummy(allocator),
@@ -435,7 +436,7 @@ impl<'a> Dummy<'a> for PrivateInExpression<'a> {
     /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             left: Dummy::dummy(allocator),
             right: Dummy::dummy(allocator),
@@ -449,7 +450,7 @@ impl<'a> Dummy<'a> for LogicalExpression<'a> {
     /// Has cost of making 2 allocations (32 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             left: Dummy::dummy(allocator),
             operator: Dummy::dummy(allocator),
@@ -464,7 +465,7 @@ impl<'a> Dummy<'a> for ConditionalExpression<'a> {
     /// Has cost of making 3 allocations (48 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             test: Dummy::dummy(allocator),
             consequent: Dummy::dummy(allocator),
@@ -479,7 +480,7 @@ impl<'a> Dummy<'a> for AssignmentExpression<'a> {
     /// Has cost of making 2 allocations (48 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             operator: Dummy::dummy(allocator),
             left: Dummy::dummy(allocator),
@@ -521,7 +522,7 @@ impl<'a> Dummy<'a> for ArrayAssignmentTarget<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             elements: Dummy::dummy(allocator),
             rest: Dummy::dummy(allocator),
@@ -535,7 +536,7 @@ impl<'a> Dummy<'a> for ObjectAssignmentTarget<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             properties: Dummy::dummy(allocator),
             rest: Dummy::dummy(allocator),
@@ -549,7 +550,7 @@ impl<'a> Dummy<'a> for AssignmentTargetRest<'a> {
     /// Has cost of making 1 allocation (32 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             target: Dummy::dummy(allocator),
         }
@@ -571,7 +572,7 @@ impl<'a> Dummy<'a> for AssignmentTargetWithDefault<'a> {
     /// Has cost of making 2 allocations (48 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             binding: Dummy::dummy(allocator),
             init: Dummy::dummy(allocator),
@@ -594,7 +595,7 @@ impl<'a> Dummy<'a> for AssignmentTargetPropertyIdentifier<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             binding: Dummy::dummy(allocator),
             init: Dummy::dummy(allocator),
@@ -608,7 +609,7 @@ impl<'a> Dummy<'a> for AssignmentTargetPropertyProperty<'a> {
     /// Has cost of making 2 allocations (48 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             name: Dummy::dummy(allocator),
             binding: Dummy::dummy(allocator),
@@ -623,7 +624,7 @@ impl<'a> Dummy<'a> for SequenceExpression<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             expressions: Dummy::dummy(allocator),
         }
@@ -635,7 +636,7 @@ impl<'a> Dummy<'a> for Super {
     ///
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
-        Self { node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY), span: Dummy::dummy(allocator) }
+        Self { node_id: Dummy::dummy(allocator), span: Dummy::dummy(allocator) }
     }
 }
 
@@ -645,7 +646,7 @@ impl<'a> Dummy<'a> for AwaitExpression<'a> {
     /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             argument: Dummy::dummy(allocator),
         }
@@ -658,7 +659,7 @@ impl<'a> Dummy<'a> for ChainExpression<'a> {
     /// Has cost of making 2 allocations (48 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             expression: Dummy::dummy(allocator),
         }
@@ -680,7 +681,7 @@ impl<'a> Dummy<'a> for ParenthesizedExpression<'a> {
     /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             expression: Dummy::dummy(allocator),
         }
@@ -702,7 +703,7 @@ impl<'a> Dummy<'a> for Directive<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             expression: Dummy::dummy(allocator),
             directive: Dummy::dummy(allocator),
@@ -716,7 +717,7 @@ impl<'a> Dummy<'a> for Hashbang<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             value: Dummy::dummy(allocator),
         }
@@ -729,7 +730,7 @@ impl<'a> Dummy<'a> for BlockStatement<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             body: Dummy::dummy(allocator),
             scope_id: Dummy::dummy(allocator),
@@ -752,7 +753,7 @@ impl<'a> Dummy<'a> for VariableDeclaration<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             kind: Dummy::dummy(allocator),
             declarations: Dummy::dummy(allocator),
@@ -777,7 +778,7 @@ impl<'a> Dummy<'a> for VariableDeclarator<'a> {
     /// Has cost of making 1 allocation (32 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             kind: Dummy::dummy(allocator),
             id: Dummy::dummy(allocator),
@@ -793,7 +794,7 @@ impl<'a> Dummy<'a> for EmptyStatement {
     ///
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
-        Self { node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY), span: Dummy::dummy(allocator) }
+        Self { node_id: Dummy::dummy(allocator), span: Dummy::dummy(allocator) }
     }
 }
 
@@ -803,7 +804,7 @@ impl<'a> Dummy<'a> for ExpressionStatement<'a> {
     /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             expression: Dummy::dummy(allocator),
         }
@@ -816,7 +817,7 @@ impl<'a> Dummy<'a> for IfStatement<'a> {
     /// Has cost of making 2 allocations (32 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             test: Dummy::dummy(allocator),
             consequent: Dummy::dummy(allocator),
@@ -831,7 +832,7 @@ impl<'a> Dummy<'a> for DoWhileStatement<'a> {
     /// Has cost of making 2 allocations (32 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             body: Dummy::dummy(allocator),
             test: Dummy::dummy(allocator),
@@ -845,7 +846,7 @@ impl<'a> Dummy<'a> for WhileStatement<'a> {
     /// Has cost of making 2 allocations (32 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             test: Dummy::dummy(allocator),
             body: Dummy::dummy(allocator),
@@ -859,7 +860,7 @@ impl<'a> Dummy<'a> for ForStatement<'a> {
     /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             init: Dummy::dummy(allocator),
             test: Dummy::dummy(allocator),
@@ -885,7 +886,7 @@ impl<'a> Dummy<'a> for ForInStatement<'a> {
     /// Has cost of making 3 allocations (64 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             left: Dummy::dummy(allocator),
             right: Dummy::dummy(allocator),
@@ -910,7 +911,7 @@ impl<'a> Dummy<'a> for ForOfStatement<'a> {
     /// Has cost of making 3 allocations (64 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             r#await: Dummy::dummy(allocator),
             left: Dummy::dummy(allocator),
@@ -927,7 +928,7 @@ impl<'a> Dummy<'a> for ContinueStatement<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             label: Dummy::dummy(allocator),
         }
@@ -940,7 +941,7 @@ impl<'a> Dummy<'a> for BreakStatement<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             label: Dummy::dummy(allocator),
         }
@@ -953,7 +954,7 @@ impl<'a> Dummy<'a> for ReturnStatement<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             argument: Dummy::dummy(allocator),
         }
@@ -966,7 +967,7 @@ impl<'a> Dummy<'a> for WithStatement<'a> {
     /// Has cost of making 2 allocations (32 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             object: Dummy::dummy(allocator),
             body: Dummy::dummy(allocator),
@@ -981,7 +982,7 @@ impl<'a> Dummy<'a> for SwitchStatement<'a> {
     /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             discriminant: Dummy::dummy(allocator),
             cases: Dummy::dummy(allocator),
@@ -996,7 +997,7 @@ impl<'a> Dummy<'a> for SwitchCase<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             test: Dummy::dummy(allocator),
             consequent: Dummy::dummy(allocator),
@@ -1010,7 +1011,7 @@ impl<'a> Dummy<'a> for LabeledStatement<'a> {
     /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             label: Dummy::dummy(allocator),
             body: Dummy::dummy(allocator),
@@ -1024,7 +1025,7 @@ impl<'a> Dummy<'a> for ThrowStatement<'a> {
     /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             argument: Dummy::dummy(allocator),
         }
@@ -1037,7 +1038,7 @@ impl<'a> Dummy<'a> for TryStatement<'a> {
     /// Has cost of making 1 allocation (40 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             block: Dummy::dummy(allocator),
             handler: Dummy::dummy(allocator),
@@ -1052,7 +1053,7 @@ impl<'a> Dummy<'a> for CatchClause<'a> {
     /// Has cost of making 1 allocation (40 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             param: Dummy::dummy(allocator),
             body: Dummy::dummy(allocator),
@@ -1067,7 +1068,7 @@ impl<'a> Dummy<'a> for CatchParameter<'a> {
     /// Has cost of making 1 allocation (32 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             pattern: Dummy::dummy(allocator),
             type_annotation: Dummy::dummy(allocator),
@@ -1080,7 +1081,7 @@ impl<'a> Dummy<'a> for DebuggerStatement {
     ///
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
-        Self { node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY), span: Dummy::dummy(allocator) }
+        Self { node_id: Dummy::dummy(allocator), span: Dummy::dummy(allocator) }
     }
 }
 
@@ -1099,7 +1100,7 @@ impl<'a> Dummy<'a> for AssignmentPattern<'a> {
     /// Has cost of making 2 allocations (48 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             left: Dummy::dummy(allocator),
             right: Dummy::dummy(allocator),
@@ -1113,7 +1114,7 @@ impl<'a> Dummy<'a> for ObjectPattern<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             properties: Dummy::dummy(allocator),
             rest: Dummy::dummy(allocator),
@@ -1127,7 +1128,7 @@ impl<'a> Dummy<'a> for BindingProperty<'a> {
     /// Has cost of making 2 allocations (48 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             key: Dummy::dummy(allocator),
             value: Dummy::dummy(allocator),
@@ -1143,7 +1144,7 @@ impl<'a> Dummy<'a> for ArrayPattern<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             elements: Dummy::dummy(allocator),
             rest: Dummy::dummy(allocator),
@@ -1157,7 +1158,7 @@ impl<'a> Dummy<'a> for BindingRestElement<'a> {
     /// Has cost of making 1 allocation (32 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             argument: Dummy::dummy(allocator),
         }
@@ -1170,7 +1171,7 @@ impl<'a> Dummy<'a> for Function<'a> {
     /// Has cost of making 1 allocation (48 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             r#type: Dummy::dummy(allocator),
             decorators: Dummy::dummy(allocator),
@@ -1206,7 +1207,7 @@ impl<'a> Dummy<'a> for FormalParameters<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             kind: Dummy::dummy(allocator),
             items: Dummy::dummy(allocator),
@@ -1221,7 +1222,7 @@ impl<'a> Dummy<'a> for FormalParameter<'a> {
     /// Has cost of making 1 allocation (32 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             decorators: Dummy::dummy(allocator),
             pattern: Dummy::dummy(allocator),
@@ -1251,7 +1252,7 @@ impl<'a> Dummy<'a> for FormalParameterRest<'a> {
     /// Has cost of making 1 allocation (32 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             decorators: Dummy::dummy(allocator),
             rest: Dummy::dummy(allocator),
@@ -1266,7 +1267,7 @@ impl<'a> Dummy<'a> for FunctionBody<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             directives: Dummy::dummy(allocator),
             statements: Dummy::dummy(allocator),
@@ -1280,7 +1281,7 @@ impl<'a> Dummy<'a> for ArrowFunctionExpression<'a> {
     /// Has cost of making 2 allocations (112 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             expression: Dummy::dummy(allocator),
             r#async: Dummy::dummy(allocator),
@@ -1301,7 +1302,7 @@ impl<'a> Dummy<'a> for YieldExpression<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             delegate: Dummy::dummy(allocator),
             argument: Dummy::dummy(allocator),
@@ -1315,7 +1316,7 @@ impl<'a> Dummy<'a> for Class<'a> {
     /// Has cost of making 1 allocation (40 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             r#type: Dummy::dummy(allocator),
             decorators: Dummy::dummy(allocator),
@@ -1348,7 +1349,7 @@ impl<'a> Dummy<'a> for ClassBody<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             body: Dummy::dummy(allocator),
         }
@@ -1370,7 +1371,7 @@ impl<'a> Dummy<'a> for MethodDefinition<'a> {
     /// Has cost of making 3 allocations (184 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             r#type: Dummy::dummy(allocator),
             decorators: Dummy::dummy(allocator),
@@ -1402,7 +1403,7 @@ impl<'a> Dummy<'a> for PropertyDefinition<'a> {
     /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             r#type: Dummy::dummy(allocator),
             decorators: Dummy::dummy(allocator),
@@ -1447,7 +1448,7 @@ impl<'a> Dummy<'a> for PrivateIdentifier<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             name: Dummy::dummy(allocator),
         }
@@ -1460,7 +1461,7 @@ impl<'a> Dummy<'a> for StaticBlock<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             body: Dummy::dummy(allocator),
             scope_id: Dummy::dummy(allocator),
@@ -1493,7 +1494,7 @@ impl<'a> Dummy<'a> for AccessorProperty<'a> {
     /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             r#type: Dummy::dummy(allocator),
             decorators: Dummy::dummy(allocator),
@@ -1515,7 +1516,7 @@ impl<'a> Dummy<'a> for ImportExpression<'a> {
     /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             source: Dummy::dummy(allocator),
             options: Dummy::dummy(allocator),
@@ -1530,7 +1531,7 @@ impl<'a> Dummy<'a> for ImportDeclaration<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             specifiers: Dummy::dummy(allocator),
             source: Dummy::dummy(allocator),
@@ -1547,6 +1548,7 @@ impl<'a> Dummy<'a> for LazyImportDeclaration<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             specifiers: Dummy::dummy(allocator),
             source: Dummy::dummy(allocator),
@@ -1580,7 +1582,7 @@ impl<'a> Dummy<'a> for ImportSpecifier<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             imported: Dummy::dummy(allocator),
             local: Dummy::dummy(allocator),
@@ -1595,7 +1597,7 @@ impl<'a> Dummy<'a> for ImportDefaultSpecifier<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             local: Dummy::dummy(allocator),
         }
@@ -1608,7 +1610,7 @@ impl<'a> Dummy<'a> for ImportNamespaceSpecifier<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             local: Dummy::dummy(allocator),
         }
@@ -1621,7 +1623,7 @@ impl<'a> Dummy<'a> for WithClause<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             keyword: Dummy::dummy(allocator),
             with_entries: Dummy::dummy(allocator),
@@ -1645,7 +1647,7 @@ impl<'a> Dummy<'a> for ImportAttribute<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             key: Dummy::dummy(allocator),
             value: Dummy::dummy(allocator),
@@ -1668,7 +1670,7 @@ impl<'a> Dummy<'a> for ExportNamedDeclaration<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             decorators: Dummy::dummy(allocator),
             declaration: Dummy::dummy(allocator),
@@ -1686,7 +1688,7 @@ impl<'a> Dummy<'a> for ExportDefaultDeclaration<'a> {
     /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             declaration: Dummy::dummy(allocator),
         }
@@ -1699,7 +1701,7 @@ impl<'a> Dummy<'a> for ExportAllDeclaration<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             exported: Dummy::dummy(allocator),
             source: Dummy::dummy(allocator),
@@ -1715,7 +1717,7 @@ impl<'a> Dummy<'a> for ExportSpecifier<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             local: Dummy::dummy(allocator),
             exported: Dummy::dummy(allocator),
@@ -1748,7 +1750,7 @@ impl<'a> Dummy<'a> for V8IntrinsicExpression<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             name: Dummy::dummy(allocator),
             arguments: Dummy::dummy(allocator),
@@ -1762,7 +1764,7 @@ impl<'a> Dummy<'a> for BooleanLiteral {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             value: Dummy::dummy(allocator),
         }
@@ -1774,7 +1776,7 @@ impl<'a> Dummy<'a> for NullLiteral {
     ///
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
-        Self { node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY), span: Dummy::dummy(allocator) }
+        Self { node_id: Dummy::dummy(allocator), span: Dummy::dummy(allocator) }
     }
 }
 
@@ -1784,7 +1786,7 @@ impl<'a> Dummy<'a> for NumericLiteral<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             value: Dummy::dummy(allocator),
             raw: Dummy::dummy(allocator),
@@ -1799,7 +1801,7 @@ impl<'a> Dummy<'a> for StringLiteral<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             value: Dummy::dummy(allocator),
             raw: Dummy::dummy(allocator),
@@ -1814,7 +1816,7 @@ impl<'a> Dummy<'a> for BigIntLiteral<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             value: Dummy::dummy(allocator),
             raw: Dummy::dummy(allocator),
@@ -1829,7 +1831,7 @@ impl<'a> Dummy<'a> for RegExpLiteral<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             regex: Dummy::dummy(allocator),
             raw: Dummy::dummy(allocator),
@@ -1861,7 +1863,7 @@ impl<'a> Dummy<'a> for JSXElement<'a> {
     /// Has cost of making 2 allocations (80 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             opening_element: Dummy::dummy(allocator),
             children: Dummy::dummy(allocator),
@@ -1876,7 +1878,7 @@ impl<'a> Dummy<'a> for JSXOpeningElement<'a> {
     /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             name: Dummy::dummy(allocator),
             type_arguments: Dummy::dummy(allocator),
@@ -1891,7 +1893,7 @@ impl<'a> Dummy<'a> for JSXClosingElement<'a> {
     /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             name: Dummy::dummy(allocator),
         }
@@ -1904,7 +1906,7 @@ impl<'a> Dummy<'a> for JSXFragment<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             opening_fragment: Dummy::dummy(allocator),
             children: Dummy::dummy(allocator),
@@ -1918,7 +1920,7 @@ impl<'a> Dummy<'a> for JSXOpeningFragment {
     ///
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
-        Self { node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY), span: Dummy::dummy(allocator) }
+        Self { node_id: Dummy::dummy(allocator), span: Dummy::dummy(allocator) }
     }
 }
 
@@ -1927,7 +1929,7 @@ impl<'a> Dummy<'a> for JSXClosingFragment {
     ///
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
-        Self { node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY), span: Dummy::dummy(allocator) }
+        Self { node_id: Dummy::dummy(allocator), span: Dummy::dummy(allocator) }
     }
 }
 
@@ -1946,7 +1948,7 @@ impl<'a> Dummy<'a> for JSXNamespacedName<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             namespace: Dummy::dummy(allocator),
             name: Dummy::dummy(allocator),
@@ -1960,7 +1962,7 @@ impl<'a> Dummy<'a> for JSXMemberExpression<'a> {
     /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             object: Dummy::dummy(allocator),
             property: Dummy::dummy(allocator),
@@ -1980,10 +1982,10 @@ impl<'a> Dummy<'a> for JSXMemberExpressionObject<'a> {
 impl<'a> Dummy<'a> for JSXExpressionContainer<'a> {
     /// Create a dummy [`JSXExpressionContainer`].
     ///
-    /// Does not allocate any data into arena.
+    /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             expression: Dummy::dummy(allocator),
         }
@@ -1993,7 +1995,7 @@ impl<'a> Dummy<'a> for JSXExpressionContainer<'a> {
 impl<'a> Dummy<'a> for JSXExpression<'a> {
     /// Create a dummy [`JSXExpression`].
     ///
-    /// Does not allocate any data into arena.
+    /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self::EmptyExpression(Dummy::dummy(allocator))
     }
@@ -2004,7 +2006,7 @@ impl<'a> Dummy<'a> for JSXEmptyExpression {
     ///
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
-        Self { node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY), span: Dummy::dummy(allocator) }
+        Self { node_id: Dummy::dummy(allocator), span: Dummy::dummy(allocator) }
     }
 }
 
@@ -2023,7 +2025,7 @@ impl<'a> Dummy<'a> for JSXAttribute<'a> {
     /// Has cost of making 1 allocation (32 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             name: Dummy::dummy(allocator),
             value: Dummy::dummy(allocator),
@@ -2037,7 +2039,7 @@ impl<'a> Dummy<'a> for JSXSpreadAttribute<'a> {
     /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             argument: Dummy::dummy(allocator),
         }
@@ -2056,9 +2058,9 @@ impl<'a> Dummy<'a> for JSXAttributeName<'a> {
 impl<'a> Dummy<'a> for JSXAttributeValue<'a> {
     /// Create a dummy [`JSXAttributeValue`].
     ///
-    /// Has cost of making 1 allocation (40 bytes).
+    /// Has cost of making 1 allocation (48 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
-        Self::ExpressionContainer(Dummy::dummy(allocator))
+        Self::StringLiteral(Dummy::dummy(allocator))
     }
 }
 
@@ -2068,7 +2070,7 @@ impl<'a> Dummy<'a> for JSXIdentifier<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             name: Dummy::dummy(allocator),
         }
@@ -2078,9 +2080,9 @@ impl<'a> Dummy<'a> for JSXIdentifier<'a> {
 impl<'a> Dummy<'a> for JSXChild<'a> {
     /// Create a dummy [`JSXChild`].
     ///
-    /// Has cost of making 1 allocation (40 bytes).
+    /// Has cost of making 1 allocation (48 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
-        Self::ExpressionContainer(Dummy::dummy(allocator))
+        Self::Text(Dummy::dummy(allocator))
     }
 }
 
@@ -2090,7 +2092,7 @@ impl<'a> Dummy<'a> for JSXSpreadChild<'a> {
     /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             expression: Dummy::dummy(allocator),
         }
@@ -2103,7 +2105,7 @@ impl<'a> Dummy<'a> for JSXText<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             value: Dummy::dummy(allocator),
             raw: Dummy::dummy(allocator),
@@ -2117,7 +2119,7 @@ impl<'a> Dummy<'a> for TSThisParameter<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             this_span: Dummy::dummy(allocator),
             type_annotation: Dummy::dummy(allocator),
@@ -2131,7 +2133,7 @@ impl<'a> Dummy<'a> for TSEnumDeclaration<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             id: Dummy::dummy(allocator),
             body: Dummy::dummy(allocator),
@@ -2147,7 +2149,7 @@ impl<'a> Dummy<'a> for TSEnumBody<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             members: Dummy::dummy(allocator),
             scope_id: Dummy::dummy(allocator),
@@ -2161,7 +2163,7 @@ impl<'a> Dummy<'a> for TSEnumMember<'a> {
     /// Has cost of making 1 allocation (32 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             id: Dummy::dummy(allocator),
             initializer: Dummy::dummy(allocator),
@@ -2184,7 +2186,7 @@ impl<'a> Dummy<'a> for TSTypeAnnotation<'a> {
     /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             type_annotation: Dummy::dummy(allocator),
         }
@@ -2197,7 +2199,7 @@ impl<'a> Dummy<'a> for TSLiteralType<'a> {
     /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             literal: Dummy::dummy(allocator),
         }
@@ -2228,7 +2230,7 @@ impl<'a> Dummy<'a> for TSConditionalType<'a> {
     /// Has cost of making 4 allocations (64 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             check_type: Dummy::dummy(allocator),
             extends_type: Dummy::dummy(allocator),
@@ -2245,7 +2247,7 @@ impl<'a> Dummy<'a> for TSUnionType<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             types: Dummy::dummy(allocator),
         }
@@ -2258,7 +2260,7 @@ impl<'a> Dummy<'a> for TSIntersectionType<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             types: Dummy::dummy(allocator),
         }
@@ -2271,7 +2273,7 @@ impl<'a> Dummy<'a> for TSParenthesizedType<'a> {
     /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             type_annotation: Dummy::dummy(allocator),
         }
@@ -2284,7 +2286,7 @@ impl<'a> Dummy<'a> for TSTypeOperator<'a> {
     /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             operator: Dummy::dummy(allocator),
             type_annotation: Dummy::dummy(allocator),
@@ -2308,7 +2310,7 @@ impl<'a> Dummy<'a> for TSArrayType<'a> {
     /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             element_type: Dummy::dummy(allocator),
         }
@@ -2321,7 +2323,7 @@ impl<'a> Dummy<'a> for TSIndexedAccessType<'a> {
     /// Has cost of making 2 allocations (32 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             object_type: Dummy::dummy(allocator),
             index_type: Dummy::dummy(allocator),
@@ -2335,7 +2337,7 @@ impl<'a> Dummy<'a> for TSTupleType<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             element_types: Dummy::dummy(allocator),
         }
@@ -2348,7 +2350,7 @@ impl<'a> Dummy<'a> for TSNamedTupleMember<'a> {
     /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             label: Dummy::dummy(allocator),
             element_type: Dummy::dummy(allocator),
@@ -2363,7 +2365,7 @@ impl<'a> Dummy<'a> for TSOptionalType<'a> {
     /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             type_annotation: Dummy::dummy(allocator),
         }
@@ -2376,7 +2378,7 @@ impl<'a> Dummy<'a> for TSRestType<'a> {
     /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             type_annotation: Dummy::dummy(allocator),
         }
@@ -2397,7 +2399,7 @@ impl<'a> Dummy<'a> for TSAnyKeyword {
     ///
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
-        Self { node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY), span: Dummy::dummy(allocator) }
+        Self { node_id: Dummy::dummy(allocator), span: Dummy::dummy(allocator) }
     }
 }
 
@@ -2406,7 +2408,7 @@ impl<'a> Dummy<'a> for TSStringKeyword {
     ///
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
-        Self { node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY), span: Dummy::dummy(allocator) }
+        Self { node_id: Dummy::dummy(allocator), span: Dummy::dummy(allocator) }
     }
 }
 
@@ -2415,7 +2417,7 @@ impl<'a> Dummy<'a> for TSBooleanKeyword {
     ///
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
-        Self { node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY), span: Dummy::dummy(allocator) }
+        Self { node_id: Dummy::dummy(allocator), span: Dummy::dummy(allocator) }
     }
 }
 
@@ -2424,7 +2426,7 @@ impl<'a> Dummy<'a> for TSNumberKeyword {
     ///
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
-        Self { node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY), span: Dummy::dummy(allocator) }
+        Self { node_id: Dummy::dummy(allocator), span: Dummy::dummy(allocator) }
     }
 }
 
@@ -2433,7 +2435,7 @@ impl<'a> Dummy<'a> for TSNeverKeyword {
     ///
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
-        Self { node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY), span: Dummy::dummy(allocator) }
+        Self { node_id: Dummy::dummy(allocator), span: Dummy::dummy(allocator) }
     }
 }
 
@@ -2442,7 +2444,7 @@ impl<'a> Dummy<'a> for TSIntrinsicKeyword {
     ///
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
-        Self { node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY), span: Dummy::dummy(allocator) }
+        Self { node_id: Dummy::dummy(allocator), span: Dummy::dummy(allocator) }
     }
 }
 
@@ -2451,7 +2453,7 @@ impl<'a> Dummy<'a> for TSUnknownKeyword {
     ///
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
-        Self { node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY), span: Dummy::dummy(allocator) }
+        Self { node_id: Dummy::dummy(allocator), span: Dummy::dummy(allocator) }
     }
 }
 
@@ -2460,7 +2462,7 @@ impl<'a> Dummy<'a> for TSNullKeyword {
     ///
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
-        Self { node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY), span: Dummy::dummy(allocator) }
+        Self { node_id: Dummy::dummy(allocator), span: Dummy::dummy(allocator) }
     }
 }
 
@@ -2469,7 +2471,7 @@ impl<'a> Dummy<'a> for TSUndefinedKeyword {
     ///
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
-        Self { node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY), span: Dummy::dummy(allocator) }
+        Self { node_id: Dummy::dummy(allocator), span: Dummy::dummy(allocator) }
     }
 }
 
@@ -2478,7 +2480,7 @@ impl<'a> Dummy<'a> for TSVoidKeyword {
     ///
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
-        Self { node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY), span: Dummy::dummy(allocator) }
+        Self { node_id: Dummy::dummy(allocator), span: Dummy::dummy(allocator) }
     }
 }
 
@@ -2487,7 +2489,7 @@ impl<'a> Dummy<'a> for TSSymbolKeyword {
     ///
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
-        Self { node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY), span: Dummy::dummy(allocator) }
+        Self { node_id: Dummy::dummy(allocator), span: Dummy::dummy(allocator) }
     }
 }
 
@@ -2496,7 +2498,7 @@ impl<'a> Dummy<'a> for TSThisType {
     ///
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
-        Self { node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY), span: Dummy::dummy(allocator) }
+        Self { node_id: Dummy::dummy(allocator), span: Dummy::dummy(allocator) }
     }
 }
 
@@ -2505,7 +2507,7 @@ impl<'a> Dummy<'a> for TSObjectKeyword {
     ///
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
-        Self { node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY), span: Dummy::dummy(allocator) }
+        Self { node_id: Dummy::dummy(allocator), span: Dummy::dummy(allocator) }
     }
 }
 
@@ -2514,7 +2516,7 @@ impl<'a> Dummy<'a> for TSBigIntKeyword {
     ///
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
-        Self { node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY), span: Dummy::dummy(allocator) }
+        Self { node_id: Dummy::dummy(allocator), span: Dummy::dummy(allocator) }
     }
 }
 
@@ -2524,7 +2526,7 @@ impl<'a> Dummy<'a> for TSTypeReference<'a> {
     /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             type_name: Dummy::dummy(allocator),
             type_arguments: Dummy::dummy(allocator),
@@ -2547,7 +2549,7 @@ impl<'a> Dummy<'a> for TSQualifiedName<'a> {
     /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             left: Dummy::dummy(allocator),
             right: Dummy::dummy(allocator),
@@ -2561,7 +2563,7 @@ impl<'a> Dummy<'a> for TSTypeParameterInstantiation<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             params: Dummy::dummy(allocator),
         }
@@ -2574,7 +2576,7 @@ impl<'a> Dummy<'a> for TSTypeParameter<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             name: Dummy::dummy(allocator),
             constraint: Dummy::dummy(allocator),
@@ -2592,7 +2594,7 @@ impl<'a> Dummy<'a> for TSTypeParameterDeclaration<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             params: Dummy::dummy(allocator),
         }
@@ -2605,7 +2607,7 @@ impl<'a> Dummy<'a> for TSTypeAliasDeclaration<'a> {
     /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             id: Dummy::dummy(allocator),
             type_parameters: Dummy::dummy(allocator),
@@ -2632,7 +2634,7 @@ impl<'a> Dummy<'a> for TSClassImplements<'a> {
     /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             expression: Dummy::dummy(allocator),
             type_arguments: Dummy::dummy(allocator),
@@ -2646,7 +2648,7 @@ impl<'a> Dummy<'a> for TSInterfaceDeclaration<'a> {
     /// Has cost of making 1 allocation (40 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             id: Dummy::dummy(allocator),
             type_parameters: Dummy::dummy(allocator),
@@ -2664,7 +2666,7 @@ impl<'a> Dummy<'a> for TSInterfaceBody<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             body: Dummy::dummy(allocator),
         }
@@ -2677,7 +2679,7 @@ impl<'a> Dummy<'a> for TSPropertySignature<'a> {
     /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             computed: Dummy::dummy(allocator),
             optional: Dummy::dummy(allocator),
@@ -2703,7 +2705,7 @@ impl<'a> Dummy<'a> for TSIndexSignature<'a> {
     /// Has cost of making 2 allocations (48 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             parameters: Dummy::dummy(allocator),
             type_annotation: Dummy::dummy(allocator),
@@ -2719,7 +2721,7 @@ impl<'a> Dummy<'a> for TSCallSignatureDeclaration<'a> {
     /// Has cost of making 1 allocation (48 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             type_parameters: Dummy::dummy(allocator),
             this_param: Dummy::dummy(allocator),
@@ -2746,7 +2748,7 @@ impl<'a> Dummy<'a> for TSMethodSignature<'a> {
     /// Has cost of making 2 allocations (64 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             key: Dummy::dummy(allocator),
             computed: Dummy::dummy(allocator),
@@ -2767,7 +2769,7 @@ impl<'a> Dummy<'a> for TSConstructSignatureDeclaration<'a> {
     /// Has cost of making 1 allocation (48 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             type_parameters: Dummy::dummy(allocator),
             params: Dummy::dummy(allocator),
@@ -2783,7 +2785,7 @@ impl<'a> Dummy<'a> for TSIndexSignatureName<'a> {
     /// Has cost of making 2 allocations (48 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             name: Dummy::dummy(allocator),
             type_annotation: Dummy::dummy(allocator),
@@ -2797,7 +2799,7 @@ impl<'a> Dummy<'a> for TSInterfaceHeritage<'a> {
     /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             expression: Dummy::dummy(allocator),
             type_arguments: Dummy::dummy(allocator),
@@ -2808,10 +2810,10 @@ impl<'a> Dummy<'a> for TSInterfaceHeritage<'a> {
 impl<'a> Dummy<'a> for TSTypePredicate<'a> {
     /// Create a dummy [`TSTypePredicate`].
     ///
-    /// Does not allocate any data into arena.
+    /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             parameter_name: Dummy::dummy(allocator),
             asserts: Dummy::dummy(allocator),
@@ -2823,7 +2825,7 @@ impl<'a> Dummy<'a> for TSTypePredicate<'a> {
 impl<'a> Dummy<'a> for TSTypePredicateName<'a> {
     /// Create a dummy [`TSTypePredicateName`].
     ///
-    /// Does not allocate any data into arena.
+    /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self::This(Dummy::dummy(allocator))
     }
@@ -2835,7 +2837,7 @@ impl<'a> Dummy<'a> for TSModuleDeclaration<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             id: Dummy::dummy(allocator),
             body: Dummy::dummy(allocator),
@@ -2880,7 +2882,7 @@ impl<'a> Dummy<'a> for TSGlobalDeclaration<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             global_span: Dummy::dummy(allocator),
             body: Dummy::dummy(allocator),
@@ -2896,7 +2898,7 @@ impl<'a> Dummy<'a> for TSModuleBlock<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             directives: Dummy::dummy(allocator),
             body: Dummy::dummy(allocator),
@@ -2910,7 +2912,7 @@ impl<'a> Dummy<'a> for TSTypeLiteral<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             members: Dummy::dummy(allocator),
         }
@@ -2923,7 +2925,7 @@ impl<'a> Dummy<'a> for TSInferType<'a> {
     /// Has cost of making 1 allocation (80 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             type_parameter: Dummy::dummy(allocator),
         }
@@ -2936,7 +2938,7 @@ impl<'a> Dummy<'a> for TSTypeQuery<'a> {
     /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             expr_name: Dummy::dummy(allocator),
             type_arguments: Dummy::dummy(allocator),
@@ -2959,7 +2961,7 @@ impl<'a> Dummy<'a> for TSImportType<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             source: Dummy::dummy(allocator),
             options: Dummy::dummy(allocator),
@@ -2984,7 +2986,7 @@ impl<'a> Dummy<'a> for TSImportTypeQualifiedName<'a> {
     /// Has cost of making 1 allocation (32 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             left: Dummy::dummy(allocator),
             right: Dummy::dummy(allocator),
@@ -2998,7 +3000,7 @@ impl<'a> Dummy<'a> for TSFunctionType<'a> {
     /// Has cost of making 3 allocations (96 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             type_parameters: Dummy::dummy(allocator),
             this_param: Dummy::dummy(allocator),
@@ -3015,7 +3017,7 @@ impl<'a> Dummy<'a> for TSConstructorType<'a> {
     /// Has cost of making 3 allocations (96 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             r#abstract: Dummy::dummy(allocator),
             type_parameters: Dummy::dummy(allocator),
@@ -3032,7 +3034,7 @@ impl<'a> Dummy<'a> for TSMappedType<'a> {
     /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             key: Dummy::dummy(allocator),
             constraint: Dummy::dummy(allocator),
@@ -3061,7 +3063,7 @@ impl<'a> Dummy<'a> for TSTemplateLiteralType<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             quasis: Dummy::dummy(allocator),
             types: Dummy::dummy(allocator),
@@ -3075,7 +3077,7 @@ impl<'a> Dummy<'a> for TSAsExpression<'a> {
     /// Has cost of making 2 allocations (32 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             expression: Dummy::dummy(allocator),
             type_annotation: Dummy::dummy(allocator),
@@ -3089,7 +3091,7 @@ impl<'a> Dummy<'a> for TSSatisfiesExpression<'a> {
     /// Has cost of making 2 allocations (32 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             expression: Dummy::dummy(allocator),
             type_annotation: Dummy::dummy(allocator),
@@ -3103,7 +3105,7 @@ impl<'a> Dummy<'a> for TSTypeAssertion<'a> {
     /// Has cost of making 2 allocations (32 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             type_annotation: Dummy::dummy(allocator),
             expression: Dummy::dummy(allocator),
@@ -3117,7 +3119,7 @@ impl<'a> Dummy<'a> for TSImportEqualsDeclaration<'a> {
     /// Has cost of making 1 allocation (32 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             id: Dummy::dummy(allocator),
             module_reference: Dummy::dummy(allocator),
@@ -3141,7 +3143,7 @@ impl<'a> Dummy<'a> for TSExternalModuleReference<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             expression: Dummy::dummy(allocator),
         }
@@ -3154,7 +3156,7 @@ impl<'a> Dummy<'a> for TSNonNullExpression<'a> {
     /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             expression: Dummy::dummy(allocator),
         }
@@ -3167,7 +3169,7 @@ impl<'a> Dummy<'a> for Decorator<'a> {
     /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             expression: Dummy::dummy(allocator),
         }
@@ -3180,7 +3182,7 @@ impl<'a> Dummy<'a> for TSExportAssignment<'a> {
     /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             expression: Dummy::dummy(allocator),
         }
@@ -3193,7 +3195,7 @@ impl<'a> Dummy<'a> for TSNamespaceExportDeclaration<'a> {
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             id: Dummy::dummy(allocator),
         }
@@ -3206,7 +3208,7 @@ impl<'a> Dummy<'a> for TSInstantiationExpression<'a> {
     /// Has cost of making 2 allocations (56 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             expression: Dummy::dummy(allocator),
             type_arguments: Dummy::dummy(allocator),
@@ -3230,7 +3232,7 @@ impl<'a> Dummy<'a> for JSDocNullableType<'a> {
     /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             type_annotation: Dummy::dummy(allocator),
             postfix: Dummy::dummy(allocator),
@@ -3244,7 +3246,7 @@ impl<'a> Dummy<'a> for JSDocNonNullableType<'a> {
     /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             type_annotation: Dummy::dummy(allocator),
             postfix: Dummy::dummy(allocator),
@@ -3257,16 +3259,17 @@ impl<'a> Dummy<'a> for JSDocUnknownType {
     ///
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
-        Self { node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY), span: Dummy::dummy(allocator) }
+        Self { node_id: Dummy::dummy(allocator), span: Dummy::dummy(allocator) }
     }
 }
 
 impl<'a> Dummy<'a> for StructStatement<'a> {
     /// Create a dummy [`StructStatement`].
     ///
-    /// Has cost of making 1 allocation (32 bytes).
+    /// Has cost of making 1 allocation (40 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             decorators: Dummy::dummy(allocator),
             id: Dummy::dummy(allocator),
@@ -3283,7 +3286,11 @@ impl<'a> Dummy<'a> for StructBody<'a> {
     ///
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
-        Self { span: Dummy::dummy(allocator), body: Dummy::dummy(allocator) }
+        Self {
+            node_id: Dummy::dummy(allocator),
+            span: Dummy::dummy(allocator),
+            body: Dummy::dummy(allocator),
+        }
     }
 }
 
@@ -3302,6 +3309,7 @@ impl<'a> Dummy<'a> for ArkUIComponentExpression<'a> {
     /// Has cost of making 1 allocation (16 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             callee: Dummy::dummy(allocator),
             type_arguments: Dummy::dummy(allocator),
@@ -3324,9 +3332,10 @@ impl<'a> Dummy<'a> for ArkUIChild<'a> {
 impl<'a> Dummy<'a> for AnnotationDeclaration<'a> {
     /// Create a dummy [`AnnotationDeclaration`].
     ///
-    /// Has cost of making 1 allocation (32 bytes).
+    /// Has cost of making 1 allocation (40 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
         Self {
+            node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             decorators: Dummy::dummy(allocator),
             id: Dummy::dummy(allocator),
@@ -3342,7 +3351,11 @@ impl<'a> Dummy<'a> for AnnotationBody<'a> {
     ///
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {
-        Self { span: Dummy::dummy(allocator), body: Dummy::dummy(allocator) }
+        Self {
+            node_id: Dummy::dummy(allocator),
+            span: Dummy::dummy(allocator),
+            body: Dummy::dummy(allocator),
+        }
     }
 }
 

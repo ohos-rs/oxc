@@ -4,7 +4,8 @@ use oxc_ast::{
 };
 use oxc_diagnostics::OxcDiagnostic;
 use oxc_macros::declare_oxc_lint;
-use oxc_span::{CompactStr, Span};
+use oxc_span::Span;
+use oxc_str::CompactStr;
 use schemars::JsonSchema;
 use serde::Deserialize;
 
@@ -13,7 +14,10 @@ use crate::{
     context::LintContext,
     globals::HTML_TAG,
     rule::Rule,
-    utils::{get_element_type, has_jsx_prop_ignore_case, is_interactive_element, parse_jsx_value},
+    utils::{
+        get_element_type, has_jsx_prop_ignore_case, is_interactive_element, is_interactive_role,
+        parse_jsx_value,
+    },
 };
 
 fn no_noninteractive_tabindex_diagnostic(span: Span) -> OxcDiagnostic {
@@ -87,31 +91,8 @@ declare_oxc_lint!(
     jsx_a11y,
     correctness,
     config = NoNoninteractiveTabindexConfig,
+    version = "0.15.4",
 );
-
-// https://www.w3.org/TR/wai-aria/#widget_roles
-// NOTE: "tabpanel" is not included here because it's technically a section role. It can optionally be considered interactive within the context of a tablist, because its visibility is dynamically controlled by an element with the "tab" aria role. It's included in the recommended jsx-a11y config for this reason.
-const INTERACTIVE_HTML_ROLES: [&str; 19] = [
-    "button",
-    "checkbox",
-    "gridcell",
-    "link",
-    "menuitem",
-    "menuitemcheckbox",
-    "menuitemradio",
-    "option",
-    "progressbar",
-    "radio",
-    "scrollbar",
-    "searchbox",
-    "separator",
-    "slider",
-    "spinbutton",
-    "switch",
-    "tab",
-    "textbox",
-    "treeitem",
-];
 
 impl Rule for NoNoninteractiveTabindex {
     fn run<'a>(&self, node: &AstNode<'a>, ctx: &LintContext<'a>) {
@@ -168,7 +149,7 @@ impl Rule for NoNoninteractiveTabindex {
                 JSXAttributeValue::StringLiteral(role) => {
                     let is_interactive_role =
                         role.value.split_whitespace().next().is_some_and(|role| {
-                            INTERACTIVE_HTML_ROLES.contains(&role)
+                            is_interactive_role(role)
                                 || self.0.roles.iter().any(|allowed_role| allowed_role == role)
                         });
 
@@ -273,6 +254,17 @@ fn test() {
             Some(serde_json::json!([{ "allowExpressionValues": true }])),
             None,
         ),
+        // Composite widget roles should be considered interactive
+        (r#"<div role="combobox" tabIndex="0" />"#, None, None),
+        (r#"<div role="grid" tabIndex="0" />"#, None, None),
+        (r#"<div role="listbox" tabIndex="0" />"#, None, None),
+        (r#"<div role="menu" tabIndex="0" />"#, None, None),
+        (r#"<div role="menubar" tabIndex="0" />"#, None, None),
+        (r#"<div role="radiogroup" tabIndex="0" />"#, None, None),
+        (r#"<div role="tablist" tabIndex="0" />"#, None, None),
+        (r#"<div role="tree" tabIndex="0" />"#, None, None),
+        (r#"<div role="treegrid" tabIndex="0" />"#, None, None),
+        (r#"<div role="toolbar" tabIndex="0" />"#, None, None),
     ];
 
     let fail = vec![

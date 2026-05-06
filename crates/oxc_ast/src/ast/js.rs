@@ -25,7 +25,8 @@ use std::cell::Cell;
 use oxc_allocator::{Box, CloneIn, Dummy, GetAddress, TakeIn, UnstableAddress, Vec};
 use oxc_ast_macros::ast;
 use oxc_estree::ESTree;
-use oxc_span::{Atom, ContentEq, GetSpan, GetSpanMut, Ident, SourceType, Span};
+use oxc_span::{ContentEq, GetSpan, GetSpanMut, SourceType, Span};
+use oxc_str::{Ident, Str};
 use oxc_syntax::{
     node::NodeId,
     operator::{
@@ -242,7 +243,6 @@ pub use match_expression;
 pub struct IdentifierName<'a> {
     pub node_id: Cell<NodeId>,
     pub span: Span,
-    #[estree(json_safe)]
     pub name: Ident<'a>,
 }
 
@@ -263,7 +263,6 @@ pub struct IdentifierReference<'a> {
     pub node_id: Cell<NodeId>,
     pub span: Span,
     /// The name of the identifier being referenced.
-    #[estree(json_safe)]
     pub name: Ident<'a>,
     /// Reference ID
     ///
@@ -293,7 +292,6 @@ pub struct BindingIdentifier<'a> {
     pub node_id: Cell<NodeId>,
     pub span: Span,
     /// The identifier name being bound.
-    #[estree(json_safe)]
     pub name: Ident<'a>,
     /// Unique identifier for this binding.
     ///
@@ -320,7 +318,6 @@ pub struct BindingIdentifier<'a> {
 pub struct LabelIdentifier<'a> {
     pub node_id: Cell<NodeId>,
     pub span: Span,
-    #[estree(json_safe)]
     pub name: Ident<'a>,
 }
 
@@ -363,7 +360,7 @@ pub enum ArrayExpressionElement<'a> {
     ///
     /// Array hole for sparse arrays.
     /// <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Trailing_commas#arrays>
-    Elision(Elision) = 65,
+    Elision(Box<'a, Elision>) = 65,
     // `Expression` variants added here by `inherit_variants!` macro
     @inherit Expression
 }
@@ -518,12 +515,12 @@ pub struct TemplateElementValue<'a> {
     /// A raw interpretation where backslashes do not have special meaning.
     /// For example, \t produces two characters – a backslash and a t.
     /// This interpretation of the template strings is stored in property .raw of the first argument (an Array).
-    pub raw: Atom<'a>,
+    pub raw: Str<'a>,
     /// A cooked interpretation where backslashes have special meaning.
     /// For example, \t produces a tab character.
     /// This interpretation of the template strings is stored as an Array in the first argument.
     /// cooked = None when template literal has invalid escape sequence
-    pub cooked: Option<Atom<'a>>,
+    pub cooked: Option<Str<'a>>,
 }
 
 /// Represents a member access expression, which can include computed member access,
@@ -611,6 +608,7 @@ pub struct PrivateFieldExpression<'a> {
 #[generate_derive(CloneIn, Dummy, TakeIn, GetSpan, GetSpanMut, ContentEq, ESTree, UnstableAddress)]
 #[estree(via = LeadingDotExpressionConverter)]
 pub struct LeadingDotExpression<'a> {
+    pub node_id: Cell<NodeId>,
     pub span: Span,
     pub optional: bool, // for optional chaining
     #[ts]
@@ -1194,7 +1192,7 @@ pub struct Directive<'a> {
     /// Directive with any escapes unescaped
     pub expression: StringLiteral<'a>,
     /// Raw content of directive as it appears in source, any escapes left as is
-    pub directive: Atom<'a>,
+    pub directive: Str<'a>,
 }
 
 /// `#! /usr/bin/env node` in `#! /usr/bin/env node`
@@ -1206,7 +1204,7 @@ pub struct Directive<'a> {
 pub struct Hashbang<'a> {
     pub node_id: Cell<NodeId>,
     pub span: Span,
-    pub value: Atom<'a>,
+    pub value: Str<'a>,
 }
 
 /// `{ let foo = 1; }` in `if(true) { let foo = 1; }`
@@ -2592,6 +2590,7 @@ pub struct ImportDeclaration<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, Dummy, TakeIn, GetSpan, GetSpanMut, ContentEq, ESTree, UnstableAddress)]
 pub struct LazyImportDeclaration<'a> {
+    pub node_id: Cell<NodeId>,
     pub span: Span,
     /// Import specifiers (e.g., `{ c }`)
     #[estree(via = LazyImportDeclarationSpecifiers)]

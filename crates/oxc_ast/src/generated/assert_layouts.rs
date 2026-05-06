@@ -68,7 +68,7 @@ const _: () = {
     assert!(offset_of!(ArrayExpression, node_id) == 8);
     assert!(offset_of!(ArrayExpression, elements) == 16);
 
-    assert!(size_of::<ArrayExpressionElement>() == 24);
+    assert!(size_of::<ArrayExpressionElement>() == 16);
     assert!(align_of::<ArrayExpressionElement>() == 8);
 
     // Padding: 4 bytes
@@ -167,14 +167,15 @@ const _: () = {
     assert!(offset_of!(PrivateFieldExpression, object) == 16);
     assert!(offset_of!(PrivateFieldExpression, field) == 32);
 
-    // Padding: 7 bytes
+    // Padding: 3 bytes
     assert!(size_of::<LeadingDotExpression>() == 64);
     assert!(align_of::<LeadingDotExpression>() == 8);
     assert!(offset_of!(LeadingDotExpression, span) == 0);
-    assert!(offset_of!(LeadingDotExpression, type_arguments) == 8);
-    assert!(offset_of!(LeadingDotExpression, arguments) == 16);
-    assert!(offset_of!(LeadingDotExpression, expression) == 40);
-    assert!(offset_of!(LeadingDotExpression, optional) == 56);
+    assert!(offset_of!(LeadingDotExpression, node_id) == 8);
+    assert!(offset_of!(LeadingDotExpression, optional) == 12);
+    assert!(offset_of!(LeadingDotExpression, type_arguments) == 16);
+    assert!(offset_of!(LeadingDotExpression, arguments) == 24);
+    assert!(offset_of!(LeadingDotExpression, expression) == 48);
 
     // Padding: 2 bytes
     assert!(size_of::<CallExpression>() == 64);
@@ -862,13 +863,14 @@ const _: () = {
     assert!(offset_of!(ImportDeclaration, source) == 40);
     assert!(offset_of!(ImportDeclaration, with_clause) == 88);
 
-    // Padding: 0 bytes
-    assert!(size_of::<LazyImportDeclaration>() == 88);
+    // Padding: 4 bytes
+    assert!(size_of::<LazyImportDeclaration>() == 96);
     assert!(align_of::<LazyImportDeclaration>() == 8);
     assert!(offset_of!(LazyImportDeclaration, span) == 0);
-    assert!(offset_of!(LazyImportDeclaration, specifiers) == 8);
-    assert!(offset_of!(LazyImportDeclaration, source) == 32);
-    assert!(offset_of!(LazyImportDeclaration, with_clause) == 80);
+    assert!(offset_of!(LazyImportDeclaration, node_id) == 8);
+    assert!(offset_of!(LazyImportDeclaration, specifiers) == 16);
+    assert!(offset_of!(LazyImportDeclaration, source) == 40);
+    assert!(offset_of!(LazyImportDeclaration, with_clause) == 88);
 
     assert!(size_of::<ImportPhase>() == 1);
     assert!(align_of::<ImportPhase>() == 1);
@@ -1106,13 +1108,13 @@ const _: () = {
     assert!(align_of::<JSXMemberExpressionObject>() == 8);
 
     // Padding: 4 bytes
-    assert!(size_of::<JSXExpressionContainer>() == 40);
+    assert!(size_of::<JSXExpressionContainer>() == 32);
     assert!(align_of::<JSXExpressionContainer>() == 8);
     assert!(offset_of!(JSXExpressionContainer, span) == 0);
     assert!(offset_of!(JSXExpressionContainer, node_id) == 8);
     assert!(offset_of!(JSXExpressionContainer, expression) == 16);
 
-    assert!(size_of::<JSXExpression>() == 24);
+    assert!(size_of::<JSXExpression>() == 16);
     assert!(align_of::<JSXExpression>() == 8);
 
     // Padding: 4 bytes
@@ -1568,15 +1570,15 @@ const _: () = {
     assert!(offset_of!(TSInterfaceHeritage, type_arguments) == 32);
 
     // Padding: 3 bytes
-    assert!(size_of::<TSTypePredicate>() == 48);
+    assert!(size_of::<TSTypePredicate>() == 40);
     assert!(align_of::<TSTypePredicate>() == 8);
     assert!(offset_of!(TSTypePredicate, span) == 0);
     assert!(offset_of!(TSTypePredicate, node_id) == 8);
     assert!(offset_of!(TSTypePredicate, asserts) == 12);
     assert!(offset_of!(TSTypePredicate, parameter_name) == 16);
-    assert!(offset_of!(TSTypePredicate, type_annotation) == 40);
+    assert!(offset_of!(TSTypePredicate, type_annotation) == 32);
 
-    assert!(size_of::<TSTypePredicateName>() == 24);
+    assert!(size_of::<TSTypePredicateName>() == 16);
     assert!(align_of::<TSTypePredicateName>() == 8);
 
     // Padding: 6 bytes
@@ -1836,54 +1838,59 @@ const _: () = {
     assert!(offset_of!(Comment, newlines) == 14);
     assert!(offset_of!(Comment, content) == 15);
 
-    // Padding: 3 bytes
-    assert!(size_of::<StructStatement>() == 88);
+    // Padding: 7 bytes
+    assert!(size_of::<StructStatement>() == 96);
     assert!(align_of::<StructStatement>() == 8);
     assert!(offset_of!(StructStatement, span) == 0);
-    assert!(offset_of!(StructStatement, decorators) == 8);
-    assert!(offset_of!(StructStatement, id) == 32);
-    assert!(offset_of!(StructStatement, type_parameters) == 64);
-    assert!(offset_of!(StructStatement, body) == 72);
-    assert!(offset_of!(StructStatement, scope_id) == 80);
-    assert!(offset_of!(StructStatement, declare) == 84);
+    assert!(offset_of!(StructStatement, node_id) == 8);
+    assert!(offset_of!(StructStatement, scope_id) == 12);
+    assert!(offset_of!(StructStatement, decorators) == 16);
+    assert!(offset_of!(StructStatement, id) == 40);
+    assert!(offset_of!(StructStatement, type_parameters) == 72);
+    assert!(offset_of!(StructStatement, body) == 80);
+    assert!(offset_of!(StructStatement, declare) == 88);
 
-    // Padding: 0 bytes
-    assert!(size_of::<StructBody>() == 32);
+    // Padding: 4 bytes
+    assert!(size_of::<StructBody>() == 40);
     assert!(align_of::<StructBody>() == 8);
     assert!(offset_of!(StructBody, span) == 0);
-    assert!(offset_of!(StructBody, body) == 8);
+    assert!(offset_of!(StructBody, node_id) == 8);
+    assert!(offset_of!(StructBody, body) == 16);
 
     assert!(size_of::<StructElement>() == 16);
     assert!(align_of::<StructElement>() == 8);
 
-    // Padding: 0 bytes
-    assert!(size_of::<ArkUIComponentExpression>() == 104);
+    // Padding: 4 bytes
+    assert!(size_of::<ArkUIComponentExpression>() == 112);
     assert!(align_of::<ArkUIComponentExpression>() == 8);
     assert!(offset_of!(ArkUIComponentExpression, span) == 0);
-    assert!(offset_of!(ArkUIComponentExpression, callee) == 8);
-    assert!(offset_of!(ArkUIComponentExpression, type_arguments) == 24);
-    assert!(offset_of!(ArkUIComponentExpression, arguments) == 32);
-    assert!(offset_of!(ArkUIComponentExpression, children) == 56);
-    assert!(offset_of!(ArkUIComponentExpression, chain_expressions) == 80);
+    assert!(offset_of!(ArkUIComponentExpression, node_id) == 8);
+    assert!(offset_of!(ArkUIComponentExpression, callee) == 16);
+    assert!(offset_of!(ArkUIComponentExpression, type_arguments) == 32);
+    assert!(offset_of!(ArkUIComponentExpression, arguments) == 40);
+    assert!(offset_of!(ArkUIComponentExpression, children) == 64);
+    assert!(offset_of!(ArkUIComponentExpression, chain_expressions) == 88);
 
     assert!(size_of::<ArkUIChild>() == 16);
     assert!(align_of::<ArkUIChild>() == 8);
 
-    // Padding: 3 bytes
-    assert!(size_of::<AnnotationDeclaration>() == 80);
+    // Padding: 7 bytes
+    assert!(size_of::<AnnotationDeclaration>() == 88);
     assert!(align_of::<AnnotationDeclaration>() == 8);
     assert!(offset_of!(AnnotationDeclaration, span) == 0);
-    assert!(offset_of!(AnnotationDeclaration, decorators) == 8);
-    assert!(offset_of!(AnnotationDeclaration, id) == 32);
-    assert!(offset_of!(AnnotationDeclaration, body) == 64);
-    assert!(offset_of!(AnnotationDeclaration, scope_id) == 72);
-    assert!(offset_of!(AnnotationDeclaration, declare) == 76);
+    assert!(offset_of!(AnnotationDeclaration, node_id) == 8);
+    assert!(offset_of!(AnnotationDeclaration, scope_id) == 12);
+    assert!(offset_of!(AnnotationDeclaration, decorators) == 16);
+    assert!(offset_of!(AnnotationDeclaration, id) == 40);
+    assert!(offset_of!(AnnotationDeclaration, body) == 72);
+    assert!(offset_of!(AnnotationDeclaration, declare) == 80);
 
-    // Padding: 0 bytes
-    assert!(size_of::<AnnotationBody>() == 32);
+    // Padding: 4 bytes
+    assert!(size_of::<AnnotationBody>() == 40);
     assert!(align_of::<AnnotationBody>() == 8);
     assert!(offset_of!(AnnotationBody, span) == 0);
-    assert!(offset_of!(AnnotationBody, body) == 8);
+    assert!(offset_of!(AnnotationBody, node_id) == 8);
+    assert!(offset_of!(AnnotationBody, body) == 16);
 
     assert!(size_of::<AnnotationElement>() == 16);
     assert!(align_of::<AnnotationElement>() == 8);
@@ -1950,7 +1957,7 @@ const _: () = if cfg!(target_family = "wasm") || align_of::<u64>() == 8 {
     assert!(offset_of!(ArrayExpression, node_id) == 8);
     assert!(offset_of!(ArrayExpression, elements) == 12);
 
-    assert!(size_of::<ArrayExpressionElement>() == 16);
+    assert!(size_of::<ArrayExpressionElement>() == 8);
     assert!(align_of::<ArrayExpressionElement>() == 4);
 
     // Padding: 0 bytes
@@ -2050,13 +2057,14 @@ const _: () = if cfg!(target_family = "wasm") || align_of::<u64>() == 8 {
     assert!(offset_of!(PrivateFieldExpression, field) == 24);
 
     // Padding: 3 bytes
-    assert!(size_of::<LeadingDotExpression>() == 40);
+    assert!(size_of::<LeadingDotExpression>() == 44);
     assert!(align_of::<LeadingDotExpression>() == 4);
     assert!(offset_of!(LeadingDotExpression, span) == 0);
-    assert!(offset_of!(LeadingDotExpression, type_arguments) == 8);
-    assert!(offset_of!(LeadingDotExpression, arguments) == 12);
-    assert!(offset_of!(LeadingDotExpression, expression) == 28);
-    assert!(offset_of!(LeadingDotExpression, optional) == 36);
+    assert!(offset_of!(LeadingDotExpression, node_id) == 8);
+    assert!(offset_of!(LeadingDotExpression, optional) == 12);
+    assert!(offset_of!(LeadingDotExpression, type_arguments) == 16);
+    assert!(offset_of!(LeadingDotExpression, arguments) == 20);
+    assert!(offset_of!(LeadingDotExpression, expression) == 36);
 
     // Padding: 2 bytes
     assert!(size_of::<CallExpression>() == 44);
@@ -2745,12 +2753,13 @@ const _: () = if cfg!(target_family = "wasm") || align_of::<u64>() == 8 {
     assert!(offset_of!(ImportDeclaration, with_clause) == 64);
 
     // Padding: 0 bytes
-    assert!(size_of::<LazyImportDeclaration>() == 60);
+    assert!(size_of::<LazyImportDeclaration>() == 64);
     assert!(align_of::<LazyImportDeclaration>() == 4);
     assert!(offset_of!(LazyImportDeclaration, span) == 0);
-    assert!(offset_of!(LazyImportDeclaration, specifiers) == 8);
-    assert!(offset_of!(LazyImportDeclaration, source) == 24);
-    assert!(offset_of!(LazyImportDeclaration, with_clause) == 56);
+    assert!(offset_of!(LazyImportDeclaration, node_id) == 8);
+    assert!(offset_of!(LazyImportDeclaration, specifiers) == 12);
+    assert!(offset_of!(LazyImportDeclaration, source) == 28);
+    assert!(offset_of!(LazyImportDeclaration, with_clause) == 60);
 
     assert!(size_of::<ImportPhase>() == 1);
     assert!(align_of::<ImportPhase>() == 1);
@@ -2988,13 +2997,13 @@ const _: () = if cfg!(target_family = "wasm") || align_of::<u64>() == 8 {
     assert!(align_of::<JSXMemberExpressionObject>() == 4);
 
     // Padding: 0 bytes
-    assert!(size_of::<JSXExpressionContainer>() == 28);
+    assert!(size_of::<JSXExpressionContainer>() == 20);
     assert!(align_of::<JSXExpressionContainer>() == 4);
     assert!(offset_of!(JSXExpressionContainer, span) == 0);
     assert!(offset_of!(JSXExpressionContainer, node_id) == 8);
     assert!(offset_of!(JSXExpressionContainer, expression) == 12);
 
-    assert!(size_of::<JSXExpression>() == 16);
+    assert!(size_of::<JSXExpression>() == 8);
     assert!(align_of::<JSXExpression>() == 4);
 
     // Padding: 0 bytes
@@ -3450,15 +3459,15 @@ const _: () = if cfg!(target_family = "wasm") || align_of::<u64>() == 8 {
     assert!(offset_of!(TSInterfaceHeritage, type_arguments) == 20);
 
     // Padding: 3 bytes
-    assert!(size_of::<TSTypePredicate>() == 36);
+    assert!(size_of::<TSTypePredicate>() == 28);
     assert!(align_of::<TSTypePredicate>() == 4);
     assert!(offset_of!(TSTypePredicate, span) == 0);
     assert!(offset_of!(TSTypePredicate, node_id) == 8);
     assert!(offset_of!(TSTypePredicate, asserts) == 12);
     assert!(offset_of!(TSTypePredicate, parameter_name) == 16);
-    assert!(offset_of!(TSTypePredicate, type_annotation) == 32);
+    assert!(offset_of!(TSTypePredicate, type_annotation) == 24);
 
-    assert!(size_of::<TSTypePredicateName>() == 16);
+    assert!(size_of::<TSTypePredicateName>() == 8);
     assert!(align_of::<TSTypePredicateName>() == 4);
 
     // Padding: 2 bytes
@@ -3719,53 +3728,58 @@ const _: () = if cfg!(target_family = "wasm") || align_of::<u64>() == 8 {
     assert!(offset_of!(Comment, content) == 15);
 
     // Padding: 3 bytes
-    assert!(size_of::<StructStatement>() == 68);
+    assert!(size_of::<StructStatement>() == 72);
     assert!(align_of::<StructStatement>() == 4);
     assert!(offset_of!(StructStatement, span) == 0);
-    assert!(offset_of!(StructStatement, decorators) == 8);
-    assert!(offset_of!(StructStatement, id) == 24);
-    assert!(offset_of!(StructStatement, type_parameters) == 52);
-    assert!(offset_of!(StructStatement, body) == 56);
-    assert!(offset_of!(StructStatement, scope_id) == 60);
-    assert!(offset_of!(StructStatement, declare) == 64);
+    assert!(offset_of!(StructStatement, node_id) == 8);
+    assert!(offset_of!(StructStatement, scope_id) == 12);
+    assert!(offset_of!(StructStatement, decorators) == 16);
+    assert!(offset_of!(StructStatement, id) == 32);
+    assert!(offset_of!(StructStatement, type_parameters) == 60);
+    assert!(offset_of!(StructStatement, body) == 64);
+    assert!(offset_of!(StructStatement, declare) == 68);
 
     // Padding: 0 bytes
-    assert!(size_of::<StructBody>() == 24);
+    assert!(size_of::<StructBody>() == 28);
     assert!(align_of::<StructBody>() == 4);
     assert!(offset_of!(StructBody, span) == 0);
-    assert!(offset_of!(StructBody, body) == 8);
+    assert!(offset_of!(StructBody, node_id) == 8);
+    assert!(offset_of!(StructBody, body) == 12);
 
     assert!(size_of::<StructElement>() == 8);
     assert!(align_of::<StructElement>() == 4);
 
     // Padding: 0 bytes
-    assert!(size_of::<ArkUIComponentExpression>() == 68);
+    assert!(size_of::<ArkUIComponentExpression>() == 72);
     assert!(align_of::<ArkUIComponentExpression>() == 4);
     assert!(offset_of!(ArkUIComponentExpression, span) == 0);
-    assert!(offset_of!(ArkUIComponentExpression, callee) == 8);
-    assert!(offset_of!(ArkUIComponentExpression, type_arguments) == 16);
-    assert!(offset_of!(ArkUIComponentExpression, arguments) == 20);
-    assert!(offset_of!(ArkUIComponentExpression, children) == 36);
-    assert!(offset_of!(ArkUIComponentExpression, chain_expressions) == 52);
+    assert!(offset_of!(ArkUIComponentExpression, node_id) == 8);
+    assert!(offset_of!(ArkUIComponentExpression, callee) == 12);
+    assert!(offset_of!(ArkUIComponentExpression, type_arguments) == 20);
+    assert!(offset_of!(ArkUIComponentExpression, arguments) == 24);
+    assert!(offset_of!(ArkUIComponentExpression, children) == 40);
+    assert!(offset_of!(ArkUIComponentExpression, chain_expressions) == 56);
 
     assert!(size_of::<ArkUIChild>() == 8);
     assert!(align_of::<ArkUIChild>() == 4);
 
     // Padding: 3 bytes
-    assert!(size_of::<AnnotationDeclaration>() == 64);
+    assert!(size_of::<AnnotationDeclaration>() == 68);
     assert!(align_of::<AnnotationDeclaration>() == 4);
     assert!(offset_of!(AnnotationDeclaration, span) == 0);
-    assert!(offset_of!(AnnotationDeclaration, decorators) == 8);
-    assert!(offset_of!(AnnotationDeclaration, id) == 24);
-    assert!(offset_of!(AnnotationDeclaration, body) == 52);
-    assert!(offset_of!(AnnotationDeclaration, scope_id) == 56);
-    assert!(offset_of!(AnnotationDeclaration, declare) == 60);
+    assert!(offset_of!(AnnotationDeclaration, node_id) == 8);
+    assert!(offset_of!(AnnotationDeclaration, scope_id) == 12);
+    assert!(offset_of!(AnnotationDeclaration, decorators) == 16);
+    assert!(offset_of!(AnnotationDeclaration, id) == 32);
+    assert!(offset_of!(AnnotationDeclaration, body) == 60);
+    assert!(offset_of!(AnnotationDeclaration, declare) == 64);
 
     // Padding: 0 bytes
-    assert!(size_of::<AnnotationBody>() == 24);
+    assert!(size_of::<AnnotationBody>() == 28);
     assert!(align_of::<AnnotationBody>() == 4);
     assert!(offset_of!(AnnotationBody, span) == 0);
-    assert!(offset_of!(AnnotationBody, body) == 8);
+    assert!(offset_of!(AnnotationBody, node_id) == 8);
+    assert!(offset_of!(AnnotationBody, body) == 12);
 
     assert!(size_of::<AnnotationElement>() == 8);
     assert!(align_of::<AnnotationElement>() == 4);

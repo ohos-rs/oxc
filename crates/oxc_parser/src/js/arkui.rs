@@ -12,7 +12,7 @@ use oxc_span::Span;
 use crate::{
     Context, ParserConfig as Config, ParserImpl, StatementContext, diagnostics,
     lexer::Kind,
-    modifiers::{ModifierFlags, ModifierKind, Modifiers},
+    modifiers::{ModifierKind, ModifierKinds, Modifiers},
 };
 
 use super::FunctionKind;
@@ -34,7 +34,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         &mut self,
         start_span: u32,
         stmt_ctx: StatementContext,
-        modifiers: &Modifiers<'a>,
+        modifiers: &Modifiers,
         decorators: Vec<'a, Decorator<'a>>,
     ) -> Statement<'a> {
         let decl = self.parse_struct_declaration(start_span, modifiers, decorators);
@@ -51,7 +51,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
     pub(crate) fn parse_struct_declaration(
         &mut self,
         start_span: u32,
-        modifiers: &Modifiers<'a>,
+        modifiers: &Modifiers,
         decorators: Vec<'a, Decorator<'a>>,
     ) -> Box<'a, StructStatement<'a>> {
         self.bump_any(); // advance `struct`
@@ -73,7 +73,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
         self.verify_modifiers(
             modifiers,
-            ModifierFlags::DECLARE | ModifierFlags::ABSTRACT,
+            ModifierKinds::new([ModifierKind::Declare, ModifierKind::Abstract]),
             true,
             diagnostics::modifier_cannot_be_used_here,
         );
@@ -98,7 +98,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         &mut self,
         start_span: u32,
         stmt_ctx: StatementContext,
-        modifiers: &Modifiers<'a>,
+        modifiers: &Modifiers,
         decorators: Vec<'a, Decorator<'a>>,
     ) -> Statement<'a> {
         let decl = self.parse_annotation_declaration(start_span, modifiers, decorators);
@@ -117,7 +117,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
     pub(crate) fn parse_annotation_declaration(
         &mut self,
         start_span: u32,
-        modifiers: &Modifiers<'a>,
+        modifiers: &Modifiers,
         decorators: Vec<'a, Decorator<'a>>,
     ) -> Box<'a, AnnotationDeclaration<'a>> {
         // We should be at `interface` after `@` was consumed
@@ -143,7 +143,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
         self.verify_modifiers(
             modifiers,
-            ModifierFlags::DECLARE | ModifierFlags::ABSTRACT,
+            ModifierKinds::new([ModifierKind::Declare, ModifierKind::Abstract]),
             true,
             diagnostics::modifier_cannot_be_used_here,
         );
@@ -186,7 +186,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
         self.verify_modifiers(
             &modifiers,
-            !ModifierFlags::EXPORT,
+            ModifierKinds::all_except([ModifierKind::Export]),
             false,
             diagnostics::cannot_appear_on_class_elements,
         );
@@ -262,7 +262,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
         self.verify_modifiers(
             &modifiers,
-            !ModifierFlags::EXPORT,
+            ModifierKinds::all_except([ModifierKind::Export]),
             false,
             diagnostics::cannot_appear_on_class_elements,
         );
@@ -314,7 +314,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         &mut self,
         span: u32,
         r#type: MethodDefinitionType,
-        modifiers: &Modifiers<'a>,
+        modifiers: &Modifiers,
         decorators: Vec<'a, Decorator<'a>>,
     ) -> StructElement<'a> {
         let generator = self.eat(Kind::Star);
@@ -363,7 +363,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         name: PropertyKey<'a>,
         computed: bool,
         optional: bool,
-        modifiers: &Modifiers<'a>,
+        modifiers: &Modifiers,
         decorators: Vec<'a, Decorator<'a>>,
     ) -> Box<'a, MethodDefinition<'a>> {
         let value = self.parse_method(
@@ -394,7 +394,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         computed: bool,
         optional_span: Option<Span>,
         definite: bool,
-        modifiers: &Modifiers<'a>,
+        modifiers: &Modifiers,
         decorators: Vec<'a, Decorator<'a>>,
     ) -> StructElement<'a> {
         let optional = optional_span.is_some();
@@ -443,7 +443,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         span: u32,
         r#type: MethodDefinitionType,
         kind: MethodDefinitionKind,
-        modifiers: &Modifiers<'a>,
+        modifiers: &Modifiers,
         decorators: Vec<'a, Decorator<'a>>,
     ) -> Box<'a, MethodDefinition<'a>> {
         let (name, computed) = self.parse_property_name();
@@ -472,7 +472,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         }
         self.verify_modifiers(
             modifiers,
-            !(ModifierFlags::ASYNC | ModifierFlags::DECLARE),
+            ModifierKinds::all_except([ModifierKind::Async, ModifierKind::Declare]),
             false,
             diagnostics::modifier_cannot_be_used_here,
         );
@@ -483,7 +483,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
     fn parse_property_definition_for_struct(
         &mut self,
         span: u32,
-        modifiers: &Modifiers<'a>,
+        modifiers: &Modifiers,
         decorators: Vec<'a, Decorator<'a>>,
     ) -> StructElement<'a> {
         // Parse property key

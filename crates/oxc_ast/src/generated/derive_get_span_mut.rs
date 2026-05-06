@@ -116,7 +116,7 @@ impl GetSpanMut for ArrayExpressionElement<'_> {
     fn span_mut(&mut self) -> &mut Span {
         match self {
             Self::SpreadElement(it) => GetSpanMut::span_mut(&mut **it),
-            Self::Elision(it) => GetSpanMut::span_mut(it),
+            Self::Elision(it) => GetSpanMut::span_mut(&mut **it),
             Self::BooleanLiteral(it) => GetSpanMut::span_mut(&mut **it),
             Self::NullLiteral(it) => GetSpanMut::span_mut(&mut **it),
             Self::NumericLiteral(it) => GetSpanMut::span_mut(&mut **it),
@@ -1379,7 +1379,7 @@ impl GetSpanMut for JSXExpressionContainer<'_> {
 impl GetSpanMut for JSXExpression<'_> {
     fn span_mut(&mut self) -> &mut Span {
         match self {
-            Self::EmptyExpression(it) => GetSpanMut::span_mut(it),
+            Self::EmptyExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::BooleanLiteral(it) => GetSpanMut::span_mut(&mut **it),
             Self::NullLiteral(it) => GetSpanMut::span_mut(&mut **it),
             Self::NumericLiteral(it) => GetSpanMut::span_mut(&mut **it),
@@ -1988,7 +1988,7 @@ impl GetSpanMut for TSTypePredicateName<'_> {
     fn span_mut(&mut self) -> &mut Span {
         match self {
             Self::Identifier(it) => GetSpanMut::span_mut(&mut **it),
-            Self::This(it) => GetSpanMut::span_mut(it),
+            Self::This(it) => GetSpanMut::span_mut(&mut **it),
         }
     }
 }

@@ -100,7 +100,7 @@ impl<'c, 'a: 'c> RuleFixer<'c, 'a> {
                 let target_text = fixer.possibly_truncate_range(target);
                 let borrowed_replacement = Cow::Borrowed(replacement_text);
                 let replacement_text = fixer.possibly_truncate_snippet(&borrowed_replacement);
-                Cow::Owned(format!("Replace `{target_text}` with `{replacement_text}`."))
+                Cow::Owned(format_replace_message(target_text.as_ref(), replacement_text.as_ref()))
             });
 
             fixer.new_fix(CompositeFix::Single(fix), message)
@@ -119,9 +119,9 @@ impl<'c, 'a: 'c> RuleFixer<'c, 'a> {
             let fix = Fix::new(replacement, target);
             let target_text = fixer.possibly_truncate_range(target);
             let content = fixer.possibly_truncate_snippet(&fix.content);
-            let message = fixer
-                .auto_message
-                .then(|| Cow::Owned(format!("Replace `{target_text}` with `{content}`.")));
+            let message = fixer.auto_message.then(|| {
+                Cow::Owned(format_replace_message(target_text.as_ref(), content.as_ref()))
+            });
 
             fixer.new_fix(CompositeFix::Single(fix), message)
         }
@@ -224,6 +224,14 @@ impl<'c, 'a: 'c> RuleFixer<'c, 'a> {
     }
 }
 
+fn format_replace_message(target_text: &str, replacement_text: &str) -> String {
+    if replacement_text.is_empty() {
+        format!("Remove `{target_text}`.")
+    } else {
+        format!("Replace `{target_text}` with `{replacement_text}`.")
+    }
+}
+
 #[derive(Debug)]
 pub struct FixResult<'a> {
     pub fixed: bool,
@@ -311,11 +319,6 @@ pub struct Fixer<'a> {
     // The behavior is oriented by `oxlint` where only one PossibleFixes is applied.
     fix_index: u8,
 
-    /// When `true`, boundary-adjacent fixes (e.g. `[0,5]` and `[5,10]`) are considered
-    /// overlapping, matching ESLint's `SourceCodeFixer` behavior.
-    /// When `false` (default), only truly overlapping fixes are skipped.
-    eslint_compat: bool,
-
     #[cfg(debug_assertions)]
     source_type: Option<SourceType>,
 }
@@ -332,7 +335,6 @@ impl<'a> Fixer<'a> {
             source_text,
             messages,
             fix_index: 0,
-            eslint_compat: false,
             #[cfg(debug_assertions)]
             source_type,
         }
@@ -342,12 +344,6 @@ impl<'a> Fixer<'a> {
     #[must_use]
     pub fn with_fix_index(mut self, fix_index: u8) -> Self {
         self.fix_index = fix_index;
-        self
-    }
-
-    #[must_use]
-    pub fn with_eslint_compat(mut self, eslint_compat: bool) -> Self {
-        self.eslint_compat = eslint_compat;
         self
     }
 
@@ -366,7 +362,6 @@ impl<'a> Fixer<'a> {
         let mut fixed = false;
         let mut output = String::with_capacity(source_text.len());
         let mut last_pos: u32 = 0;
-        let eslint_compat = self.eslint_compat;
 
         // only keep messages that were not fixed
         let mut filtered_messages = Vec::with_capacity(self.messages.len());
@@ -391,16 +386,12 @@ impl<'a> Fixer<'a> {
                 continue;
             }
 
-            // Skip fixes that overlap with a previously applied fix.
-            //
-            // In standard mode, boundary-adjacent fixes (e.g. [0, 5] and [5, 10]) are not considered overlapping.
-            // In ESLint compat mode, they *are* considered overlapping (like ESLint does).
-            //
+            // Skip fixes that overlap with a previously applied fix. Boundary-adjacent fixes
+            // (e.g. [0, 5] and [5, 10]) are considered overlapping to match ESLint's behavior.
             // Never consider the first fix overlapping, because there's no previous fix to overlap with.
             // This extra check is required because `last_pos` is 0 initially, so a fix starting at offset 0
-            // would incorrectly be considered as overlapping when `eslint_compat` is `true`.
-            let overlaps =
-                if eslint_compat && fixed { last_pos >= start } else { last_pos > start };
+            // would incorrectly be considered as overlapping.
+            let overlaps = fixed && last_pos >= start;
             if overlaps {
                 filtered_messages.push(m);
                 continue;
@@ -452,7 +443,9 @@ mod test {
 
     use crate::FixKind;
 
-    use super::{CompositeFix, Fix, FixResult, Fixer, Message, PossibleFixes};
+    use super::{
+        CompositeFix, Fix, FixResult, Fixer, Message, PossibleFixes, format_replace_message,
+    };
 
     fn insert_at_end() -> OxcDiagnostic {
         OxcDiagnostic::warn("End")
@@ -719,30 +712,12 @@ mod test {
         assert!(result.fixed);
     }
 
-    // In normal mode, fixes that share a boundary (end of one == start of next)
-    // are not treated as overlapping. Both fixes are applied.
     #[test]
-    fn apply_two_fix_when_the_start_the_same_as_the_previous_end() {
+    fn apply_one_fix_when_the_start_the_same_as_the_previous_end() {
         let result = get_fix_result(vec![
             create_message(remove_start(), PossibleFixes::Single(REMOVE_START)),
             create_message(replace_id(), PossibleFixes::Single(REPLACE_ID)),
         ]);
-        assert_eq!(result.fixed_code, TEST_CODE.cow_replace("var answer", "foo"));
-        assert_eq!(result.messages.len(), 0);
-        assert!(result.fixed);
-    }
-
-    // In ESLint compat mode, fixes that share a boundary (end of one == start of next)
-    // are treated as overlapping. Only the first fix is applied.
-    #[test]
-    fn apply_one_fix_when_the_start_the_same_as_the_previous_end_in_eslint_compat_mode() {
-        let messages = vec![
-            create_message(remove_start(), PossibleFixes::Single(REMOVE_START)),
-            create_message(replace_id(), PossibleFixes::Single(REPLACE_ID)),
-        ];
-        let result = Fixer::new(TEST_CODE, messages, Some(SourceType::default()))
-            .with_eslint_compat(true)
-            .fix();
         assert_eq!(result.fixed_code, TEST_CODE.cow_replace("var ", ""));
         assert_eq!(result.messages.len(), 1);
         assert!(result.fixed);
@@ -949,5 +924,15 @@ mod test {
         let result = fixer.fix();
         assert!(result.fixed);
         assert_eq!(result.fixed_code, "let answer = 42;");
+    }
+
+    #[test]
+    fn format_replace_message_for_non_empty_replacement() {
+        assert_eq!(format_replace_message("{foo}", "bar"), "Replace `{foo}` with `bar`.");
+    }
+
+    #[test]
+    fn format_replace_message_for_empty_replacement() {
+        assert_eq!(format_replace_message(r#"{""}"#, ""), r#"Remove `{""}`."#);
     }
 }

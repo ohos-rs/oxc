@@ -11,7 +11,7 @@ use oxc_allocator::{Box, CloneIn, Dummy, GetAddress, TakeIn, UnstableAddress, Ve
 use oxc_ast_macros::ast;
 use oxc_estree::ESTree;
 use oxc_span::{ContentEq, GetSpan, GetSpanMut, Span};
-use oxc_syntax::scope::ScopeId;
+use oxc_syntax::{node::NodeId, scope::ScopeId};
 use std::cell::Cell;
 
 use super::{js::*, ts::*};
@@ -37,6 +37,7 @@ use super::{js::*, ts::*};
 #[derive(Debug)]
 #[generate_derive(CloneIn, Dummy, TakeIn, GetSpan, GetSpanMut, ContentEq, ESTree, UnstableAddress)]
 pub struct StructStatement<'a> {
+    pub node_id: Cell<NodeId>,
     /// Span
     pub span: Span,
     /// Decorators applied to the struct.
@@ -72,6 +73,7 @@ pub struct StructStatement<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, Dummy, TakeIn, GetSpan, GetSpanMut, ContentEq, ESTree, UnstableAddress)]
 pub struct StructBody<'a> {
+    pub node_id: Cell<NodeId>,
     /// Span
     pub span: Span,
     /// Elements within the struct body
@@ -130,6 +132,7 @@ pub enum StructElement<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, Dummy, TakeIn, GetSpan, GetSpanMut, ContentEq, ESTree, UnstableAddress)]
 pub struct ArkUIComponentExpression<'a> {
+    pub node_id: Cell<NodeId>,
     /// Span
     pub span: Span,
     /// The component name/callee (e.g., `Column`, `Text`, `Button`)
@@ -209,6 +212,7 @@ pub enum ArkUIChild<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, Dummy, TakeIn, GetSpan, GetSpanMut, ContentEq, ESTree, UnstableAddress)]
 pub struct AnnotationDeclaration<'a> {
+    pub node_id: Cell<NodeId>,
     /// Span
     pub span: Span,
     /// Decorators applied to the annotation (not used for @interface syntax).
@@ -232,6 +236,7 @@ pub struct AnnotationDeclaration<'a> {
 #[derive(Debug)]
 #[generate_derive(CloneIn, Dummy, TakeIn, GetSpan, GetSpanMut, ContentEq, ESTree, UnstableAddress)]
 pub struct AnnotationBody<'a> {
+    pub node_id: Cell<NodeId>,
     /// Span
     pub span: Span,
     /// Elements within the annotation body

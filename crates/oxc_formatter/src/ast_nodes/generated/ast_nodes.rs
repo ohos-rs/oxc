@@ -5,7 +5,8 @@ use std::mem::transmute;
 
 use oxc_allocator::Vec;
 use oxc_ast::ast::*;
-use oxc_span::{GetSpan, Ident};
+use oxc_span::GetSpan;
+use oxc_str::Ident;
 use oxc_syntax::node::NodeId;
 
 use crate::ast_nodes::AstNode;
@@ -1393,7 +1394,7 @@ impl<'a> AstNode<'a, ArrayExpressionElement<'a>> {
             }
             ArrayExpressionElement::Elision(s) => {
                 AstNodes::Elision(self.allocator.alloc(AstNode {
-                    inner: s,
+                    inner: s.as_ref(),
                     parent,
                     allocator: self.allocator,
                     following_span_start: self.following_span_start,
@@ -1875,6 +1876,11 @@ impl<'a> AstNode<'a, PrivateFieldExpression<'a>> {
 }
 
 impl<'a> AstNode<'a, LeadingDotExpression<'a>> {
+    #[inline]
+    pub fn node_id(&self) -> NodeId {
+        self.inner.node_id()
+    }
+
     #[inline]
     pub fn optional(&self) -> bool {
         self.inner.optional
@@ -3206,7 +3212,7 @@ impl<'a> AstNode<'a, Directive<'a>> {
     }
 
     #[inline]
-    pub fn directive(&self) -> Atom<'a> {
+    pub fn directive(&self) -> Str<'a> {
         self.inner.directive
     }
 
@@ -3227,7 +3233,7 @@ impl<'a> AstNode<'a, Hashbang<'a>> {
     }
 
     #[inline]
-    pub fn value(&self) -> Atom<'a> {
+    pub fn value(&self) -> Str<'a> {
         self.inner.value
     }
 
@@ -5865,6 +5871,11 @@ impl<'a> AstNode<'a, ImportDeclaration<'a>> {
 
 impl<'a> AstNode<'a, LazyImportDeclaration<'a>> {
     #[inline]
+    pub fn node_id(&self) -> NodeId {
+        self.inner.node_id()
+    }
+
+    #[inline]
     pub fn specifiers(&self) -> Option<&AstNode<'a, Vec<'a, ImportDeclarationSpecifier<'a>>>> {
         let following_span_start = self.inner.source.span().start;
         self.allocator
@@ -6549,7 +6560,7 @@ impl<'a> AstNode<'a, NumericLiteral<'a>> {
     }
 
     #[inline]
-    pub fn raw(&self) -> Option<Atom<'a>> {
+    pub fn raw(&self) -> Option<Str<'a>> {
         self.inner.raw
     }
 
@@ -6575,12 +6586,12 @@ impl<'a> AstNode<'a, StringLiteral<'a>> {
     }
 
     #[inline]
-    pub fn value(&self) -> Atom<'a> {
+    pub fn value(&self) -> Str<'a> {
         self.inner.value
     }
 
     #[inline]
-    pub fn raw(&self) -> Option<Atom<'a>> {
+    pub fn raw(&self) -> Option<Str<'a>> {
         self.inner.raw
     }
 
@@ -6606,12 +6617,12 @@ impl<'a> AstNode<'a, BigIntLiteral<'a>> {
     }
 
     #[inline]
-    pub fn value(&self) -> Atom<'a> {
+    pub fn value(&self) -> Str<'a> {
         self.inner.value
     }
 
     #[inline]
-    pub fn raw(&self) -> Option<Atom<'a>> {
+    pub fn raw(&self) -> Option<Str<'a>> {
         self.inner.raw
     }
 
@@ -6642,7 +6653,7 @@ impl<'a> AstNode<'a, RegExpLiteral<'a>> {
     }
 
     #[inline]
-    pub fn raw(&self) -> Option<Atom<'a>> {
+    pub fn raw(&self) -> Option<Str<'a>> {
         self.inner.raw
     }
 
@@ -7092,7 +7103,7 @@ impl<'a> AstNode<'a, JSXExpression<'a>> {
         let node = match self.inner {
             JSXExpression::EmptyExpression(s) => {
                 AstNodes::JSXEmptyExpression(self.allocator.alloc(AstNode {
-                    inner: s,
+                    inner: s.as_ref(),
                     parent,
                     allocator: self.allocator,
                     following_span_start: self.following_span_start,
@@ -7302,7 +7313,7 @@ impl<'a> AstNode<'a, JSXIdentifier<'a>> {
     }
 
     #[inline]
-    pub fn name(&self) -> Atom<'a> {
+    pub fn name(&self) -> Str<'a> {
         self.inner.name
     }
 
@@ -7392,12 +7403,12 @@ impl<'a> AstNode<'a, JSXText<'a>> {
     }
 
     #[inline]
-    pub fn value(&self) -> Atom<'a> {
+    pub fn value(&self) -> Str<'a> {
         self.inner.value
     }
 
     #[inline]
-    pub fn raw(&self) -> Option<Atom<'a>> {
+    pub fn raw(&self) -> Option<Str<'a>> {
         self.inner.raw
     }
 
@@ -9493,7 +9504,7 @@ impl<'a> AstNode<'a, TSIndexSignatureName<'a>> {
     }
 
     #[inline]
-    pub fn name(&self) -> Atom<'a> {
+    pub fn name(&self) -> Str<'a> {
         self.inner.name
     }
 
@@ -9629,7 +9640,7 @@ impl<'a> AstNode<'a, TSTypePredicateName<'a>> {
                 }))
             }
             TSTypePredicateName::This(s) => AstNodes::TSThisType(self.allocator.alloc(AstNode {
-                inner: s,
+                inner: s.as_ref(),
                 parent,
                 allocator: self.allocator,
                 following_span_start: self.following_span_start,
@@ -10805,6 +10816,11 @@ impl<'a> AstNode<'a, JSDocUnknownType> {
 
 impl<'a> AstNode<'a, StructStatement<'a>> {
     #[inline]
+    pub fn node_id(&self) -> NodeId {
+        self.inner.node_id()
+    }
+
+    #[inline]
     pub fn decorators(&self) -> &AstNode<'a, Vec<'a, Decorator<'a>>> {
         let following_span_start = self.inner.id.span().start;
         self.allocator.alloc(AstNode {
@@ -10873,6 +10889,11 @@ impl<'a> AstNode<'a, StructStatement<'a>> {
 
 impl<'a> AstNode<'a, StructBody<'a>> {
     #[inline]
+    pub fn node_id(&self) -> NodeId {
+        self.inner.node_id()
+    }
+
+    #[inline]
     pub fn body(&self) -> &AstNode<'a, Vec<'a, StructElement<'a>>> {
         let following_span_start = self.following_span_start;
         self.allocator.alloc(AstNode {
@@ -10920,6 +10941,11 @@ impl<'a> AstNode<'a, StructElement<'a>> {
 }
 
 impl<'a> AstNode<'a, ArkUIComponentExpression<'a>> {
+    #[inline]
+    pub fn node_id(&self) -> NodeId {
+        self.inner.node_id()
+    }
+
     #[inline]
     pub fn callee(&self) -> &AstNode<'a, Expression<'a>> {
         let following_span_start = self
@@ -11047,6 +11073,11 @@ impl<'a> AstNode<'a, ArkUIChild<'a>> {
 
 impl<'a> AstNode<'a, AnnotationDeclaration<'a>> {
     #[inline]
+    pub fn node_id(&self) -> NodeId {
+        self.inner.node_id()
+    }
+
+    #[inline]
     pub fn decorators(&self) -> &AstNode<'a, Vec<'a, Decorator<'a>>> {
         let following_span_start = self.inner.id.span().start;
         self.allocator.alloc(AstNode {
@@ -11095,6 +11126,11 @@ impl<'a> AstNode<'a, AnnotationDeclaration<'a>> {
 }
 
 impl<'a> AstNode<'a, AnnotationBody<'a>> {
+    #[inline]
+    pub fn node_id(&self) -> NodeId {
+        self.inner.node_id()
+    }
+
     #[inline]
     pub fn body(&self) -> &AstNode<'a, Vec<'a, AnnotationElement<'a>>> {
         let following_span_start = self.following_span_start;

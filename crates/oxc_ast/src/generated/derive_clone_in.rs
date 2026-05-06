@@ -19,7 +19,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for Program<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         Program {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             source_type: CloneIn::clone_in(&self.source_type, allocator),
             source_text: CloneIn::clone_in(&self.source_text, allocator),
@@ -33,7 +33,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for Program<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         Program {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             source_type: CloneIn::clone_in_with_semantic_ids(&self.source_type, allocator),
             source_text: CloneIn::clone_in_with_semantic_ids(&self.source_text, allocator),
@@ -315,7 +315,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for IdentifierName<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         IdentifierName {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             name: CloneIn::clone_in(&self.name, allocator),
         }
@@ -323,7 +323,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for IdentifierName<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         IdentifierName {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             name: CloneIn::clone_in_with_semantic_ids(&self.name, allocator),
         }
@@ -335,7 +335,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for IdentifierReference<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         IdentifierReference {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             name: CloneIn::clone_in(&self.name, allocator),
             reference_id: Default::default(),
@@ -344,7 +344,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for IdentifierReference<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         IdentifierReference {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             name: CloneIn::clone_in_with_semantic_ids(&self.name, allocator),
             reference_id: CloneIn::clone_in_with_semantic_ids(&self.reference_id, allocator),
@@ -357,7 +357,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for BindingIdentifier<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         BindingIdentifier {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             name: CloneIn::clone_in(&self.name, allocator),
             symbol_id: Default::default(),
@@ -366,7 +366,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for BindingIdentifier<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         BindingIdentifier {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             name: CloneIn::clone_in_with_semantic_ids(&self.name, allocator),
             symbol_id: CloneIn::clone_in_with_semantic_ids(&self.symbol_id, allocator),
@@ -379,7 +379,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for LabelIdentifier<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         LabelIdentifier {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             name: CloneIn::clone_in(&self.name, allocator),
         }
@@ -387,7 +387,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for LabelIdentifier<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         LabelIdentifier {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             name: CloneIn::clone_in_with_semantic_ids(&self.name, allocator),
         }
@@ -399,14 +399,14 @@ impl<'new_alloc> CloneIn<'new_alloc> for ThisExpression {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ThisExpression {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
         }
     }
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ThisExpression {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
         }
     }
@@ -417,7 +417,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ArrayExpression<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ArrayExpression {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             elements: CloneIn::clone_in(&self.elements, allocator),
         }
@@ -425,7 +425,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ArrayExpression<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ArrayExpression {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             elements: CloneIn::clone_in_with_semantic_ids(&self.elements, allocator),
         }
@@ -730,15 +730,12 @@ impl<'new_alloc> CloneIn<'new_alloc> for Elision {
     type Cloned = Elision;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
-        Elision {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
-            span: CloneIn::clone_in(&self.span, allocator),
-        }
+        Elision { node_id: Default::default(), span: CloneIn::clone_in(&self.span, allocator) }
     }
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         Elision {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
         }
     }
@@ -749,7 +746,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ObjectExpression<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ObjectExpression {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             properties: CloneIn::clone_in(&self.properties, allocator),
         }
@@ -757,7 +754,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ObjectExpression<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ObjectExpression {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             properties: CloneIn::clone_in_with_semantic_ids(&self.properties, allocator),
         }
@@ -795,7 +792,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ObjectProperty<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ObjectProperty {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             kind: CloneIn::clone_in(&self.kind, allocator),
             key: CloneIn::clone_in(&self.key, allocator),
@@ -808,7 +805,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ObjectProperty<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ObjectProperty {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             kind: CloneIn::clone_in_with_semantic_ids(&self.kind, allocator),
             key: CloneIn::clone_in_with_semantic_ids(&self.key, allocator),
@@ -1115,7 +1112,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TemplateLiteral<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TemplateLiteral {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             quasis: CloneIn::clone_in(&self.quasis, allocator),
             expressions: CloneIn::clone_in(&self.expressions, allocator),
@@ -1124,7 +1121,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TemplateLiteral<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TemplateLiteral {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             quasis: CloneIn::clone_in_with_semantic_ids(&self.quasis, allocator),
             expressions: CloneIn::clone_in_with_semantic_ids(&self.expressions, allocator),
@@ -1137,7 +1134,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TaggedTemplateExpression<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TaggedTemplateExpression {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             tag: CloneIn::clone_in(&self.tag, allocator),
             type_arguments: CloneIn::clone_in(&self.type_arguments, allocator),
@@ -1147,7 +1144,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TaggedTemplateExpression<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TaggedTemplateExpression {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             tag: CloneIn::clone_in_with_semantic_ids(&self.tag, allocator),
             type_arguments: CloneIn::clone_in_with_semantic_ids(&self.type_arguments, allocator),
@@ -1161,7 +1158,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TemplateElement<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TemplateElement {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             value: CloneIn::clone_in(&self.value, allocator),
             tail: CloneIn::clone_in(&self.tail, allocator),
@@ -1171,7 +1168,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TemplateElement<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TemplateElement {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             value: CloneIn::clone_in_with_semantic_ids(&self.value, allocator),
             tail: CloneIn::clone_in_with_semantic_ids(&self.tail, allocator),
@@ -1235,7 +1232,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ComputedMemberExpression<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ComputedMemberExpression {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             object: CloneIn::clone_in(&self.object, allocator),
             expression: CloneIn::clone_in(&self.expression, allocator),
@@ -1245,7 +1242,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ComputedMemberExpression<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ComputedMemberExpression {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             object: CloneIn::clone_in_with_semantic_ids(&self.object, allocator),
             expression: CloneIn::clone_in_with_semantic_ids(&self.expression, allocator),
@@ -1259,7 +1256,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for StaticMemberExpression<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         StaticMemberExpression {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             object: CloneIn::clone_in(&self.object, allocator),
             property: CloneIn::clone_in(&self.property, allocator),
@@ -1269,7 +1266,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for StaticMemberExpression<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         StaticMemberExpression {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             object: CloneIn::clone_in_with_semantic_ids(&self.object, allocator),
             property: CloneIn::clone_in_with_semantic_ids(&self.property, allocator),
@@ -1283,7 +1280,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for PrivateFieldExpression<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         PrivateFieldExpression {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             object: CloneIn::clone_in(&self.object, allocator),
             field: CloneIn::clone_in(&self.field, allocator),
@@ -1293,7 +1290,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for PrivateFieldExpression<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         PrivateFieldExpression {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             object: CloneIn::clone_in_with_semantic_ids(&self.object, allocator),
             field: CloneIn::clone_in_with_semantic_ids(&self.field, allocator),
@@ -1307,6 +1304,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for LeadingDotExpression<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         LeadingDotExpression {
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             optional: CloneIn::clone_in(&self.optional, allocator),
             type_arguments: CloneIn::clone_in(&self.type_arguments, allocator),
@@ -1317,6 +1315,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for LeadingDotExpression<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         LeadingDotExpression {
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             optional: CloneIn::clone_in_with_semantic_ids(&self.optional, allocator),
             type_arguments: CloneIn::clone_in_with_semantic_ids(&self.type_arguments, allocator),
@@ -1331,7 +1330,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for CallExpression<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         CallExpression {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             callee: CloneIn::clone_in(&self.callee, allocator),
             type_arguments: CloneIn::clone_in(&self.type_arguments, allocator),
@@ -1343,7 +1342,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for CallExpression<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         CallExpression {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             callee: CloneIn::clone_in_with_semantic_ids(&self.callee, allocator),
             type_arguments: CloneIn::clone_in_with_semantic_ids(&self.type_arguments, allocator),
@@ -1359,7 +1358,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for NewExpression<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         NewExpression {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             callee: CloneIn::clone_in(&self.callee, allocator),
             type_arguments: CloneIn::clone_in(&self.type_arguments, allocator),
@@ -1370,7 +1369,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for NewExpression<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         NewExpression {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             callee: CloneIn::clone_in_with_semantic_ids(&self.callee, allocator),
             type_arguments: CloneIn::clone_in_with_semantic_ids(&self.type_arguments, allocator),
@@ -1385,7 +1384,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for MetaProperty<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         MetaProperty {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             meta: CloneIn::clone_in(&self.meta, allocator),
             property: CloneIn::clone_in(&self.property, allocator),
@@ -1394,7 +1393,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for MetaProperty<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         MetaProperty {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             meta: CloneIn::clone_in_with_semantic_ids(&self.meta, allocator),
             property: CloneIn::clone_in_with_semantic_ids(&self.property, allocator),
@@ -1407,7 +1406,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for SpreadElement<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         SpreadElement {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             argument: CloneIn::clone_in(&self.argument, allocator),
         }
@@ -1415,7 +1414,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for SpreadElement<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         SpreadElement {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             argument: CloneIn::clone_in_with_semantic_ids(&self.argument, allocator),
         }
@@ -1683,7 +1682,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for UpdateExpression<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         UpdateExpression {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             operator: CloneIn::clone_in(&self.operator, allocator),
             prefix: CloneIn::clone_in(&self.prefix, allocator),
@@ -1693,7 +1692,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for UpdateExpression<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         UpdateExpression {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             operator: CloneIn::clone_in_with_semantic_ids(&self.operator, allocator),
             prefix: CloneIn::clone_in_with_semantic_ids(&self.prefix, allocator),
@@ -1707,7 +1706,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for UnaryExpression<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         UnaryExpression {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             operator: CloneIn::clone_in(&self.operator, allocator),
             argument: CloneIn::clone_in(&self.argument, allocator),
@@ -1716,7 +1715,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for UnaryExpression<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         UnaryExpression {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             operator: CloneIn::clone_in_with_semantic_ids(&self.operator, allocator),
             argument: CloneIn::clone_in_with_semantic_ids(&self.argument, allocator),
@@ -1729,7 +1728,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for BinaryExpression<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         BinaryExpression {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             left: CloneIn::clone_in(&self.left, allocator),
             operator: CloneIn::clone_in(&self.operator, allocator),
@@ -1739,7 +1738,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for BinaryExpression<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         BinaryExpression {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             left: CloneIn::clone_in_with_semantic_ids(&self.left, allocator),
             operator: CloneIn::clone_in_with_semantic_ids(&self.operator, allocator),
@@ -1753,7 +1752,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for PrivateInExpression<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         PrivateInExpression {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             left: CloneIn::clone_in(&self.left, allocator),
             right: CloneIn::clone_in(&self.right, allocator),
@@ -1762,7 +1761,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for PrivateInExpression<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         PrivateInExpression {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             left: CloneIn::clone_in_with_semantic_ids(&self.left, allocator),
             right: CloneIn::clone_in_with_semantic_ids(&self.right, allocator),
@@ -1775,7 +1774,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for LogicalExpression<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         LogicalExpression {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             left: CloneIn::clone_in(&self.left, allocator),
             operator: CloneIn::clone_in(&self.operator, allocator),
@@ -1785,7 +1784,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for LogicalExpression<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         LogicalExpression {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             left: CloneIn::clone_in_with_semantic_ids(&self.left, allocator),
             operator: CloneIn::clone_in_with_semantic_ids(&self.operator, allocator),
@@ -1799,7 +1798,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ConditionalExpression<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ConditionalExpression {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             test: CloneIn::clone_in(&self.test, allocator),
             consequent: CloneIn::clone_in(&self.consequent, allocator),
@@ -1809,7 +1808,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ConditionalExpression<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ConditionalExpression {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             test: CloneIn::clone_in_with_semantic_ids(&self.test, allocator),
             consequent: CloneIn::clone_in_with_semantic_ids(&self.consequent, allocator),
@@ -1823,7 +1822,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for AssignmentExpression<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         AssignmentExpression {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             operator: CloneIn::clone_in(&self.operator, allocator),
             left: CloneIn::clone_in(&self.left, allocator),
@@ -1833,7 +1832,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for AssignmentExpression<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         AssignmentExpression {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             operator: CloneIn::clone_in_with_semantic_ids(&self.operator, allocator),
             left: CloneIn::clone_in_with_semantic_ids(&self.left, allocator),
@@ -2011,7 +2010,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ArrayAssignmentTarget<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ArrayAssignmentTarget {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             elements: CloneIn::clone_in(&self.elements, allocator),
             rest: CloneIn::clone_in(&self.rest, allocator),
@@ -2020,7 +2019,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ArrayAssignmentTarget<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ArrayAssignmentTarget {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             elements: CloneIn::clone_in_with_semantic_ids(&self.elements, allocator),
             rest: CloneIn::clone_in_with_semantic_ids(&self.rest, allocator),
@@ -2033,7 +2032,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ObjectAssignmentTarget<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ObjectAssignmentTarget {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             properties: CloneIn::clone_in(&self.properties, allocator),
             rest: CloneIn::clone_in(&self.rest, allocator),
@@ -2042,7 +2041,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ObjectAssignmentTarget<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ObjectAssignmentTarget {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             properties: CloneIn::clone_in_with_semantic_ids(&self.properties, allocator),
             rest: CloneIn::clone_in_with_semantic_ids(&self.rest, allocator),
@@ -2055,7 +2054,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for AssignmentTargetRest<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         AssignmentTargetRest {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             target: CloneIn::clone_in(&self.target, allocator),
         }
@@ -2063,7 +2062,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for AssignmentTargetRest<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         AssignmentTargetRest {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             target: CloneIn::clone_in_with_semantic_ids(&self.target, allocator),
         }
@@ -2179,7 +2178,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for AssignmentTargetWithDefault<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         AssignmentTargetWithDefault {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             binding: CloneIn::clone_in(&self.binding, allocator),
             init: CloneIn::clone_in(&self.init, allocator),
@@ -2188,7 +2187,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for AssignmentTargetWithDefault<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         AssignmentTargetWithDefault {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             binding: CloneIn::clone_in_with_semantic_ids(&self.binding, allocator),
             init: CloneIn::clone_in_with_semantic_ids(&self.init, allocator),
@@ -2235,7 +2234,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for AssignmentTargetPropertyIdentifier<'_> 
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         AssignmentTargetPropertyIdentifier {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             binding: CloneIn::clone_in(&self.binding, allocator),
             init: CloneIn::clone_in(&self.init, allocator),
@@ -2244,7 +2243,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for AssignmentTargetPropertyIdentifier<'_> 
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         AssignmentTargetPropertyIdentifier {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             binding: CloneIn::clone_in_with_semantic_ids(&self.binding, allocator),
             init: CloneIn::clone_in_with_semantic_ids(&self.init, allocator),
@@ -2257,7 +2256,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for AssignmentTargetPropertyProperty<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         AssignmentTargetPropertyProperty {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             name: CloneIn::clone_in(&self.name, allocator),
             binding: CloneIn::clone_in(&self.binding, allocator),
@@ -2267,7 +2266,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for AssignmentTargetPropertyProperty<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         AssignmentTargetPropertyProperty {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             name: CloneIn::clone_in_with_semantic_ids(&self.name, allocator),
             binding: CloneIn::clone_in_with_semantic_ids(&self.binding, allocator),
@@ -2281,7 +2280,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for SequenceExpression<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         SequenceExpression {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             expressions: CloneIn::clone_in(&self.expressions, allocator),
         }
@@ -2289,7 +2288,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for SequenceExpression<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         SequenceExpression {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             expressions: CloneIn::clone_in_with_semantic_ids(&self.expressions, allocator),
         }
@@ -2300,15 +2299,12 @@ impl<'new_alloc> CloneIn<'new_alloc> for Super {
     type Cloned = Super;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
-        Super {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
-            span: CloneIn::clone_in(&self.span, allocator),
-        }
+        Super { node_id: Default::default(), span: CloneIn::clone_in(&self.span, allocator) }
     }
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         Super {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
         }
     }
@@ -2319,7 +2315,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for AwaitExpression<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         AwaitExpression {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             argument: CloneIn::clone_in(&self.argument, allocator),
         }
@@ -2327,7 +2323,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for AwaitExpression<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         AwaitExpression {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             argument: CloneIn::clone_in_with_semantic_ids(&self.argument, allocator),
         }
@@ -2339,7 +2335,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ChainExpression<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ChainExpression {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             expression: CloneIn::clone_in(&self.expression, allocator),
         }
@@ -2347,7 +2343,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ChainExpression<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ChainExpression {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             expression: CloneIn::clone_in_with_semantic_ids(&self.expression, allocator),
         }
@@ -2403,7 +2399,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ParenthesizedExpression<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ParenthesizedExpression {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             expression: CloneIn::clone_in(&self.expression, allocator),
         }
@@ -2411,7 +2407,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ParenthesizedExpression<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ParenthesizedExpression {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             expression: CloneIn::clone_in_with_semantic_ids(&self.expression, allocator),
         }
@@ -2631,7 +2627,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for Directive<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         Directive {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             expression: CloneIn::clone_in(&self.expression, allocator),
             directive: CloneIn::clone_in(&self.directive, allocator),
@@ -2640,7 +2636,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for Directive<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         Directive {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             expression: CloneIn::clone_in_with_semantic_ids(&self.expression, allocator),
             directive: CloneIn::clone_in_with_semantic_ids(&self.directive, allocator),
@@ -2653,7 +2649,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for Hashbang<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         Hashbang {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             value: CloneIn::clone_in(&self.value, allocator),
         }
@@ -2661,7 +2657,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for Hashbang<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         Hashbang {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             value: CloneIn::clone_in_with_semantic_ids(&self.value, allocator),
         }
@@ -2673,7 +2669,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for BlockStatement<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         BlockStatement {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             body: CloneIn::clone_in(&self.body, allocator),
             scope_id: Default::default(),
@@ -2682,7 +2678,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for BlockStatement<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         BlockStatement {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             body: CloneIn::clone_in_with_semantic_ids(&self.body, allocator),
             scope_id: CloneIn::clone_in_with_semantic_ids(&self.scope_id, allocator),
@@ -2775,7 +2771,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for VariableDeclaration<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         VariableDeclaration {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             kind: CloneIn::clone_in(&self.kind, allocator),
             declarations: CloneIn::clone_in(&self.declarations, allocator),
@@ -2785,7 +2781,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for VariableDeclaration<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         VariableDeclaration {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             kind: CloneIn::clone_in_with_semantic_ids(&self.kind, allocator),
             declarations: CloneIn::clone_in_with_semantic_ids(&self.declarations, allocator),
@@ -2813,7 +2809,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for VariableDeclarator<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         VariableDeclarator {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             kind: CloneIn::clone_in(&self.kind, allocator),
             id: CloneIn::clone_in(&self.id, allocator),
@@ -2825,7 +2821,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for VariableDeclarator<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         VariableDeclarator {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             kind: CloneIn::clone_in_with_semantic_ids(&self.kind, allocator),
             id: CloneIn::clone_in_with_semantic_ids(&self.id, allocator),
@@ -2841,14 +2837,14 @@ impl<'new_alloc> CloneIn<'new_alloc> for EmptyStatement {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         EmptyStatement {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
         }
     }
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         EmptyStatement {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
         }
     }
@@ -2859,7 +2855,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ExpressionStatement<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ExpressionStatement {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             expression: CloneIn::clone_in(&self.expression, allocator),
         }
@@ -2867,7 +2863,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ExpressionStatement<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ExpressionStatement {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             expression: CloneIn::clone_in_with_semantic_ids(&self.expression, allocator),
         }
@@ -2879,7 +2875,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for IfStatement<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         IfStatement {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             test: CloneIn::clone_in(&self.test, allocator),
             consequent: CloneIn::clone_in(&self.consequent, allocator),
@@ -2889,7 +2885,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for IfStatement<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         IfStatement {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             test: CloneIn::clone_in_with_semantic_ids(&self.test, allocator),
             consequent: CloneIn::clone_in_with_semantic_ids(&self.consequent, allocator),
@@ -2903,7 +2899,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for DoWhileStatement<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         DoWhileStatement {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             body: CloneIn::clone_in(&self.body, allocator),
             test: CloneIn::clone_in(&self.test, allocator),
@@ -2912,7 +2908,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for DoWhileStatement<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         DoWhileStatement {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             body: CloneIn::clone_in_with_semantic_ids(&self.body, allocator),
             test: CloneIn::clone_in_with_semantic_ids(&self.test, allocator),
@@ -2925,7 +2921,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for WhileStatement<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         WhileStatement {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             test: CloneIn::clone_in(&self.test, allocator),
             body: CloneIn::clone_in(&self.body, allocator),
@@ -2934,7 +2930,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for WhileStatement<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         WhileStatement {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             test: CloneIn::clone_in_with_semantic_ids(&self.test, allocator),
             body: CloneIn::clone_in_with_semantic_ids(&self.body, allocator),
@@ -2947,7 +2943,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ForStatement<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ForStatement {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             init: CloneIn::clone_in(&self.init, allocator),
             test: CloneIn::clone_in(&self.test, allocator),
@@ -2959,7 +2955,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ForStatement<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ForStatement {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             init: CloneIn::clone_in_with_semantic_ids(&self.init, allocator),
             test: CloneIn::clone_in_with_semantic_ids(&self.test, allocator),
@@ -3259,7 +3255,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ForInStatement<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ForInStatement {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             left: CloneIn::clone_in(&self.left, allocator),
             right: CloneIn::clone_in(&self.right, allocator),
@@ -3270,7 +3266,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ForInStatement<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ForInStatement {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             left: CloneIn::clone_in_with_semantic_ids(&self.left, allocator),
             right: CloneIn::clone_in_with_semantic_ids(&self.right, allocator),
@@ -3365,7 +3361,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ForOfStatement<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ForOfStatement {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             r#await: CloneIn::clone_in(&self.r#await, allocator),
             left: CloneIn::clone_in(&self.left, allocator),
@@ -3377,7 +3373,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ForOfStatement<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ForOfStatement {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             r#await: CloneIn::clone_in_with_semantic_ids(&self.r#await, allocator),
             left: CloneIn::clone_in_with_semantic_ids(&self.left, allocator),
@@ -3393,7 +3389,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ContinueStatement<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ContinueStatement {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             label: CloneIn::clone_in(&self.label, allocator),
         }
@@ -3401,7 +3397,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ContinueStatement<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ContinueStatement {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             label: CloneIn::clone_in_with_semantic_ids(&self.label, allocator),
         }
@@ -3413,7 +3409,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for BreakStatement<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         BreakStatement {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             label: CloneIn::clone_in(&self.label, allocator),
         }
@@ -3421,7 +3417,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for BreakStatement<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         BreakStatement {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             label: CloneIn::clone_in_with_semantic_ids(&self.label, allocator),
         }
@@ -3433,7 +3429,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ReturnStatement<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ReturnStatement {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             argument: CloneIn::clone_in(&self.argument, allocator),
         }
@@ -3441,7 +3437,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ReturnStatement<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ReturnStatement {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             argument: CloneIn::clone_in_with_semantic_ids(&self.argument, allocator),
         }
@@ -3453,7 +3449,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for WithStatement<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         WithStatement {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             object: CloneIn::clone_in(&self.object, allocator),
             body: CloneIn::clone_in(&self.body, allocator),
@@ -3463,7 +3459,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for WithStatement<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         WithStatement {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             object: CloneIn::clone_in_with_semantic_ids(&self.object, allocator),
             body: CloneIn::clone_in_with_semantic_ids(&self.body, allocator),
@@ -3477,7 +3473,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for SwitchStatement<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         SwitchStatement {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             discriminant: CloneIn::clone_in(&self.discriminant, allocator),
             cases: CloneIn::clone_in(&self.cases, allocator),
@@ -3487,7 +3483,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for SwitchStatement<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         SwitchStatement {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             discriminant: CloneIn::clone_in_with_semantic_ids(&self.discriminant, allocator),
             cases: CloneIn::clone_in_with_semantic_ids(&self.cases, allocator),
@@ -3501,7 +3497,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for SwitchCase<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         SwitchCase {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             test: CloneIn::clone_in(&self.test, allocator),
             consequent: CloneIn::clone_in(&self.consequent, allocator),
@@ -3510,7 +3506,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for SwitchCase<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         SwitchCase {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             test: CloneIn::clone_in_with_semantic_ids(&self.test, allocator),
             consequent: CloneIn::clone_in_with_semantic_ids(&self.consequent, allocator),
@@ -3523,7 +3519,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for LabeledStatement<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         LabeledStatement {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             label: CloneIn::clone_in(&self.label, allocator),
             body: CloneIn::clone_in(&self.body, allocator),
@@ -3532,7 +3528,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for LabeledStatement<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         LabeledStatement {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             label: CloneIn::clone_in_with_semantic_ids(&self.label, allocator),
             body: CloneIn::clone_in_with_semantic_ids(&self.body, allocator),
@@ -3545,7 +3541,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ThrowStatement<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ThrowStatement {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             argument: CloneIn::clone_in(&self.argument, allocator),
         }
@@ -3553,7 +3549,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ThrowStatement<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ThrowStatement {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             argument: CloneIn::clone_in_with_semantic_ids(&self.argument, allocator),
         }
@@ -3565,7 +3561,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TryStatement<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TryStatement {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             block: CloneIn::clone_in(&self.block, allocator),
             handler: CloneIn::clone_in(&self.handler, allocator),
@@ -3575,7 +3571,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TryStatement<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TryStatement {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             block: CloneIn::clone_in_with_semantic_ids(&self.block, allocator),
             handler: CloneIn::clone_in_with_semantic_ids(&self.handler, allocator),
@@ -3589,7 +3585,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for CatchClause<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         CatchClause {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             param: CloneIn::clone_in(&self.param, allocator),
             body: CloneIn::clone_in(&self.body, allocator),
@@ -3599,7 +3595,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for CatchClause<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         CatchClause {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             param: CloneIn::clone_in_with_semantic_ids(&self.param, allocator),
             body: CloneIn::clone_in_with_semantic_ids(&self.body, allocator),
@@ -3613,7 +3609,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for CatchParameter<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         CatchParameter {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             pattern: CloneIn::clone_in(&self.pattern, allocator),
             type_annotation: CloneIn::clone_in(&self.type_annotation, allocator),
@@ -3622,7 +3618,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for CatchParameter<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         CatchParameter {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             pattern: CloneIn::clone_in_with_semantic_ids(&self.pattern, allocator),
             type_annotation: CloneIn::clone_in_with_semantic_ids(&self.type_annotation, allocator),
@@ -3635,14 +3631,14 @@ impl<'new_alloc> CloneIn<'new_alloc> for DebuggerStatement {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         DebuggerStatement {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
         }
     }
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         DebuggerStatement {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
         }
     }
@@ -3691,7 +3687,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for AssignmentPattern<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         AssignmentPattern {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             left: CloneIn::clone_in(&self.left, allocator),
             right: CloneIn::clone_in(&self.right, allocator),
@@ -3700,7 +3696,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for AssignmentPattern<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         AssignmentPattern {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             left: CloneIn::clone_in_with_semantic_ids(&self.left, allocator),
             right: CloneIn::clone_in_with_semantic_ids(&self.right, allocator),
@@ -3713,7 +3709,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ObjectPattern<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ObjectPattern {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             properties: CloneIn::clone_in(&self.properties, allocator),
             rest: CloneIn::clone_in(&self.rest, allocator),
@@ -3722,7 +3718,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ObjectPattern<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ObjectPattern {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             properties: CloneIn::clone_in_with_semantic_ids(&self.properties, allocator),
             rest: CloneIn::clone_in_with_semantic_ids(&self.rest, allocator),
@@ -3735,7 +3731,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for BindingProperty<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         BindingProperty {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             key: CloneIn::clone_in(&self.key, allocator),
             value: CloneIn::clone_in(&self.value, allocator),
@@ -3746,7 +3742,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for BindingProperty<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         BindingProperty {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             key: CloneIn::clone_in_with_semantic_ids(&self.key, allocator),
             value: CloneIn::clone_in_with_semantic_ids(&self.value, allocator),
@@ -3761,7 +3757,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ArrayPattern<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ArrayPattern {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             elements: CloneIn::clone_in(&self.elements, allocator),
             rest: CloneIn::clone_in(&self.rest, allocator),
@@ -3770,7 +3766,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ArrayPattern<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ArrayPattern {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             elements: CloneIn::clone_in_with_semantic_ids(&self.elements, allocator),
             rest: CloneIn::clone_in_with_semantic_ids(&self.rest, allocator),
@@ -3783,7 +3779,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for BindingRestElement<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         BindingRestElement {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             argument: CloneIn::clone_in(&self.argument, allocator),
         }
@@ -3791,7 +3787,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for BindingRestElement<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         BindingRestElement {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             argument: CloneIn::clone_in_with_semantic_ids(&self.argument, allocator),
         }
@@ -3803,7 +3799,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for Function<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         Function {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             r#type: CloneIn::clone_in(&self.r#type, allocator),
             decorators: CloneIn::clone_in(&self.decorators, allocator),
@@ -3824,7 +3820,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for Function<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         Function {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             r#type: CloneIn::clone_in_with_semantic_ids(&self.r#type, allocator),
             decorators: CloneIn::clone_in_with_semantic_ids(&self.decorators, allocator),
@@ -3863,7 +3859,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for FormalParameters<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         FormalParameters {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             kind: CloneIn::clone_in(&self.kind, allocator),
             items: CloneIn::clone_in(&self.items, allocator),
@@ -3873,7 +3869,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for FormalParameters<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         FormalParameters {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             kind: CloneIn::clone_in_with_semantic_ids(&self.kind, allocator),
             items: CloneIn::clone_in_with_semantic_ids(&self.items, allocator),
@@ -3887,7 +3883,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for FormalParameter<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         FormalParameter {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             decorators: CloneIn::clone_in(&self.decorators, allocator),
             pattern: CloneIn::clone_in(&self.pattern, allocator),
@@ -3902,7 +3898,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for FormalParameter<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         FormalParameter {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             decorators: CloneIn::clone_in_with_semantic_ids(&self.decorators, allocator),
             pattern: CloneIn::clone_in_with_semantic_ids(&self.pattern, allocator),
@@ -3935,7 +3931,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for FormalParameterRest<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         FormalParameterRest {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             decorators: CloneIn::clone_in(&self.decorators, allocator),
             rest: CloneIn::clone_in(&self.rest, allocator),
@@ -3945,7 +3941,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for FormalParameterRest<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         FormalParameterRest {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             decorators: CloneIn::clone_in_with_semantic_ids(&self.decorators, allocator),
             rest: CloneIn::clone_in_with_semantic_ids(&self.rest, allocator),
@@ -3959,7 +3955,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for FunctionBody<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         FunctionBody {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             directives: CloneIn::clone_in(&self.directives, allocator),
             statements: CloneIn::clone_in(&self.statements, allocator),
@@ -3968,7 +3964,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for FunctionBody<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         FunctionBody {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             directives: CloneIn::clone_in_with_semantic_ids(&self.directives, allocator),
             statements: CloneIn::clone_in_with_semantic_ids(&self.statements, allocator),
@@ -3981,7 +3977,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ArrowFunctionExpression<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ArrowFunctionExpression {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             expression: CloneIn::clone_in(&self.expression, allocator),
             r#async: CloneIn::clone_in(&self.r#async, allocator),
@@ -3997,7 +3993,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ArrowFunctionExpression<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ArrowFunctionExpression {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             expression: CloneIn::clone_in_with_semantic_ids(&self.expression, allocator),
             r#async: CloneIn::clone_in_with_semantic_ids(&self.r#async, allocator),
@@ -4017,7 +4013,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for YieldExpression<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         YieldExpression {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             delegate: CloneIn::clone_in(&self.delegate, allocator),
             argument: CloneIn::clone_in(&self.argument, allocator),
@@ -4026,7 +4022,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for YieldExpression<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         YieldExpression {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             delegate: CloneIn::clone_in_with_semantic_ids(&self.delegate, allocator),
             argument: CloneIn::clone_in_with_semantic_ids(&self.argument, allocator),
@@ -4039,7 +4035,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for Class<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         Class {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             r#type: CloneIn::clone_in(&self.r#type, allocator),
             decorators: CloneIn::clone_in(&self.decorators, allocator),
@@ -4057,7 +4053,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for Class<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         Class {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             r#type: CloneIn::clone_in_with_semantic_ids(&self.r#type, allocator),
             decorators: CloneIn::clone_in_with_semantic_ids(&self.decorators, allocator),
@@ -4096,7 +4092,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ClassBody<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ClassBody {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             body: CloneIn::clone_in(&self.body, allocator),
         }
@@ -4104,7 +4100,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ClassBody<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ClassBody {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             body: CloneIn::clone_in_with_semantic_ids(&self.body, allocator),
         }
@@ -4158,7 +4154,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for MethodDefinition<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         MethodDefinition {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             r#type: CloneIn::clone_in(&self.r#type, allocator),
             decorators: CloneIn::clone_in(&self.decorators, allocator),
@@ -4175,7 +4171,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for MethodDefinition<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         MethodDefinition {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             r#type: CloneIn::clone_in_with_semantic_ids(&self.r#type, allocator),
             decorators: CloneIn::clone_in_with_semantic_ids(&self.decorators, allocator),
@@ -4210,7 +4206,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for PropertyDefinition<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         PropertyDefinition {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             r#type: CloneIn::clone_in(&self.r#type, allocator),
             decorators: CloneIn::clone_in(&self.decorators, allocator),
@@ -4230,7 +4226,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for PropertyDefinition<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         PropertyDefinition {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             r#type: CloneIn::clone_in_with_semantic_ids(&self.r#type, allocator),
             decorators: CloneIn::clone_in_with_semantic_ids(&self.decorators, allocator),
@@ -4282,7 +4278,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for PrivateIdentifier<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         PrivateIdentifier {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             name: CloneIn::clone_in(&self.name, allocator),
         }
@@ -4290,7 +4286,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for PrivateIdentifier<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         PrivateIdentifier {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             name: CloneIn::clone_in_with_semantic_ids(&self.name, allocator),
         }
@@ -4302,7 +4298,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for StaticBlock<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         StaticBlock {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             body: CloneIn::clone_in(&self.body, allocator),
             scope_id: Default::default(),
@@ -4311,7 +4307,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for StaticBlock<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         StaticBlock {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             body: CloneIn::clone_in_with_semantic_ids(&self.body, allocator),
             scope_id: CloneIn::clone_in_with_semantic_ids(&self.scope_id, allocator),
@@ -4396,7 +4392,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for AccessorProperty<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         AccessorProperty {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             r#type: CloneIn::clone_in(&self.r#type, allocator),
             decorators: CloneIn::clone_in(&self.decorators, allocator),
@@ -4413,7 +4409,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for AccessorProperty<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         AccessorProperty {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             r#type: CloneIn::clone_in_with_semantic_ids(&self.r#type, allocator),
             decorators: CloneIn::clone_in_with_semantic_ids(&self.decorators, allocator),
@@ -4434,7 +4430,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ImportExpression<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ImportExpression {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             source: CloneIn::clone_in(&self.source, allocator),
             options: CloneIn::clone_in(&self.options, allocator),
@@ -4444,7 +4440,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ImportExpression<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ImportExpression {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             source: CloneIn::clone_in_with_semantic_ids(&self.source, allocator),
             options: CloneIn::clone_in_with_semantic_ids(&self.options, allocator),
@@ -4458,7 +4454,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ImportDeclaration<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ImportDeclaration {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             specifiers: CloneIn::clone_in(&self.specifiers, allocator),
             source: CloneIn::clone_in(&self.source, allocator),
@@ -4470,7 +4466,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ImportDeclaration<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ImportDeclaration {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             specifiers: CloneIn::clone_in_with_semantic_ids(&self.specifiers, allocator),
             source: CloneIn::clone_in_with_semantic_ids(&self.source, allocator),
@@ -4486,6 +4482,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for LazyImportDeclaration<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         LazyImportDeclaration {
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             specifiers: CloneIn::clone_in(&self.specifiers, allocator),
             source: CloneIn::clone_in(&self.source, allocator),
@@ -4495,6 +4492,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for LazyImportDeclaration<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         LazyImportDeclaration {
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             specifiers: CloneIn::clone_in_with_semantic_ids(&self.specifiers, allocator),
             source: CloneIn::clone_in_with_semantic_ids(&self.source, allocator),
@@ -4558,7 +4556,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ImportSpecifier<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ImportSpecifier {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             imported: CloneIn::clone_in(&self.imported, allocator),
             local: CloneIn::clone_in(&self.local, allocator),
@@ -4568,7 +4566,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ImportSpecifier<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ImportSpecifier {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             imported: CloneIn::clone_in_with_semantic_ids(&self.imported, allocator),
             local: CloneIn::clone_in_with_semantic_ids(&self.local, allocator),
@@ -4582,7 +4580,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ImportDefaultSpecifier<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ImportDefaultSpecifier {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             local: CloneIn::clone_in(&self.local, allocator),
         }
@@ -4590,7 +4588,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ImportDefaultSpecifier<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ImportDefaultSpecifier {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             local: CloneIn::clone_in_with_semantic_ids(&self.local, allocator),
         }
@@ -4602,7 +4600,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ImportNamespaceSpecifier<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ImportNamespaceSpecifier {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             local: CloneIn::clone_in(&self.local, allocator),
         }
@@ -4610,7 +4608,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ImportNamespaceSpecifier<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ImportNamespaceSpecifier {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             local: CloneIn::clone_in_with_semantic_ids(&self.local, allocator),
         }
@@ -4622,7 +4620,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for WithClause<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         WithClause {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             keyword: CloneIn::clone_in(&self.keyword, allocator),
             with_entries: CloneIn::clone_in(&self.with_entries, allocator),
@@ -4631,7 +4629,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for WithClause<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         WithClause {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             keyword: CloneIn::clone_in_with_semantic_ids(&self.keyword, allocator),
             with_entries: CloneIn::clone_in_with_semantic_ids(&self.with_entries, allocator),
@@ -4658,7 +4656,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ImportAttribute<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ImportAttribute {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             key: CloneIn::clone_in(&self.key, allocator),
             value: CloneIn::clone_in(&self.value, allocator),
@@ -4667,7 +4665,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ImportAttribute<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ImportAttribute {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             key: CloneIn::clone_in_with_semantic_ids(&self.key, allocator),
             value: CloneIn::clone_in_with_semantic_ids(&self.value, allocator),
@@ -4706,7 +4704,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ExportNamedDeclaration<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ExportNamedDeclaration {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             decorators: CloneIn::clone_in(&self.decorators, allocator),
             declaration: CloneIn::clone_in(&self.declaration, allocator),
@@ -4719,7 +4717,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ExportNamedDeclaration<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ExportNamedDeclaration {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             decorators: CloneIn::clone_in_with_semantic_ids(&self.decorators, allocator),
             declaration: CloneIn::clone_in_with_semantic_ids(&self.declaration, allocator),
@@ -4736,7 +4734,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ExportDefaultDeclaration<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ExportDefaultDeclaration {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             declaration: CloneIn::clone_in(&self.declaration, allocator),
         }
@@ -4744,7 +4742,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ExportDefaultDeclaration<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ExportDefaultDeclaration {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             declaration: CloneIn::clone_in_with_semantic_ids(&self.declaration, allocator),
         }
@@ -4756,7 +4754,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ExportAllDeclaration<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ExportAllDeclaration {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             exported: CloneIn::clone_in(&self.exported, allocator),
             source: CloneIn::clone_in(&self.source, allocator),
@@ -4767,7 +4765,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ExportAllDeclaration<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ExportAllDeclaration {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             exported: CloneIn::clone_in_with_semantic_ids(&self.exported, allocator),
             source: CloneIn::clone_in_with_semantic_ids(&self.source, allocator),
@@ -4782,7 +4780,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ExportSpecifier<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ExportSpecifier {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             local: CloneIn::clone_in(&self.local, allocator),
             exported: CloneIn::clone_in(&self.exported, allocator),
@@ -4792,7 +4790,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ExportSpecifier<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ExportSpecifier {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             local: CloneIn::clone_in_with_semantic_ids(&self.local, allocator),
             exported: CloneIn::clone_in_with_semantic_ids(&self.exported, allocator),
@@ -5182,7 +5180,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for V8IntrinsicExpression<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         V8IntrinsicExpression {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             name: CloneIn::clone_in(&self.name, allocator),
             arguments: CloneIn::clone_in(&self.arguments, allocator),
@@ -5191,7 +5189,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for V8IntrinsicExpression<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         V8IntrinsicExpression {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             name: CloneIn::clone_in_with_semantic_ids(&self.name, allocator),
             arguments: CloneIn::clone_in_with_semantic_ids(&self.arguments, allocator),
@@ -5204,7 +5202,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for BooleanLiteral {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         BooleanLiteral {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             value: CloneIn::clone_in(&self.value, allocator),
         }
@@ -5212,7 +5210,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for BooleanLiteral {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         BooleanLiteral {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             value: CloneIn::clone_in_with_semantic_ids(&self.value, allocator),
         }
@@ -5223,15 +5221,12 @@ impl<'new_alloc> CloneIn<'new_alloc> for NullLiteral {
     type Cloned = NullLiteral;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
-        NullLiteral {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
-            span: CloneIn::clone_in(&self.span, allocator),
-        }
+        NullLiteral { node_id: Default::default(), span: CloneIn::clone_in(&self.span, allocator) }
     }
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         NullLiteral {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
         }
     }
@@ -5242,7 +5237,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for NumericLiteral<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         NumericLiteral {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             value: CloneIn::clone_in(&self.value, allocator),
             raw: CloneIn::clone_in(&self.raw, allocator),
@@ -5252,7 +5247,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for NumericLiteral<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         NumericLiteral {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             value: CloneIn::clone_in_with_semantic_ids(&self.value, allocator),
             raw: CloneIn::clone_in_with_semantic_ids(&self.raw, allocator),
@@ -5266,7 +5261,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for StringLiteral<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         StringLiteral {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             value: CloneIn::clone_in(&self.value, allocator),
             raw: CloneIn::clone_in(&self.raw, allocator),
@@ -5276,7 +5271,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for StringLiteral<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         StringLiteral {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             value: CloneIn::clone_in_with_semantic_ids(&self.value, allocator),
             raw: CloneIn::clone_in_with_semantic_ids(&self.raw, allocator),
@@ -5290,7 +5285,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for BigIntLiteral<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         BigIntLiteral {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             value: CloneIn::clone_in(&self.value, allocator),
             raw: CloneIn::clone_in(&self.raw, allocator),
@@ -5300,7 +5295,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for BigIntLiteral<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         BigIntLiteral {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             value: CloneIn::clone_in_with_semantic_ids(&self.value, allocator),
             raw: CloneIn::clone_in_with_semantic_ids(&self.raw, allocator),
@@ -5314,7 +5309,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for RegExpLiteral<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         RegExpLiteral {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             regex: CloneIn::clone_in(&self.regex, allocator),
             raw: CloneIn::clone_in(&self.raw, allocator),
@@ -5323,7 +5318,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for RegExpLiteral<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         RegExpLiteral {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             regex: CloneIn::clone_in_with_semantic_ids(&self.regex, allocator),
             raw: CloneIn::clone_in_with_semantic_ids(&self.raw, allocator),
@@ -5372,7 +5367,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for JSXElement<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         JSXElement {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             opening_element: CloneIn::clone_in(&self.opening_element, allocator),
             children: CloneIn::clone_in(&self.children, allocator),
@@ -5382,7 +5377,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for JSXElement<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         JSXElement {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             opening_element: CloneIn::clone_in_with_semantic_ids(&self.opening_element, allocator),
             children: CloneIn::clone_in_with_semantic_ids(&self.children, allocator),
@@ -5396,7 +5391,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for JSXOpeningElement<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         JSXOpeningElement {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             name: CloneIn::clone_in(&self.name, allocator),
             type_arguments: CloneIn::clone_in(&self.type_arguments, allocator),
@@ -5406,7 +5401,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for JSXOpeningElement<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         JSXOpeningElement {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             name: CloneIn::clone_in_with_semantic_ids(&self.name, allocator),
             type_arguments: CloneIn::clone_in_with_semantic_ids(&self.type_arguments, allocator),
@@ -5420,7 +5415,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for JSXClosingElement<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         JSXClosingElement {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             name: CloneIn::clone_in(&self.name, allocator),
         }
@@ -5428,7 +5423,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for JSXClosingElement<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         JSXClosingElement {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             name: CloneIn::clone_in_with_semantic_ids(&self.name, allocator),
         }
@@ -5440,7 +5435,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for JSXFragment<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         JSXFragment {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             opening_fragment: CloneIn::clone_in(&self.opening_fragment, allocator),
             children: CloneIn::clone_in(&self.children, allocator),
@@ -5450,7 +5445,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for JSXFragment<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         JSXFragment {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             opening_fragment: CloneIn::clone_in_with_semantic_ids(
                 &self.opening_fragment,
@@ -5470,14 +5465,14 @@ impl<'new_alloc> CloneIn<'new_alloc> for JSXOpeningFragment {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         JSXOpeningFragment {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
         }
     }
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         JSXOpeningFragment {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
         }
     }
@@ -5488,14 +5483,14 @@ impl<'new_alloc> CloneIn<'new_alloc> for JSXClosingFragment {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         JSXClosingFragment {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
         }
     }
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         JSXClosingFragment {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
         }
     }
@@ -5548,7 +5543,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for JSXNamespacedName<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         JSXNamespacedName {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             namespace: CloneIn::clone_in(&self.namespace, allocator),
             name: CloneIn::clone_in(&self.name, allocator),
@@ -5557,7 +5552,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for JSXNamespacedName<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         JSXNamespacedName {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             namespace: CloneIn::clone_in_with_semantic_ids(&self.namespace, allocator),
             name: CloneIn::clone_in_with_semantic_ids(&self.name, allocator),
@@ -5570,7 +5565,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for JSXMemberExpression<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         JSXMemberExpression {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             object: CloneIn::clone_in(&self.object, allocator),
             property: CloneIn::clone_in(&self.property, allocator),
@@ -5579,7 +5574,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for JSXMemberExpression<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         JSXMemberExpression {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             object: CloneIn::clone_in_with_semantic_ids(&self.object, allocator),
             property: CloneIn::clone_in_with_semantic_ids(&self.property, allocator),
@@ -5624,7 +5619,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for JSXExpressionContainer<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         JSXExpressionContainer {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             expression: CloneIn::clone_in(&self.expression, allocator),
         }
@@ -5632,7 +5627,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for JSXExpressionContainer<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         JSXExpressionContainer {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             expression: CloneIn::clone_in_with_semantic_ids(&self.expression, allocator),
         }
@@ -5922,14 +5917,14 @@ impl<'new_alloc> CloneIn<'new_alloc> for JSXEmptyExpression {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         JSXEmptyExpression {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
         }
     }
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         JSXEmptyExpression {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
         }
     }
@@ -5964,7 +5959,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for JSXAttribute<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         JSXAttribute {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             name: CloneIn::clone_in(&self.name, allocator),
             value: CloneIn::clone_in(&self.value, allocator),
@@ -5973,7 +5968,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for JSXAttribute<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         JSXAttribute {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             name: CloneIn::clone_in_with_semantic_ids(&self.name, allocator),
             value: CloneIn::clone_in_with_semantic_ids(&self.value, allocator),
@@ -5986,7 +5981,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for JSXSpreadAttribute<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         JSXSpreadAttribute {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             argument: CloneIn::clone_in(&self.argument, allocator),
         }
@@ -5994,7 +5989,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for JSXSpreadAttribute<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         JSXSpreadAttribute {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             argument: CloneIn::clone_in_with_semantic_ids(&self.argument, allocator),
         }
@@ -6064,7 +6059,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for JSXIdentifier<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         JSXIdentifier {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             name: CloneIn::clone_in(&self.name, allocator),
         }
@@ -6072,7 +6067,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for JSXIdentifier<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         JSXIdentifier {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             name: CloneIn::clone_in_with_semantic_ids(&self.name, allocator),
         }
@@ -6118,7 +6113,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for JSXSpreadChild<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         JSXSpreadChild {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             expression: CloneIn::clone_in(&self.expression, allocator),
         }
@@ -6126,7 +6121,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for JSXSpreadChild<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         JSXSpreadChild {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             expression: CloneIn::clone_in_with_semantic_ids(&self.expression, allocator),
         }
@@ -6138,7 +6133,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for JSXText<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         JSXText {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             value: CloneIn::clone_in(&self.value, allocator),
             raw: CloneIn::clone_in(&self.raw, allocator),
@@ -6147,7 +6142,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for JSXText<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         JSXText {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             value: CloneIn::clone_in_with_semantic_ids(&self.value, allocator),
             raw: CloneIn::clone_in_with_semantic_ids(&self.raw, allocator),
@@ -6160,7 +6155,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSThisParameter<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSThisParameter {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             this_span: CloneIn::clone_in(&self.this_span, allocator),
             type_annotation: CloneIn::clone_in(&self.type_annotation, allocator),
@@ -6169,7 +6164,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSThisParameter<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSThisParameter {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             this_span: CloneIn::clone_in_with_semantic_ids(&self.this_span, allocator),
             type_annotation: CloneIn::clone_in_with_semantic_ids(&self.type_annotation, allocator),
@@ -6182,7 +6177,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSEnumDeclaration<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSEnumDeclaration {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             id: CloneIn::clone_in(&self.id, allocator),
             body: CloneIn::clone_in(&self.body, allocator),
@@ -6193,7 +6188,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSEnumDeclaration<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSEnumDeclaration {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             id: CloneIn::clone_in_with_semantic_ids(&self.id, allocator),
             body: CloneIn::clone_in_with_semantic_ids(&self.body, allocator),
@@ -6208,7 +6203,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSEnumBody<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSEnumBody {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             members: CloneIn::clone_in(&self.members, allocator),
             scope_id: Default::default(),
@@ -6217,7 +6212,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSEnumBody<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSEnumBody {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             members: CloneIn::clone_in_with_semantic_ids(&self.members, allocator),
             scope_id: CloneIn::clone_in_with_semantic_ids(&self.scope_id, allocator),
@@ -6230,7 +6225,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSEnumMember<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSEnumMember {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             id: CloneIn::clone_in(&self.id, allocator),
             initializer: CloneIn::clone_in(&self.initializer, allocator),
@@ -6239,7 +6234,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSEnumMember<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSEnumMember {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             id: CloneIn::clone_in_with_semantic_ids(&self.id, allocator),
             initializer: CloneIn::clone_in_with_semantic_ids(&self.initializer, allocator),
@@ -6286,7 +6281,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSTypeAnnotation<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSTypeAnnotation {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             type_annotation: CloneIn::clone_in(&self.type_annotation, allocator),
         }
@@ -6294,7 +6289,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSTypeAnnotation<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSTypeAnnotation {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             type_annotation: CloneIn::clone_in_with_semantic_ids(&self.type_annotation, allocator),
         }
@@ -6306,7 +6301,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSLiteralType<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSLiteralType {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             literal: CloneIn::clone_in(&self.literal, allocator),
         }
@@ -6314,7 +6309,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSLiteralType<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSLiteralType {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             literal: CloneIn::clone_in_with_semantic_ids(&self.literal, allocator),
         }
@@ -6560,7 +6555,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSConditionalType<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSConditionalType {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             check_type: CloneIn::clone_in(&self.check_type, allocator),
             extends_type: CloneIn::clone_in(&self.extends_type, allocator),
@@ -6572,7 +6567,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSConditionalType<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSConditionalType {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             check_type: CloneIn::clone_in_with_semantic_ids(&self.check_type, allocator),
             extends_type: CloneIn::clone_in_with_semantic_ids(&self.extends_type, allocator),
@@ -6588,7 +6583,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSUnionType<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSUnionType {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             types: CloneIn::clone_in(&self.types, allocator),
         }
@@ -6596,7 +6591,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSUnionType<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSUnionType {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             types: CloneIn::clone_in_with_semantic_ids(&self.types, allocator),
         }
@@ -6608,7 +6603,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSIntersectionType<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSIntersectionType {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             types: CloneIn::clone_in(&self.types, allocator),
         }
@@ -6616,7 +6611,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSIntersectionType<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSIntersectionType {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             types: CloneIn::clone_in_with_semantic_ids(&self.types, allocator),
         }
@@ -6628,7 +6623,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSParenthesizedType<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSParenthesizedType {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             type_annotation: CloneIn::clone_in(&self.type_annotation, allocator),
         }
@@ -6636,7 +6631,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSParenthesizedType<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSParenthesizedType {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             type_annotation: CloneIn::clone_in_with_semantic_ids(&self.type_annotation, allocator),
         }
@@ -6648,7 +6643,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSTypeOperator<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSTypeOperator {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             operator: CloneIn::clone_in(&self.operator, allocator),
             type_annotation: CloneIn::clone_in(&self.type_annotation, allocator),
@@ -6657,7 +6652,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSTypeOperator<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSTypeOperator {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             operator: CloneIn::clone_in_with_semantic_ids(&self.operator, allocator),
             type_annotation: CloneIn::clone_in_with_semantic_ids(&self.type_annotation, allocator),
@@ -6684,7 +6679,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSArrayType<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSArrayType {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             element_type: CloneIn::clone_in(&self.element_type, allocator),
         }
@@ -6692,7 +6687,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSArrayType<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSArrayType {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             element_type: CloneIn::clone_in_with_semantic_ids(&self.element_type, allocator),
         }
@@ -6704,7 +6699,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSIndexedAccessType<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSIndexedAccessType {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             object_type: CloneIn::clone_in(&self.object_type, allocator),
             index_type: CloneIn::clone_in(&self.index_type, allocator),
@@ -6713,7 +6708,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSIndexedAccessType<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSIndexedAccessType {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             object_type: CloneIn::clone_in_with_semantic_ids(&self.object_type, allocator),
             index_type: CloneIn::clone_in_with_semantic_ids(&self.index_type, allocator),
@@ -6726,7 +6721,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSTupleType<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSTupleType {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             element_types: CloneIn::clone_in(&self.element_types, allocator),
         }
@@ -6734,7 +6729,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSTupleType<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSTupleType {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             element_types: CloneIn::clone_in_with_semantic_ids(&self.element_types, allocator),
         }
@@ -6746,7 +6741,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSNamedTupleMember<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSNamedTupleMember {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             label: CloneIn::clone_in(&self.label, allocator),
             element_type: CloneIn::clone_in(&self.element_type, allocator),
@@ -6756,7 +6751,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSNamedTupleMember<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSNamedTupleMember {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             label: CloneIn::clone_in_with_semantic_ids(&self.label, allocator),
             element_type: CloneIn::clone_in_with_semantic_ids(&self.element_type, allocator),
@@ -6770,7 +6765,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSOptionalType<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSOptionalType {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             type_annotation: CloneIn::clone_in(&self.type_annotation, allocator),
         }
@@ -6778,7 +6773,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSOptionalType<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSOptionalType {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             type_annotation: CloneIn::clone_in_with_semantic_ids(&self.type_annotation, allocator),
         }
@@ -6790,7 +6785,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSRestType<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSRestType {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             type_annotation: CloneIn::clone_in(&self.type_annotation, allocator),
         }
@@ -6798,7 +6793,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSRestType<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSRestType {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             type_annotation: CloneIn::clone_in_with_semantic_ids(&self.type_annotation, allocator),
         }
@@ -7043,15 +7038,12 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSAnyKeyword {
     type Cloned = TSAnyKeyword;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
-        TSAnyKeyword {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
-            span: CloneIn::clone_in(&self.span, allocator),
-        }
+        TSAnyKeyword { node_id: Default::default(), span: CloneIn::clone_in(&self.span, allocator) }
     }
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSAnyKeyword {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
         }
     }
@@ -7062,14 +7054,14 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSStringKeyword {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSStringKeyword {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
         }
     }
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSStringKeyword {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
         }
     }
@@ -7080,14 +7072,14 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSBooleanKeyword {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSBooleanKeyword {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
         }
     }
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSBooleanKeyword {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
         }
     }
@@ -7098,14 +7090,14 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSNumberKeyword {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSNumberKeyword {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
         }
     }
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSNumberKeyword {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
         }
     }
@@ -7116,14 +7108,14 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSNeverKeyword {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSNeverKeyword {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
         }
     }
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSNeverKeyword {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
         }
     }
@@ -7134,14 +7126,14 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSIntrinsicKeyword {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSIntrinsicKeyword {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
         }
     }
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSIntrinsicKeyword {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
         }
     }
@@ -7152,14 +7144,14 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSUnknownKeyword {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSUnknownKeyword {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
         }
     }
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSUnknownKeyword {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
         }
     }
@@ -7170,14 +7162,14 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSNullKeyword {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSNullKeyword {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
         }
     }
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSNullKeyword {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
         }
     }
@@ -7188,14 +7180,14 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSUndefinedKeyword {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSUndefinedKeyword {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
         }
     }
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSUndefinedKeyword {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
         }
     }
@@ -7206,14 +7198,14 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSVoidKeyword {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSVoidKeyword {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
         }
     }
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSVoidKeyword {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
         }
     }
@@ -7224,14 +7216,14 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSSymbolKeyword {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSSymbolKeyword {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
         }
     }
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSSymbolKeyword {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
         }
     }
@@ -7241,15 +7233,12 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSThisType {
     type Cloned = TSThisType;
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
-        TSThisType {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
-            span: CloneIn::clone_in(&self.span, allocator),
-        }
+        TSThisType { node_id: Default::default(), span: CloneIn::clone_in(&self.span, allocator) }
     }
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSThisType {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
         }
     }
@@ -7260,14 +7249,14 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSObjectKeyword {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSObjectKeyword {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
         }
     }
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSObjectKeyword {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
         }
     }
@@ -7278,14 +7267,14 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSBigIntKeyword {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSBigIntKeyword {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
         }
     }
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSBigIntKeyword {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
         }
     }
@@ -7296,7 +7285,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSTypeReference<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSTypeReference {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             type_name: CloneIn::clone_in(&self.type_name, allocator),
             type_arguments: CloneIn::clone_in(&self.type_arguments, allocator),
@@ -7305,7 +7294,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSTypeReference<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSTypeReference {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             type_name: CloneIn::clone_in_with_semantic_ids(&self.type_name, allocator),
             type_arguments: CloneIn::clone_in_with_semantic_ids(&self.type_arguments, allocator),
@@ -7348,7 +7337,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSQualifiedName<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSQualifiedName {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             left: CloneIn::clone_in(&self.left, allocator),
             right: CloneIn::clone_in(&self.right, allocator),
@@ -7357,7 +7346,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSQualifiedName<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSQualifiedName {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             left: CloneIn::clone_in_with_semantic_ids(&self.left, allocator),
             right: CloneIn::clone_in_with_semantic_ids(&self.right, allocator),
@@ -7370,7 +7359,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSTypeParameterInstantiation<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSTypeParameterInstantiation {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             params: CloneIn::clone_in(&self.params, allocator),
         }
@@ -7378,7 +7367,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSTypeParameterInstantiation<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSTypeParameterInstantiation {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             params: CloneIn::clone_in_with_semantic_ids(&self.params, allocator),
         }
@@ -7390,7 +7379,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSTypeParameter<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSTypeParameter {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             name: CloneIn::clone_in(&self.name, allocator),
             constraint: CloneIn::clone_in(&self.constraint, allocator),
@@ -7403,7 +7392,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSTypeParameter<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSTypeParameter {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             name: CloneIn::clone_in_with_semantic_ids(&self.name, allocator),
             constraint: CloneIn::clone_in_with_semantic_ids(&self.constraint, allocator),
@@ -7420,7 +7409,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSTypeParameterDeclaration<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSTypeParameterDeclaration {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             params: CloneIn::clone_in(&self.params, allocator),
         }
@@ -7428,7 +7417,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSTypeParameterDeclaration<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSTypeParameterDeclaration {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             params: CloneIn::clone_in_with_semantic_ids(&self.params, allocator),
         }
@@ -7440,7 +7429,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSTypeAliasDeclaration<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSTypeAliasDeclaration {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             id: CloneIn::clone_in(&self.id, allocator),
             type_parameters: CloneIn::clone_in(&self.type_parameters, allocator),
@@ -7452,7 +7441,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSTypeAliasDeclaration<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSTypeAliasDeclaration {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             id: CloneIn::clone_in_with_semantic_ids(&self.id, allocator),
             type_parameters: CloneIn::clone_in_with_semantic_ids(&self.type_parameters, allocator),
@@ -7482,7 +7471,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSClassImplements<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSClassImplements {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             expression: CloneIn::clone_in(&self.expression, allocator),
             type_arguments: CloneIn::clone_in(&self.type_arguments, allocator),
@@ -7491,7 +7480,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSClassImplements<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSClassImplements {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             expression: CloneIn::clone_in_with_semantic_ids(&self.expression, allocator),
             type_arguments: CloneIn::clone_in_with_semantic_ids(&self.type_arguments, allocator),
@@ -7504,7 +7493,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSInterfaceDeclaration<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSInterfaceDeclaration {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             id: CloneIn::clone_in(&self.id, allocator),
             type_parameters: CloneIn::clone_in(&self.type_parameters, allocator),
@@ -7517,7 +7506,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSInterfaceDeclaration<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSInterfaceDeclaration {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             id: CloneIn::clone_in_with_semantic_ids(&self.id, allocator),
             type_parameters: CloneIn::clone_in_with_semantic_ids(&self.type_parameters, allocator),
@@ -7534,7 +7523,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSInterfaceBody<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSInterfaceBody {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             body: CloneIn::clone_in(&self.body, allocator),
         }
@@ -7542,7 +7531,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSInterfaceBody<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSInterfaceBody {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             body: CloneIn::clone_in_with_semantic_ids(&self.body, allocator),
         }
@@ -7554,7 +7543,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSPropertySignature<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSPropertySignature {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             computed: CloneIn::clone_in(&self.computed, allocator),
             optional: CloneIn::clone_in(&self.optional, allocator),
@@ -7566,7 +7555,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSPropertySignature<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSPropertySignature {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             computed: CloneIn::clone_in_with_semantic_ids(&self.computed, allocator),
             optional: CloneIn::clone_in_with_semantic_ids(&self.optional, allocator),
@@ -7628,7 +7617,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSIndexSignature<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSIndexSignature {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             parameters: CloneIn::clone_in(&self.parameters, allocator),
             type_annotation: CloneIn::clone_in(&self.type_annotation, allocator),
@@ -7639,7 +7628,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSIndexSignature<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSIndexSignature {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             parameters: CloneIn::clone_in_with_semantic_ids(&self.parameters, allocator),
             type_annotation: CloneIn::clone_in_with_semantic_ids(&self.type_annotation, allocator),
@@ -7654,7 +7643,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSCallSignatureDeclaration<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSCallSignatureDeclaration {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             type_parameters: CloneIn::clone_in(&self.type_parameters, allocator),
             this_param: CloneIn::clone_in(&self.this_param, allocator),
@@ -7666,7 +7655,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSCallSignatureDeclaration<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSCallSignatureDeclaration {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             type_parameters: CloneIn::clone_in_with_semantic_ids(&self.type_parameters, allocator),
             this_param: CloneIn::clone_in_with_semantic_ids(&self.this_param, allocator),
@@ -7696,7 +7685,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSMethodSignature<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSMethodSignature {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             key: CloneIn::clone_in(&self.key, allocator),
             computed: CloneIn::clone_in(&self.computed, allocator),
@@ -7712,7 +7701,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSMethodSignature<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSMethodSignature {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             key: CloneIn::clone_in_with_semantic_ids(&self.key, allocator),
             computed: CloneIn::clone_in_with_semantic_ids(&self.computed, allocator),
@@ -7732,7 +7721,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSConstructSignatureDeclaration<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSConstructSignatureDeclaration {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             type_parameters: CloneIn::clone_in(&self.type_parameters, allocator),
             params: CloneIn::clone_in(&self.params, allocator),
@@ -7743,7 +7732,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSConstructSignatureDeclaration<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSConstructSignatureDeclaration {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             type_parameters: CloneIn::clone_in_with_semantic_ids(&self.type_parameters, allocator),
             params: CloneIn::clone_in_with_semantic_ids(&self.params, allocator),
@@ -7758,7 +7747,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSIndexSignatureName<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSIndexSignatureName {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             name: CloneIn::clone_in(&self.name, allocator),
             type_annotation: CloneIn::clone_in(&self.type_annotation, allocator),
@@ -7767,7 +7756,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSIndexSignatureName<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSIndexSignatureName {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             name: CloneIn::clone_in_with_semantic_ids(&self.name, allocator),
             type_annotation: CloneIn::clone_in_with_semantic_ids(&self.type_annotation, allocator),
@@ -7780,7 +7769,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSInterfaceHeritage<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSInterfaceHeritage {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             expression: CloneIn::clone_in(&self.expression, allocator),
             type_arguments: CloneIn::clone_in(&self.type_arguments, allocator),
@@ -7789,7 +7778,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSInterfaceHeritage<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSInterfaceHeritage {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             expression: CloneIn::clone_in_with_semantic_ids(&self.expression, allocator),
             type_arguments: CloneIn::clone_in_with_semantic_ids(&self.type_arguments, allocator),
@@ -7802,7 +7791,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSTypePredicate<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSTypePredicate {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             parameter_name: CloneIn::clone_in(&self.parameter_name, allocator),
             asserts: CloneIn::clone_in(&self.asserts, allocator),
@@ -7812,7 +7801,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSTypePredicate<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSTypePredicate {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             parameter_name: CloneIn::clone_in_with_semantic_ids(&self.parameter_name, allocator),
             asserts: CloneIn::clone_in_with_semantic_ids(&self.asserts, allocator),
@@ -7850,7 +7839,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSModuleDeclaration<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSModuleDeclaration {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             id: CloneIn::clone_in(&self.id, allocator),
             body: CloneIn::clone_in(&self.body, allocator),
@@ -7862,7 +7851,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSModuleDeclaration<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSModuleDeclaration {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             id: CloneIn::clone_in_with_semantic_ids(&self.id, allocator),
             body: CloneIn::clone_in_with_semantic_ids(&self.body, allocator),
@@ -7944,7 +7933,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSGlobalDeclaration<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSGlobalDeclaration {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             global_span: CloneIn::clone_in(&self.global_span, allocator),
             body: CloneIn::clone_in(&self.body, allocator),
@@ -7955,7 +7944,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSGlobalDeclaration<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSGlobalDeclaration {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             global_span: CloneIn::clone_in_with_semantic_ids(&self.global_span, allocator),
             body: CloneIn::clone_in_with_semantic_ids(&self.body, allocator),
@@ -7970,7 +7959,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSModuleBlock<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSModuleBlock {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             directives: CloneIn::clone_in(&self.directives, allocator),
             body: CloneIn::clone_in(&self.body, allocator),
@@ -7979,7 +7968,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSModuleBlock<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSModuleBlock {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             directives: CloneIn::clone_in_with_semantic_ids(&self.directives, allocator),
             body: CloneIn::clone_in_with_semantic_ids(&self.body, allocator),
@@ -7992,7 +7981,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSTypeLiteral<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSTypeLiteral {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             members: CloneIn::clone_in(&self.members, allocator),
         }
@@ -8000,7 +7989,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSTypeLiteral<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSTypeLiteral {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             members: CloneIn::clone_in_with_semantic_ids(&self.members, allocator),
         }
@@ -8012,7 +8001,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSInferType<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSInferType {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             type_parameter: CloneIn::clone_in(&self.type_parameter, allocator),
         }
@@ -8020,7 +8009,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSInferType<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSInferType {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             type_parameter: CloneIn::clone_in_with_semantic_ids(&self.type_parameter, allocator),
         }
@@ -8032,7 +8021,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSTypeQuery<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSTypeQuery {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             expr_name: CloneIn::clone_in(&self.expr_name, allocator),
             type_arguments: CloneIn::clone_in(&self.type_arguments, allocator),
@@ -8041,7 +8030,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSTypeQuery<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSTypeQuery {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             expr_name: CloneIn::clone_in_with_semantic_ids(&self.expr_name, allocator),
             type_arguments: CloneIn::clone_in_with_semantic_ids(&self.type_arguments, allocator),
@@ -8092,7 +8081,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSImportType<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSImportType {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             source: CloneIn::clone_in(&self.source, allocator),
             options: CloneIn::clone_in(&self.options, allocator),
@@ -8103,7 +8092,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSImportType<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSImportType {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             source: CloneIn::clone_in_with_semantic_ids(&self.source, allocator),
             options: CloneIn::clone_in_with_semantic_ids(&self.options, allocator),
@@ -8144,7 +8133,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSImportTypeQualifiedName<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSImportTypeQualifiedName {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             left: CloneIn::clone_in(&self.left, allocator),
             right: CloneIn::clone_in(&self.right, allocator),
@@ -8153,7 +8142,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSImportTypeQualifiedName<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSImportTypeQualifiedName {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             left: CloneIn::clone_in_with_semantic_ids(&self.left, allocator),
             right: CloneIn::clone_in_with_semantic_ids(&self.right, allocator),
@@ -8166,7 +8155,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSFunctionType<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSFunctionType {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             type_parameters: CloneIn::clone_in(&self.type_parameters, allocator),
             this_param: CloneIn::clone_in(&self.this_param, allocator),
@@ -8178,7 +8167,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSFunctionType<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSFunctionType {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             type_parameters: CloneIn::clone_in_with_semantic_ids(&self.type_parameters, allocator),
             this_param: CloneIn::clone_in_with_semantic_ids(&self.this_param, allocator),
@@ -8194,7 +8183,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSConstructorType<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSConstructorType {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             r#abstract: CloneIn::clone_in(&self.r#abstract, allocator),
             type_parameters: CloneIn::clone_in(&self.type_parameters, allocator),
@@ -8206,7 +8195,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSConstructorType<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSConstructorType {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             r#abstract: CloneIn::clone_in_with_semantic_ids(&self.r#abstract, allocator),
             type_parameters: CloneIn::clone_in_with_semantic_ids(&self.type_parameters, allocator),
@@ -8222,7 +8211,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSMappedType<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSMappedType {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             key: CloneIn::clone_in(&self.key, allocator),
             constraint: CloneIn::clone_in(&self.constraint, allocator),
@@ -8236,7 +8225,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSMappedType<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSMappedType {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             key: CloneIn::clone_in_with_semantic_ids(&self.key, allocator),
             constraint: CloneIn::clone_in_with_semantic_ids(&self.constraint, allocator),
@@ -8268,7 +8257,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSTemplateLiteralType<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSTemplateLiteralType {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             quasis: CloneIn::clone_in(&self.quasis, allocator),
             types: CloneIn::clone_in(&self.types, allocator),
@@ -8277,7 +8266,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSTemplateLiteralType<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSTemplateLiteralType {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             quasis: CloneIn::clone_in_with_semantic_ids(&self.quasis, allocator),
             types: CloneIn::clone_in_with_semantic_ids(&self.types, allocator),
@@ -8290,7 +8279,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSAsExpression<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSAsExpression {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             expression: CloneIn::clone_in(&self.expression, allocator),
             type_annotation: CloneIn::clone_in(&self.type_annotation, allocator),
@@ -8299,7 +8288,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSAsExpression<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSAsExpression {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             expression: CloneIn::clone_in_with_semantic_ids(&self.expression, allocator),
             type_annotation: CloneIn::clone_in_with_semantic_ids(&self.type_annotation, allocator),
@@ -8312,7 +8301,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSSatisfiesExpression<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSSatisfiesExpression {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             expression: CloneIn::clone_in(&self.expression, allocator),
             type_annotation: CloneIn::clone_in(&self.type_annotation, allocator),
@@ -8321,7 +8310,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSSatisfiesExpression<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSSatisfiesExpression {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             expression: CloneIn::clone_in_with_semantic_ids(&self.expression, allocator),
             type_annotation: CloneIn::clone_in_with_semantic_ids(&self.type_annotation, allocator),
@@ -8334,7 +8323,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSTypeAssertion<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSTypeAssertion {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             type_annotation: CloneIn::clone_in(&self.type_annotation, allocator),
             expression: CloneIn::clone_in(&self.expression, allocator),
@@ -8343,7 +8332,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSTypeAssertion<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSTypeAssertion {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             type_annotation: CloneIn::clone_in_with_semantic_ids(&self.type_annotation, allocator),
             expression: CloneIn::clone_in_with_semantic_ids(&self.expression, allocator),
@@ -8356,7 +8345,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSImportEqualsDeclaration<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSImportEqualsDeclaration {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             id: CloneIn::clone_in(&self.id, allocator),
             module_reference: CloneIn::clone_in(&self.module_reference, allocator),
@@ -8366,7 +8355,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSImportEqualsDeclaration<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSImportEqualsDeclaration {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             id: CloneIn::clone_in_with_semantic_ids(&self.id, allocator),
             module_reference: CloneIn::clone_in_with_semantic_ids(
@@ -8415,7 +8404,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSExternalModuleReference<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSExternalModuleReference {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             expression: CloneIn::clone_in(&self.expression, allocator),
         }
@@ -8423,7 +8412,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSExternalModuleReference<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSExternalModuleReference {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             expression: CloneIn::clone_in_with_semantic_ids(&self.expression, allocator),
         }
@@ -8435,7 +8424,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSNonNullExpression<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSNonNullExpression {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             expression: CloneIn::clone_in(&self.expression, allocator),
         }
@@ -8443,7 +8432,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSNonNullExpression<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSNonNullExpression {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             expression: CloneIn::clone_in_with_semantic_ids(&self.expression, allocator),
         }
@@ -8455,7 +8444,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for Decorator<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         Decorator {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             expression: CloneIn::clone_in(&self.expression, allocator),
         }
@@ -8463,7 +8452,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for Decorator<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         Decorator {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             expression: CloneIn::clone_in_with_semantic_ids(&self.expression, allocator),
         }
@@ -8475,7 +8464,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSExportAssignment<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSExportAssignment {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             expression: CloneIn::clone_in(&self.expression, allocator),
         }
@@ -8483,7 +8472,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSExportAssignment<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSExportAssignment {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             expression: CloneIn::clone_in_with_semantic_ids(&self.expression, allocator),
         }
@@ -8495,7 +8484,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSNamespaceExportDeclaration<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSNamespaceExportDeclaration {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             id: CloneIn::clone_in(&self.id, allocator),
         }
@@ -8503,7 +8492,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSNamespaceExportDeclaration<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSNamespaceExportDeclaration {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             id: CloneIn::clone_in_with_semantic_ids(&self.id, allocator),
         }
@@ -8515,7 +8504,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSInstantiationExpression<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSInstantiationExpression {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             expression: CloneIn::clone_in(&self.expression, allocator),
             type_arguments: CloneIn::clone_in(&self.type_arguments, allocator),
@@ -8524,7 +8513,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSInstantiationExpression<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         TSInstantiationExpression {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             expression: CloneIn::clone_in_with_semantic_ids(&self.expression, allocator),
             type_arguments: CloneIn::clone_in_with_semantic_ids(&self.type_arguments, allocator),
@@ -8551,7 +8540,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for JSDocNullableType<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         JSDocNullableType {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             type_annotation: CloneIn::clone_in(&self.type_annotation, allocator),
             postfix: CloneIn::clone_in(&self.postfix, allocator),
@@ -8560,7 +8549,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for JSDocNullableType<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         JSDocNullableType {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             type_annotation: CloneIn::clone_in_with_semantic_ids(&self.type_annotation, allocator),
             postfix: CloneIn::clone_in_with_semantic_ids(&self.postfix, allocator),
@@ -8573,7 +8562,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for JSDocNonNullableType<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         JSDocNonNullableType {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             type_annotation: CloneIn::clone_in(&self.type_annotation, allocator),
             postfix: CloneIn::clone_in(&self.postfix, allocator),
@@ -8582,7 +8571,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for JSDocNonNullableType<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         JSDocNonNullableType {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             type_annotation: CloneIn::clone_in_with_semantic_ids(&self.type_annotation, allocator),
             postfix: CloneIn::clone_in_with_semantic_ids(&self.postfix, allocator),
@@ -8595,14 +8584,14 @@ impl<'new_alloc> CloneIn<'new_alloc> for JSDocUnknownType {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         JSDocUnknownType {
-            node_id: Cell::new(oxc_syntax::node::NodeId::DUMMY),
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
         }
     }
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         JSDocUnknownType {
-            node_id: Cell::new(self.node_id.get()),
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
         }
     }
@@ -8681,6 +8670,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for StructStatement<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         StructStatement {
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             decorators: CloneIn::clone_in(&self.decorators, allocator),
             id: CloneIn::clone_in(&self.id, allocator),
@@ -8693,6 +8683,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for StructStatement<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         StructStatement {
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             decorators: CloneIn::clone_in_with_semantic_ids(&self.decorators, allocator),
             id: CloneIn::clone_in_with_semantic_ids(&self.id, allocator),
@@ -8709,6 +8700,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for StructBody<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         StructBody {
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             body: CloneIn::clone_in(&self.body, allocator),
         }
@@ -8716,6 +8708,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for StructBody<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         StructBody {
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             body: CloneIn::clone_in_with_semantic_ids(&self.body, allocator),
         }
@@ -8753,6 +8746,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ArkUIComponentExpression<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ArkUIComponentExpression {
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             callee: CloneIn::clone_in(&self.callee, allocator),
             type_arguments: CloneIn::clone_in(&self.type_arguments, allocator),
@@ -8764,6 +8758,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ArkUIComponentExpression<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         ArkUIComponentExpression {
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             callee: CloneIn::clone_in_with_semantic_ids(&self.callee, allocator),
             type_arguments: CloneIn::clone_in_with_semantic_ids(&self.type_arguments, allocator),
@@ -8808,6 +8803,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for AnnotationDeclaration<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         AnnotationDeclaration {
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             decorators: CloneIn::clone_in(&self.decorators, allocator),
             id: CloneIn::clone_in(&self.id, allocator),
@@ -8819,6 +8815,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for AnnotationDeclaration<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         AnnotationDeclaration {
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             decorators: CloneIn::clone_in_with_semantic_ids(&self.decorators, allocator),
             id: CloneIn::clone_in_with_semantic_ids(&self.id, allocator),
@@ -8834,6 +8831,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for AnnotationBody<'_> {
 
     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         AnnotationBody {
+            node_id: Default::default(),
             span: CloneIn::clone_in(&self.span, allocator),
             body: CloneIn::clone_in(&self.body, allocator),
         }
@@ -8841,6 +8839,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for AnnotationBody<'_> {
 
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
         AnnotationBody {
+            node_id: CloneIn::clone_in_with_semantic_ids(&self.node_id, allocator),
             span: CloneIn::clone_in_with_semantic_ids(&self.span, allocator),
             body: CloneIn::clone_in_with_semantic_ids(&self.body, allocator),
         }
