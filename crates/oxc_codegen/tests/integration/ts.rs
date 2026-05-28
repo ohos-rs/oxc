@@ -1,9 +1,13 @@
 use oxc_codegen::CodegenOptions;
 use oxc_parser::ParseOptions;
+use oxc_span::SourceType;
 
 use crate::{
     snapshot, snapshot_options,
-    tester::{test_idempotency, test_same, test_tsx, test_with_parse_options},
+    tester::{
+        default_options, test_idempotency, test_options_with_source_type, test_same, test_tsx,
+        test_with_parse_options,
+    },
 };
 
 #[test]
@@ -51,6 +55,21 @@ fn cases() {
 fn decorators() {
     test_same("@a abstract class C {}\n");
     test_tsx("@a @b export default abstract class {}", "export default @a @b abstract class {}\n");
+}
+
+#[test]
+fn arkui() {
+    let source_type = SourceType::default().with_typescript(true).with_arkui(true);
+    let expected =
+        "@Component export declare struct Foo {\n\t@State count: number;\n\tbuild(): void;\n}\n";
+
+    test_options_with_source_type(
+        "@Component\nexport declare struct Foo {\n\t@State count: number;\n\tbuild(): void;\n}\n",
+        expected,
+        source_type,
+        default_options(),
+    );
+    test_options_with_source_type(expected, expected, source_type, default_options());
 }
 
 #[test]

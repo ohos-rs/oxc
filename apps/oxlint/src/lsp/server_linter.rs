@@ -105,14 +105,13 @@ impl ServerLinterBuilder {
         #[cfg(feature = "napi")]
         let loader = loader.with_js_config_loader(self.js_config_loader.as_ref());
 
-        let oxlintrc =
-            match loader.load_root_config_with_ancestor_search(&root_path, config_path.as_ref()) {
-                Ok(config) => config,
-                Err(e) => {
-                    warn!("Failed to load config: {e}");
-                    Oxlintrc::default()
-                }
-            };
+        let oxlintrc = match loader.load_root_config(&root_path, config_path.as_ref()) {
+            Ok(config) => config,
+            Err(e) => {
+                warn!("Failed to load config: {e}");
+                Oxlintrc::default()
+            }
+        };
 
         let mut nested_ignore_patterns = Vec::new();
         let mut extended_paths = FxHashSet::default();
@@ -167,7 +166,7 @@ impl ServerLinterBuilder {
         let lint_options = LintOptions {
             fix: fix_kind,
             report_unused_directive: match options.unused_disable_directives {
-                Some(UnusedDisableDirectives::Allow) => Some(AllowWarnDeny::Allow),
+                Some(UnusedDisableDirectives::Allow) => None,
                 Some(UnusedDisableDirectives::Warn) => Some(AllowWarnDeny::Warn),
                 Some(UnusedDisableDirectives::Deny) => Some(AllowWarnDeny::Deny),
                 None => match config_store.report_unused_disable_directives() {
@@ -535,6 +534,10 @@ impl Tool for ServerLinter {
         }
 
         let text_edits = fix_all_text_edit(actions.into_iter());
+
+        if text_edits.is_empty() {
+            return Ok(None);
+        }
 
         Ok(Some(WorkspaceEdit {
             #[expect(clippy::disallowed_types)]
@@ -1196,7 +1199,7 @@ mod test {
         let linter = tester.create_linter();
         let range = Range::new(Position::new(0, 0), Position::new(u32::MAX, u32::MAX));
         let uri = tester.get_file_uri("quickfix.js");
-        let _ = linter.run_file(&uri, Some("debugger;")).unwrap();
+        let _ = linter.run_file(&uri, Some("if (foo == NaN) {}")).unwrap();
         let code_actions =
             linter.get_code_actions_or_commands(&uri, &range, &CodeActionContext::default());
         assert_eq!(
@@ -1382,6 +1385,17 @@ mod test {
             "fixtures/lsp/unused_disabled_directives",
             json!({
                 "unusedDisableDirectives": "deny"
+            }),
+        )
+        .test_and_snapshot_single_file("test.js");
+    }
+
+    #[test]
+    fn test_allow_unused_directives() {
+        Tester::new(
+            "fixtures/lsp/allow_unused_disabled_directives",
+            json!({
+                "unusedDisableDirectives": "allow"
             }),
         )
         .test_and_snapshot_single_file("test.js");

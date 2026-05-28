@@ -1,9 +1,9 @@
-commit: c543b031
+commit: d9fe348c
 
 parser_babel Summary:
-AST Parsed     : 2232/2232 (100.00%)
-Positive Passed: 2218/2232 (99.37%)
-Negative Passed: 1691/1709 (98.95%)
+AST Parsed     : 2236/2236 (100.00%)
+Positive Passed: 2222/2236 (99.37%)
+Negative Passed: 1693/1723 (98.26%)
 Expect Syntax Error: tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/cast/unparenthesized-assert-and-assign/input.ts
 
 Expect Syntax Error: tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/cast/unparenthesized-type-assertion-and-assign/input.ts
@@ -26,11 +26,35 @@ Expect Syntax Error: tasks/coverage/babel/packages/babel-parser/test/fixtures/ty
 
 Expect Syntax Error: tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/export/equals-in-script/input.ts
 
+Expect Syntax Error: tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/export/invalid-as-namespace-duplicate-identifier/input.ts
+
 Expect Syntax Error: tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/import/equals-in-script/input.ts
 
 Expect Syntax Error: tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/import/equals-require-in-script/input.ts
 
 Expect Syntax Error: tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/interface/invalid-within-single-statement-context/input.ts
+
+Expect Syntax Error: tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/module-namespace/invalid-body-declare-export-assignment/input.ts
+
+Expect Syntax Error: tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/module-namespace/invalid-body-declare-export-default/input.ts
+
+Expect Syntax Error: tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/module-namespace/invalid-body-declare-export-from/input.ts
+
+Expect Syntax Error: tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/module-namespace/invalid-body-declare-import/input.ts
+
+Expect Syntax Error: tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/module-namespace/invalid-body-export-assignment/input.ts
+
+Expect Syntax Error: tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/module-namespace/invalid-body-export-default/input.ts
+
+Expect Syntax Error: tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/module-namespace/invalid-body-export-from/input.ts
+
+Expect Syntax Error: tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/module-namespace/invalid-body-export-named/input.ts
+
+Expect Syntax Error: tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/module-namespace/invalid-body-import/input.ts
+
+Expect Syntax Error: tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/module-namespace/invalid-body-namespace-export/input.ts
+
+Expect Syntax Error: tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/module-namespace/invalid-global-redeclare-block-level-variable-in-module/input.ts
 
 Expect Syntax Error: tasks/coverage/babel/packages/babel-parser/test/fixtures/typescript/module-namespace/module-identifier-invalid/input.ts
 
@@ -5648,39 +5672,40 @@ Expect to Parse: tasks/coverage/babel/packages/babel-parser/test/fixtures/typesc
    ·                                ╰── It can not be redeclared here
    ╰────
 
-  × Invalid rest element
+  × Invalid rest element target in destructuring pattern
    ╭─[babel/packages/babel-parser/test/fixtures/es2018/object-rest-spread/16/input.js:1:9]
  1 │ var {...{z}} = { z: 1};
    ·         ───
    ╰────
-  help: Expected identifier in rest element
+  help: Expected an identifier, like `...rest`.
 
-  × Invalid rest element
+  × Invalid rest element target in destructuring pattern
    ╭─[babel/packages/babel-parser/test/fixtures/es2018/object-rest-spread/17/input.js:1:10]
  1 │ var { ...{ x = 5 } } = {x : 1};
    ·          ─────────
    ╰────
-  help: Expected identifier in rest element
+  help: Expected an identifier, like `...rest`.
 
-  × Invalid rest element
+  × Invalid rest element target in destructuring pattern
    ╭─[babel/packages/babel-parser/test/fixtures/es2018/object-rest-spread/19/input.js:1:19]
  1 │ function test({...{}}) {}
    ·                   ──
    ╰────
-  help: Expected identifier in rest element
+  help: Expected an identifier, like `...rest`.
 
-  × Invalid rest element
+  × Invalid rest element target in destructuring pattern
    ╭─[babel/packages/babel-parser/test/fixtures/es2018/object-rest-spread/20/input.js:1:19]
  1 │ function test({...{a}}) {}
    ·                   ───
    ╰────
-  help: Expected identifier in rest element
+  help: Expected an identifier, like `...rest`.
 
-  × Invalid rest operator's argument.
+  × Invalid rest element target in destructuring assignment
    ╭─[babel/packages/babel-parser/test/fixtures/es2018/object-rest-spread/21/input.js:1:6]
  1 │ ({...x = 1} = {})
    ·      ─────
    ╰────
+  help: Expected an identifier or member expression, like `...rest` or `...obj.prop`.
 
   × Cannot assign to this expression
    ╭─[babel/packages/babel-parser/test/fixtures/es2018/object-rest-spread/21/input.js:1:6]
@@ -5694,12 +5719,12 @@ Expect to Parse: tasks/coverage/babel/packages/babel-parser/test/fixtures/typesc
    ·         ─────
    ╰────
 
-  × Invalid rest element
+  × Invalid rest element target in destructuring pattern
    ╭─[babel/packages/babel-parser/test/fixtures/es2018/object-rest-spread/22/input.js:1:9]
  1 │ var {...x = 1} = {}
    ·         ─────
    ╰────
-  help: Expected identifier in rest element
+  help: Expected an identifier, like `...rest`.
 
   × A rest element cannot have an initializer.
    ╭─[babel/packages/babel-parser/test/fixtures/es2018/object-rest-spread/23/input.js:1:19]
@@ -5707,32 +5732,33 @@ Expect to Parse: tasks/coverage/babel/packages/babel-parser/test/fixtures/typesc
    ·                   ─────
    ╰────
 
-  × Invalid rest element
+  × Invalid rest element target in destructuring pattern
    ╭─[babel/packages/babel-parser/test/fixtures/es2018/object-rest-spread/23/input.js:1:19]
  1 │ function test({...x = 1}) {}
    ·                   ─────
    ╰────
-  help: Expected identifier in rest element
+  help: Expected an identifier, like `...rest`.
 
-  × Invalid rest operator's argument.
+  × Invalid rest element target in destructuring assignment
    ╭─[babel/packages/babel-parser/test/fixtures/es2018/object-rest-spread/24/input.js:1:6]
  1 │ ({...[]} = {})
    ·      ──
    ╰────
+  help: Expected an identifier or member expression, like `...rest` or `...obj.prop`.
 
-  × Invalid rest element
+  × Invalid rest element target in destructuring pattern
    ╭─[babel/packages/babel-parser/test/fixtures/es2018/object-rest-spread/25/input.js:1:9]
  1 │ var {...[]} = {}
    ·         ──
    ╰────
-  help: Expected identifier in rest element
+  help: Expected an identifier, like `...rest`.
 
-  × Invalid rest element
+  × Invalid rest element target in destructuring pattern
    ╭─[babel/packages/babel-parser/test/fixtures/es2018/object-rest-spread/26/input.js:1:19]
  1 │ function test({...[]}) {}
    ·                   ──
    ╰────
-  help: Expected identifier in rest element
+  help: Expected an identifier, like `...rest`.
 
   × A rest element must be last in a destructuring pattern
    ╭─[babel/packages/babel-parser/test/fixtures/es2018/object-rest-spread/7/input.js:1:7]
@@ -5780,17 +5806,19 @@ Expect to Parse: tasks/coverage/babel/packages/babel-parser/test/fixtures/typesc
    ·   ───────
    ╰────
 
-  × Invalid rest operator's argument.
+  × Invalid rest element target in destructuring assignment
    ╭─[babel/packages/babel-parser/test/fixtures/es2018/object-rest-spread/no-pattern-in-rest/input.js:1:6]
  1 │ ({...{}} = {})
    ·      ──
    ╰────
+  help: Expected an identifier or member expression, like `...rest` or `...obj.prop`.
 
-  × Invalid rest operator's argument.
+  × Invalid rest element target in destructuring assignment
    ╭─[babel/packages/babel-parser/test/fixtures/es2018/object-rest-spread/no-pattern-in-rest-with-ts/input.js:1:6]
  1 │ ({...{}} = {})
    ·      ──
    ╰────
+  help: Expected an identifier or member expression, like `...rest` or `...obj.prop`.
 
   × Invalid characters after number
    ╭─[babel/packages/babel-parser/test/fixtures/es2020/bigint/invalid-decimal/input.js:1:4]
@@ -5816,7 +5844,7 @@ Expect to Parse: tasks/coverage/babel/packages/babel-parser/test/fixtures/typesc
    ·       ─
    ╰────
 
-  × The only valid meta property for import is import.meta
+  × The only valid property accesses on import are `import.meta`, `import.source()`, and `import.defer()`
    ╭─[babel/packages/babel-parser/test/fixtures/es2020/dynamic-import/direct-calls-only/input.js:2:10]
  1 │ function failsParse() {
  2 │   return import.then();
@@ -5855,7 +5883,7 @@ Expect to Parse: tasks/coverage/babel/packages/babel-parser/test/fixtures/typesc
    · ────────
    ╰────
 
-  × The only valid meta property for import is import.meta
+  × The only valid property accesses on import are `import.meta`, `import.source()`, and `import.defer()`
    ╭─[babel/packages/babel-parser/test/fixtures/es2020/dynamic-import-createImportExpression-false/direct-calls-only/input.js:2:10]
  1 │ function failsParse() {
  2 │   return import.then();
@@ -5901,7 +5929,7 @@ Expect to Parse: tasks/coverage/babel/packages/babel-parser/test/fixtures/typesc
    ╰────
   help: import.meta is only allowed in module code
 
-  × The only valid meta property for import is import.meta
+  × The only valid property accesses on import are `import.meta`, `import.source()`, and `import.defer()`
    ╭─[babel/packages/babel-parser/test/fixtures/es2020/import-meta/no-other-prop-names/input.js:1:1]
  1 │ import.notMeta;
    · ──────────────
@@ -12346,12 +12374,13 @@ Expect to Parse: tasks/coverage/babel/packages/babel-parser/test/fixtures/typesc
    ╰────
   help: Try inserting a semicolon here
 
-  × Invalid rest operator's argument.
+  × Invalid rest element target in destructuring assignment
    ╭─[babel/packages/babel-parser/test/fixtures/typescript/cast/destructuring-assignent-rest-invalid/input.ts:1:9]
  1 │ 0, { ...{} as T} = b;
    ·         ───────
  2 │ [...[] as T] = b;
    ╰────
+  help: Expected an identifier or member expression, like `...rest` or `...obj.prop`.
 
   × Cannot assign to this expression
    ╭─[babel/packages/babel-parser/test/fixtures/typescript/cast/destructuring-assignent-rest-invalid/input.ts:1:9]
@@ -13972,6 +14001,36 @@ Expect to Parse: tasks/coverage/babel/packages/babel-parser/test/fixtures/typesc
    ╭─[babel/packages/babel-parser/test/fixtures/typescript/interface/property-initializer/input.ts:1:25]
  1 │ interface I { x: number = 1;}
    ·                         ─
+   ╰────
+
+  × TS(2670): Augmentations for the global scope should have 'declare' modifier unless they appear in already ambient context.
+   ╭─[babel/packages/babel-parser/test/fixtures/typescript/module-namespace/invalid-global-redeclare-block-level-variable/input.ts:3:1]
+ 2 │ 
+ 3 │ global {
+   · ──────
+ 4 │   let x: number;
+   ╰────
+
+  × The keyword 'public' is reserved
+   ╭─[babel/packages/babel-parser/test/fixtures/typescript/module-namespace/invalid-reserved-word/input.ts:1:11]
+ 1 │ namespace public {}
+   ·           ──────
+ 2 │ 
+   ╰────
+
+  × The keyword 'private' is reserved
+   ╭─[babel/packages/babel-parser/test/fixtures/typescript/module-namespace/invalid-reserved-word/input.ts:3:11]
+ 2 │ 
+ 3 │ namespace private {}
+   ·           ───────
+ 4 │ 
+   ╰────
+
+  × The keyword 'protected' is reserved
+   ╭─[babel/packages/babel-parser/test/fixtures/typescript/module-namespace/invalid-reserved-word/input.ts:5:11]
+ 4 │ 
+ 5 │ namespace protected.foo {}
+   ·           ─────────
    ╰────
 
   × Expected a semicolon or an implicit semicolon after a statement, but found none
