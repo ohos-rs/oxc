@@ -63,7 +63,12 @@ impl<'a> PeepholeOptimizations {
             ctx,
         )
         .map(|new_expr| {
-            ctx.ast.expression_logical(expr.span, left.left.take_in(ctx.ast), expr.operator, new_expr)
+            ctx.ast.expression_logical(
+                expr.span,
+                left.left.take_in(ctx.ast),
+                expr.operator,
+                new_expr,
+            )
         })
     }
 

@@ -568,13 +568,22 @@ impl<'a> ConvertCtx<'a> {
                 // `import x = require(...)` / `import x = ns` — TS-only, no
                 // dedicated Babel node. Round-trips via source re-parse.
                 Statement::TSModuleDeclaration(
-                    self.convert_ts_declaration_passthrough(t.span, false),
+                    self.convert_source_declaration_passthrough(t.span, false),
                 )
             }
+            oxc::Statement::StructStatement(s) => Statement::TSModuleDeclaration(
+                self.convert_source_declaration_passthrough(s.span, false),
+            ),
+            oxc::Statement::AnnotationDeclaration(a) => Statement::TSModuleDeclaration(
+                self.convert_source_declaration_passthrough(a.span, false),
+            ),
             // ModuleDeclaration variants (inherited directly into Statement)
             oxc::Statement::ImportDeclaration(i) => {
                 Statement::ImportDeclaration(self.convert_import_declaration(i))
             }
+            oxc::Statement::LazyImportDeclaration(i) => Statement::TSModuleDeclaration(
+                self.convert_source_declaration_passthrough(i.span, false),
+            ),
             oxc::Statement::ExportAllDeclaration(e) => {
                 Statement::ExportAllDeclaration(self.convert_export_all_declaration(e))
             }
@@ -587,19 +596,19 @@ impl<'a> ConvertCtx<'a> {
             oxc::Statement::TSExportAssignment(t) => {
                 // `export = expr` — TS-only. Round-trips via source re-parse.
                 Statement::TSModuleDeclaration(
-                    self.convert_ts_declaration_passthrough(t.span, false),
+                    self.convert_source_declaration_passthrough(t.span, false),
                 )
             }
             oxc::Statement::TSNamespaceExportDeclaration(t) => {
                 // `export as namespace X` — TS-only. Round-trips via source re-parse.
                 Statement::TSModuleDeclaration(
-                    self.convert_ts_declaration_passthrough(t.span, false),
+                    self.convert_source_declaration_passthrough(t.span, false),
                 )
             }
             oxc::Statement::TSGlobalDeclaration(t) => {
                 // `declare global { ... }` — modeled as a `global` TSModuleDeclaration.
                 Statement::TSModuleDeclaration(
-                    self.convert_ts_declaration_passthrough(t.span, true),
+                    self.convert_source_declaration_passthrough(t.span, true),
                 )
             }
         }
@@ -1109,6 +1118,11 @@ impl<'a> ConvertCtx<'a> {
                     base: self.make_base_node(i.span),
                 })))
             }
+            oxc::ExportDefaultDeclarationKind::StructStatement(s) => {
+                ExportDefaultDecl::Expression(Box::new(Expression::NullLiteral(NullLiteral {
+                    base: self.make_base_node(s.span),
+                })))
+            }
             _ => {
                 // All expression variants
                 ExportDefaultDecl::Expression(Box::new(
@@ -1128,7 +1142,8 @@ impl<'a> ConvertCtx<'a> {
         match kind {
             oxc::ExportDefaultDeclarationKind::FunctionDeclaration(_)
             | oxc::ExportDefaultDeclarationKind::ClassDeclaration(_)
-            | oxc::ExportDefaultDeclarationKind::TSInterfaceDeclaration(_) => {
+            | oxc::ExportDefaultDeclarationKind::TSInterfaceDeclaration(_)
+            | oxc::ExportDefaultDeclarationKind::StructStatement(_) => {
                 panic!("Should be handled separately")
             }
             other => self.convert_expression_from_export_default(other),
@@ -1175,15 +1190,21 @@ impl<'a> ConvertCtx<'a> {
                     oxc::Declaration::TSImportEqualsDeclaration(t) => {
                         // `export import x = require(...)` — TS-only.
                         Declaration::TSModuleDeclaration(
-                            self.convert_ts_declaration_passthrough(t.span, false),
+                            self.convert_source_declaration_passthrough(t.span, false),
                         )
                     }
                     oxc::Declaration::TSGlobalDeclaration(t) => {
                         // `export declare global { ... }` — TS-only.
                         Declaration::TSModuleDeclaration(
-                            self.convert_ts_declaration_passthrough(t.span, true),
+                            self.convert_source_declaration_passthrough(t.span, true),
                         )
                     }
+                    oxc::Declaration::StructStatement(s) => Declaration::TSModuleDeclaration(
+                        self.convert_source_declaration_passthrough(s.span, false),
+                    ),
+                    oxc::Declaration::AnnotationDeclaration(a) => Declaration::TSModuleDeclaration(
+                        self.convert_source_declaration_passthrough(a.span, false),
+                    ),
                 })
             }),
             specifiers: export
@@ -1285,14 +1306,19 @@ impl<'a> ConvertCtx<'a> {
     }
 
     /// Build a placeholder `TSModuleDeclaration` carrying only the original
-    /// span. The React compiler does not analyze type-level TypeScript
+    /// span. The React compiler does not analyze TypeScript/ArkTS declaration
     /// constructs, and `react_compiler_ast` has no dedicated Babel node for
     /// several of them (`declare global`, `export =`, `export as namespace`,
-    /// `import x = require(...)`). They only need to round-trip back to OXC,
-    /// which the reverse converter does by re-parsing the original source slice
-    /// at `[start, end)`. Reusing the `TSModuleDeclaration` variant keeps these
-    /// statements routed through that source-extraction path.
-    fn convert_ts_declaration_passthrough(&self, span: Span, global: bool) -> TSModuleDeclaration {
+    /// `import x = require(...)`, ArkTS `struct`, and ArkTS annotations). They
+    /// only need to round-trip back to OXC, which the reverse converter does by
+    /// re-parsing the original source slice at `[start, end)`. Reusing the
+    /// `TSModuleDeclaration` variant keeps these statements routed through that
+    /// source-extraction path.
+    fn convert_source_declaration_passthrough(
+        &self,
+        span: Span,
+        global: bool,
+    ) -> TSModuleDeclaration {
         TSModuleDeclaration {
             base: self.make_base_node(span),
             id: RawNode::null(),
@@ -1483,6 +1509,10 @@ impl<'a> ConvertCtx<'a> {
                 unreachable!(
                     "V8IntrinsicExpression: oxc does not emit this without ParseOptions::allow_v8_intrinsics"
                 )
+            }
+            oxc::Expression::ArkUIComponentExpression(_)
+            | oxc::Expression::LeadingDotExpression(_) => {
+                unreachable!("ArkTS/ArkUI syntax is filtered out before React compiler conversion")
             }
         }
     }
@@ -3101,6 +3131,11 @@ macro_rules! impl_expression_like {
                     Self::V8IntrinsicExpression(_) => unreachable!(
                         "V8IntrinsicExpression: oxc does not emit this without ParseOptions::allow_v8_intrinsics"
                     ),
+                    Self::ArkUIComponentExpression(_) | Self::LeadingDotExpression(_) => {
+                        unreachable!(
+                            "ArkTS/ArkUI syntax is filtered out before React compiler conversion"
+                        )
+                    }
                 }
             }
         }
@@ -3127,7 +3162,8 @@ impl_expression_like!(oxc::ArrayExpressionElement<'a>, [
 impl_expression_like!(oxc::ExportDefaultDeclarationKind<'a>, [
     Self::FunctionDeclaration(_) => unreachable!("handled separately"),
     Self::ClassDeclaration(_) => unreachable!("handled separately"),
-    Self::TSInterfaceDeclaration(_) => unreachable!("handled separately")
+    Self::TSInterfaceDeclaration(_) => unreachable!("handled separately"),
+    Self::StructStatement(_) => unreachable!("handled separately")
 ]);
 
 // PropertyKey: StaticIdentifier + PrivateIdentifier + @inherit Expression

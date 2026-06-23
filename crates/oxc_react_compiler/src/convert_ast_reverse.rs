@@ -920,24 +920,29 @@ impl<'a> ReverseCtx<'a> {
     fn export_default_needs_source_stmt(&self, decl: &ExportDefaultDeclaration) -> bool {
         match decl.declaration.as_ref() {
             ExportDefaultDecl::ClassDeclaration(_) => true,
-            ExportDefaultDecl::Expression(expr) => self.is_export_default_interface(expr, decl),
+            ExportDefaultDecl::Expression(expr) => {
+                self.is_export_default_source_placeholder(expr, decl)
+            }
             ExportDefaultDecl::FunctionDeclaration(_) | ExportDefaultDecl::EnumDeclaration(_) => {
                 false
             }
         }
     }
 
-    fn is_export_default_interface(
+    fn is_export_default_source_placeholder(
         &self,
         expr: &Expression,
         decl: &ExportDefaultDeclaration,
     ) -> bool {
         let Expression::NullLiteral(null) = expr else { return false };
-        self.source_text_for_base(&decl.base)
-            .is_some_and(|text| text.trim_start().starts_with("export default interface"))
-            || self
-                .source_text_for_base(&null.base)
-                .is_some_and(|text| text.trim_start().starts_with("interface"))
+        self.source_text_for_base(&decl.base).is_some_and(|text| {
+            let text = text.trim_start();
+            text.starts_with("export default interface")
+                || text.starts_with("export default struct")
+        }) || self.source_text_for_base(&null.base).is_some_and(|text| {
+            let text = text.trim_start();
+            text.starts_with("interface") || text.starts_with("struct")
+        })
     }
 
     /// Allocate a string in the arena and return a `&str` with lifetime 'a.

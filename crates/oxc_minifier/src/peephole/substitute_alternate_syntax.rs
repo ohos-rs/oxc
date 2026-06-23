@@ -388,8 +388,12 @@ impl<'a> PeepholeOptimizations {
                 right.left.take_in(ctx.ast),
             );
             Self::substitute_rotate_binary_expression(&mut new_left, ctx);
-            let new_value =
-                ctx.ast.expression_binary(e.span, new_left, e.operator, right.right.take_in(ctx.ast));
+            let new_value = ctx.ast.expression_binary(
+                e.span,
+                new_left,
+                e.operator,
+                right.right.take_in(ctx.ast),
+            );
             ctx.replace_expression(expr, new_value);
             return;
         }
@@ -1114,7 +1118,9 @@ impl<'a> PeepholeOptimizations {
             // `BigInt(1n)` -> `1n`
             "BigInt" => match arg {
                 None => None,
-                Some(arg) => matches!(arg, Expression::BigIntLiteral(_)).then(|| arg.take_in(ctx.ast)),
+                Some(arg) => {
+                    matches!(arg, Expression::BigIntLiteral(_)).then(|| arg.take_in(ctx.ast))
+                }
             },
             _ => None,
         };
@@ -1219,7 +1225,8 @@ impl<'a> PeepholeOptimizations {
                     }
                     // `new Array(literal)` -> `[literal]`
                     else if arg.is_literal() || matches!(arg, Expression::ArrayExpression(_)) {
-                        let elements = ctx.ast.vec1(ArrayExpressionElement::from(arg.take_in(ctx.ast)));
+                        let elements =
+                            ctx.ast.vec1(ArrayExpressionElement::from(arg.take_in(ctx.ast)));
                         let new_value = ctx.ast.expression_array(*span, elements);
                         ctx.replace_expression(expr, new_value);
                     }
@@ -1257,7 +1264,8 @@ impl<'a> PeepholeOptimizations {
 
                     // `new Array(1, 2, ...xs)` -> `[1, 2, ...xs]`
                     let elements = ctx.ast.vec_from_iter(
-                        args.iter_mut().map(|arg| ArrayExpressionElement::from(arg.take_in(ctx.ast))),
+                        args.iter_mut()
+                            .map(|arg| ArrayExpressionElement::from(arg.take_in(ctx.ast))),
                     );
                     let new_value = ctx.ast.expression_array(*span, elements);
                     ctx.replace_expression(expr, new_value);
@@ -1446,12 +1454,10 @@ impl<'a> PeepholeOptimizations {
                         }
                     }
                 } else {
-                    new_args.push(
-                        ctx.ast.argument_spread_element(
-                            spread_el.span,
-                            spread_el.argument.take_in(ctx.ast),
-                        ),
-                    );
+                    new_args.push(ctx.ast.argument_spread_element(
+                        spread_el.span,
+                        spread_el.argument.take_in(ctx.ast),
+                    ));
                 }
             } else {
                 new_args.push(arg);

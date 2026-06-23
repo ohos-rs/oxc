@@ -833,13 +833,7 @@ impl<'a> AstBuilder<'a> {
     ///
     /// This node contains a [`Function`] that will be stored in the memory arena.
     #[inline]
-    pub fn expression_function_with_scope_id_and_pure_and_pife_with_decorators<
-        T1,
-        T2,
-        T3,
-        T4,
-        T5,
-    >(
+    pub fn expression_function_with_scope_id_and_pure_and_pife_with_decorators<T1, T2, T3, T4, T5>(
         self,
         span: Span,
         r#type: FunctionType,
@@ -6831,13 +6825,7 @@ impl<'a> AstBuilder<'a> {
     /// If you want a stack-allocated node, use
     /// [`AstBuilder::function_with_scope_id_and_pure_and_pife_with_decorators`] instead.
     #[inline]
-    pub fn alloc_function_with_scope_id_and_pure_and_pife_with_decorators<
-        T1,
-        T2,
-        T3,
-        T4,
-        T5,
-    >(
+    pub fn alloc_function_with_scope_id_and_pure_and_pife_with_decorators<T1, T2, T3, T4, T5>(
         self,
         span: Span,
         r#type: FunctionType,

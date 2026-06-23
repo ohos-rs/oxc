@@ -205,7 +205,9 @@ impl<'a> PeepholeOptimizations {
                     };
                     if var_init.kind.is_var() {
                         if let Some(var_decl) = &mut var_decl {
-                            var_decl.declarations.splice(0..0, var_init.declarations.take_in(ctx.ast));
+                            var_decl
+                                .declarations
+                                .splice(0..0, var_init.declarations.take_in(ctx.ast));
                         } else {
                             var_decl = Some(var_init.take_in_box(ctx.ast));
                         }
@@ -347,7 +349,8 @@ impl<'a> PeepholeOptimizations {
             ]);
             ctx.ast.expression_sequence(e.span, exprs)
         } else {
-            let result_expr = if v { e.consequent.take_in(ctx.ast) } else { e.alternate.take_in(ctx.ast) };
+            let result_expr =
+                if v { e.consequent.take_in(ctx.ast) } else { e.alternate.take_in(ctx.ast) };
             let should_keep_as_sequence_expr = Self::should_keep_indirect_access(&result_expr, ctx);
             // "(1 ? a.b : 0)()" => "(0, a.b)()"
             if should_keep_as_sequence_expr {

@@ -895,8 +895,9 @@ impl<'a> PeepholeOptimizations {
                     let a = &mut prev_expr_stmt.expression;
                     prev_expr_stmt.expression = Self::join_sequence(a, argument, ctx);
                 } else {
-                    result
-                        .push(ctx.ast.statement_expression(argument.span(), argument.take_in(ctx.ast)));
+                    result.push(
+                        ctx.ast.statement_expression(argument.span(), argument.take_in(ctx.ast)),
+                    );
                 }
             }
             if let Some(old) = ret_stmt.argument.take() {
@@ -1017,8 +1018,9 @@ impl<'a> PeepholeOptimizations {
                             ctx.drop_statement(&dropped);
                         }
                     } else {
-                        for_stmt.init =
-                            Some(ForStatementInit::from(prev_expr_stmt.expression.take_in(ctx.ast)));
+                        for_stmt.init = Some(ForStatementInit::from(
+                            prev_expr_stmt.expression.take_in(ctx.ast),
+                        ));
                         let dropped = result.pop().unwrap();
                         ctx.drop_statement(&dropped);
                     }

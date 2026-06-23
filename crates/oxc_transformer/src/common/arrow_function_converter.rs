@@ -444,7 +444,8 @@ impl<'a> Traverse<'a, TransformState<'a>> for ArrowFunctionConverter<'a> {
                 return;
             }
 
-            let Expression::ArrowFunctionExpression(arrow_function_expr) = expr.take_in(ctx.ast) else {
+            let Expression::ArrowFunctionExpression(arrow_function_expr) = expr.take_in(ctx.ast)
+            else {
                 unreachable!()
             };
 

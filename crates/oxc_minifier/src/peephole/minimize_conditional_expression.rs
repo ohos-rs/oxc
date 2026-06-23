@@ -476,8 +476,9 @@ impl<'a> PeepholeOptimizations {
             }
 
             // "a ? b : b" => "a, b"
-            let expressions =
-                ctx.ast.vec_from_array([expr.test.take_in(ctx.ast), expr.consequent.take_in(ctx.ast)]);
+            let expressions = ctx
+                .ast
+                .vec_from_array([expr.test.take_in(ctx.ast), expr.consequent.take_in(ctx.ast)]);
             return Some(ctx.ast.expression_sequence(expr.span, expressions));
         }
 
@@ -543,9 +544,10 @@ impl<'a> PeepholeOptimizations {
             ctx,
         ) {
             if !matches!(expr, Expression::ChainExpression(_)) {
-                let new_expr = ctx
-                    .ast
-                    .expression_chain(expr.span(), expr.take_in(ctx.ast).into_chain_element().unwrap());
+                let new_expr = ctx.ast.expression_chain(
+                    expr.span(),
+                    expr.take_in(ctx.ast).into_chain_element().unwrap(),
+                );
                 ctx.replace_expression(expr, new_expr);
             }
             true

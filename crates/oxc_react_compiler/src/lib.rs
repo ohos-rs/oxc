@@ -7,7 +7,9 @@ pub mod prefilter;
 use convert_ast::convert_program;
 use convert_scope::convert_scope_info;
 use diagnostics::compile_result_to_diagnostics;
-use prefilter::{has_react_like_functions, has_resource_management_declarations};
+use prefilter::{
+    has_react_like_functions, has_resource_management_declarations, has_unsupported_arkts_syntax,
+};
 use react_compiler::entrypoint::compile_result::LoggerEvent;
 
 // Re-exported so integrations needn't depend on the upstream `react_compiler` crates.
@@ -79,6 +81,13 @@ pub fn transform<'a>(
     if !matches!(options.compilation_mode.as_str(), "all" | "annotation")
         && !has_react_like_functions(program)
     {
+        return TransformResult::default();
+    }
+
+    // ArkTS/ArkUI-specific syntax has no React compiler AST equivalent. Leave
+    // those files unchanged instead of trying to lower them through Babel-shaped
+    // nodes and risking source changes.
+    if has_unsupported_arkts_syntax(program) {
         return TransformResult::default();
     }
 

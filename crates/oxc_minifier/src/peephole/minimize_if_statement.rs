@@ -74,8 +74,11 @@ impl<'a> PeepholeOptimizations {
                     }
                     // "if (a) {} else return b;" => "if (!a) return b;"
                     _ => {
-                        let new_test =
-                            Self::minimize_not(if_stmt.test.span(), if_stmt.test.take_in(ctx.ast), ctx);
+                        let new_test = Self::minimize_not(
+                            if_stmt.test.span(),
+                            if_stmt.test.take_in(ctx.ast),
+                            ctx,
+                        );
                         let new_consequent = stmt.take_in(ctx.ast);
                         ctx.replace_expression(&mut if_stmt.test, new_test);
                         ctx.replace_statement(&mut if_stmt.consequent, new_consequent);

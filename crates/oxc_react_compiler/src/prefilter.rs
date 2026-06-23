@@ -4,7 +4,8 @@
 // LICENSE file in the root directory of this source tree.
 
 use oxc_ast::ast::{
-    AssignmentTarget, CallExpression, Expression, Function, Program, VariableDeclarator,
+    AnnotationDeclaration, ArkUIComponentExpression, AssignmentTarget, CallExpression, Expression,
+    Function, LeadingDotExpression, Program, StructStatement, VariableDeclarator,
 };
 use oxc_ast_visit::{Visit, walk};
 
@@ -17,6 +18,12 @@ pub fn has_react_like_functions(program: &Program) -> bool {
 
 pub fn has_resource_management_declarations(program: &Program) -> bool {
     let mut visitor = ResourceManagementVisitor { found: false };
+    visitor.visit_program(program);
+    visitor.found
+}
+
+pub fn has_unsupported_arkts_syntax(program: &Program) -> bool {
+    let mut visitor = UnsupportedArkTsSyntaxVisitor { found: false };
     visitor.visit_program(program);
     visitor.found
 }
@@ -41,6 +48,28 @@ struct ReactLikeVisitor<'a> {
 
 struct ResourceManagementVisitor {
     found: bool,
+}
+
+struct UnsupportedArkTsSyntaxVisitor {
+    found: bool,
+}
+
+impl<'a> Visit<'a> for UnsupportedArkTsSyntaxVisitor {
+    fn visit_struct_statement(&mut self, _stmt: &StructStatement<'a>) {
+        self.found = true;
+    }
+
+    fn visit_annotation_declaration(&mut self, _decl: &AnnotationDeclaration<'a>) {
+        self.found = true;
+    }
+
+    fn visit_ark_ui_component_expression(&mut self, _expr: &ArkUIComponentExpression<'a>) {
+        self.found = true;
+    }
+
+    fn visit_leading_dot_expression(&mut self, _expr: &LeadingDotExpression<'a>) {
+        self.found = true;
+    }
 }
 
 impl<'a> Visit<'a> for ResourceManagementVisitor {
