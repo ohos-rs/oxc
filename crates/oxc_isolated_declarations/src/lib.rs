@@ -9,7 +9,7 @@ use std::{cell::RefCell, iter::repeat_with, mem};
 
 use rustc_hash::{FxHashMap, FxHashSet};
 
-use oxc_allocator::{Allocator, CloneIn, GetAllocator, Vec as ArenaVec};
+use oxc_allocator::{Allocator, CloneIn, Vec as ArenaVec};
 use oxc_ast::{AstBuilder, NONE, ast::*};
 use oxc_ast_visit::Visit;
 use oxc_diagnostics::{Diagnostics, OxcDiagnostic};
@@ -414,7 +414,6 @@ impl<'a> IsolatedDeclarations<'a> {
             let kind = ImportOrExportKind::Value;
             let empty_export = self.ast.alloc_export_named_declaration(
                 SPAN,
-                self.ast.vec(),
                 None,
                 specifiers,
                 None,
@@ -638,12 +637,5 @@ impl<'a> IsolatedDeclarations<'a> {
     fn is_declare(&self) -> bool {
         // If we are in a module block, we don't need to add declare
         !self.scope.is_ts_module_block()
-    }
-}
-
-impl<'a> GetAllocator<'a> for IsolatedDeclarations<'a> {
-    #[inline]
-    fn allocator(&self) -> &'a Allocator {
-        self.ast.allocator()
     }
 }

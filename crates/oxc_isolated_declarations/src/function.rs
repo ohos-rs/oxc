@@ -22,7 +22,7 @@ impl<'a> IsolatedDeclarations<'a> {
             self.error(function_must_have_explicit_return_type(get_function_span(func)));
         }
         let params = self.transform_formal_parameters(&func.params, false);
-        self.ast.alloc_function(
+        self.ast.alloc_function_with_decorators(
             func.span,
             func.r#type,
             func.decorators.clone_in(self.ast.allocator),

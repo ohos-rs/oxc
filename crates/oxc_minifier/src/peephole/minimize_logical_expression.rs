@@ -63,7 +63,7 @@ impl<'a> PeepholeOptimizations {
             ctx,
         )
         .map(|new_expr| {
-            ctx.ast.expression_logical(expr.span, left.left.take_in(ctx), expr.operator, new_expr)
+            ctx.ast.expression_logical(expr.span, left.left.take_in(ctx.ast), expr.operator, new_expr)
         })
     }
 
@@ -137,7 +137,7 @@ impl<'a> PeepholeOptimizations {
         };
         Some(ctx.ast.expression_binary(
             span,
-            left_non_value_expr.take_in(ctx),
+            left_non_value_expr.take_in(ctx.ast),
             replace_op,
             ctx.ast.expression_null_literal(null_expr_span),
         ))
@@ -240,13 +240,13 @@ impl<'a> PeepholeOptimizations {
 
             Self::mark_assignment_target_as_read(&assignment_expr.left, ctx);
 
-            let assign_value = assignment_expr.right.take_in(ctx);
+            let assign_value = assignment_expr.right.take_in(ctx.ast);
             sequence_expr.expressions.push(assign_value);
             let new_expr = ctx.ast.expression_assignment(
                 e.span,
                 e.operator.to_assignment_operator(),
-                assignment_expr.left.take_in(ctx),
-                e.right.take_in(ctx),
+                assignment_expr.left.take_in(ctx.ast),
+                e.right.take_in(ctx.ast),
             );
             ctx.replace_expression(expr, new_expr);
             return;
@@ -272,7 +272,7 @@ impl<'a> PeepholeOptimizations {
         };
         assignment_expr.span = span;
         assignment_expr.operator = new_op;
-        let new_expr = e.right.take_in(ctx);
+        let new_expr = e.right.take_in(ctx.ast);
         ctx.replace_expression(expr, new_expr);
     }
 

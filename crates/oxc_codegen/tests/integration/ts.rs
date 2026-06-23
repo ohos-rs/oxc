@@ -78,6 +78,29 @@ fn arkui() {
 }
 
 #[test]
+fn arkui_lazy_import_codegen() {
+    let source_type = SourceType::default().with_typescript(true).with_arkui(true);
+    test_options_with_source_type(
+        "import lazy { Foo } from './Foo';",
+        "import lazy { Foo } from \"./Foo\";\n",
+        source_type,
+        default_options(),
+    );
+    test_options_with_source_type(
+        "import lazy Foo from './Foo';",
+        "import lazy Foo from \"./Foo\";\n",
+        source_type,
+        default_options(),
+    );
+    test_options_with_source_type(
+        "import lazy Foo, { Bar } from './Foo';",
+        "import lazy Foo, { Bar } from \"./Foo\";\n",
+        source_type,
+        default_options(),
+    );
+}
+
+#[test]
 fn arkui_chain_codegen_omits_internal_receiver() {
     let allocator = Allocator::default();
     let source_type = SourceType::default().with_typescript(true).with_arkui(true);

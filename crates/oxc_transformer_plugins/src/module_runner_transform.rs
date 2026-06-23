@@ -245,7 +245,7 @@ impl<'a> ModuleRunnerTransform<'a> {
     /// Transform `import(source, ...arguments)` to `__vite_ssr_dynamic_import__(source, ...arguments)`.
     #[inline]
     fn transform_dynamic_import(&mut self, expr: &mut Expression<'a>, ctx: &mut TraverseCtx<'a>) {
-        let Expression::ImportExpression(import_expr) = expr.take_in(ctx) else {
+        let Expression::ImportExpression(import_expr) = expr.take_in(ctx.ast) else {
             unreachable!();
         };
 
@@ -766,7 +766,6 @@ impl<'a> ModuleRunnerTransform<'a> {
         ctx.ast.expression_function_with_scope_id_and_pure_and_pife(
             SPAN,
             r#type,
-            ctx.ast.vec(), // decorators
             None,
             false,
             false,

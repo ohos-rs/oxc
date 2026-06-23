@@ -741,7 +741,7 @@ impl<'a> ReplaceGlobalDefines<'a> {
         }
 
         // No optional markers remain — unwrap the chain to a plain expression.
-        let chain_expr = expr.take_in(&self.allocator);
+        let chain_expr = expr.take_in(self.allocator);
         let Expression::ChainExpression(chain) = chain_expr else { unreachable!() };
         *expr = Expression::from(chain.unbox().expression);
     }

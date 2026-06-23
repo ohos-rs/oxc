@@ -216,7 +216,6 @@ impl<'a> TypeScriptEnum {
         let callee = ctx.ast.expression_function_with_scope_id_and_pure_and_pife(
             span,
             FunctionType::FunctionExpression,
-            ctx.ast.vec(), // decorators
             None,
             false,
             false,
@@ -325,7 +324,7 @@ impl<'a> TypeScriptEnum {
 
         let mut prev_member_name = None;
 
-        for member in members.take_in(ctx) {
+        for member in members.take_in(ctx.ast) {
             let member_span = member.span;
             let member_name = member.id.static_name();
 

@@ -541,7 +541,6 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                 if stmt.is_declaration() {
                     let export_named_decl = self.ast.alloc_export_named_declaration(
                         self.end_span(span),
-                        self.ast.vec(), // decorators
                         Some(stmt.into_declaration()),
                         self.ast.vec(),
                         None,
@@ -571,7 +570,6 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                 let decl = Declaration::ClassDeclaration(class_decl);
                 let export_named_decl = self.ast.alloc_export_named_declaration(
                     self.end_span(span),
-                    self.ast.vec(), // decorators (already on class)
                     Some(decl),
                     self.ast.vec(),
                     None,
@@ -726,7 +724,6 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         let span = self.end_span(span);
         let export_named_decl = self.ast.alloc_export_named_declaration(
             span,
-            self.ast.vec(), // decorators
             None,
             specifiers,
             source,
@@ -762,7 +759,6 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         // Decorators are now stored on the declaration itself (class or function), not on export
         let export_named_decl = self.ast.alloc_export_named_declaration(
             self.end_span(span),
-            self.ast.vec(), // decorators (stored on declaration, not export)
             Some(declaration),
             self.ast.vec(),
             None,
@@ -1510,6 +1506,67 @@ export declare struct Foo {
         }
     }
 
+    #[test]
+    fn arkui_lazy_import_named_specifier() {
+        parse_and_assert_arkui_statements("import lazy { Foo } from './Foo';", |statements| {
+            assert_eq!(statements.len(), 1);
+            let Statement::LazyImportDeclaration(decl) = statements[0] else {
+                panic!("Expected LazyImportDeclaration, found: {:?}", statements[0]);
+            };
+            let specifiers = decl.specifiers.as_ref().expect("lazy import specifiers");
+            assert_eq!(specifiers.len(), 1);
+            assert_eq!(specifiers[0].name(), "Foo");
+            assert_eq!(decl.source.value.as_str(), "./Foo");
+        });
+    }
+
+    #[test]
+    fn arkui_lazy_import_default_specifier() {
+        parse_and_assert_arkui_statements("import lazy Foo from './Foo';", |statements| {
+            assert_eq!(statements.len(), 1);
+            let Statement::LazyImportDeclaration(decl) = statements[0] else {
+                panic!("Expected LazyImportDeclaration, found: {:?}", statements[0]);
+            };
+            let specifiers = decl.specifiers.as_ref().expect("lazy import specifiers");
+            assert_eq!(specifiers.len(), 1);
+            assert!(matches!(specifiers[0], ImportDeclarationSpecifier::ImportDefaultSpecifier(_)));
+            assert_eq!(specifiers[0].name(), "Foo");
+            assert_eq!(decl.source.value.as_str(), "./Foo");
+        });
+    }
+
+    #[test]
+    fn arkui_lazy_import_default_and_named_specifiers() {
+        parse_and_assert_arkui_statements("import lazy Foo, { Bar } from './Foo';", |statements| {
+            assert_eq!(statements.len(), 1);
+            let Statement::LazyImportDeclaration(decl) = statements[0] else {
+                panic!("Expected LazyImportDeclaration, found: {:?}", statements[0]);
+            };
+            let specifiers = decl.specifiers.as_ref().expect("lazy import specifiers");
+            assert_eq!(specifiers.len(), 2);
+            assert!(matches!(specifiers[0], ImportDeclarationSpecifier::ImportDefaultSpecifier(_)));
+            assert!(matches!(specifiers[1], ImportDeclarationSpecifier::ImportSpecifier(_)));
+            assert_eq!(specifiers[0].name(), "Foo");
+            assert_eq!(specifiers[1].name(), "Bar");
+            assert_eq!(decl.source.value.as_str(), "./Foo");
+        });
+    }
+
+    #[test]
+    fn arkui_import_lazy_from_remains_default_import() {
+        parse_and_assert_arkui_statements("import lazy from './Foo';", |statements| {
+            assert_eq!(statements.len(), 1);
+            let Statement::ImportDeclaration(decl) = statements[0] else {
+                panic!("Expected ImportDeclaration, found: {:?}", statements[0]);
+            };
+            let specifiers = decl.specifiers.as_ref().expect("import specifiers");
+            assert_eq!(specifiers.len(), 1);
+            assert!(matches!(specifiers[0], ImportDeclarationSpecifier::ImportDefaultSpecifier(_)));
+            assert_eq!(specifiers[0].name(), "lazy");
+            assert_eq!(decl.source.value.as_str(), "./Foo");
+        });
+    }
+
     fn parse_and_assert_statements(
         src: &'static str,
         // takes a function which accepts the list of statements
@@ -1521,6 +1578,21 @@ export declare struct Foo {
         assert!(
             ret.diagnostics.is_empty(),
             "Failed to parse source: {src:?}, error: {:?}",
+            ret.diagnostics
+        );
+        f(ret.program.body.iter().collect::<Vec<_>>());
+    }
+
+    fn parse_and_assert_arkui_statements(
+        src: &'static str,
+        f: fn(Vec<&oxc_ast::ast::Statement<'_>>) -> (),
+    ) {
+        let source_type = SourceType::default().with_typescript(true).with_arkui(true);
+        let allocator = Allocator::default();
+        let ret = Parser::new(&allocator, src, source_type).parse();
+        assert!(
+            ret.diagnostics.is_empty(),
+            "Failed to parse ArkUI source: {src:?}, error: {:?}",
             ret.diagnostics
         );
         f(ret.program.body.iter().collect::<Vec<_>>());

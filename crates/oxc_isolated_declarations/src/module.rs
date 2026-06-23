@@ -14,7 +14,6 @@ impl<'a> IsolatedDeclarations<'a> {
 
         Some(self.ast.alloc_export_named_declaration(
             prev_decl.span,
-            self.ast.vec(), // decorators
             Some(decl),
             self.ast.vec(),
             None,
@@ -197,7 +196,7 @@ impl<'a> IsolatedDeclarations<'a> {
             if let Statement::ExportNamedDeclaration(decl) = stmt
                 && let Some(declaration) = &mut decl.declaration
             {
-                *stmt = Statement::from(declaration.take_in(self));
+                *stmt = Statement::from(declaration.take_in(self.ast));
             }
         });
     }

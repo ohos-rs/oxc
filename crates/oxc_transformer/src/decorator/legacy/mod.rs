@@ -997,7 +997,7 @@ impl<'a> LegacyDecorator<'a> {
         let span = class.span;
         class.r#type = ClassType::ClassExpression;
         let initializer = Self::get_class_initializer(
-            Expression::ClassExpression(class.take_in_box(ctx)),
+            Expression::ClassExpression(class.take_in_box(ctx.ast)),
             alias_binding,
             ctx,
         );
@@ -1254,7 +1254,7 @@ impl<'a> LegacyDecorator<'a> {
         decorations.extend(
             method
                 .decorators
-                .take_in(ctx)
+                .take_in(ctx.ast)
                 .into_iter()
                 .map(|decorator| ArrayExpressionElement::from(decorator.expression)),
         );
@@ -1381,7 +1381,7 @@ impl<'a> LegacyDecorator<'a> {
                 let binding = VarDeclarationsStore::create_uid_var_based_on_node(key, ctx);
                 let operator = AssignmentOperator::Assign;
                 let left = binding.create_write_target(ctx);
-                let right = key.to_expression_mut().take_in(ctx);
+                let right = key.to_expression_mut().take_in(ctx.ast);
                 let key_expr = ctx.ast.expression_assignment(SPAN, operator, left, right);
                 *key = PropertyKey::from(key_expr);
                 binding.create_read_expression(ctx)
@@ -1434,7 +1434,6 @@ impl<'a> LegacyDecorator<'a> {
         let specifiers = ctx.ast.vec1(ctx.ast.export_specifier(SPAN, local, exported, kind));
         let export_class_reference = ctx.ast.module_declaration_export_named_declaration(
             SPAN,
-            ctx.ast.vec(),
             None,
             specifiers,
             None,

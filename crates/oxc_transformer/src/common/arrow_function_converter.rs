@@ -422,7 +422,7 @@ impl<'a> Traverse<'a, TransformState<'a>> for ArrowFunctionConverter<'a> {
                     //   prop = (() => { return async () => {} })();
                     // }
                     // ```
-                    Some(wrap_expression_in_arrow_function_iife(expr.take_in(ctx), ctx))
+                    Some(wrap_expression_in_arrow_function_iife(expr.take_in(ctx.ast), ctx))
                 }
             _ => return,
         };
@@ -444,7 +444,7 @@ impl<'a> Traverse<'a, TransformState<'a>> for ArrowFunctionConverter<'a> {
                 return;
             }
 
-            let Expression::ArrowFunctionExpression(arrow_function_expr) = expr.take_in(ctx) else {
+            let Expression::ArrowFunctionExpression(arrow_function_expr) = expr.take_in(ctx.ast) else {
                 unreachable!()
             };
 
@@ -649,7 +649,6 @@ impl<'a> ArrowFunctionConverter<'a> {
         ctx.ast.expression_function_with_scope_id_and_pure_and_pife(
             arrow_function_expr.span,
             FunctionType::FunctionExpression,
-            ctx.ast.vec(), // decorators
             None,
             false,
             arrow_function_expr.r#async,
@@ -745,8 +744,8 @@ impl<'a> ArrowFunctionConverter<'a> {
 
                 // The property will as a parameter to pass to the new arrow function.
                 // `super[property]` to `_superprop_get(property)`
-                argument = Some(computed_member.expression.take_in(ctx));
-                computed_member.object.take_in(ctx)
+                argument = Some(computed_member.expression.take_in(ctx.ast));
+                computed_member.object.take_in(ctx.ast)
             }
             MemberExpression::StaticMemberExpression(static_member) => {
                 if !static_member.object.is_super() {
@@ -755,7 +754,7 @@ impl<'a> ArrowFunctionConverter<'a> {
 
                 // Used to generate the name of the arrow function.
                 property = static_member.property.name.as_str();
-                expr.take_in(ctx)
+                expr.take_in(ctx.ast)
             }
             // LeadingDotExpression is now a separate Expression type, not a MemberExpression
             // So it's handled in the Expression match above
@@ -784,7 +783,7 @@ impl<'a> ArrowFunctionConverter<'a> {
         }
         // _value
         if let Some(assign_value) = assign_value {
-            arguments.push(Argument::from(assign_value.take_in(ctx)));
+            arguments.push(Argument::from(assign_value.take_in(ctx.ast)));
         }
         let call = ctx.ast.expression_call(expr.span(), callee, NONE, arguments, false);
         Some(call)
@@ -821,7 +820,7 @@ impl<'a> ArrowFunctionConverter<'a> {
         // Add `this` as the first argument and original arguments as the rest.
         let mut arguments = ctx.ast.vec_with_capacity(call.arguments.len() + 1);
         arguments.push(Argument::from(ctx.ast.expression_this(SPAN)));
-        arguments.extend(call.arguments.take_in(ctx));
+        arguments.extend(call.arguments.take_in(ctx.ast));
 
         let property = ctx.ast.identifier_name(SPAN, "call");
         let callee = ctx.ast.member_expression_static(SPAN, object, property, false);
@@ -858,7 +857,7 @@ impl<'a> ArrowFunctionConverter<'a> {
             return None;
         }
 
-        let assignment_target = assignment.left.take_in(ctx);
+        let assignment_target = assignment.left.take_in(ctx.ast);
         let mut assignment_expr = Expression::from(assignment_target.into_member_expression());
         self.transform_member_expression_for_super(
             &mut assignment_expr,
@@ -1331,7 +1330,7 @@ impl<'a> ConstructorBodyThisAfterSuperInserter<'a, '_> {
     fn transform_super_call_expression(&mut self, expr: &mut Expression<'a>) {
         let assignment = self.create_assignment_to_this_temp_var();
         let span = expr.span();
-        let exprs = self.ctx.ast.vec_from_array([expr.take_in(self.ctx), assignment]);
+        let exprs = self.ctx.ast.vec_from_array([expr.take_in(self.ctx.ast), assignment]);
         *expr = self.ctx.ast.expression_sequence(span, exprs);
     }
 

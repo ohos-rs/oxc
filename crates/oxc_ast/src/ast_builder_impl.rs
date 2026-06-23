@@ -1,6 +1,6 @@
 use std::{alloc::Layout, borrow::Cow, mem::MaybeUninit, slice, str};
 
-use oxc_allocator::{Allocator, Box, FromIn, GetAllocator, IntoIn, Vec};
+use oxc_allocator::{Allocator, AllocatorAccessor, Box, FromIn, IntoIn, Vec};
 use oxc_span::{SPAN, Span};
 use oxc_str::{Ident, Str};
 use oxc_syntax::{number::NumberBase, operator::UnaryOperator, scope::ScopeId};
@@ -25,9 +25,9 @@ pub struct AstBuilder<'a> {
     pub allocator: &'a Allocator,
 }
 
-impl<'a> GetAllocator<'a> for AstBuilder<'a> {
+impl<'a> AllocatorAccessor<'a> for AstBuilder<'a> {
     #[inline]
-    fn allocator(&self) -> &'a Allocator {
+    fn allocator(self) -> &'a Allocator {
         self.allocator
     }
 }
@@ -181,7 +181,6 @@ impl<'a> AstBuilder<'a> {
         self.alloc_function_with_scope_id_and_pure_and_pife(
             span,
             r#type,
-            self.vec(), // decorators
             id,
             false, // generator
             false, // async
@@ -203,7 +202,6 @@ impl<'a> AstBuilder<'a> {
         self,
         span: Span,
         r#type: FunctionType,
-        decorators: Vec<'a, Decorator<'a>>,
         id: Option<BindingIdentifier<'a>>,
         generator: bool,
         r#async: bool,
@@ -225,7 +223,6 @@ impl<'a> AstBuilder<'a> {
         self.alloc_function_with_scope_id_and_pure_and_pife(
             span,
             r#type,
-            decorators,
             id,
             generator,
             r#async,
@@ -252,7 +249,6 @@ impl<'a> AstBuilder<'a> {
     ) -> Box<'a, ExportNamedDeclaration<'a>> {
         self.alloc_export_named_declaration(
             span,
-            self.vec(), // decorators
             Some(declaration),
             self.vec(),
             None,
@@ -272,7 +268,6 @@ impl<'a> AstBuilder<'a> {
     ) -> Box<'a, ExportNamedDeclaration<'a>> {
         self.alloc_export_named_declaration(
             span,
-            self.vec(), // decorators
             None,
             specifiers,
             source,

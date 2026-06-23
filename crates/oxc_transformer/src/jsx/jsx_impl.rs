@@ -541,7 +541,7 @@ impl<'a> Traverse<'a, TransformState<'a>> for JsxImpl<'a> {
         if !expr.is_jsx() {
             return;
         }
-        *expr = match expr.take_in(ctx) {
+        *expr = match expr.take_in(ctx.ast) {
             Expression::JSXElement(e) => self.transform_jsx_element(e, ctx),
             Expression::JSXFragment(e) => self.transform_jsx(e.span, None, e.unbox().children, ctx),
             _ => unreachable!(),

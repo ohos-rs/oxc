@@ -188,7 +188,7 @@ impl<'a> IsolatedDeclarations<'a> {
     ) -> ClassElement<'a> {
         let function = &definition.value;
 
-        let value = self.ast.alloc_function(
+        let value = self.ast.alloc_function_with_decorators(
             function.span,
             FunctionType::TSEmptyBodyFunctionExpression,
             function.decorators.clone_in(self.ast.allocator),

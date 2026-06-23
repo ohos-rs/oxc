@@ -148,7 +148,7 @@ impl<'a> Traverse<'a, TransformState<'a>> for ReactRefresh<'a> {
         self.used_in_jsx_bindings = UsedInJSXBindingsCollector::collect(program, ctx);
 
         let mut new_statements = ctx.ast.vec_with_capacity(program.body.len() * 2);
-        for mut statement in program.body.take_in(ctx) {
+        for mut statement in program.body.take_in(ctx.ast) {
             let next_statement = self.process_statement(&mut statement, ctx);
             new_statements.push(statement);
             if let Some(assignment_expression) = next_statement {
@@ -258,7 +258,7 @@ impl<'a> Traverse<'a, TransformState<'a>> for ReactRefresh<'a> {
         }
 
         let span = expr.span();
-        arguments.insert(0, Argument::from(expr.take_in(ctx)));
+        arguments.insert(0, Argument::from(expr.take_in(ctx.ast)));
         *expr = ctx.ast.expression_call(
             span,
             binding.create_read_expression(ctx),
@@ -532,7 +532,7 @@ impl<'a> ReactRefresh<'a> {
                 SPAN,
                 AssignmentOperator::Assign,
                 self.create_registration(ctx.ast.str(inferred_name), ctx),
-                expr.take_in(ctx),
+                expr.take_in(ctx.ast),
             );
         }
 
@@ -637,7 +637,6 @@ impl<'a> ReactRefresh<'a> {
                 Argument::from(ctx.ast.expression_function_with_scope_id_and_pure_and_pife(
                     SPAN,
                     FunctionType::FunctionExpression,
-                    ctx.ast.vec(), // decorators
                     None,
                     false,
                     false,

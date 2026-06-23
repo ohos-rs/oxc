@@ -338,7 +338,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             diagnostics::modifier_cannot_be_used_here,
         );
 
-        self.ast.alloc_function(
+        self.ast.alloc_function_with_decorators(
             self.end_span(span),
             function_type,
             decorators,

@@ -42,7 +42,7 @@ impl<'a> Traverse<'a, TransformState<'a>> for TypeScriptNamespace {
         // pass-through statements.
         let mut new_stmts = ctx.ast.vec_with_capacity(program.body.len());
 
-        for stmt in program.body.take_in(ctx) {
+        for stmt in program.body.take_in(ctx.ast) {
             match stmt {
                 Statement::TSModuleDeclaration(decl) => {
                     if !self.allow_namespaces {
@@ -476,7 +476,7 @@ impl<'a> TypeScriptNamespace {
                                 false,
                             ))
                             .into(),
-                            init.take_in(ctx),
+                            init.take_in(ctx.ast),
                         ),
                     );
                 }

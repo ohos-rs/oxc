@@ -180,7 +180,7 @@ impl<'a> AsyncToGenerator<'a> {
     ) -> Option<Expression<'a>> {
         // We don't need to handle top-level await.
         if Self::is_inside_async_function(ctx) {
-            Some(ctx.ast.expression_yield(expr.span, false, Some(expr.argument.take_in(ctx))))
+            Some(ctx.ast.expression_yield(expr.span, false, Some(expr.argument.take_in(ctx.ast))))
         } else {
             None
         }
@@ -307,7 +307,7 @@ impl<'a> AsyncGeneratorExecutor<'a> {
     ) -> Expression<'a> {
         let span = wrapper_function.span;
         let body = wrapper_function.body.take().unwrap();
-        let params = wrapper_function.params.take_in_box(ctx);
+        let params = wrapper_function.params.take_in_box(ctx.ast);
         let id = wrapper_function.id.take();
         let has_function_id = id.is_some();
 
@@ -406,7 +406,7 @@ impl<'a> AsyncGeneratorExecutor<'a> {
         }
 
         // Construct the IIFE
-        let callee = Expression::FunctionExpression(wrapper_function.take_in_box(ctx));
+        let callee = Expression::FunctionExpression(wrapper_function.take_in_box(ctx.ast));
         ctx.ast.expression_call_with_pure(span, callee, NONE, ctx.ast.vec(), false, true)
     }
 
@@ -490,19 +490,19 @@ impl<'a> AsyncGeneratorExecutor<'a> {
         ctx: &mut TraverseCtx<'a>,
     ) -> Expression<'a> {
         let arrow_span = arrow.span;
-        let mut body = arrow.body.take_in_box(ctx);
+        let mut body = arrow.body.take_in_box(ctx.ast);
 
         // If the arrow's expression is true, we need to wrap the only one expression with return statement.
         if arrow.expression {
             let statement = body.statements.first_mut().unwrap();
             let expression = match statement {
-                Statement::ExpressionStatement(es) => es.expression.take_in(ctx),
+                Statement::ExpressionStatement(es) => es.expression.take_in(ctx.ast),
                 _ => unreachable!(),
             };
             *statement = ctx.ast.statement_return(expression.span(), Some(expression));
         }
 
-        let params = arrow.params.take_in_box(ctx);
+        let params = arrow.params.take_in_box(ctx.ast);
         let generator_function_id = arrow.scope_id();
         ctx.scoping_mut().scope_flags_mut(generator_function_id).remove(ScopeFlags::Arrow);
         let function_name = Self::infer_function_name_from_parent_node(ctx);
@@ -662,7 +662,6 @@ impl<'a> AsyncGeneratorExecutor<'a> {
         let function = ctx.ast.alloc_function_with_scope_id(
             SPAN,
             r#type,
-            ctx.ast.vec(), // decorators
             id,
             false,
             false,

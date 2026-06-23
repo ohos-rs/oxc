@@ -46,9 +46,9 @@ impl<'a> PeepholeOptimizations {
             if let Expression::LogicalExpression(logical_expr) = &mut b
                 && logical_expr.operator == op
             {
-                let right = logical_expr.left.take_in(ctx);
+                let right = logical_expr.left.take_in(ctx.ast);
                 a = Self::join_with_left_associative_op(span, op, a, right, ctx);
-                b = logical_expr.right.take_in(ctx);
+                b = logical_expr.right.take_in(ctx.ast);
                 continue;
             }
             break;
@@ -109,9 +109,9 @@ impl<'a> PeepholeOptimizations {
             _ => return,
         }
         let new_expr = if b {
-            e.left.take_in(ctx)
+            e.left.take_in(ctx.ast)
         } else {
-            let argument = e.left.take_in(ctx);
+            let argument = e.left.take_in(ctx.ast);
             ctx.ast.expression_unary(e.span, UnaryOperator::LogicalNot, argument)
         };
         ctx.replace_expression(expr, new_expr);
@@ -204,7 +204,7 @@ impl<'a> PeepholeOptimizations {
         reference.flags_mut().insert(ReferenceFlags::Read);
 
         let new_op = logical_expr.operator.to_assignment_operator();
-        let new_right = logical_expr.right.take_in(ctx);
+        let new_right = logical_expr.right.take_in(ctx.ast);
         expr.operator = new_op;
         ctx.replace_expression(&mut expr.right, new_right);
     }
@@ -226,7 +226,7 @@ impl<'a> PeepholeOptimizations {
 
         Self::mark_assignment_target_as_read(&expr.left, ctx);
 
-        let new_right = binary_expr.right.take_in(ctx);
+        let new_right = binary_expr.right.take_in(ctx.ast);
         expr.operator = new_op;
         ctx.replace_expression(&mut expr.right, new_right);
     }
@@ -253,7 +253,7 @@ impl<'a> PeepholeOptimizations {
             return;
         };
         let Some(target) = e.left.as_simple_assignment_target_mut() else { return };
-        let target = target.take_in(ctx);
+        let target = target.take_in(ctx.ast);
         let new_expr = ctx.ast.expression_update(e.span, operator, true, target);
         ctx.replace_expression(expr, new_expr);
     }

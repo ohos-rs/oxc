@@ -53,7 +53,7 @@ impl<'a> Traverse<'a, TransformState<'a>> for ExportNamespaceFrom {
 
         let mut new_statements = ctx.ast.vec_with_capacity(program.body.len());
 
-        for stmt in program.body.take_in(ctx) {
+        for stmt in program.body.take_in(ctx.ast) {
             match stmt {
                 Statement::ExportAllDeclaration(export_all) if export_all.exported.is_some() => {
                     // Transform `export * as ns from "mod"` to:
@@ -96,7 +96,6 @@ impl<'a> Traverse<'a, TransformState<'a>> for ExportNamespaceFrom {
 
                     let export_named_decl = ctx.ast.alloc_export_named_declaration(
                         span,
-                        ctx.ast.vec(), // decorators
                         None,
                         ctx.ast.vec1(export_specifier),
                         None,

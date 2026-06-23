@@ -377,7 +377,6 @@ impl<'a> ClassProperties<'a> {
         let super_func = ctx.ast.expression_function_with_scope_id_and_pure_and_pife(
             SPAN,
             FunctionType::FunctionExpression,
-            ctx.ast.vec(), // decorators
             None,
             false,
             false,
@@ -578,7 +577,7 @@ impl<'a> ConstructorParamsSuperReplacer<'a, '_> {
         });
 
         let ctx = &mut *self.ctx;
-        let super_call = expr.take_in(ctx);
+        let super_call = expr.take_in(ctx.ast);
         *expr = ctx.ast.expression_call(
             span,
             Expression::from(ctx.ast.member_expression_static(

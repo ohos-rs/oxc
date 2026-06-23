@@ -692,7 +692,6 @@ impl<'a> AstBuilder<'a> {
         self,
         span: Span,
         r#type: FunctionType,
-        decorators: Vec<'a, Decorator<'a>>,
         id: Option<BindingIdentifier<'a>>,
         generator: bool,
         r#async: bool,
@@ -711,6 +710,47 @@ impl<'a> AstBuilder<'a> {
         T5: IntoIn<'a, Option<Box<'a, FunctionBody<'a>>>>,
     {
         Expression::FunctionExpression(self.alloc_function(
+            span,
+            r#type,
+            id,
+            generator,
+            r#async,
+            declare,
+            type_parameters,
+            this_param,
+            params,
+            return_type,
+            body,
+        ))
+    }
+
+    /// Build an [`Expression::FunctionExpression`] with decorators.
+    ///
+    /// This node contains a [`Function`] that will be stored in the memory arena.
+    #[inline]
+    pub fn expression_function_with_decorators<T1, T2, T3, T4, T5>(
+        self,
+        span: Span,
+        r#type: FunctionType,
+        decorators: Vec<'a, Decorator<'a>>,
+        id: Option<BindingIdentifier<'a>>,
+        generator: bool,
+        r#async: bool,
+        declare: bool,
+        type_parameters: T1,
+        this_param: T2,
+        params: T3,
+        return_type: T4,
+        body: T5,
+    ) -> Expression<'a>
+    where
+        T1: IntoIn<'a, Option<Box<'a, TSTypeParameterDeclaration<'a>>>>,
+        T2: IntoIn<'a, Option<Box<'a, TSThisParameter<'a>>>>,
+        T3: IntoIn<'a, Box<'a, FormalParameters<'a>>>,
+        T4: IntoIn<'a, Option<Box<'a, TSTypeAnnotation<'a>>>>,
+        T5: IntoIn<'a, Option<Box<'a, FunctionBody<'a>>>>,
+    {
+        Expression::FunctionExpression(self.alloc_function_with_decorators(
             span,
             r#type,
             decorators,
@@ -751,7 +791,6 @@ impl<'a> AstBuilder<'a> {
         self,
         span: Span,
         r#type: FunctionType,
-        decorators: Vec<'a, Decorator<'a>>,
         id: Option<BindingIdentifier<'a>>,
         generator: bool,
         r#async: bool,
@@ -775,7 +814,6 @@ impl<'a> AstBuilder<'a> {
         Expression::FunctionExpression(self.alloc_function_with_scope_id_and_pure_and_pife(
             span,
             r#type,
-            decorators,
             id,
             generator,
             r#async,
@@ -789,6 +827,62 @@ impl<'a> AstBuilder<'a> {
             pure,
             pife,
         ))
+    }
+
+    /// Build an [`Expression::FunctionExpression`] with decorators, `scope_id`, `pure`, and `pife`.
+    ///
+    /// This node contains a [`Function`] that will be stored in the memory arena.
+    #[inline]
+    pub fn expression_function_with_scope_id_and_pure_and_pife_with_decorators<
+        T1,
+        T2,
+        T3,
+        T4,
+        T5,
+    >(
+        self,
+        span: Span,
+        r#type: FunctionType,
+        decorators: Vec<'a, Decorator<'a>>,
+        id: Option<BindingIdentifier<'a>>,
+        generator: bool,
+        r#async: bool,
+        declare: bool,
+        type_parameters: T1,
+        this_param: T2,
+        params: T3,
+        return_type: T4,
+        body: T5,
+        scope_id: ScopeId,
+        pure: bool,
+        pife: bool,
+    ) -> Expression<'a>
+    where
+        T1: IntoIn<'a, Option<Box<'a, TSTypeParameterDeclaration<'a>>>>,
+        T2: IntoIn<'a, Option<Box<'a, TSThisParameter<'a>>>>,
+        T3: IntoIn<'a, Box<'a, FormalParameters<'a>>>,
+        T4: IntoIn<'a, Option<Box<'a, TSTypeAnnotation<'a>>>>,
+        T5: IntoIn<'a, Option<Box<'a, FunctionBody<'a>>>>,
+    {
+        Expression::FunctionExpression(
+            self.alloc_function_with_scope_id_and_pure_and_pife_with_decorators(
+                span,
+                r#type,
+                decorators,
+                id,
+                generator,
+                r#async,
+                declare,
+                type_parameters,
+                this_param,
+                params,
+                return_type,
+                body,
+                scope_id,
+                pure,
+                pife,
+            ),
+        )
     }
 
     /// Build an [`Expression::ImportExpression`].
@@ -4117,7 +4211,6 @@ impl<'a> AstBuilder<'a> {
         self,
         span: Span,
         r#type: FunctionType,
-        decorators: Vec<'a, Decorator<'a>>,
         id: Option<BindingIdentifier<'a>>,
         generator: bool,
         r#async: bool,
@@ -4136,6 +4229,47 @@ impl<'a> AstBuilder<'a> {
         T5: IntoIn<'a, Option<Box<'a, FunctionBody<'a>>>>,
     {
         Declaration::FunctionDeclaration(self.alloc_function(
+            span,
+            r#type,
+            id,
+            generator,
+            r#async,
+            declare,
+            type_parameters,
+            this_param,
+            params,
+            return_type,
+            body,
+        ))
+    }
+
+    /// Build a [`Declaration::FunctionDeclaration`] with decorators.
+    ///
+    /// This node contains a [`Function`] that will be stored in the memory arena.
+    #[inline]
+    pub fn declaration_function_with_decorators<T1, T2, T3, T4, T5>(
+        self,
+        span: Span,
+        r#type: FunctionType,
+        decorators: Vec<'a, Decorator<'a>>,
+        id: Option<BindingIdentifier<'a>>,
+        generator: bool,
+        r#async: bool,
+        declare: bool,
+        type_parameters: T1,
+        this_param: T2,
+        params: T3,
+        return_type: T4,
+        body: T5,
+    ) -> Declaration<'a>
+    where
+        T1: IntoIn<'a, Option<Box<'a, TSTypeParameterDeclaration<'a>>>>,
+        T2: IntoIn<'a, Option<Box<'a, TSThisParameter<'a>>>>,
+        T3: IntoIn<'a, Box<'a, FormalParameters<'a>>>,
+        T4: IntoIn<'a, Option<Box<'a, TSTypeAnnotation<'a>>>>,
+        T5: IntoIn<'a, Option<Box<'a, FunctionBody<'a>>>>,
+    {
+        Declaration::FunctionDeclaration(self.alloc_function_with_decorators(
             span,
             r#type,
             decorators,
@@ -4176,7 +4310,6 @@ impl<'a> AstBuilder<'a> {
         self,
         span: Span,
         r#type: FunctionType,
-        decorators: Vec<'a, Decorator<'a>>,
         id: Option<BindingIdentifier<'a>>,
         generator: bool,
         r#async: bool,
@@ -4200,7 +4333,6 @@ impl<'a> AstBuilder<'a> {
         Declaration::FunctionDeclaration(self.alloc_function_with_scope_id_and_pure_and_pife(
             span,
             r#type,
-            decorators,
             id,
             generator,
             r#async,
@@ -4214,6 +4346,62 @@ impl<'a> AstBuilder<'a> {
             pure,
             pife,
         ))
+    }
+
+    /// Build a [`Declaration::FunctionDeclaration`] with decorators, `scope_id`, `pure`, and `pife`.
+    ///
+    /// This node contains a [`Function`] that will be stored in the memory arena.
+    #[inline]
+    pub fn declaration_function_with_scope_id_and_pure_and_pife_with_decorators<
+        T1,
+        T2,
+        T3,
+        T4,
+        T5,
+    >(
+        self,
+        span: Span,
+        r#type: FunctionType,
+        decorators: Vec<'a, Decorator<'a>>,
+        id: Option<BindingIdentifier<'a>>,
+        generator: bool,
+        r#async: bool,
+        declare: bool,
+        type_parameters: T1,
+        this_param: T2,
+        params: T3,
+        return_type: T4,
+        body: T5,
+        scope_id: ScopeId,
+        pure: bool,
+        pife: bool,
+    ) -> Declaration<'a>
+    where
+        T1: IntoIn<'a, Option<Box<'a, TSTypeParameterDeclaration<'a>>>>,
+        T2: IntoIn<'a, Option<Box<'a, TSThisParameter<'a>>>>,
+        T3: IntoIn<'a, Box<'a, FormalParameters<'a>>>,
+        T4: IntoIn<'a, Option<Box<'a, TSTypeAnnotation<'a>>>>,
+        T5: IntoIn<'a, Option<Box<'a, FunctionBody<'a>>>>,
+    {
+        Declaration::FunctionDeclaration(
+            self.alloc_function_with_scope_id_and_pure_and_pife_with_decorators(
+                span,
+                r#type,
+                decorators,
+                id,
+                generator,
+                r#async,
+                declare,
+                type_parameters,
+                this_param,
+                params,
+                return_type,
+                body,
+                scope_id,
+                pure,
+                pife,
+            ),
+        )
     }
 
     /// Build a [`Declaration::ClassDeclaration`].
@@ -6270,6 +6458,48 @@ impl<'a> AstBuilder<'a> {
         self,
         span: Span,
         r#type: FunctionType,
+        id: Option<BindingIdentifier<'a>>,
+        generator: bool,
+        r#async: bool,
+        declare: bool,
+        type_parameters: T1,
+        this_param: T2,
+        params: T3,
+        return_type: T4,
+        body: T5,
+    ) -> Function<'a>
+    where
+        T1: IntoIn<'a, Option<Box<'a, TSTypeParameterDeclaration<'a>>>>,
+        T2: IntoIn<'a, Option<Box<'a, TSThisParameter<'a>>>>,
+        T3: IntoIn<'a, Box<'a, FormalParameters<'a>>>,
+        T4: IntoIn<'a, Option<Box<'a, TSTypeAnnotation<'a>>>>,
+        T5: IntoIn<'a, Option<Box<'a, FunctionBody<'a>>>>,
+    {
+        self.function_with_decorators(
+            span,
+            r#type,
+            self.vec(),
+            id,
+            generator,
+            r#async,
+            declare,
+            type_parameters,
+            this_param,
+            params,
+            return_type,
+            body,
+        )
+    }
+
+    /// Build a [`Function`] with decorators.
+    ///
+    /// If you want the built node to be allocated in the memory arena,
+    /// use [`AstBuilder::alloc_function_with_decorators`] instead.
+    #[inline]
+    pub fn function_with_decorators<T1, T2, T3, T4, T5>(
+        self,
+        span: Span,
+        r#type: FunctionType,
         decorators: Vec<'a, Decorator<'a>>,
         id: Option<BindingIdentifier<'a>>,
         generator: bool,
@@ -6331,7 +6561,6 @@ impl<'a> AstBuilder<'a> {
         self,
         span: Span,
         r#type: FunctionType,
-        decorators: Vec<'a, Decorator<'a>>,
         id: Option<BindingIdentifier<'a>>,
         generator: bool,
         r#async: bool,
@@ -6351,6 +6580,51 @@ impl<'a> AstBuilder<'a> {
     {
         Box::new_in(
             self.function(
+                span,
+                r#type,
+                id,
+                generator,
+                r#async,
+                declare,
+                type_parameters,
+                this_param,
+                params,
+                return_type,
+                body,
+            ),
+            self.allocator,
+        )
+    }
+
+    /// Build a [`Function`] with decorators, and store it in the memory arena.
+    ///
+    /// Returns a [`Box`] containing the newly-allocated node.
+    /// If you want a stack-allocated node, use [`AstBuilder::function_with_decorators`] instead.
+    #[inline]
+    pub fn alloc_function_with_decorators<T1, T2, T3, T4, T5>(
+        self,
+        span: Span,
+        r#type: FunctionType,
+        decorators: Vec<'a, Decorator<'a>>,
+        id: Option<BindingIdentifier<'a>>,
+        generator: bool,
+        r#async: bool,
+        declare: bool,
+        type_parameters: T1,
+        this_param: T2,
+        params: T3,
+        return_type: T4,
+        body: T5,
+    ) -> Box<'a, Function<'a>>
+    where
+        T1: IntoIn<'a, Option<Box<'a, TSTypeParameterDeclaration<'a>>>>,
+        T2: IntoIn<'a, Option<Box<'a, TSThisParameter<'a>>>>,
+        T3: IntoIn<'a, Box<'a, FormalParameters<'a>>>,
+        T4: IntoIn<'a, Option<Box<'a, TSTypeAnnotation<'a>>>>,
+        T5: IntoIn<'a, Option<Box<'a, FunctionBody<'a>>>>,
+    {
+        Box::new_in(
+            self.function_with_decorators(
                 span,
                 r#type,
                 decorators,
@@ -6391,6 +6665,54 @@ impl<'a> AstBuilder<'a> {
     /// * `pife`: `true` if the function should be marked as "Possibly-Invoked Function Expression" (PIFE).
     #[inline]
     pub fn function_with_scope_id_and_pure_and_pife<T1, T2, T3, T4, T5>(
+        self,
+        span: Span,
+        r#type: FunctionType,
+        id: Option<BindingIdentifier<'a>>,
+        generator: bool,
+        r#async: bool,
+        declare: bool,
+        type_parameters: T1,
+        this_param: T2,
+        params: T3,
+        return_type: T4,
+        body: T5,
+        scope_id: ScopeId,
+        pure: bool,
+        pife: bool,
+    ) -> Function<'a>
+    where
+        T1: IntoIn<'a, Option<Box<'a, TSTypeParameterDeclaration<'a>>>>,
+        T2: IntoIn<'a, Option<Box<'a, TSThisParameter<'a>>>>,
+        T3: IntoIn<'a, Box<'a, FormalParameters<'a>>>,
+        T4: IntoIn<'a, Option<Box<'a, TSTypeAnnotation<'a>>>>,
+        T5: IntoIn<'a, Option<Box<'a, FunctionBody<'a>>>>,
+    {
+        self.function_with_scope_id_and_pure_and_pife_with_decorators(
+            span,
+            r#type,
+            self.vec(),
+            id,
+            generator,
+            r#async,
+            declare,
+            type_parameters,
+            this_param,
+            params,
+            return_type,
+            body,
+            scope_id,
+            pure,
+            pife,
+        )
+    }
+
+    /// Build a [`Function`] with decorators, `scope_id`, `pure`, and `pife`.
+    ///
+    /// If you want the built node to be allocated in the memory arena,
+    /// use [`AstBuilder::alloc_function_with_scope_id_and_pure_and_pife_with_decorators`] instead.
+    #[inline]
+    pub fn function_with_scope_id_and_pure_and_pife_with_decorators<T1, T2, T3, T4, T5>(
         self,
         span: Span,
         r#type: FunctionType,
@@ -6461,7 +6783,6 @@ impl<'a> AstBuilder<'a> {
         self,
         span: Span,
         r#type: FunctionType,
-        decorators: Vec<'a, Decorator<'a>>,
         id: Option<BindingIdentifier<'a>>,
         generator: bool,
         r#async: bool,
@@ -6484,6 +6805,65 @@ impl<'a> AstBuilder<'a> {
     {
         Box::new_in(
             self.function_with_scope_id_and_pure_and_pife(
+                span,
+                r#type,
+                id,
+                generator,
+                r#async,
+                declare,
+                type_parameters,
+                this_param,
+                params,
+                return_type,
+                body,
+                scope_id,
+                pure,
+                pife,
+            ),
+            self.allocator,
+        )
+    }
+
+    /// Build a [`Function`] with decorators, `scope_id`, `pure`, and `pife`,
+    /// and store it in the memory arena.
+    ///
+    /// Returns a [`Box`] containing the newly-allocated node.
+    /// If you want a stack-allocated node, use
+    /// [`AstBuilder::function_with_scope_id_and_pure_and_pife_with_decorators`] instead.
+    #[inline]
+    pub fn alloc_function_with_scope_id_and_pure_and_pife_with_decorators<
+        T1,
+        T2,
+        T3,
+        T4,
+        T5,
+    >(
+        self,
+        span: Span,
+        r#type: FunctionType,
+        decorators: Vec<'a, Decorator<'a>>,
+        id: Option<BindingIdentifier<'a>>,
+        generator: bool,
+        r#async: bool,
+        declare: bool,
+        type_parameters: T1,
+        this_param: T2,
+        params: T3,
+        return_type: T4,
+        body: T5,
+        scope_id: ScopeId,
+        pure: bool,
+        pife: bool,
+    ) -> Box<'a, Function<'a>>
+    where
+        T1: IntoIn<'a, Option<Box<'a, TSTypeParameterDeclaration<'a>>>>,
+        T2: IntoIn<'a, Option<Box<'a, TSThisParameter<'a>>>>,
+        T3: IntoIn<'a, Box<'a, FormalParameters<'a>>>,
+        T4: IntoIn<'a, Option<Box<'a, TSTypeAnnotation<'a>>>>,
+        T5: IntoIn<'a, Option<Box<'a, FunctionBody<'a>>>>,
+    {
+        Box::new_in(
+            self.function_with_scope_id_and_pure_and_pife_with_decorators(
                 span,
                 r#type,
                 decorators,
@@ -7858,7 +8238,6 @@ impl<'a> AstBuilder<'a> {
     pub fn module_declaration_export_named_declaration<T1>(
         self,
         span: Span,
-        decorators: Vec<'a, Decorator<'a>>,
         declaration: Option<Declaration<'a>>,
         specifiers: Vec<'a, ExportSpecifier<'a>>,
         source: Option<StringLiteral<'a>>,
@@ -7870,13 +8249,42 @@ impl<'a> AstBuilder<'a> {
     {
         ModuleDeclaration::ExportNamedDeclaration(self.alloc_export_named_declaration(
             span,
-            decorators,
             declaration,
             specifiers,
             source,
             export_kind,
             with_clause,
         ))
+    }
+
+    /// Build a [`ModuleDeclaration::ExportNamedDeclaration`] with decorators.
+    ///
+    /// This node contains an [`ExportNamedDeclaration`] that will be stored in the memory arena.
+    #[inline]
+    pub fn module_declaration_export_named_declaration_with_decorators<T1>(
+        self,
+        span: Span,
+        decorators: Vec<'a, Decorator<'a>>,
+        declaration: Option<Declaration<'a>>,
+        specifiers: Vec<'a, ExportSpecifier<'a>>,
+        source: Option<StringLiteral<'a>>,
+        export_kind: ImportOrExportKind,
+        with_clause: T1,
+    ) -> ModuleDeclaration<'a>
+    where
+        T1: IntoIn<'a, Option<Box<'a, WithClause<'a>>>>,
+    {
+        ModuleDeclaration::ExportNamedDeclaration(
+            self.alloc_export_named_declaration_with_decorators(
+                span,
+                decorators,
+                declaration,
+                specifiers,
+                source,
+                export_kind,
+                with_clause,
+            ),
+        )
     }
 
     /// Build a [`ModuleDeclaration::TSExportAssignment`].
@@ -8483,6 +8891,34 @@ impl<'a> AstBuilder<'a> {
     pub fn export_named_declaration<T1>(
         self,
         span: Span,
+        declaration: Option<Declaration<'a>>,
+        specifiers: Vec<'a, ExportSpecifier<'a>>,
+        source: Option<StringLiteral<'a>>,
+        export_kind: ImportOrExportKind,
+        with_clause: T1,
+    ) -> ExportNamedDeclaration<'a>
+    where
+        T1: IntoIn<'a, Option<Box<'a, WithClause<'a>>>>,
+    {
+        self.export_named_declaration_with_decorators(
+            span,
+            self.vec(),
+            declaration,
+            specifiers,
+            source,
+            export_kind,
+            with_clause,
+        )
+    }
+
+    /// Build an [`ExportNamedDeclaration`] with decorators.
+    ///
+    /// If you want the built node to be allocated in the memory arena,
+    /// use [`AstBuilder::alloc_export_named_declaration_with_decorators`] instead.
+    #[inline]
+    pub fn export_named_declaration_with_decorators<T1>(
+        self,
+        span: Span,
         decorators: Vec<'a, Decorator<'a>>,
         declaration: Option<Declaration<'a>>,
         specifiers: Vec<'a, ExportSpecifier<'a>>,
@@ -8522,7 +8958,6 @@ impl<'a> AstBuilder<'a> {
     pub fn alloc_export_named_declaration<T1>(
         self,
         span: Span,
-        decorators: Vec<'a, Decorator<'a>>,
         declaration: Option<Declaration<'a>>,
         specifiers: Vec<'a, ExportSpecifier<'a>>,
         source: Option<StringLiteral<'a>>,
@@ -8534,6 +8969,38 @@ impl<'a> AstBuilder<'a> {
     {
         Box::new_in(
             self.export_named_declaration(
+                span,
+                declaration,
+                specifiers,
+                source,
+                export_kind,
+                with_clause,
+            ),
+            self.allocator,
+        )
+    }
+
+    /// Build an [`ExportNamedDeclaration`] with decorators, and store it in the memory arena.
+    ///
+    /// Returns a [`Box`] containing the newly-allocated node.
+    /// If you want a stack-allocated node, use
+    /// [`AstBuilder::export_named_declaration_with_decorators`] instead.
+    #[inline]
+    pub fn alloc_export_named_declaration_with_decorators<T1>(
+        self,
+        span: Span,
+        decorators: Vec<'a, Decorator<'a>>,
+        declaration: Option<Declaration<'a>>,
+        specifiers: Vec<'a, ExportSpecifier<'a>>,
+        source: Option<StringLiteral<'a>>,
+        export_kind: ImportOrExportKind,
+        with_clause: T1,
+    ) -> Box<'a, ExportNamedDeclaration<'a>>
+    where
+        T1: IntoIn<'a, Option<Box<'a, WithClause<'a>>>>,
+    {
+        Box::new_in(
+            self.export_named_declaration_with_decorators(
                 span,
                 decorators,
                 declaration,
@@ -8682,7 +9149,6 @@ impl<'a> AstBuilder<'a> {
         self,
         span: Span,
         r#type: FunctionType,
-        decorators: Vec<'a, Decorator<'a>>,
         id: Option<BindingIdentifier<'a>>,
         generator: bool,
         r#async: bool,
@@ -8701,6 +9167,53 @@ impl<'a> AstBuilder<'a> {
         T5: IntoIn<'a, Option<Box<'a, FunctionBody<'a>>>>,
     {
         ExportDefaultDeclarationKind::FunctionDeclaration(self.alloc_function(
+            span,
+            r#type,
+            id,
+            generator,
+            r#async,
+            declare,
+            type_parameters,
+            this_param,
+            params,
+            return_type,
+            body,
+        ))
+    }
+
+    /// Build an [`ExportDefaultDeclarationKind::FunctionDeclaration`] with decorators.
+    ///
+    /// This node contains a [`Function`] that will be stored in the memory arena.
+    #[inline]
+    pub fn export_default_declaration_kind_function_declaration_with_decorators<
+        T1,
+        T2,
+        T3,
+        T4,
+        T5,
+    >(
+        self,
+        span: Span,
+        r#type: FunctionType,
+        decorators: Vec<'a, Decorator<'a>>,
+        id: Option<BindingIdentifier<'a>>,
+        generator: bool,
+        r#async: bool,
+        declare: bool,
+        type_parameters: T1,
+        this_param: T2,
+        params: T3,
+        return_type: T4,
+        body: T5,
+    ) -> ExportDefaultDeclarationKind<'a>
+    where
+        T1: IntoIn<'a, Option<Box<'a, TSTypeParameterDeclaration<'a>>>>,
+        T2: IntoIn<'a, Option<Box<'a, TSThisParameter<'a>>>>,
+        T3: IntoIn<'a, Box<'a, FormalParameters<'a>>>,
+        T4: IntoIn<'a, Option<Box<'a, TSTypeAnnotation<'a>>>>,
+        T5: IntoIn<'a, Option<Box<'a, FunctionBody<'a>>>>,
+    {
+        ExportDefaultDeclarationKind::FunctionDeclaration(self.alloc_function_with_decorators(
             span,
             r#type,
             decorators,
@@ -8747,7 +9260,6 @@ impl<'a> AstBuilder<'a> {
         self,
         span: Span,
         r#type: FunctionType,
-        decorators: Vec<'a, Decorator<'a>>,
         id: Option<BindingIdentifier<'a>>,
         generator: bool,
         r#async: bool,
@@ -8770,6 +9282,62 @@ impl<'a> AstBuilder<'a> {
     {
         ExportDefaultDeclarationKind::FunctionDeclaration(
             self.alloc_function_with_scope_id_and_pure_and_pife(
+                span,
+                r#type,
+                id,
+                generator,
+                r#async,
+                declare,
+                type_parameters,
+                this_param,
+                params,
+                return_type,
+                body,
+                scope_id,
+                pure,
+                pife,
+            ),
+        )
+    }
+
+    /// Build an [`ExportDefaultDeclarationKind::FunctionDeclaration`] with decorators,
+    /// `scope_id`, `pure`, and `pife`.
+    ///
+    /// This node contains a [`Function`] that will be stored in the memory arena.
+    #[inline]
+    pub fn export_default_declaration_kind_function_declaration_with_scope_id_and_pure_and_pife_with_decorators<
+        T1,
+        T2,
+        T3,
+        T4,
+        T5,
+    >(
+        self,
+        span: Span,
+        r#type: FunctionType,
+        decorators: Vec<'a, Decorator<'a>>,
+        id: Option<BindingIdentifier<'a>>,
+        generator: bool,
+        r#async: bool,
+        declare: bool,
+        type_parameters: T1,
+        this_param: T2,
+        params: T3,
+        return_type: T4,
+        body: T5,
+        scope_id: ScopeId,
+        pure: bool,
+        pife: bool,
+    ) -> ExportDefaultDeclarationKind<'a>
+    where
+        T1: IntoIn<'a, Option<Box<'a, TSTypeParameterDeclaration<'a>>>>,
+        T2: IntoIn<'a, Option<Box<'a, TSThisParameter<'a>>>>,
+        T3: IntoIn<'a, Box<'a, FormalParameters<'a>>>,
+        T4: IntoIn<'a, Option<Box<'a, TSTypeAnnotation<'a>>>>,
+        T5: IntoIn<'a, Option<Box<'a, FunctionBody<'a>>>>,
+    {
+        ExportDefaultDeclarationKind::FunctionDeclaration(
+            self.alloc_function_with_scope_id_and_pure_and_pife_with_decorators(
                 span,
                 r#type,
                 decorators,
