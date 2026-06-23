@@ -26,13 +26,22 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         let span = self.start_span();
         self.bump_any(); // bump `<`
         let kind = self.cur_kind();
-        if kind == Kind::RAngle {
+        let expr = if kind == Kind::RAngle {
             Expression::JSXFragment(self.parse_jsx_fragment(span, false))
         } else if kind.is_identifier_or_keyword() {
             Expression::JSXElement(self.parse_jsx_element(span, false))
         } else {
-            self.unexpected()
+            return self.unexpected();
+        };
+
+        // A top-level JSX element/fragment immediately followed by `<` is a second,
+        // adjacent JSX element that isn't wrapped in an enclosing tag, e.g.
+        // `<div></div><span></span>`.
+        if self.at(Kind::LAngle) && self.fatal_error.is_none() {
+            self.set_fatal_error(diagnostics::adjacent_jsx_elements(self.cur_token().span()));
         }
+
+        expr
     }
 
     /// `JSXFragment` :
@@ -132,11 +141,11 @@ impl<'a, C: Config> ParserImpl<'a, C> {
     ///   `JSXMemberExpression`
     fn parse_jsx_element_name(&mut self) -> JSXElementName<'a> {
         let span = self.start_span();
-        let identifier = self.parse_jsx_identifier();
+        let (identifier, contains_dash) = self.parse_jsx_identifier();
 
         // <namespace:property />
         if self.eat(Kind::Colon) {
-            let property = self.parse_jsx_identifier();
+            let (property, _) = self.parse_jsx_identifier();
             return self.ast.jsx_element_name_namespaced_name(
                 self.end_span(span),
                 identifier,
@@ -166,10 +175,11 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         // we know it can only be `a-z`, `A-Z`, `_` or `$`.
         // Use a fast path for ASCII to avoid expensive Unicode operations in the common case.
         let name = identifier.name.as_str();
-        let is_reference = match name.as_bytes()[0] {
-            b if b.is_ascii() => !b.is_ascii_lowercase(), // Matches A-Z, _, $
-            _ => true, // Non-ASCII characters are always treated as references
-        } && !name.contains('-'); // Exclude hyphenated custom elements
+        let is_reference = !contains_dash // Exclude hyphenated custom elements
+            && match name.as_bytes()[0] {
+                b if b.is_ascii() => !b.is_ascii_lowercase(), // Matches A-Z, _, $
+                _ => true, // Non-ASCII characters are always treated as references
+            };
 
         if is_reference {
             let identifier = self.ast.alloc_identifier_reference(identifier.span, identifier.name);
@@ -206,9 +216,9 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             }
 
             // <foo.bar>
-            let ident = self.parse_jsx_identifier();
+            let (ident, contains_dash) = self.parse_jsx_identifier();
             // `<foo.bar- />` is a syntax error.
-            if ident.name.contains('-') {
+            if contains_dash {
                 let error = diagnostics::identifier_expected_jsx_no_hyphen(ident.span);
                 return self.fatal_error(error);
             }
@@ -352,6 +362,12 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             self.ast.jsx_expression_empty_expression(Span::new(span.start + 1, span.end - 1))
         } else {
             let expr = JSXExpression::from(self.parse_expr());
+            // JSX expressions may not use the comma operator.
+            if matches!(expr, JSXExpression::SequenceExpression(_)) {
+                self.error(diagnostics::jsx_expressions_may_not_use_the_comma_operator(
+                    expr.span(),
+                ));
+            }
             if in_jsx_child {
                 self.expect_jsx_child(Kind::RCurly);
             } else {
@@ -424,10 +440,10 @@ impl<'a, C: Config> ParserImpl<'a, C> {
     ///   `JSXNamespacedName`
     fn parse_jsx_attribute_name(&mut self) -> JSXAttributeName<'a> {
         let span = self.start_span();
-        let identifier = self.parse_jsx_identifier();
+        let (identifier, _) = self.parse_jsx_identifier();
 
         if self.eat(Kind::Colon) {
-            let property = self.parse_jsx_identifier();
+            let (property, _) = self.parse_jsx_identifier();
             return self.ast.jsx_attribute_name_namespaced_name(
                 self.end_span(span),
                 identifier,
@@ -465,18 +481,24 @@ impl<'a, C: Config> ParserImpl<'a, C> {
     ///   `IdentifierStart`
     ///   `JSXIdentifier` `IdentifierPart`
     ///   `JSXIdentifier` [no `WhiteSpace` or Comment here] -
-    fn parse_jsx_identifier(&mut self) -> JSXIdentifier<'a> {
+    fn parse_jsx_identifier(
+        &mut self,
+    ) -> (
+        JSXIdentifier<'a>, // JSX identifier
+        bool,              // `true` if contains `-`
+    ) {
         let span = self.start_span();
         let kind = self.cur_kind();
         if kind != Kind::Ident && !kind.is_any_keyword() {
-            return self.unexpected();
+            return (self.unexpected(), false);
         }
         // Currently at a valid normal Ident or Keyword, keep on lexing for `-` in `<component-name />`
-        self.continue_lex_jsx_identifier();
+        let contains_dash = self.continue_lex_jsx_identifier();
         self.bump_any();
         let span = self.end_span(span);
         let name = span.source_text(self.source_text);
-        self.ast.jsx_identifier(span, name)
+        let identifier = self.ast.jsx_identifier(span, name);
+        (identifier, contains_dash)
     }
 
     fn parse_jsx_text(&mut self) -> Box<'a, JSXText<'a>> {

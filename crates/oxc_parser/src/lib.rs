@@ -87,12 +87,12 @@ mod lexer;
 #[doc(hidden)]
 pub mod lexer;
 
-use oxc_allocator::{Allocator, Box as ArenaBox, Dummy, Vec as ArenaVec};
+use oxc_allocator::{Allocator, Box as ArenaBox, Dummy, GetAllocator, Vec as ArenaVec};
 use oxc_ast::{
     AstBuilder,
     ast::{Expression, Program},
 };
-use oxc_diagnostics::OxcDiagnostic;
+use oxc_diagnostics::{Diagnostics, OxcDiagnostic};
 use oxc_span::{SourceType, Span};
 use oxc_syntax::module_record::ModuleRecord;
 
@@ -128,14 +128,14 @@ pub(crate) const MAX_LEN: usize = if size_of::<usize>() >= 8 {
 ///
 /// [`program`] will always contain a structurally valid AST, even if there are syntax errors.
 /// However, the AST may be semantically invalid. To ensure a valid AST,
-/// 1. Check that [`errors`] is empty
+/// 1. Check that [`diagnostics`] is empty
 /// 2. Run semantic analysis with [syntax error checking
 ///    enabled](https://docs.rs/oxc_semantic/latest/oxc_semantic/struct.SemanticBuilder.html#method.with_check_syntax_error)
 ///
 /// ## Errors
 /// Oxc's [`Parser`] is able to recover from some syntax errors and continue parsing. When this
 /// happens,
-/// 1. [`errors`] will be non-empty
+/// 1. [`diagnostics`] will be non-empty
 /// 2. [`program`] will contain a full AST
 /// 3. [`panicked`] will be false
 ///
@@ -143,7 +143,7 @@ pub(crate) const MAX_LEN: usize = if size_of::<usize>() >= 8 {
 /// be empty and [`panicked`] will be `true`.
 ///
 /// [`program`]: ParserReturn::program
-/// [`errors`]: ParserReturn::errors
+/// [`diagnostics`]: ParserReturn::diagnostics
 /// [`panicked`]: ParserReturn::panicked
 #[non_exhaustive]
 pub struct ParserReturn<'a> {
@@ -156,7 +156,7 @@ pub struct ParserReturn<'a> {
     /// 1. The [`Parser`] encounters a recoverable syntax error
     /// 2. The logic for checking the violation is in the semantic analyzer
     ///
-    /// To ensure a valid AST, check that [`errors`](ParserReturn::errors) is empty. Then, run
+    /// To ensure a valid AST, check that [`diagnostics`](ParserReturn::diagnostics) is empty. Then, run
     /// semantic analysis with syntax error checking enabled.
     pub program: Program<'a>,
 
@@ -168,7 +168,7 @@ pub struct ParserReturn<'a> {
     /// This list is not comprehensive. Oxc offloads more-expensive checks to [semantic
     /// analysis](https://docs.rs/oxc_semantic), which can be enabled using
     /// [`SemanticBuilder::with_check_syntax_error`](https://docs.rs/oxc_semantic/latest/oxc_semantic/struct.SemanticBuilder.html#method.with_check_syntax_error).
-    pub errors: Vec<OxcDiagnostic>,
+    pub diagnostics: Diagnostics,
 
     /// Irregular whitespaces for `Oxlint`
     pub irregular_whitespaces: Box<[Span]>,
@@ -181,11 +181,11 @@ pub struct ParserReturn<'a> {
     /// Whether the parser panicked and terminated early.
     ///
     /// This will be `false` if parsing was successful, or if parsing was able to recover from a
-    /// syntax error. When `true`, [`program`] will be empty and [`errors`] will contain at least
+    /// syntax error. When `true`, [`program`] will be empty and [`diagnostics`] will contain at least
     /// one error.
     ///
     /// [`program`]: ParserReturn::program
-    /// [`errors`]: ParserReturn::errors
+    /// [`diagnostics`]: ParserReturn::diagnostics
     pub panicked: bool,
 
     /// Whether the file is [flow](https://flow.org).
@@ -404,7 +404,7 @@ mod parser_parse {
         //
         // # Implementation note
         // Dispatches via `Any`, same as `parse` does.
-        pub fn parse_expression(self) -> Result<Expression<'a>, Vec<OxcDiagnostic>> {
+        pub fn parse_expression(self) -> Result<Expression<'a>, Diagnostics> {
             let config: &dyn Any = &self.config;
             if config.is::<NoTokensParserConfig>() {
                 parse_expression_with_no_tokens_config(
@@ -530,7 +530,7 @@ mod parser_parse {
         source_text: &'a str,
         source_type: SourceType,
         options: ParseOptions,
-    ) -> Result<Expression<'a>, Vec<OxcDiagnostic>> {
+    ) -> Result<Expression<'a>, Diagnostics> {
         ParserImpl::<NoTokensParserConfig>::new(
             allocator,
             source_text,
@@ -548,7 +548,7 @@ mod parser_parse {
         source_text: &'a str,
         source_type: SourceType,
         options: ParseOptions,
-    ) -> Result<Expression<'a>, Vec<OxcDiagnostic>> {
+    ) -> Result<Expression<'a>, Diagnostics> {
         ParserImpl::<TokensParserConfig>::new(
             allocator,
             source_text,
@@ -567,7 +567,7 @@ mod parser_parse {
         source_type: SourceType,
         options: ParseOptions,
         config: RuntimeParserConfig,
-    ) -> Result<Expression<'a>, Vec<OxcDiagnostic>> {
+    ) -> Result<Expression<'a>, Diagnostics> {
         ParserImpl::<RuntimeParserConfig>::new(
             allocator,
             source_text,
@@ -696,7 +696,7 @@ impl<'a, C: ParserConfig> ParserImpl<'a, C> {
         }
 
         let mut is_flow_language = false;
-        let mut errors = vec![];
+        let mut errors = Diagnostics::new();
         // only check for `@flow` if the file failed to parse.
         if (!self.lexer.errors.is_empty() || !self.errors.is_empty())
             && let Some(error) = self.flow_error()
@@ -741,7 +741,7 @@ impl<'a, C: ParserConfig> ParserImpl<'a, C> {
         ParserReturn {
             program,
             module_record,
-            errors,
+            diagnostics: errors,
             irregular_whitespaces,
             tokens,
             panicked,
@@ -749,15 +749,15 @@ impl<'a, C: ParserConfig> ParserImpl<'a, C> {
         }
     }
 
-    pub fn parse_expression(mut self) -> Result<Expression<'a>, Vec<OxcDiagnostic>> {
+    pub fn parse_expression(mut self) -> Result<Expression<'a>, Diagnostics> {
         // initialize cur_token and prev_token by moving onto the first token
         self.bump_any();
         let expr = self.parse_expr();
         if let Some(FatalError { error, .. }) = self.fatal_error.take() {
-            return Err(vec![error]);
+            return Err(error.into());
         }
         self.check_unfinished_errors();
-        let errors = self.lexer.errors.into_iter().chain(self.errors).collect::<Vec<_>>();
+        let errors = self.lexer.errors.into_iter().chain(self.errors).collect::<Diagnostics>();
         if !errors.is_empty() {
             return Err(errors);
         }
@@ -772,7 +772,8 @@ impl<'a, C: ParserConfig> ParserImpl<'a, C> {
 
         let hashbang = self.parse_hashbang();
         self.ctx |= Context::TopLevel;
-        let (directives, mut statements) = self.parse_directives_and_statements();
+        let (directives, mut statements) =
+            self.parse_directives_and_statements(/* in_ts_namespace_body */ false);
 
         // In unambiguous mode, if ESM syntax was detected (import/export/import.meta),
         // we need to reparse statements that were originally parsed with `await` as identifier.
@@ -840,9 +841,13 @@ impl<'a, C: ParserConfig> ParserImpl<'a, C> {
             // for [top-level-await](https://tc39.es/proposal-top-level-await/)
             ctx = ctx.and_await(true);
         }
-        // CommonJS files are wrapped in a function, so return is allowed at top-level
+        // CommonJS files are wrapped in a function, so return and `new.target`
+        // are allowed at top-level
         if options.allow_return_outside_function || source_type.is_commonjs() {
             ctx = ctx.and_return(true);
+        }
+        if source_type.is_commonjs() {
+            ctx = ctx.and_new_target(true);
         }
         ctx
     }
@@ -887,6 +892,13 @@ impl<'a, C: ParserConfig> ParserImpl<'a, C> {
     }
 }
 
+impl<'a, C: ParserConfig> GetAllocator<'a> for ParserImpl<'a, C> {
+    #[inline]
+    fn allocator(&self) -> &'a Allocator {
+        self.ast.allocator()
+    }
+}
+
 #[cfg(test)]
 mod test {
     use oxc_ast::ast::AnnotationElement;
@@ -904,7 +916,7 @@ mod test {
         let source = "";
         let ret = Parser::new(&allocator, source, source_type).parse();
         assert!(ret.program.is_empty());
-        assert!(ret.errors.is_empty());
+        assert!(ret.diagnostics.is_empty());
         assert!(!ret.is_flow_language);
     }
 
@@ -934,8 +946,8 @@ mod test {
         for source in sources {
             let ret = Parser::new(&allocator, source, source_type).parse();
             assert!(ret.is_flow_language);
-            assert_eq!(ret.errors.len(), 1);
-            assert_eq!(ret.errors.first().unwrap().to_string(), "Flow is not supported");
+            assert_eq!(ret.diagnostics.len(), 1);
+            assert_eq!(ret.diagnostics.first().unwrap().to_string(), "Flow is not supported");
         }
     }
 
@@ -945,7 +957,7 @@ mod test {
         let source_type = SourceType::from_path(Path::new("module.ts")).unwrap();
         let source = "declare module 'test'\n";
         let ret = Parser::new(&allocator, source, source_type).parse();
-        assert_eq!(ret.errors.len(), 0);
+        assert_eq!(ret.diagnostics.len(), 0);
     }
 
     #[test]
@@ -972,7 +984,7 @@ mod test {
             let source = "%DebugPrint('Raging against the Dying Light')";
             let opts = ParseOptions { allow_v8_intrinsics: true, ..ParseOptions::default() };
             let ret = Parser::new(&allocator, source, source_type).with_options(opts).parse();
-            assert!(ret.errors.is_empty());
+            assert!(ret.diagnostics.is_empty());
 
             if let Some(Statement::ExpressionStatement(expr_stmt)) = ret.program.body.first() {
                 if let Expression::V8IntrinsicExpression(expr) = &expr_stmt.expression {
@@ -988,17 +1000,17 @@ mod test {
             let source = "%DebugPrint(...illegalSpread)";
             let opts = ParseOptions { allow_v8_intrinsics: true, ..ParseOptions::default() };
             let ret = Parser::new(&allocator, source, source_type).with_options(opts).parse();
-            assert_eq!(ret.errors.len(), 1);
+            assert_eq!(ret.diagnostics.len(), 1);
             assert_eq!(
-                ret.errors[0].to_string(),
+                ret.diagnostics[0].to_string(),
                 "V8 runtime calls cannot have spread elements as arguments"
             );
         }
         {
             let source = "%DebugPrint('~~')";
             let ret = Parser::new(&allocator, source, source_type).parse();
-            assert_eq!(ret.errors.len(), 1);
-            assert_eq!(ret.errors[0].to_string(), "Unexpected token");
+            assert_eq!(ret.diagnostics.len(), 1);
+            assert_eq!(ret.diagnostics[0].to_string(), "Unexpected token");
         }
         {
             // https://github.com/oxc-project/oxc/issues/12121
@@ -1007,9 +1019,9 @@ mod test {
             // Should not panic whether `allow_v8_intrinsics` is set or not.
             let opts = ParseOptions { allow_v8_intrinsics: true, ..ParseOptions::default() };
             let ret = Parser::new(&allocator, source, source_type).with_options(opts).parse();
-            assert_eq!(ret.errors.len(), 1);
+            assert_eq!(ret.diagnostics.len(), 1);
             let ret = Parser::new(&allocator, source, source_type).parse();
-            assert_eq!(ret.errors.len(), 1);
+            assert_eq!(ret.diagnostics.len(), 1);
         }
     }
 
@@ -1068,13 +1080,13 @@ mod test {
         // U+FFFD as a standalone token — file appears to be binary
         let ret = Parser::new(&allocator, "\u{FFFD}", source_type).parse();
         assert!(ret.program.is_empty());
-        assert_eq!(ret.errors.len(), 1);
-        assert_eq!(ret.errors[0].to_string(), "File appears to be binary.");
+        assert_eq!(ret.diagnostics.len(), 1);
+        assert_eq!(ret.diagnostics[0].to_string(), "File appears to be binary.");
 
         // U+FFFD inside string literals — should parse fine
         let ret = Parser::new(&allocator, "\"oops \u{FFFD} oops\";", source_type).parse();
         assert!(!ret.program.is_empty());
-        assert!(ret.errors.is_empty());
+        assert!(ret.diagnostics.is_empty());
     }
 
     #[test]
@@ -1154,8 +1166,11 @@ mod test {
         // Parsing should fail
         assert!(ret.program.is_empty());
         assert!(ret.panicked);
-        assert_eq!(ret.errors.len(), 1);
-        assert_eq!(ret.errors.first().unwrap().to_string(), "Source length exceeds 4 GiB limit");
+        assert_eq!(ret.diagnostics.len(), 1);
+        assert_eq!(
+            ret.diagnostics.first().unwrap().to_string(),
+            "Source length exceeds 4 GiB limit"
+        );
     }
 
     // Source with length MAX_LEN parses OK.
@@ -1177,7 +1192,7 @@ mod test {
         let allocator = Allocator::default();
         let ret = Parser::new(&allocator, &source, SourceType::default()).parse();
         assert!(!ret.panicked);
-        assert!(ret.errors.is_empty());
+        assert!(ret.diagnostics.is_empty());
         assert_eq!(ret.program.body.len(), 2);
     }
 
@@ -1188,7 +1203,7 @@ mod test {
         let source_type = SourceType::ets();
         let source = "@Component\nstruct MyComponent {\n  @State message: string = 'Hello';\n  build() {\n    Column() {}\n  }\n}";
         let ret = Parser::new(&allocator, source, source_type).parse();
-        assert!(ret.errors.is_empty(), "Errors: {:?}", ret.errors);
+        assert!(ret.diagnostics.is_empty(), "Errors: {:?}", ret.diagnostics);
         assert_eq!(ret.program.body.len(), 1);
         if let Statement::StructStatement(struct_stmt) = &ret.program.body[0] {
             assert_eq!(struct_stmt.id.name.as_str(), "MyComponent");
@@ -1204,7 +1219,7 @@ mod test {
         let source_type = SourceType::ets();
         let source = "@interface MyAnnotation {\n  value: string;\n  count: number;\n}";
         let ret = Parser::new(&allocator, source, source_type).parse();
-        assert!(ret.errors.is_empty(), "Errors: {:?}", ret.errors);
+        assert!(ret.diagnostics.is_empty(), "Errors: {:?}", ret.diagnostics);
         assert_eq!(ret.program.body.len(), 1);
         if let Statement::AnnotationDeclaration(annotation) = &ret.program.body[0] {
             assert_eq!(annotation.id.name.as_str(), "MyAnnotation");
@@ -1221,7 +1236,7 @@ mod test {
         let source =
             "@interface MyAnnotation {\n  value: string = 'default';\n  count: number = 10;\n}";
         let ret = Parser::new(&allocator, source, source_type).parse();
-        assert!(ret.errors.is_empty(), "Errors: {:?}", ret.errors);
+        assert!(ret.diagnostics.is_empty(), "Errors: {:?}", ret.diagnostics);
         assert_eq!(ret.program.body.len(), 1);
         if let Statement::AnnotationDeclaration(annotation) = &ret.program.body[0] {
             assert_eq!(annotation.id.name.as_str(), "MyAnnotation");
@@ -1242,7 +1257,7 @@ mod test {
         let source_type = SourceType::ets();
         let source = "@interface EmptyAnnotation {}";
         let ret = Parser::new(&allocator, source, source_type).parse();
-        assert!(ret.errors.is_empty(), "Errors: {:?}", ret.errors);
+        assert!(ret.diagnostics.is_empty(), "Errors: {:?}", ret.diagnostics);
         assert_eq!(ret.program.body.len(), 1);
         if let Statement::AnnotationDeclaration(annotation) = &ret.program.body[0] {
             assert_eq!(annotation.id.name.as_str(), "EmptyAnnotation");
@@ -1260,7 +1275,7 @@ mod test {
         // Test case where `{` is on a new line after `Column()`
         let source = "struct MyComponent {\n  build() {\n    Column()\n    {\n      Text('Hello')\n    }\n  }\n}";
         let ret = Parser::new(&allocator, source, source_type).parse();
-        assert!(ret.errors.is_empty(), "Errors: {:?}", ret.errors);
+        assert!(ret.diagnostics.is_empty(), "Errors: {:?}", ret.diagnostics);
     }
 
     #[test]
@@ -1271,7 +1286,7 @@ mod test {
         // Test case from user's error report
         let source = "struct MyComponent {\n  build() {\n    Column() {\n      Text(this.lastName + ' ' + this.firstName)\n    }\n  }\n}";
         let ret = Parser::new(&allocator, source, source_type).parse();
-        assert!(ret.errors.is_empty(), "Errors: {:?}", ret.errors);
+        assert!(ret.diagnostics.is_empty(), "Errors: {:?}", ret.diagnostics);
     }
 
     #[test]
@@ -1280,7 +1295,7 @@ mod test {
         let source_type = SourceType::ets();
         let source = "function test() {\n  foo()\n  {\n    bar()\n  }\n}";
         let ret = Parser::new(&allocator, source, source_type).parse();
-        assert!(ret.errors.is_empty(), "Errors: {:?}", ret.errors);
+        assert!(ret.diagnostics.is_empty(), "Errors: {:?}", ret.diagnostics);
 
         let Statement::FunctionDeclaration(func) = &ret.program.body[0] else {
             panic!("Expected FunctionDeclaration");
@@ -1297,7 +1312,7 @@ mod test {
         let source_type = SourceType::ets();
         let source = "function test() {\n  MPPerformance.loadBundleHitCache = false\n  {\n    const memoryCachedBundle = load()\n  }\n}";
         let ret = Parser::new(&allocator, source, source_type).parse();
-        assert!(ret.errors.is_empty(), "Errors: {:?}", ret.errors);
+        assert!(ret.diagnostics.is_empty(), "Errors: {:?}", ret.diagnostics);
 
         let Statement::FunctionDeclaration(func) = &ret.program.body[0] else {
             panic!("Expected FunctionDeclaration");
@@ -1314,7 +1329,7 @@ mod test {
         let source_type = SourceType::ets();
         let source = "function test() {\n  return\n  {\n    value: 1\n  }\n}";
         let ret = Parser::new(&allocator, source, source_type).parse();
-        assert!(ret.errors.is_empty(), "Errors: {:?}", ret.errors);
+        assert!(ret.diagnostics.is_empty(), "Errors: {:?}", ret.diagnostics);
 
         let Statement::FunctionDeclaration(func) = &ret.program.body[0] else {
             panic!("Expected FunctionDeclaration");
@@ -1335,7 +1350,7 @@ mod test {
         let source_type = SourceType::ets();
         let source = "function test() {\n  .fontSize(16)\n}";
         let ret = Parser::new(&allocator, source, source_type).parse();
-        assert!(!ret.errors.is_empty(), "Plain ETS should keep TS syntax errors");
+        assert!(!ret.diagnostics.is_empty(), "Plain ETS should keep TS syntax errors");
     }
 
     #[test]
@@ -1344,7 +1359,7 @@ mod test {
         let source_type = SourceType::ets();
         let source = "@Builder\nfunction test() {\n  Column()\n  {\n    Text('Hello')\n  }\n}";
         let ret = Parser::new(&allocator, source, source_type).parse();
-        assert!(ret.errors.is_empty(), "Errors: {:?}", ret.errors);
+        assert!(ret.diagnostics.is_empty(), "Errors: {:?}", ret.diagnostics);
 
         let Statement::FunctionDeclaration(func) = &ret.program.body[0] else {
             panic!("Expected FunctionDeclaration");
@@ -1364,7 +1379,7 @@ mod test {
         let source_type = SourceType::ets();
         let source = "@LocalBuilder\nfunction test() {\n  Column() { Text('Hello') }\n}";
         let ret = Parser::new(&allocator, source, source_type).parse();
-        assert!(ret.errors.is_empty(), "Errors: {:?}", ret.errors);
+        assert!(ret.diagnostics.is_empty(), "Errors: {:?}", ret.diagnostics);
 
         let Statement::FunctionDeclaration(func) = &ret.program.body[0] else {
             panic!("Expected FunctionDeclaration");
@@ -1384,7 +1399,7 @@ mod test {
         let source_type = SourceType::ets();
         let source = "@AnimatableExtend(Text)\nfunction test() {\n  .fontSize(16)\n}";
         let ret = Parser::new(&allocator, source, source_type).parse();
-        assert!(ret.errors.is_empty(), "Errors: {:?}", ret.errors);
+        assert!(ret.diagnostics.is_empty(), "Errors: {:?}", ret.diagnostics);
 
         let Statement::FunctionDeclaration(func) = &ret.program.body[0] else {
             panic!("Expected FunctionDeclaration");
@@ -1404,7 +1419,7 @@ mod test {
         let source_type = SourceType::ets();
         let source = "struct Test {\n  @Builder\n  itemBuilder() {\n    Column() { Text('Hello') }\n  }\n  @LocalBuilder\n  localItemBuilder() {\n    Row() { Text('World') }\n  }\n}";
         let ret = Parser::new(&allocator, source, source_type).parse();
-        assert!(ret.errors.is_empty(), "Errors: {:?}", ret.errors);
+        assert!(ret.diagnostics.is_empty(), "Errors: {:?}", ret.diagnostics);
 
         let Statement::StructStatement(struct_stmt) = &ret.program.body[0] else {
             panic!("Expected StructStatement");
@@ -1430,7 +1445,7 @@ mod test {
         let source_type = SourceType::ets();
         let source = "struct Test {\n  pageTransition() {\n    PageTransitionEnter() { Text('Hello') }\n  }\n}";
         let ret = Parser::new(&allocator, source, source_type).parse();
-        assert!(ret.errors.is_empty(), "Errors: {:?}", ret.errors);
+        assert!(ret.diagnostics.is_empty(), "Errors: {:?}", ret.diagnostics);
 
         let Statement::StructStatement(struct_stmt) = &ret.program.body[0] else {
             panic!("Expected StructStatement");
@@ -1454,7 +1469,7 @@ mod test {
         let source =
             "class Test {\n  @Builder\n  itemBuilder() {\n    Column() { Text('Hello') }\n  }\n}";
         let ret = Parser::new(&allocator, source, source_type).parse();
-        assert!(ret.errors.is_empty(), "Errors: {:?}", ret.errors);
+        assert!(ret.diagnostics.is_empty(), "Errors: {:?}", ret.diagnostics);
 
         let Statement::ClassDeclaration(class_decl) = &ret.program.body[0] else {
             panic!("Expected ClassDeclaration");
@@ -1478,7 +1493,7 @@ mod test {
         let source_type = SourceType::ets();
         let source = "@Builder\nfunction test() {\n  Column() { Text('Hello') }\n}";
         let ret = Parser::new(&allocator, source, source_type).parse();
-        assert!(ret.errors.is_empty(), "Errors: {:?}", ret.errors);
+        assert!(ret.diagnostics.is_empty(), "Errors: {:?}", ret.diagnostics);
         let Statement::FunctionDeclaration(func) = &ret.program.body[0] else {
             panic!("Expected FunctionDeclaration");
         };
@@ -1501,7 +1516,7 @@ mod test {
         let source_type = SourceType::ets();
         let source = "struct A {\n  aboutToAppear?(): void {\n  }\n}";
         let ret = Parser::new(&allocator, source, source_type).parse();
-        assert!(ret.errors.is_empty(), "Errors: {:?}", ret.errors);
+        assert!(ret.diagnostics.is_empty(), "Errors: {:?}", ret.diagnostics);
         assert_eq!(ret.program.body.len(), 1);
         if let Statement::StructStatement(struct_stmt) = &ret.program.body[0] {
             assert_eq!(struct_stmt.id.name.as_str(), "A");
@@ -1524,7 +1539,7 @@ mod test {
         // Test object literal in return statement with commas on new lines
         let source = "struct Test {\n  test(): void {\n    return {\n      x: 1,\n      y: 2\n    };\n  }\n}";
         let ret = Parser::new(&allocator, source, source_type).parse();
-        assert!(ret.errors.is_empty(), "Errors: {:?}", ret.errors);
+        assert!(ret.diagnostics.is_empty(), "Errors: {:?}", ret.diagnostics);
     }
 
     #[test]
@@ -1554,16 +1569,20 @@ mod test {
         // Common TSX pattern: function call followed by block
         let source = "function Component() { return <div>{value}</div> }";
         let ret = Parser::new(&allocator, source, source_type).parse();
-        assert!(ret.errors.is_empty(), "Should parse TSX without errors: {:?}", ret.errors);
+        assert!(
+            ret.diagnostics.is_empty(),
+            "Should parse TSX without errors: {:?}",
+            ret.diagnostics
+        );
         assert!(!ret.panicked, "Should not panic when parsing TSX");
 
         // Another common pattern: arrow function with block
         let source2 = "const fn = () => { return <div>Hello</div> }";
         let ret2 = Parser::new(&allocator, source2, source_type).parse();
         assert!(
-            ret2.errors.is_empty(),
+            ret2.diagnostics.is_empty(),
             "Should parse TSX arrow function without errors: {:?}",
-            ret2.errors
+            ret2.diagnostics
         );
         assert!(!ret2.panicked, "Should not panic when parsing TSX arrow function");
     }
@@ -1579,7 +1598,7 @@ mod test {
         // Test ArkUI component expression in a DSL-bearing ETS AST context.
         let source = "struct Test {\n  build() {\n    Column() { Text('Hello') }\n  }\n}";
         let ret = Parser::new(&allocator, source, source_type).parse();
-        assert!(ret.errors.is_empty(), "Errors: {:?}", ret.errors);
+        assert!(ret.diagnostics.is_empty(), "Errors: {:?}", ret.diagnostics);
         let Statement::StructStatement(struct_stmt) = &ret.program.body[0] else {
             panic!("Expected StructStatement");
         };
@@ -1602,9 +1621,9 @@ mod test {
         let source = "@Builder\nexport function titleContent() {\n  TitleContent();\n}";
         let ret = Parser::new(&allocator, source, source_type).parse();
         assert!(
-            ret.errors.is_empty(),
+            ret.diagnostics.is_empty(),
             "Should parse exported function with decorator in ArkUI mode. Errors: {:?}",
-            ret.errors
+            ret.diagnostics
         );
         assert_eq!(ret.program.body.len(), 1);
         // Verify it's an export statement
@@ -1621,9 +1640,9 @@ mod test {
         let source = "@Extend(Text)\nfunction memoTextExpand() {\n  .textOverflow({ overflow: TextOverflow.Ellipsis })\n  .maxLines(Constants.MAX_TEXT_LINES)\n}";
         let ret = Parser::new(&allocator, source, source_type).parse();
         assert!(
-            ret.errors.is_empty(),
+            ret.diagnostics.is_empty(),
             "Should parse @Extend function in ArkUI mode. Errors: {:?}",
-            ret.errors
+            ret.diagnostics
         );
         assert_eq!(ret.program.body.len(), 1);
         if let Statement::FunctionDeclaration(func) = &ret.program.body[0] {
@@ -1648,9 +1667,9 @@ mod test {
         let source = "@Extend(Text)\nfunction test() {\n  .fontSize(16)\n}";
         let ret = Parser::new(&allocator, source, source_type).parse();
         assert!(
-            ret.errors.is_empty(),
+            ret.diagnostics.is_empty(),
             "Should parse @Extend function with single chain. Errors: {:?}",
-            ret.errors
+            ret.diagnostics
         );
     }
 
@@ -1662,9 +1681,9 @@ mod test {
         let source = "@Extend(Text)\nfunction test() {\n  .fontSize\n}";
         let ret = Parser::new(&allocator, source, source_type).parse();
         assert!(
-            ret.errors.is_empty(),
+            ret.diagnostics.is_empty(),
             "Should parse @Extend function with property access. Errors: {:?}",
-            ret.errors
+            ret.diagnostics
         );
     }
 
@@ -1677,9 +1696,9 @@ mod test {
         let source = "@Extend(Text)\nfunction superFancyText(size: number) {\n  .fontSize(size)\n  .fancy()\n}";
         let ret = Parser::new(&allocator, source, source_type).parse();
         assert!(
-            ret.errors.is_empty(),
+            ret.diagnostics.is_empty(),
             "Should parse @Extend function with multiline chain. Errors: {:?}",
-            ret.errors
+            ret.diagnostics
         );
         assert_eq!(ret.program.body.len(), 1);
         if let Statement::FunctionDeclaration(func) = &ret.program.body[0] {
@@ -1715,9 +1734,9 @@ mod test {
             "let obj = {\n  toneMapping: {\n    type: 1,\n    exposure: 1.0,\n  } as Type\n};";
         let ret = Parser::new(&allocator, source, source_type).parse();
         assert!(
-            ret.errors.is_empty(),
+            ret.diagnostics.is_empty(),
             "Should parse object literal with type assertion. Errors: {:?}",
-            ret.errors
+            ret.diagnostics
         );
     }
 }

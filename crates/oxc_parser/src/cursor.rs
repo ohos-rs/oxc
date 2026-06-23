@@ -1,6 +1,6 @@
 //! Code related to navigating `Token`s from the lexer
 
-use oxc_allocator::Vec;
+use oxc_allocator::{Box, Vec};
 use oxc_ast::ast::{BindingRestElement, RegExpFlags};
 use oxc_diagnostics::OxcDiagnostic;
 use oxc_span::{GetSpan, Span};
@@ -8,7 +8,7 @@ use oxc_span::{GetSpan, Span};
 use crate::{
     Context, ParserConfig as Config, ParserImpl, diagnostics,
     error_handler::FatalError,
-    lexer::{Kind, LexerCheckpoint, Token},
+    lexer::{Kind, LexerCheckpoint, Token, cold_branch},
 };
 
 #[derive(Clone)]
@@ -143,9 +143,14 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         if self.eat(Kind::Semicolon) || self.can_insert_semicolon() {
             /* no op */
         } else {
-            let span = Span::empty(self.prev_token_end);
-            let error = diagnostics::auto_semicolon_insertion(span);
-            self.set_fatal_error(error);
+            // ASI failure is a syntax error (cold). Build the diagnostic out of line so the
+            // ~232-byte `OxcDiagnostic` buffer does not inflate `asi`'s stack frame on the
+            // common (valid) path.
+            cold_branch(|| {
+                let span = Span::empty(self.prev_token_end);
+                let error = diagnostics::auto_semicolon_insertion(span);
+                self.set_fatal_error(error);
+            });
         }
     }
 
@@ -262,10 +267,15 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         }
     }
 
-    /// Tell lexer to continue reading jsx identifier if the lexer character position is at `-` for `<component-name>`
-    pub(crate) fn continue_lex_jsx_identifier(&mut self) {
+    /// Tell lexer to continue reading jsx identifier if the lexer character position is at `-` for `<component-name>`.
+    ///
+    /// Returns `true` if was continued.
+    pub(crate) fn continue_lex_jsx_identifier(&mut self) -> bool {
         if let Some(token) = self.lexer.continue_lex_jsx_identifier(self.token.start()) {
             self.token = token;
+            true
+        } else {
+            false
         }
     }
 
@@ -392,9 +402,14 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         result
     }
 
-    pub(crate) fn parse_normal_list<F, T>(&mut self, open: Kind, close: Kind, f: F) -> Vec<'a, T>
+    pub(crate) fn parse_normal_list<F, T>(
+        &mut self,
+        open: Kind,
+        close: Kind,
+        mut f: F,
+    ) -> Vec<'a, T>
     where
-        F: Fn(&mut Self) -> T,
+        F: FnMut(&mut Self) -> T,
     {
         let opening_span = self.cur_token().span();
         self.expect(open);
@@ -467,7 +482,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             {
                 return (list, None);
             }
-            if !self.at(separator) {
+            if kind != separator {
                 self.set_fatal_error(diagnostics::expect_closing_or_separator(
                     close.to_str(),
                     separator.to_str(),
@@ -514,7 +529,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             {
                 return None;
             }
-            if !self.at(separator) {
+            if kind != separator {
                 self.set_fatal_error(diagnostics::expect_closing_or_separator(
                     close.to_str(),
                     separator.to_str(),
@@ -540,14 +555,14 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         parse_element: E,
         parse_rest: R,
         rest_last_diagnostic: D,
-    ) -> (Vec<'a, A>, Option<BindingRestElement<'a>>)
+    ) -> (Vec<'a, A>, Option<Box<'a, BindingRestElement<'a>>>)
     where
         E: Fn(&mut Self) -> A,
-        R: Fn(&mut Self) -> BindingRestElement<'a>,
+        R: Fn(&mut Self) -> Box<'a, BindingRestElement<'a>>,
         D: Fn(Span) -> OxcDiagnostic,
     {
         let mut list = self.ast.vec();
-        let mut rest: Option<BindingRestElement<'a>> = None;
+        let mut rest: Option<Box<'a, BindingRestElement<'a>>> = None;
         let mut first = true;
         loop {
             let kind = self.cur_kind();

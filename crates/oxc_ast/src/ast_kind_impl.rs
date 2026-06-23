@@ -358,13 +358,13 @@ impl AstKind<'_> {
     pub fn debug_name(&self) -> std::borrow::Cow<'_, str> {
         use std::borrow::Cow;
 
-        const COMPUTED: Cow<'static, str> = Cow::Borrowed("<computed>");
-        const ANONYMOUS: Cow<'static, str> = Cow::Borrowed("<anonymous>");
-        const DESTRUCTURE: Cow<'static, str> = Cow::Borrowed("<destructure>");
+        const COMPUTED: &str = "<computed>";
+        const ANONYMOUS: &str = "<anonymous>";
+        const DESTRUCTURE: &str = "<destructure>";
 
         #[inline]
         fn or_anonymous<'a>(id: Option<&BindingIdentifier<'a>>) -> Cow<'a, str> {
-            id.map_or_else(|| ANONYMOUS.as_ref(), |id| id.name.as_str()).into()
+            id.map_or(ANONYMOUS, |id| id.name.as_str()).into()
         }
 
         match self {
@@ -396,7 +396,7 @@ impl AstKind<'_> {
             Self::VariableDeclaration(_) => "VariableDeclaration".into(),
             Self::VariableDeclarator(v) => format!(
                 "VariableDeclarator({})",
-                v.id.get_identifier_name().unwrap_or(Ident::from(DESTRUCTURE.as_ref()))
+                v.id.get_identifier_name().map_or(DESTRUCTURE, |name| name.as_str())
             )
             .into(),
 
@@ -434,7 +434,7 @@ impl AstKind<'_> {
                 format!("BinaryExpression({})", b.operator.as_str()).into()
             }
             Self::CallExpression(c) => {
-                format!("CallExpression({})", c.callee_name().unwrap_or(&COMPUTED)).into()
+                format!("CallExpression({})", c.callee_name().unwrap_or(COMPUTED)).into()
             }
             Self::ChainExpression(_) => "ChainExpression".into(),
             Self::ComputedMemberExpression(_) => "ComputedMemberExpression".into(),
@@ -448,7 +448,7 @@ impl AstKind<'_> {
                     }
                     _ => None,
                 };
-                format!("NewExpression({})", callee.unwrap_or(&COMPUTED)).into()
+                format!("NewExpression({})", callee.unwrap_or(COMPUTED)).into()
             }
             Self::ObjectExpression(_) => "ObjectExpression".into(),
             Self::ParenthesizedExpression(_) => "ParenthesizedExpression".into(),
@@ -465,7 +465,7 @@ impl AstKind<'_> {
             Self::PrivateInExpression(_) => "PrivateInExpression".into(),
 
             Self::ObjectProperty(p) => {
-                format!("ObjectProperty({})", p.key.name().unwrap_or(COMPUTED)).into()
+                format!("ObjectProperty({})", p.key.name().as_deref().unwrap_or(COMPUTED)).into()
             }
             Self::ArrayAssignmentTarget(_) => "ArrayAssignmentTarget".into(),
             Self::ObjectAssignmentTarget(_) => "ObjectAssignmentTarget".into(),
@@ -479,7 +479,7 @@ impl AstKind<'_> {
             Self::FormalParameters(_) => "FormalParameters".into(),
             Self::FormalParameter(p) => format!(
                 "FormalParameter({})",
-                p.pattern.get_identifier_name().unwrap_or(Ident::from(DESTRUCTURE.as_ref()))
+                p.pattern.get_identifier_name().map_or(DESTRUCTURE, |name| name.as_str())
             )
             .into(),
             Self::FormalParameterRest(_) => "FormalParameterRest".into(),

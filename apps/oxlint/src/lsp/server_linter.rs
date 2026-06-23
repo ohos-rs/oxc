@@ -2,7 +2,6 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 
 use ignore::gitignore::Gitignore;
-use oxc_data_structures::rope::Rope;
 use rustc_hash::{FxHashMap, FxHashSet};
 use tower_lsp_server::ls_types::{
     CodeActionContext, CodeActionTriggerKind, DiagnosticOptions, DiagnosticServerCapabilities,
@@ -31,6 +30,7 @@ use oxc_language_server::{
 use crate::{
     config_loader::{
         ConfigLoader, build_nested_configs, config_file_names, discover_configs_in_tree,
+        materialize_default_plugins,
     },
     lsp::{
         code_actions::{
@@ -105,13 +105,14 @@ impl ServerLinterBuilder {
         #[cfg(feature = "napi")]
         let loader = loader.with_js_config_loader(self.js_config_loader.as_ref());
 
-        let oxlintrc = match loader.load_root_config(&root_path, config_path.as_ref()) {
+        let mut oxlintrc = match loader.load_root_config(&root_path, config_path.as_ref()) {
             Ok(config) => config,
             Err(e) => {
                 warn!("Failed to load config: {e}");
                 Oxlintrc::default()
             }
         };
+        materialize_default_plugins(&mut oxlintrc);
 
         let mut nested_ignore_patterns = Vec::new();
         let mut extended_paths = FxHashSet::default();
@@ -795,8 +796,6 @@ impl ServerLinter {
             &read_to_string(path).map_err(|e| format!("Failed to read file: {e}"))?
         };
 
-        let rope = &Rope::from_str(source_text);
-
         let mut fs = LspFileSystem::default();
         fs.add_file(path.to_path_buf(), Arc::from(source_text));
 
@@ -809,7 +808,6 @@ impl ServerLinter {
                             message,
                             uri,
                             source_text,
-                            rope,
                             self.rules_customization.as_ref(),
                         )
                     })
@@ -827,12 +825,7 @@ impl ServerLinter {
         if let Some(severity) = self.unused_directives_severity
             && let Some(directives) = self.runner.directives_coordinator().get(path)
         {
-            messages.extend(create_unused_directives_report(
-                &directives,
-                severity,
-                source_text,
-                rope,
-            ));
+            messages.extend(create_unused_directives_report(&directives, severity, source_text));
         }
 
         // Clear any stale directives because they are no longer needed.
@@ -1518,5 +1511,11 @@ mod test {
             }),
         );
         tester.test_and_snapshot_single_file("test.ts");
+    }
+
+    #[test]
+    fn test_issue_22758() {
+        let tester = Tester::new("fixtures/lsp/issue_22758/apps/api", json!({}));
+        tester.test_and_snapshot_single_file("app/auth/guard/firebase.ts");
     }
 }

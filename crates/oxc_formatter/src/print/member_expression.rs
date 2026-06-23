@@ -5,7 +5,7 @@ use crate::{
     JsLabels,
     ast_nodes::{AstNode, AstNodes},
     format_args,
-    formatter::{Buffer, Format, Formatter, prelude::*, trivia::FormatLeadingComments},
+    formatter::{Buffer, Format, JsFormatter, prelude::*, trivia::FormatLeadingComments},
     utils::member_chain::chain_member::FormatComputedMemberExpressionWithoutObject,
     write,
 };
@@ -13,14 +13,14 @@ use crate::{
 use super::FormatWrite;
 
 impl<'a> FormatWrite<'a> for AstNode<'a, ComputedMemberExpression<'a>> {
-    fn write(&self, f: &mut Formatter<'_, 'a>) {
+    fn write(&self, f: &mut JsFormatter<'_, 'a>) {
         write!(f, self.object());
         FormatComputedMemberExpressionWithoutObject(self).fmt(f);
     }
 }
 
 impl<'a> FormatWrite<'a> for AstNode<'a, StaticMemberExpression<'a>> {
-    fn write(&self, f: &mut Formatter<'_, 'a>) {
+    fn write(&self, f: &mut JsFormatter<'_, 'a>) {
         // Note: LeadingDotExpression is now handled separately, so we don't need
         // the base_is_this check here anymore
 
@@ -83,7 +83,7 @@ fn operator_token(optional: bool) -> &'static str {
 fn layout<'a>(
     node: &AstNode<'a, StaticMemberExpression<'a>>,
     is_member_chain: bool,
-    f: &Formatter<'_, 'a>,
+    f: &JsFormatter<'_, 'a>,
 ) -> StaticMemberLayout {
     if f.comments().has_leading_own_line_comment(node.property.span.start) {
         return StaticMemberLayout::BreakAfterObject;
@@ -156,7 +156,7 @@ fn layout<'a>(
 }
 
 impl<'a> FormatWrite<'a> for AstNode<'a, PrivateFieldExpression<'a>> {
-    fn write(&self, f: &mut Formatter<'_, 'a>) {
+    fn write(&self, f: &mut JsFormatter<'_, 'a>) {
         write!(f, [self.object(), self.optional().then_some("?"), ".", self.field()]);
     }
 }

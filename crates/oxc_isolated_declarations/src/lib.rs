@@ -9,10 +9,10 @@ use std::{cell::RefCell, iter::repeat_with, mem};
 
 use rustc_hash::{FxHashMap, FxHashSet};
 
-use oxc_allocator::{Allocator, CloneIn, Vec as ArenaVec};
+use oxc_allocator::{Allocator, CloneIn, GetAllocator, Vec as ArenaVec};
 use oxc_ast::{AstBuilder, NONE, ast::*};
 use oxc_ast_visit::Visit;
-use oxc_diagnostics::OxcDiagnostic;
+use oxc_diagnostics::{Diagnostics, OxcDiagnostic};
 use oxc_span::{GetSpan, SPAN, SourceType};
 use oxc_str::{IdentHashSet, Str};
 
@@ -52,7 +52,7 @@ pub struct IsolatedDeclarationsReturn<'a> {
     /// Generated declaration program (`.d.ts` AST).
     pub program: Program<'a>,
     /// Diagnostics collected while generating declarations.
-    pub errors: Vec<OxcDiagnostic>,
+    pub diagnostics: Diagnostics,
 }
 
 /// Transformer that emits declaration-only AST from TypeScript source AST.
@@ -61,7 +61,7 @@ pub struct IsolatedDeclarations<'a> {
 
     // state
     scope: ScopeTree<'a>,
-    errors: RefCell<Vec<OxcDiagnostic>>,
+    errors: RefCell<Diagnostics>,
 
     // options
     strip_internal: bool,
@@ -79,7 +79,7 @@ impl<'a> IsolatedDeclarations<'a> {
             strip_internal,
             internal_annotations: FxHashSet::default(),
             scope: ScopeTree::new(),
-            errors: RefCell::new(vec![]),
+            errors: RefCell::new(Diagnostics::new()),
         }
     }
 
@@ -104,10 +104,10 @@ impl<'a> IsolatedDeclarations<'a> {
             directives,
             stmts,
         );
-        IsolatedDeclarationsReturn { program, errors: self.take_errors() }
+        IsolatedDeclarationsReturn { program, diagnostics: self.take_errors() }
     }
 
-    fn take_errors(&self) -> Vec<OxcDiagnostic> {
+    fn take_errors(&self) -> Diagnostics {
         mem::take(&mut self.errors.borrow_mut())
     }
 
@@ -277,11 +277,8 @@ impl<'a> IsolatedDeclarations<'a> {
                         ModuleDeclaration::ExportNamedDeclaration(decl) => {
                             if let Some(new_decl) = self.transform_export_named_declaration(decl) {
                                 self.scope.visit_export_named_declaration(&new_decl);
-                                transformed_stmts[idx] = Some(Statement::from(
-                                    ModuleDeclaration::ExportNamedDeclaration(
-                                        self.ast.alloc(new_decl),
-                                    ),
-                                ));
+                                transformed_stmts[idx] =
+                                    Some(Statement::ExportNamedDeclaration(new_decl));
                             } else if decl.declaration.is_none() {
                                 need_empty_export_marker = false;
                                 self.scope.visit_export_named_declaration(decl);
@@ -340,14 +337,13 @@ impl<'a> IsolatedDeclarations<'a> {
                                 transformed_variable_declarator.remove(&declarator.span).unwrap()
                             }),
                         );
-                        let decl = self.ast.variable_declaration(
+                        let decl = self.ast.alloc_variable_declaration(
                             declaration.span,
                             declaration.kind,
                             declarations,
                             self.is_declare(),
                         );
-                        transformed_stmts[idx] =
-                            Some(Statement::VariableDeclaration(self.ast.alloc(decl)));
+                        transformed_stmts[idx] = Some(Statement::VariableDeclaration(decl));
                         transformed_count += 1;
                     }
                 } else if let Some(new_decl) = self.transform_declaration(decl, true) {
@@ -642,5 +638,12 @@ impl<'a> IsolatedDeclarations<'a> {
     fn is_declare(&self) -> bool {
         // If we are in a module block, we don't need to add declare
         !self.scope.is_ts_module_block()
+    }
+}
+
+impl<'a> GetAllocator<'a> for IsolatedDeclarations<'a> {
+    #[inline]
+    fn allocator(&self) -> &'a Allocator {
+        self.ast.allocator()
     }
 }

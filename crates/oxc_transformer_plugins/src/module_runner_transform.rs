@@ -245,7 +245,7 @@ impl<'a> ModuleRunnerTransform<'a> {
     /// Transform `import(source, ...arguments)` to `__vite_ssr_dynamic_import__(source, ...arguments)`.
     #[inline]
     fn transform_dynamic_import(&mut self, expr: &mut Expression<'a>, ctx: &mut TraverseCtx<'a>) {
-        let Expression::ImportExpression(import_expr) = expr.take_in(ctx.ast) else {
+        let Expression::ImportExpression(import_expr) = expr.take_in(ctx) else {
             unreachable!();
         };
 
@@ -327,13 +327,13 @@ impl<'a> ModuleRunnerTransform<'a> {
                 };
 
                 // Reuse the `vue` binding identifier by renaming it to `__vite_ssr_import_0__`
-                let mut local = specifier.unbox().local;
+                let mut local = ctx.alloc(specifier.unbox().local);
                 local.name = self.generate_import_binding_name(ctx);
                 let binding = BoundIdentifier::from_binding_ident(&local);
                 ctx.scoping_mut().set_symbol_name(binding.symbol_id, binding.name);
                 self.import_bindings.insert(binding.symbol_id, (binding, None));
 
-                BindingPattern::BindingIdentifier(ctx.alloc(local))
+                BindingPattern::BindingIdentifier(local)
             } else {
                 let binding = self.generate_import_binding(ctx);
                 arguments.push(self.transform_import_specifiers(&binding, specifiers, ctx));
@@ -436,7 +436,7 @@ impl<'a> ModuleRunnerTransform<'a> {
                     ArrayExpressionElement::from(local_name_expr)
                 }));
                 let arguments = ctx.ast.vec_from_array([
-                    Argument::from(Expression::StringLiteral(ctx.ast.alloc(source))),
+                    Argument::StringLiteral(ctx.ast.alloc(source)),
                     Self::create_imported_names_object(imported_names, ctx),
                 ]);
                 hoist_imports.push(Self::create_import(SPAN, pattern, arguments, ctx));
@@ -883,7 +883,7 @@ mod test {
 
     use oxc_allocator::Allocator;
     use oxc_codegen::{Codegen, CodegenOptions, CommentOptions};
-    use oxc_diagnostics::OxcDiagnostic;
+    use oxc_diagnostics::Diagnostics;
     use oxc_parser::Parser;
     use oxc_semantic::SemanticBuilder;
     use oxc_span::SourceType;
@@ -898,7 +898,7 @@ mod test {
         dynamic_deps: FxHashSet<String>,
     }
 
-    fn transform(source_text: &str, is_jsx: bool) -> Result<TransformReturn, Vec<OxcDiagnostic>> {
+    fn transform(source_text: &str, is_jsx: bool) -> Result<TransformReturn, Diagnostics> {
         let source_type = SourceType::default().with_jsx(is_jsx);
         let allocator = Allocator::default();
         let ret = Parser::new(&allocator, source_text, source_type).parse();
@@ -914,8 +914,8 @@ mod test {
         let (deps, dynamic_deps) =
             ModuleRunnerTransform::new().transform(&allocator, &mut program, scoping);
 
-        if !ret.errors.is_empty() {
-            return Err(ret.errors);
+        if !ret.diagnostics.is_empty() {
+            return Err(ret.diagnostics);
         }
         let code = Codegen::new()
             .with_options(CodegenOptions {
@@ -933,7 +933,7 @@ mod test {
         let source_type = SourceType::default();
         let allocator = Allocator::default();
         let ret = Parser::new(&allocator, source_text, source_type).parse();
-        assert!(ret.errors.is_empty());
+        assert!(ret.diagnostics.is_empty());
 
         Codegen::new()
             .with_options(CodegenOptions {
