@@ -31,6 +31,14 @@ pub struct ParserState<'a> {
     /// Used to determine if a statement needs to be stored for potential reparsing
     /// in unambiguous mode.
     pub encountered_await_identifier: bool,
+
+    /// Nesting depth for contexts whose enclosing AST is ArkUI DSL.
+    ///
+    /// ETS is a TypeScript superset, so expression-level ArkUI syntax must not be
+    /// enabled for every ETS token stream. This is set only while parsing bodies
+    /// that are already known to be ArkUI DSL, such as `struct build()` methods,
+    /// ArkUI-decorated functions, and component children.
+    pub arkui_dsl_depth: u32,
 }
 
 impl ParserState<'_> {
@@ -41,6 +49,7 @@ impl ParserState<'_> {
             trailing_commas: FxHashMap::default(),
             potential_await_reparse: Vec::new(),
             encountered_await_identifier: false,
+            arkui_dsl_depth: 0,
         }
     }
 }

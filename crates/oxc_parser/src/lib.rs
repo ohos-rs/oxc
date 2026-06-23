@@ -892,7 +892,7 @@ mod test {
     use oxc_ast::ast::AnnotationElement;
     use std::path::Path;
 
-    use oxc_ast::ast::{CommentKind, Expression, Statement, StructElement};
+    use oxc_ast::ast::{ClassElement, CommentKind, Expression, Statement, StructElement};
     use oxc_span::GetSpan;
 
     use super::*;
@@ -1275,16 +1275,222 @@ mod test {
     }
 
     #[test]
+    fn ets_plain_function_keeps_ts_call_then_block() {
+        let allocator = Allocator::default();
+        let source_type = SourceType::ets();
+        let source = "function test() {\n  foo()\n  {\n    bar()\n  }\n}";
+        let ret = Parser::new(&allocator, source, source_type).parse();
+        assert!(ret.errors.is_empty(), "Errors: {:?}", ret.errors);
+
+        let Statement::FunctionDeclaration(func) = &ret.program.body[0] else {
+            panic!("Expected FunctionDeclaration");
+        };
+        let body = func.body.as_ref().expect("function should have a body");
+        assert_eq!(body.statements.len(), 2);
+        assert!(matches!(body.statements[0], Statement::ExpressionStatement(_)));
+        assert!(matches!(body.statements[1], Statement::BlockStatement(_)));
+    }
+
+    #[test]
+    fn ets_plain_function_keeps_ts_assignment_then_block() {
+        let allocator = Allocator::default();
+        let source_type = SourceType::ets();
+        let source = "function test() {\n  MPPerformance.loadBundleHitCache = false\n  {\n    const memoryCachedBundle = load()\n  }\n}";
+        let ret = Parser::new(&allocator, source, source_type).parse();
+        assert!(ret.errors.is_empty(), "Errors: {:?}", ret.errors);
+
+        let Statement::FunctionDeclaration(func) = &ret.program.body[0] else {
+            panic!("Expected FunctionDeclaration");
+        };
+        let body = func.body.as_ref().expect("function should have a body");
+        assert_eq!(body.statements.len(), 2);
+        assert!(matches!(body.statements[0], Statement::ExpressionStatement(_)));
+        assert!(matches!(body.statements[1], Statement::BlockStatement(_)));
+    }
+
+    #[test]
+    fn ets_plain_function_keeps_ts_return_newline_before_object() {
+        let allocator = Allocator::default();
+        let source_type = SourceType::ets();
+        let source = "function test() {\n  return\n  {\n    value: 1\n  }\n}";
+        let ret = Parser::new(&allocator, source, source_type).parse();
+        assert!(ret.errors.is_empty(), "Errors: {:?}", ret.errors);
+
+        let Statement::FunctionDeclaration(func) = &ret.program.body[0] else {
+            panic!("Expected FunctionDeclaration");
+        };
+        let body = func.body.as_ref().expect("function should have a body");
+        assert_eq!(body.statements.len(), 2);
+        if let Statement::ReturnStatement(return_stmt) = &body.statements[0] {
+            assert!(return_stmt.argument.is_none());
+        } else {
+            panic!("Expected ReturnStatement");
+        }
+        assert!(matches!(body.statements[1], Statement::BlockStatement(_)));
+    }
+
+    #[test]
+    fn ets_plain_function_does_not_enable_arkui_leading_dot() {
+        let allocator = Allocator::default();
+        let source_type = SourceType::ets();
+        let source = "function test() {\n  .fontSize(16)\n}";
+        let ret = Parser::new(&allocator, source, source_type).parse();
+        assert!(!ret.errors.is_empty(), "Plain ETS should keep TS syntax errors");
+    }
+
+    #[test]
+    fn arkui_builder_function_enables_component_dsl() {
+        let allocator = Allocator::default();
+        let source_type = SourceType::ets();
+        let source = "@Builder\nfunction test() {\n  Column()\n  {\n    Text('Hello')\n  }\n}";
+        let ret = Parser::new(&allocator, source, source_type).parse();
+        assert!(ret.errors.is_empty(), "Errors: {:?}", ret.errors);
+
+        let Statement::FunctionDeclaration(func) = &ret.program.body[0] else {
+            panic!("Expected FunctionDeclaration");
+        };
+        let body = func.body.as_ref().expect("function should have a body");
+        assert_eq!(body.statements.len(), 1);
+        if let Statement::ExpressionStatement(stmt) = &body.statements[0] {
+            assert!(matches!(stmt.expression, Expression::ArkUIComponentExpression(_)));
+        } else {
+            panic!("Expected ExpressionStatement");
+        }
+    }
+
+    #[test]
+    fn arkui_local_builder_function_enables_component_dsl() {
+        let allocator = Allocator::default();
+        let source_type = SourceType::ets();
+        let source = "@LocalBuilder\nfunction test() {\n  Column() { Text('Hello') }\n}";
+        let ret = Parser::new(&allocator, source, source_type).parse();
+        assert!(ret.errors.is_empty(), "Errors: {:?}", ret.errors);
+
+        let Statement::FunctionDeclaration(func) = &ret.program.body[0] else {
+            panic!("Expected FunctionDeclaration");
+        };
+        let body = func.body.as_ref().expect("function should have a body");
+        assert_eq!(body.statements.len(), 1);
+        if let Statement::ExpressionStatement(stmt) = &body.statements[0] {
+            assert!(matches!(stmt.expression, Expression::ArkUIComponentExpression(_)));
+        } else {
+            panic!("Expected ExpressionStatement");
+        }
+    }
+
+    #[test]
+    fn arkui_animatable_extend_function_enables_leading_dot_dsl() {
+        let allocator = Allocator::default();
+        let source_type = SourceType::ets();
+        let source = "@AnimatableExtend(Text)\nfunction test() {\n  .fontSize(16)\n}";
+        let ret = Parser::new(&allocator, source, source_type).parse();
+        assert!(ret.errors.is_empty(), "Errors: {:?}", ret.errors);
+
+        let Statement::FunctionDeclaration(func) = &ret.program.body[0] else {
+            panic!("Expected FunctionDeclaration");
+        };
+        let body = func.body.as_ref().expect("function should have a body");
+        assert_eq!(body.statements.len(), 1);
+        if let Statement::ExpressionStatement(stmt) = &body.statements[0] {
+            assert!(matches!(stmt.expression, Expression::LeadingDotExpression(_)));
+        } else {
+            panic!("Expected ExpressionStatement");
+        }
+    }
+
+    #[test]
+    fn arkui_builder_methods_enable_component_dsl() {
+        let allocator = Allocator::default();
+        let source_type = SourceType::ets();
+        let source = "struct Test {\n  @Builder\n  itemBuilder() {\n    Column() { Text('Hello') }\n  }\n  @LocalBuilder\n  localItemBuilder() {\n    Row() { Text('World') }\n  }\n}";
+        let ret = Parser::new(&allocator, source, source_type).parse();
+        assert!(ret.errors.is_empty(), "Errors: {:?}", ret.errors);
+
+        let Statement::StructStatement(struct_stmt) = &ret.program.body[0] else {
+            panic!("Expected StructStatement");
+        };
+        assert_eq!(struct_stmt.body.body.len(), 2);
+        for element in &struct_stmt.body.body {
+            let StructElement::MethodDefinition(method) = element else {
+                panic!("Expected MethodDefinition");
+            };
+            let body = method.value.body.as_ref().expect("method should have a body");
+            assert_eq!(body.statements.len(), 1);
+            if let Statement::ExpressionStatement(stmt) = &body.statements[0] {
+                assert!(matches!(stmt.expression, Expression::ArkUIComponentExpression(_)));
+            } else {
+                panic!("Expected ExpressionStatement");
+            }
+        }
+    }
+
+    #[test]
+    fn arkui_struct_page_transition_enables_component_dsl() {
+        let allocator = Allocator::default();
+        let source_type = SourceType::ets();
+        let source = "struct Test {\n  pageTransition() {\n    PageTransitionEnter() { Text('Hello') }\n  }\n}";
+        let ret = Parser::new(&allocator, source, source_type).parse();
+        assert!(ret.errors.is_empty(), "Errors: {:?}", ret.errors);
+
+        let Statement::StructStatement(struct_stmt) = &ret.program.body[0] else {
+            panic!("Expected StructStatement");
+        };
+        let StructElement::MethodDefinition(method) = &struct_stmt.body.body[0] else {
+            panic!("Expected MethodDefinition");
+        };
+        let body = method.value.body.as_ref().expect("method should have a body");
+        assert_eq!(body.statements.len(), 1);
+        if let Statement::ExpressionStatement(stmt) = &body.statements[0] {
+            assert!(matches!(stmt.expression, Expression::ArkUIComponentExpression(_)));
+        } else {
+            panic!("Expected ExpressionStatement");
+        }
+    }
+
+    #[test]
+    fn arkui_builder_class_method_enables_component_dsl() {
+        let allocator = Allocator::default();
+        let source_type = SourceType::ets();
+        let source =
+            "class Test {\n  @Builder\n  itemBuilder() {\n    Column() { Text('Hello') }\n  }\n}";
+        let ret = Parser::new(&allocator, source, source_type).parse();
+        assert!(ret.errors.is_empty(), "Errors: {:?}", ret.errors);
+
+        let Statement::ClassDeclaration(class_decl) = &ret.program.body[0] else {
+            panic!("Expected ClassDeclaration");
+        };
+        let ClassElement::MethodDefinition(method) = &class_decl.body.body[0] else {
+            panic!("Expected MethodDefinition");
+        };
+        let body = method.value.body.as_ref().expect("method should have a body");
+        assert_eq!(body.statements.len(), 1);
+        if let Statement::ExpressionStatement(stmt) = &body.statements[0] {
+            assert!(matches!(stmt.expression, Expression::ArkUIComponentExpression(_)));
+        } else {
+            panic!("Expected ExpressionStatement");
+        }
+    }
+
+    #[test]
     fn arkui_component_expression() {
         let allocator = Allocator::default();
         // Use ETS source type for ArkUI
         let source_type = SourceType::ets();
-        let source = "Column() { Text('Hello') }";
-        let expr = Parser::new(&allocator, source, source_type).parse_expression().unwrap();
-        if let Expression::ArkUIComponentExpression(component) = expr {
-            assert_eq!(component.children.len(), 1);
+        let source = "@Builder\nfunction test() {\n  Column() { Text('Hello') }\n}";
+        let ret = Parser::new(&allocator, source, source_type).parse();
+        assert!(ret.errors.is_empty(), "Errors: {:?}", ret.errors);
+        let Statement::FunctionDeclaration(func) = &ret.program.body[0] else {
+            panic!("Expected FunctionDeclaration");
+        };
+        let body = func.body.as_ref().expect("function should have a body");
+        if let Statement::ExpressionStatement(stmt) = &body.statements[0] {
+            if let Expression::ArkUIComponentExpression(component) = &stmt.expression {
+                assert_eq!(component.children.len(), 1);
+            } else {
+                panic!("Expected ArkUIComponentExpression");
+            }
         } else {
-            panic!("Expected ArkUIComponentExpression");
+            panic!("Expected ExpressionStatement");
         }
     }
 
@@ -1370,13 +1576,21 @@ mod test {
         assert!(source_type.is_arkui(), "ETS source type should be ArkUI");
         assert!(source_type.is_typescript(), "ETS should be TypeScript");
 
-        // Test ArkUI component expression in ETS
-        let source = "Column() { Text('Hello') }";
-        let expr = Parser::new(&allocator, source, source_type).parse_expression().unwrap();
-        if let Expression::ArkUIComponentExpression(_) = expr {
-            // Expected
+        // Test ArkUI component expression in a DSL-bearing ETS AST context.
+        let source = "struct Test {\n  build() {\n    Column() { Text('Hello') }\n  }\n}";
+        let ret = Parser::new(&allocator, source, source_type).parse();
+        assert!(ret.errors.is_empty(), "Errors: {:?}", ret.errors);
+        let Statement::StructStatement(struct_stmt) = &ret.program.body[0] else {
+            panic!("Expected StructStatement");
+        };
+        let StructElement::MethodDefinition(method) = &struct_stmt.body.body[0] else {
+            panic!("Expected MethodDefinition");
+        };
+        let body = method.value.body.as_ref().expect("method should have a body");
+        if let Statement::ExpressionStatement(stmt) = &body.statements[0] {
+            assert!(matches!(stmt.expression, Expression::ArkUIComponentExpression(_)));
         } else {
-            panic!("ETS should parse ArkUI component expressions");
+            panic!("Expected ExpressionStatement");
         }
     }
 

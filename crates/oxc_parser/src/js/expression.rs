@@ -203,7 +203,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
     fn parse_primary_expression(&mut self) -> Expression<'a> {
         // Handle ArkUI expressions starting with dots (e.g., in object literals or function bodies)
         // Example: { focused: { .backgroundColor('#ffffeef0') } }
-        if self.source_type.is_arkui() && self.at(Kind::Dot) {
+        if self.source_type.is_arkui() && self.is_in_arkui_dsl_context() && self.at(Kind::Dot) {
             return self.parse_leading_dot_expression();
         }
 
@@ -302,7 +302,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         let empty_arguments = self.ast.vec(); // LeadingDotExpression should have empty arguments
 
         if self.source_type.is_arkui()
-            && self.ctx.has_return()
+            && self.is_in_arkui_dsl_context()
             && (self.at(Kind::Dot) || self.at(Kind::LParen) || self.at(Kind::LBrack))
         {
             // Parse the entire chain starting from the leading dot
@@ -1354,9 +1354,9 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         });
         self.expect(Kind::RParen);
 
-        // Check if this is an ArkUI component expression (has children block)
-        // Only parse as ArkUI if this is an ETS file (ArkUI variant)
-        if self.source_type.is_arkui() && self.at(Kind::LCurly) {
+        // Check if this is an ArkUI component expression (has children block).
+        // ETS stays on the TS path unless the enclosing AST is known to be ArkUI DSL.
+        if self.source_type.is_arkui() && self.is_in_arkui_dsl_context() && self.at(Kind::LCurly) {
             // This is an ArkUI component expression
             return self.parse_arkui_component_expression_after_args(
                 lhs_span,

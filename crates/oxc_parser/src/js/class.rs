@@ -600,11 +600,23 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         modifiers: &Modifiers,
         decorators: Vec<'a, Decorator<'a>>,
     ) -> ClassElement<'a> {
-        let value = self.parse_method(
-            modifiers.contains(ModifierKind::Async),
-            generator,
-            FunctionKind::ClassMethod,
-        );
+        let is_arkui_dsl_method =
+            self.source_type.is_arkui() && Self::decorators_enable_arkui_dsl(decorators.as_slice());
+        let value = if is_arkui_dsl_method {
+            self.in_arkui_dsl_context(|p| {
+                p.parse_method(
+                    modifiers.contains(ModifierKind::Async),
+                    generator,
+                    FunctionKind::ClassMethod,
+                )
+            })
+        } else {
+            self.parse_method(
+                modifiers.contains(ModifierKind::Async),
+                generator,
+                FunctionKind::ClassMethod,
+            )
+        };
         let method_definition = self.ast.alloc_method_definition(
             self.end_span(span),
             r#type,

@@ -1,5 +1,6 @@
-use oxc_codegen::CodegenOptions;
-use oxc_parser::ParseOptions;
+use oxc_allocator::Allocator;
+use oxc_codegen::{Codegen, CodegenOptions};
+use oxc_parser::{ParseOptions, Parser};
 use oxc_span::SourceType;
 
 use crate::{
@@ -70,6 +71,19 @@ fn arkui() {
         default_options(),
     );
     test_options_with_source_type(expected, expected, source_type, default_options());
+}
+
+#[test]
+fn arkui_chain_codegen_omits_internal_receiver() {
+    let allocator = Allocator::default();
+    let source_type = SourceType::default().with_typescript(true).with_arkui(true);
+    let source = "@Builder\nfunction test() {\n\tButton('Click').onClick(() => {})\n}\n";
+    let ret = Parser::new(&allocator, source, source_type).parse();
+    assert!(ret.errors.is_empty(), "Parse errors: {:?}", ret.errors);
+
+    let code = Codegen::new().with_options(default_options()).build(&ret.program).code;
+    assert!(code.contains(".onClick(() => {})"), "{code}");
+    assert!(!code.contains(".this."), "{code}");
 }
 
 #[test]

@@ -157,9 +157,9 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         if matches!(kind, Kind::Semicolon | Kind::RCurly | Kind::Eof) {
             return true;
         }
-        // In ArkUI function bodies, allow ASI before a dot (even on the same line)
+        // In ArkUI DSL bodies, allow ASI before a dot (even on the same line)
         // to allow separate LeadingDotExpression statements
-        if self.source_type.is_arkui() && self.ctx.has_return() && kind == Kind::Dot {
+        if self.source_type.is_arkui() && self.is_in_arkui_dsl_context() && kind == Kind::Dot {
             return true;
         }
         // Allow ASI on newline, but not if the current token is a comma, colon, closing bracket/paren,
@@ -170,14 +170,9 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         // - Array elements followed by commas on new lines
         // - Expressions followed by closing brackets/parens (they're part of the expression)
         // - Object literals in return statements (e.g., `return { x: 1 }`)
-        // - ArkUI component expressions (e.g., `Column() { ... }`) - the expression parser handles this
         // In delimited lists (object literals, arrays, etc.), commas are separators
         // and should be consumed by the list parser, not by ASI.
         if token.is_on_new_line() {
-            if self.source_type.is_arkui() && kind == Kind::LCurly {
-                // In ArkUI, `Column() { ... }` can span lines, so avoid inserting ASI before `{`.
-                return false;
-            }
             return !matches!(kind, Kind::Comma | Kind::Colon | Kind::RBrack | Kind::RParen);
         }
         false

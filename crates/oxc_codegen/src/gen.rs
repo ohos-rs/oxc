@@ -2878,8 +2878,20 @@ impl GenExpr for ArkUIComponentExpression<'_> {
             for chain_expr in &self.chain_expressions {
                 p.print_soft_newline();
                 p.print_indent();
-                p.print_ascii_byte(b'.');
-                chain_expr.callee.print_expr(p, Precedence::Postfix, Context::empty());
+                if let Expression::StaticMemberExpression(member) = &chain_expr.callee {
+                    if member.optional {
+                        p.print_str("?.");
+                    } else {
+                        p.print_ascii_byte(b'.');
+                    }
+                    member.property.print(p, ctx);
+                } else {
+                    p.print_ascii_byte(b'.');
+                    chain_expr.callee.print_expr(p, Precedence::Postfix, Context::empty());
+                }
+                if let Some(type_arguments) = &chain_expr.type_arguments {
+                    type_arguments.print(p, ctx);
+                }
                 p.print_arguments(chain_expr.span, &chain_expr.arguments, ctx);
             }
         });

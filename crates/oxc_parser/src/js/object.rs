@@ -24,7 +24,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
         // Check if this is an ArkUI object literal with expression statements (e.g., { .backgroundColor(...) })
         // In ArkUI, object literals can contain expression statements starting with dots
-        if self.source_type.is_arkui() && self.at(Kind::Dot) {
+        if self.source_type.is_arkui() && self.is_in_arkui_dsl_context() && self.at(Kind::Dot) {
             // Parse as ArkUI object literal with expression statements
             return self.parse_arkui_object_expression_with_statements(span, opening_span);
         }
@@ -221,7 +221,10 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
         // Check if the value is an ArkUI object literal with leading-dot expressions
         // Example: normal: { .borderRadius(20) .borderWidth(1) }
-        let value = if self.source_type.is_arkui() && self.at(Kind::LCurly) {
+        let value = if self.source_type.is_arkui()
+            && self.is_in_arkui_dsl_context()
+            && self.at(Kind::LCurly)
+        {
             // Check if after the opening brace, there's a dot
             // We'll parse the opening brace and then check
             let obj_span = self.start_span();
