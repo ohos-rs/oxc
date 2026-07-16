@@ -334,17 +334,20 @@ pub(crate) enum AncestorType {
     StructStatementDecorators = 310,
     StructStatementId = 311,
     StructStatementTypeParameters = 312,
-    StructStatementBody = 313,
-    StructBodyBody = 314,
-    ArkUIComponentExpressionCallee = 315,
-    ArkUIComponentExpressionTypeArguments = 316,
-    ArkUIComponentExpressionArguments = 317,
-    ArkUIComponentExpressionChildren = 318,
-    ArkUIComponentExpressionChainExpressions = 319,
-    AnnotationDeclarationDecorators = 320,
-    AnnotationDeclarationId = 321,
-    AnnotationDeclarationBody = 322,
-    AnnotationBodyBody = 323,
+    StructStatementSuperClass = 313,
+    StructStatementSuperTypeArguments = 314,
+    StructStatementImplements = 315,
+    StructStatementBody = 316,
+    StructBodyBody = 317,
+    ArkUIComponentExpressionCallee = 318,
+    ArkUIComponentExpressionTypeArguments = 319,
+    ArkUIComponentExpressionArguments = 320,
+    ArkUIComponentExpressionChildren = 321,
+    ArkUIComponentExpressionChainExpressions = 322,
+    AnnotationDeclarationDecorators = 323,
+    AnnotationDeclarationId = 324,
+    AnnotationDeclarationBody = 325,
+    AnnotationBodyBody = 326,
 }
 
 /// Ancestor type used in AST traversal.
@@ -949,6 +952,12 @@ pub enum Ancestor<'a, 't> {
     StructStatementId(StructStatementWithoutId<'a, 't>) = AncestorType::StructStatementId as u16,
     StructStatementTypeParameters(StructStatementWithoutTypeParameters<'a, 't>) =
         AncestorType::StructStatementTypeParameters as u16,
+    StructStatementSuperClass(StructStatementWithoutSuperClass<'a, 't>) =
+        AncestorType::StructStatementSuperClass as u16,
+    StructStatementSuperTypeArguments(StructStatementWithoutSuperTypeArguments<'a, 't>) =
+        AncestorType::StructStatementSuperTypeArguments as u16,
+    StructStatementImplements(StructStatementWithoutImplements<'a, 't>) =
+        AncestorType::StructStatementImplements as u16,
     StructStatementBody(StructStatementWithoutBody<'a, 't>) =
         AncestorType::StructStatementBody as u16,
     StructBodyBody(StructBodyWithoutBody<'a, 't>) = AncestorType::StructBodyBody as u16,
@@ -1997,6 +2006,9 @@ impl<'a, 't> Ancestor<'a, 't> {
             Self::StructStatementDecorators(_)
                 | Self::StructStatementId(_)
                 | Self::StructStatementTypeParameters(_)
+                | Self::StructStatementSuperClass(_)
+                | Self::StructStatementSuperTypeArguments(_)
+                | Self::StructStatementImplements(_)
                 | Self::StructStatementBody(_)
         )
     }
@@ -2143,6 +2155,7 @@ impl<'a, 't> Ancestor<'a, 't> {
                 | Self::DecoratorExpression(_)
                 | Self::TSExportAssignmentExpression(_)
                 | Self::TSInstantiationExpressionExpression(_)
+                | Self::StructStatementSuperClass(_)
                 | Self::ArkUIComponentExpressionCallee(_)
         )
     }
@@ -2720,6 +2733,9 @@ impl<'a, 't> GetAddress for Ancestor<'a, 't> {
             Self::StructStatementDecorators(a) => a.address(),
             Self::StructStatementId(a) => a.address(),
             Self::StructStatementTypeParameters(a) => a.address(),
+            Self::StructStatementSuperClass(a) => a.address(),
+            Self::StructStatementSuperTypeArguments(a) => a.address(),
+            Self::StructStatementImplements(a) => a.address(),
             Self::StructStatementBody(a) => a.address(),
             Self::StructBodyBody(a) => a.address(),
             Self::ArkUIComponentExpressionCallee(a) => a.address(),
@@ -19328,7 +19344,14 @@ pub(crate) const OFFSET_STRUCT_STATEMENT_DECORATORS: usize =
 pub(crate) const OFFSET_STRUCT_STATEMENT_ID: usize = offset_of!(StructStatement, id);
 pub(crate) const OFFSET_STRUCT_STATEMENT_TYPE_PARAMETERS: usize =
     offset_of!(StructStatement, type_parameters);
+pub(crate) const OFFSET_STRUCT_STATEMENT_SUPER_CLASS: usize =
+    offset_of!(StructStatement, super_class);
+pub(crate) const OFFSET_STRUCT_STATEMENT_SUPER_TYPE_ARGUMENTS: usize =
+    offset_of!(StructStatement, super_type_arguments);
+pub(crate) const OFFSET_STRUCT_STATEMENT_IMPLEMENTS: usize =
+    offset_of!(StructStatement, implements);
 pub(crate) const OFFSET_STRUCT_STATEMENT_BODY: usize = offset_of!(StructStatement, body);
+pub(crate) const OFFSET_STRUCT_STATEMENT_ABSTRACT: usize = offset_of!(StructStatement, r#abstract);
 pub(crate) const OFFSET_STRUCT_STATEMENT_DECLARE: usize = offset_of!(StructStatement, declare);
 pub(crate) const OFFSET_STRUCT_STATEMENT_SCOPE_ID: usize = offset_of!(StructStatement, scope_id);
 
@@ -19369,11 +19392,40 @@ impl<'a, 't> StructStatementWithoutDecorators<'a, 't> {
     }
 
     #[inline]
+    pub fn super_class(self) -> &'t Option<Expression<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_SUPER_CLASS)
+                as *const Option<Expression<'a>>)
+        }
+    }
+
+    #[inline]
+    pub fn super_type_arguments(self) -> &'t Option<Box<'a, TSTypeParameterInstantiation<'a>>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_SUPER_TYPE_ARGUMENTS)
+                as *const Option<Box<'a, TSTypeParameterInstantiation<'a>>>)
+        }
+    }
+
+    #[inline]
+    pub fn implements(self) -> &'t Vec<'a, TSClassImplements<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_IMPLEMENTS)
+                as *const Vec<'a, TSClassImplements<'a>>)
+        }
+    }
+
+    #[inline]
     pub fn body(self) -> &'t Box<'a, StructBody<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_BODY)
                 as *const Box<'a, StructBody<'a>>)
         }
+    }
+
+    #[inline]
+    pub fn r#abstract(self) -> &'t bool {
+        unsafe { &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_ABSTRACT) as *const bool) }
     }
 
     #[inline]
@@ -19434,11 +19486,40 @@ impl<'a, 't> StructStatementWithoutId<'a, 't> {
     }
 
     #[inline]
+    pub fn super_class(self) -> &'t Option<Expression<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_SUPER_CLASS)
+                as *const Option<Expression<'a>>)
+        }
+    }
+
+    #[inline]
+    pub fn super_type_arguments(self) -> &'t Option<Box<'a, TSTypeParameterInstantiation<'a>>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_SUPER_TYPE_ARGUMENTS)
+                as *const Option<Box<'a, TSTypeParameterInstantiation<'a>>>)
+        }
+    }
+
+    #[inline]
+    pub fn implements(self) -> &'t Vec<'a, TSClassImplements<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_IMPLEMENTS)
+                as *const Vec<'a, TSClassImplements<'a>>)
+        }
+    }
+
+    #[inline]
     pub fn body(self) -> &'t Box<'a, StructBody<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_BODY)
                 as *const Box<'a, StructBody<'a>>)
         }
+    }
+
+    #[inline]
+    pub fn r#abstract(self) -> &'t bool {
+        unsafe { &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_ABSTRACT) as *const bool) }
     }
 
     #[inline]
@@ -19499,11 +19580,40 @@ impl<'a, 't> StructStatementWithoutTypeParameters<'a, 't> {
     }
 
     #[inline]
+    pub fn super_class(self) -> &'t Option<Expression<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_SUPER_CLASS)
+                as *const Option<Expression<'a>>)
+        }
+    }
+
+    #[inline]
+    pub fn super_type_arguments(self) -> &'t Option<Box<'a, TSTypeParameterInstantiation<'a>>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_SUPER_TYPE_ARGUMENTS)
+                as *const Option<Box<'a, TSTypeParameterInstantiation<'a>>>)
+        }
+    }
+
+    #[inline]
+    pub fn implements(self) -> &'t Vec<'a, TSClassImplements<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_IMPLEMENTS)
+                as *const Vec<'a, TSClassImplements<'a>>)
+        }
+    }
+
+    #[inline]
     pub fn body(self) -> &'t Box<'a, StructBody<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_BODY)
                 as *const Box<'a, StructBody<'a>>)
         }
+    }
+
+    #[inline]
+    pub fn r#abstract(self) -> &'t bool {
+        unsafe { &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_ABSTRACT) as *const bool) }
     }
 
     #[inline]
@@ -19521,6 +19631,288 @@ impl<'a, 't> StructStatementWithoutTypeParameters<'a, 't> {
 }
 
 impl<'a, 't> GetAddress for StructStatementWithoutTypeParameters<'a, 't> {
+    #[inline]
+    fn address(&self) -> Address {
+        unsafe { Address::from_ptr(self.0) }
+    }
+}
+
+#[repr(transparent)]
+#[derive(Clone, Copy, Debug)]
+pub struct StructStatementWithoutSuperClass<'a, 't>(
+    pub(crate) *const StructStatement<'a>,
+    pub(crate) PhantomData<&'t ()>,
+);
+
+impl<'a, 't> StructStatementWithoutSuperClass<'a, 't> {
+    #[inline]
+    pub fn node_id(self) -> &'t Cell<NodeId> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_NODE_ID) as *const Cell<NodeId>)
+        }
+    }
+
+    #[inline]
+    pub fn span(self) -> &'t Span {
+        unsafe { &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_SPAN) as *const Span) }
+    }
+
+    #[inline]
+    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_DECORATORS)
+                as *const Vec<'a, Decorator<'a>>)
+        }
+    }
+
+    #[inline]
+    pub fn id(self) -> &'t BindingIdentifier<'a> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_ID)
+                as *const BindingIdentifier<'a>)
+        }
+    }
+
+    #[inline]
+    pub fn type_parameters(self) -> &'t Option<Box<'a, TSTypeParameterDeclaration<'a>>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_TYPE_PARAMETERS)
+                as *const Option<Box<'a, TSTypeParameterDeclaration<'a>>>)
+        }
+    }
+
+    #[inline]
+    pub fn super_type_arguments(self) -> &'t Option<Box<'a, TSTypeParameterInstantiation<'a>>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_SUPER_TYPE_ARGUMENTS)
+                as *const Option<Box<'a, TSTypeParameterInstantiation<'a>>>)
+        }
+    }
+
+    #[inline]
+    pub fn implements(self) -> &'t Vec<'a, TSClassImplements<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_IMPLEMENTS)
+                as *const Vec<'a, TSClassImplements<'a>>)
+        }
+    }
+
+    #[inline]
+    pub fn body(self) -> &'t Box<'a, StructBody<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_BODY)
+                as *const Box<'a, StructBody<'a>>)
+        }
+    }
+
+    #[inline]
+    pub fn r#abstract(self) -> &'t bool {
+        unsafe { &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_ABSTRACT) as *const bool) }
+    }
+
+    #[inline]
+    pub fn declare(self) -> &'t bool {
+        unsafe { &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_DECLARE) as *const bool) }
+    }
+
+    #[inline]
+    pub fn scope_id(self) -> &'t Cell<Option<ScopeId>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_SCOPE_ID)
+                as *const Cell<Option<ScopeId>>)
+        }
+    }
+}
+
+impl<'a, 't> GetAddress for StructStatementWithoutSuperClass<'a, 't> {
+    #[inline]
+    fn address(&self) -> Address {
+        unsafe { Address::from_ptr(self.0) }
+    }
+}
+
+#[repr(transparent)]
+#[derive(Clone, Copy, Debug)]
+pub struct StructStatementWithoutSuperTypeArguments<'a, 't>(
+    pub(crate) *const StructStatement<'a>,
+    pub(crate) PhantomData<&'t ()>,
+);
+
+impl<'a, 't> StructStatementWithoutSuperTypeArguments<'a, 't> {
+    #[inline]
+    pub fn node_id(self) -> &'t Cell<NodeId> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_NODE_ID) as *const Cell<NodeId>)
+        }
+    }
+
+    #[inline]
+    pub fn span(self) -> &'t Span {
+        unsafe { &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_SPAN) as *const Span) }
+    }
+
+    #[inline]
+    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_DECORATORS)
+                as *const Vec<'a, Decorator<'a>>)
+        }
+    }
+
+    #[inline]
+    pub fn id(self) -> &'t BindingIdentifier<'a> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_ID)
+                as *const BindingIdentifier<'a>)
+        }
+    }
+
+    #[inline]
+    pub fn type_parameters(self) -> &'t Option<Box<'a, TSTypeParameterDeclaration<'a>>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_TYPE_PARAMETERS)
+                as *const Option<Box<'a, TSTypeParameterDeclaration<'a>>>)
+        }
+    }
+
+    #[inline]
+    pub fn super_class(self) -> &'t Option<Expression<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_SUPER_CLASS)
+                as *const Option<Expression<'a>>)
+        }
+    }
+
+    #[inline]
+    pub fn implements(self) -> &'t Vec<'a, TSClassImplements<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_IMPLEMENTS)
+                as *const Vec<'a, TSClassImplements<'a>>)
+        }
+    }
+
+    #[inline]
+    pub fn body(self) -> &'t Box<'a, StructBody<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_BODY)
+                as *const Box<'a, StructBody<'a>>)
+        }
+    }
+
+    #[inline]
+    pub fn r#abstract(self) -> &'t bool {
+        unsafe { &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_ABSTRACT) as *const bool) }
+    }
+
+    #[inline]
+    pub fn declare(self) -> &'t bool {
+        unsafe { &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_DECLARE) as *const bool) }
+    }
+
+    #[inline]
+    pub fn scope_id(self) -> &'t Cell<Option<ScopeId>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_SCOPE_ID)
+                as *const Cell<Option<ScopeId>>)
+        }
+    }
+}
+
+impl<'a, 't> GetAddress for StructStatementWithoutSuperTypeArguments<'a, 't> {
+    #[inline]
+    fn address(&self) -> Address {
+        unsafe { Address::from_ptr(self.0) }
+    }
+}
+
+#[repr(transparent)]
+#[derive(Clone, Copy, Debug)]
+pub struct StructStatementWithoutImplements<'a, 't>(
+    pub(crate) *const StructStatement<'a>,
+    pub(crate) PhantomData<&'t ()>,
+);
+
+impl<'a, 't> StructStatementWithoutImplements<'a, 't> {
+    #[inline]
+    pub fn node_id(self) -> &'t Cell<NodeId> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_NODE_ID) as *const Cell<NodeId>)
+        }
+    }
+
+    #[inline]
+    pub fn span(self) -> &'t Span {
+        unsafe { &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_SPAN) as *const Span) }
+    }
+
+    #[inline]
+    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_DECORATORS)
+                as *const Vec<'a, Decorator<'a>>)
+        }
+    }
+
+    #[inline]
+    pub fn id(self) -> &'t BindingIdentifier<'a> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_ID)
+                as *const BindingIdentifier<'a>)
+        }
+    }
+
+    #[inline]
+    pub fn type_parameters(self) -> &'t Option<Box<'a, TSTypeParameterDeclaration<'a>>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_TYPE_PARAMETERS)
+                as *const Option<Box<'a, TSTypeParameterDeclaration<'a>>>)
+        }
+    }
+
+    #[inline]
+    pub fn super_class(self) -> &'t Option<Expression<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_SUPER_CLASS)
+                as *const Option<Expression<'a>>)
+        }
+    }
+
+    #[inline]
+    pub fn super_type_arguments(self) -> &'t Option<Box<'a, TSTypeParameterInstantiation<'a>>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_SUPER_TYPE_ARGUMENTS)
+                as *const Option<Box<'a, TSTypeParameterInstantiation<'a>>>)
+        }
+    }
+
+    #[inline]
+    pub fn body(self) -> &'t Box<'a, StructBody<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_BODY)
+                as *const Box<'a, StructBody<'a>>)
+        }
+    }
+
+    #[inline]
+    pub fn r#abstract(self) -> &'t bool {
+        unsafe { &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_ABSTRACT) as *const bool) }
+    }
+
+    #[inline]
+    pub fn declare(self) -> &'t bool {
+        unsafe { &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_DECLARE) as *const bool) }
+    }
+
+    #[inline]
+    pub fn scope_id(self) -> &'t Cell<Option<ScopeId>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_SCOPE_ID)
+                as *const Cell<Option<ScopeId>>)
+        }
+    }
+}
+
+impl<'a, 't> GetAddress for StructStatementWithoutImplements<'a, 't> {
     #[inline]
     fn address(&self) -> Address {
         unsafe { Address::from_ptr(self.0) }
@@ -19569,6 +19961,35 @@ impl<'a, 't> StructStatementWithoutBody<'a, 't> {
             &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_TYPE_PARAMETERS)
                 as *const Option<Box<'a, TSTypeParameterDeclaration<'a>>>)
         }
+    }
+
+    #[inline]
+    pub fn super_class(self) -> &'t Option<Expression<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_SUPER_CLASS)
+                as *const Option<Expression<'a>>)
+        }
+    }
+
+    #[inline]
+    pub fn super_type_arguments(self) -> &'t Option<Box<'a, TSTypeParameterInstantiation<'a>>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_SUPER_TYPE_ARGUMENTS)
+                as *const Option<Box<'a, TSTypeParameterInstantiation<'a>>>)
+        }
+    }
+
+    #[inline]
+    pub fn implements(self) -> &'t Vec<'a, TSClassImplements<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_IMPLEMENTS)
+                as *const Vec<'a, TSClassImplements<'a>>)
+        }
+    }
+
+    #[inline]
+    pub fn r#abstract(self) -> &'t bool {
+        unsafe { &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_ABSTRACT) as *const bool) }
     }
 
     #[inline]
@@ -19634,6 +20055,8 @@ pub(crate) const OFFSET_ARK_UI_COMPONENT_EXPRESSION_ARGUMENTS: usize =
     offset_of!(ArkUIComponentExpression, arguments);
 pub(crate) const OFFSET_ARK_UI_COMPONENT_EXPRESSION_CHILDREN: usize =
     offset_of!(ArkUIComponentExpression, children);
+pub(crate) const OFFSET_ARK_UI_COMPONENT_EXPRESSION_HAS_CHILDREN: usize =
+    offset_of!(ArkUIComponentExpression, has_children);
 pub(crate) const OFFSET_ARK_UI_COMPONENT_EXPRESSION_CHAIN_EXPRESSIONS: usize =
     offset_of!(ArkUIComponentExpression, chain_expressions);
 
@@ -19681,6 +20104,14 @@ impl<'a, 't> ArkUIComponentExpressionWithoutCallee<'a, 't> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_ARK_UI_COMPONENT_EXPRESSION_CHILDREN)
                 as *const Vec<'a, ArkUIChild<'a>>)
+        }
+    }
+
+    #[inline]
+    pub fn has_children(self) -> &'t bool {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_ARK_UI_COMPONENT_EXPRESSION_HAS_CHILDREN)
+                as *const bool)
         }
     }
 
@@ -19748,6 +20179,14 @@ impl<'a, 't> ArkUIComponentExpressionWithoutTypeArguments<'a, 't> {
     }
 
     #[inline]
+    pub fn has_children(self) -> &'t bool {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_ARK_UI_COMPONENT_EXPRESSION_HAS_CHILDREN)
+                as *const bool)
+        }
+    }
+
+    #[inline]
     pub fn chain_expressions(self) -> &'t Vec<'a, CallExpression<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_ARK_UI_COMPONENT_EXPRESSION_CHAIN_EXPRESSIONS)
@@ -19811,6 +20250,14 @@ impl<'a, 't> ArkUIComponentExpressionWithoutArguments<'a, 't> {
     }
 
     #[inline]
+    pub fn has_children(self) -> &'t bool {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_ARK_UI_COMPONENT_EXPRESSION_HAS_CHILDREN)
+                as *const bool)
+        }
+    }
+
+    #[inline]
     pub fn chain_expressions(self) -> &'t Vec<'a, CallExpression<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_ARK_UI_COMPONENT_EXPRESSION_CHAIN_EXPRESSIONS)
@@ -19870,6 +20317,14 @@ impl<'a, 't> ArkUIComponentExpressionWithoutChildren<'a, 't> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_ARK_UI_COMPONENT_EXPRESSION_ARGUMENTS)
                 as *const Vec<'a, Argument<'a>>)
+        }
+    }
+
+    #[inline]
+    pub fn has_children(self) -> &'t bool {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_ARK_UI_COMPONENT_EXPRESSION_HAS_CHILDREN)
+                as *const bool)
         }
     }
 
@@ -19941,6 +20396,14 @@ impl<'a, 't> ArkUIComponentExpressionWithoutChainExpressions<'a, 't> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_ARK_UI_COMPONENT_EXPRESSION_CHILDREN)
                 as *const Vec<'a, ArkUIChild<'a>>)
+        }
+    }
+
+    #[inline]
+    pub fn has_children(self) -> &'t bool {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_ARK_UI_COMPONENT_EXPRESSION_HAS_CHILDREN)
+                as *const bool)
         }
     }
 }

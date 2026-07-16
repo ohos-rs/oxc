@@ -820,6 +820,9 @@ impl GetAddress for StructElement<'_> {
         match self {
             Self::PropertyDefinition(it) => GetAddress::address(it),
             Self::MethodDefinition(it) => GetAddress::address(it),
+            Self::StaticBlock(it) => GetAddress::address(it),
+            Self::TSIndexSignature(it) => GetAddress::address(it),
+            Self::AccessorProperty(it) => GetAddress::address(it),
         }
     }
 }

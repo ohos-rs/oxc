@@ -2235,6 +2235,9 @@ impl GetSpan for StructElement<'_> {
         match self {
             Self::PropertyDefinition(it) => GetSpan::span(&**it),
             Self::MethodDefinition(it) => GetSpan::span(&**it),
+            Self::StaticBlock(it) => GetSpan::span(&**it),
+            Self::TSIndexSignature(it) => GetSpan::span(&**it),
+            Self::AccessorProperty(it) => GetSpan::span(&**it),
         }
     }
 }

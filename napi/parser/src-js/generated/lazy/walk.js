@@ -4838,7 +4838,10 @@ function walkStructStatement(pos, ast, visitors) {
   walkVecDecorator(pos + 16, ast, visitors);
   walkBindingIdentifier(pos + 40, ast, visitors);
   walkOptionBoxTSTypeParameterDeclaration(pos + 72, ast, visitors);
-  walkBoxStructBody(pos + 80, ast, visitors);
+  walkOptionExpression(pos + 80, ast, visitors);
+  walkOptionBoxTSTypeParameterInstantiation(pos + 96, ast, visitors);
+  walkVecTSClassImplements(pos + 104, ast, visitors);
+  walkBoxStructBody(pos + 128, ast, visitors);
 
   if (exit !== null) exit(node);
 }
@@ -4866,6 +4869,15 @@ function walkStructElement(pos, ast, visitors) {
       return;
     case 1:
       walkBoxMethodDefinition(pos + 8, ast, visitors);
+      return;
+    case 2:
+      walkBoxStaticBlock(pos + 8, ast, visitors);
+      return;
+    case 3:
+      walkBoxTSIndexSignature(pos + 8, ast, visitors);
+      return;
+    case 4:
+      walkBoxAccessorProperty(pos + 8, ast, visitors);
       return;
     default:
       throw new Error(`Unexpected discriminant ${ast.buffer[pos]} for StructElement`);

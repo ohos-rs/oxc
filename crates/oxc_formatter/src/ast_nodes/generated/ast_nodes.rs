@@ -10848,6 +10848,9 @@ impl<'a> AstNode<'a, StructStatement<'a>> {
             .type_parameters
             .as_deref()
             .map(|n| n.span().start)
+            .or_else(|| self.inner.super_class.as_ref().map(|n| n.span().start))
+            .or_else(|| self.inner.super_type_arguments.as_deref().map(|n| n.span().start))
+            .or_else(|| self.inner.implements.first().map(|n| n.span().start))
             .or_else(|| Some(self.inner.body.span().start))
             .unwrap_or(0);
         self.allocator.alloc(AstNode {
@@ -10860,7 +10863,15 @@ impl<'a> AstNode<'a, StructStatement<'a>> {
 
     #[inline]
     pub fn type_parameters(&self) -> Option<&AstNode<'a, TSTypeParameterDeclaration<'a>>> {
-        let following_span_start = self.inner.body.span().start;
+        let following_span_start = self
+            .inner
+            .super_class
+            .as_ref()
+            .map(|n| n.span().start)
+            .or_else(|| self.inner.super_type_arguments.as_deref().map(|n| n.span().start))
+            .or_else(|| self.inner.implements.first().map(|n| n.span().start))
+            .or_else(|| Some(self.inner.body.span().start))
+            .unwrap_or(0);
         self.allocator
             .alloc(self.inner.type_parameters.as_ref().map(|inner| AstNode {
                 inner: inner.as_ref(),
@@ -10872,6 +10883,56 @@ impl<'a> AstNode<'a, StructStatement<'a>> {
     }
 
     #[inline]
+    pub fn super_class(&self) -> Option<&AstNode<'a, Expression<'a>>> {
+        let following_span_start = self
+            .inner
+            .super_type_arguments
+            .as_deref()
+            .map(|n| n.span().start)
+            .or_else(|| self.inner.implements.first().map(|n| n.span().start))
+            .or_else(|| Some(self.inner.body.span().start))
+            .unwrap_or(0);
+        self.allocator
+            .alloc(self.inner.super_class.as_ref().map(|inner| AstNode {
+                inner,
+                allocator: self.allocator,
+                parent: AstNodes::StructStatement(transmute_self(self)),
+                following_span_start,
+            }))
+            .as_ref()
+    }
+
+    #[inline]
+    pub fn super_type_arguments(&self) -> Option<&AstNode<'a, TSTypeParameterInstantiation<'a>>> {
+        let following_span_start = self
+            .inner
+            .implements
+            .first()
+            .map(|n| n.span().start)
+            .or_else(|| Some(self.inner.body.span().start))
+            .unwrap_or(0);
+        self.allocator
+            .alloc(self.inner.super_type_arguments.as_ref().map(|inner| AstNode {
+                inner: inner.as_ref(),
+                allocator: self.allocator,
+                parent: AstNodes::StructStatement(transmute_self(self)),
+                following_span_start,
+            }))
+            .as_ref()
+    }
+
+    #[inline]
+    pub fn implements(&self) -> &AstNode<'a, Vec<'a, TSClassImplements<'a>>> {
+        let following_span_start = self.inner.body.span().start;
+        self.allocator.alloc(AstNode {
+            inner: &self.inner.implements,
+            allocator: self.allocator,
+            parent: AstNodes::StructStatement(transmute_self(self)),
+            following_span_start,
+        })
+    }
+
+    #[inline]
     pub fn body(&self) -> &AstNode<'a, StructBody<'a>> {
         let following_span_start = 0;
         self.allocator.alloc(AstNode {
@@ -10880,6 +10941,11 @@ impl<'a> AstNode<'a, StructStatement<'a>> {
             parent: AstNodes::StructStatement(transmute_self(self)),
             following_span_start,
         })
+    }
+
+    #[inline]
+    pub fn r#abstract(&self) -> bool {
+        self.inner.r#abstract
     }
 
     #[inline]
@@ -10939,6 +11005,28 @@ impl<'a> AstNode<'a, StructElement<'a>> {
             }
             StructElement::MethodDefinition(s) => {
                 AstNodes::MethodDefinition(self.allocator.alloc(AstNode {
+                    inner: s.as_ref(),
+                    parent,
+                    allocator: self.allocator,
+                    following_span_start: self.following_span_start,
+                }))
+            }
+            StructElement::StaticBlock(s) => AstNodes::StaticBlock(self.allocator.alloc(AstNode {
+                inner: s.as_ref(),
+                parent,
+                allocator: self.allocator,
+                following_span_start: self.following_span_start,
+            })),
+            StructElement::TSIndexSignature(s) => {
+                AstNodes::TSIndexSignature(self.allocator.alloc(AstNode {
+                    inner: s.as_ref(),
+                    parent,
+                    allocator: self.allocator,
+                    following_span_start: self.following_span_start,
+                }))
+            }
+            StructElement::AccessorProperty(s) => {
+                AstNodes::AccessorProperty(self.allocator.alloc(AstNode {
                     inner: s.as_ref(),
                     parent,
                     allocator: self.allocator,
@@ -11030,6 +11118,11 @@ impl<'a> AstNode<'a, ArkUIComponentExpression<'a>> {
             parent: AstNodes::ArkUIComponentExpression(transmute_self(self)),
             following_span_start,
         })
+    }
+
+    #[inline]
+    pub fn has_children(&self) -> bool {
+        self.inner.has_children
     }
 
     #[inline]

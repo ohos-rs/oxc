@@ -105,6 +105,7 @@ impl Generator for AstBuilderGenerator {
 ///
 /// Contains reference to the struct field, and various other bits of data derived from it.
 #[expect(clippy::struct_field_names)]
+#[derive(Clone)]
 struct Param<'d> {
     /// Struct field which this param is for
     field: &'d FieldDef,
@@ -114,6 +115,8 @@ struct Param<'d> {
     fn_param: TokenStream,
     /// `true` if is a default param (semantic ID)
     is_default: bool,
+    /// `true` if this is an allocator-backed vector with an explicit default.
+    is_vec_default: bool,
     /// `true` if is `NodeId` field
     is_node_id: bool,
     /// * `None` if param is not generic.
@@ -157,59 +160,92 @@ fn generate_builder_methods_for_struct(
     node_id_cell_type_id: TypeId,
     schema: &Schema,
 ) -> TokenStream {
-    let (mut params, generic_params, where_clause, has_default_fields) =
+    let (params, generic_params, where_clause, has_default_fields) =
         get_struct_params(struct_def, node_id_cell_type_id, schema);
-    let (fn_params, fields) = get_struct_fn_params_and_fields(&params, true, schema);
-
-    let (fn_name_postfix, doc_postfix) = if has_default_fields {
-        // Exclude `node_id` from the list of default params (it's always set to `NodeId::DUMMY`)
-        let default_params = params.iter().filter(|param| param.is_default && !param.is_node_id);
-        let fn_name_postfix = format!(
-            "_with_{}",
-            default_params.clone().map(|param| param.field.name()).join("_and_")
-        );
-        let doc_postfix =
-            format!(" with `{}`", default_params.map(|param| param.field.name()).join("` and `"));
-        (fn_name_postfix, doc_postfix)
-    } else {
-        (String::new(), String::new())
-    };
-
-    // Generate builder functions including all fields (inc default fields)
-    let output = generate_builder_methods_for_struct_impl(
-        struct_def,
-        &params,
-        &fn_params,
-        &fields,
-        &generic_params,
-        &where_clause,
-        &fn_name_postfix,
-        &doc_postfix,
-        schema,
-    );
 
     if !has_default_fields {
-        return output;
+        let (fn_params, fields) = get_struct_fn_params_and_fields(&params, true, true, schema);
+        return generate_builder_methods_for_struct_impl(
+            struct_def,
+            &params,
+            &fn_params,
+            &fields,
+            &generic_params,
+            &where_clause,
+            "",
+            "",
+            schema,
+        );
     }
 
-    // Generate builder functions excluding default fields
-    let (fn_params, fields) = get_struct_fn_params_and_fields(&params, false, schema);
-    params.retain(|param| !param.is_default);
-    let mut output2 = generate_builder_methods_for_struct_impl(
-        struct_def,
-        &params,
-        &fn_params,
-        &fields,
-        &generic_params,
-        &where_clause,
-        "",
-        "",
-        schema,
-    );
+    let has_vec_defaults = params.iter().any(|param| param.is_vec_default);
+    let has_regular_defaults =
+        params.iter().any(|param| param.is_default && !param.is_vec_default && !param.is_node_id);
+    let regular_modes: &[bool] = if has_regular_defaults { &[false, true] } else { &[false] };
+    let vec_modes: &[bool] = if has_vec_defaults { &[false, true] } else { &[false] };
+    let mut output = TokenStream::new();
 
-    output2.extend(output);
+    for &include_regular_defaults in regular_modes {
+        for &include_vec_defaults in vec_modes {
+            let (fn_params, fields) = get_struct_fn_params_and_fields(
+                &params,
+                include_regular_defaults,
+                include_vec_defaults,
+                schema,
+            );
+            let method_params = params
+                .iter()
+                .filter(|param| {
+                    !param.is_default
+                        || (param.is_vec_default && include_vec_defaults)
+                        || (!param.is_vec_default && include_regular_defaults)
+                })
+                .cloned()
+                .collect::<Vec<_>>();
 
-    output2
+            let regular_names = method_params
+                .iter()
+                .filter(|param| param.is_default && !param.is_vec_default && !param.is_node_id)
+                .map(|param| param.field.name())
+                .join("_and_");
+            let vec_names = method_params
+                .iter()
+                .filter(|param| param.is_vec_default && !param.is_node_id)
+                .map(|param| param.field.name())
+                .join("_and_");
+            let mut fn_name_postfix = String::new();
+            let mut doc_names = vec![];
+            if !regular_names.is_empty() {
+                fn_name_postfix.push_str("_with_");
+                fn_name_postfix.push_str(&regular_names);
+                doc_names.extend(regular_names.split("_and_"));
+            }
+            if !vec_names.is_empty() {
+                fn_name_postfix.push_str("_with_");
+                fn_name_postfix.push_str(&vec_names);
+                doc_names.extend(vec_names.split("_and_"));
+            }
+            let doc_postfix = if doc_names.is_empty() {
+                String::new()
+            } else {
+                format!(" with `{}`", doc_names.iter().join("` and `"))
+            };
+
+            output.extend(generate_builder_methods_for_struct_impl(
+                struct_def,
+                &method_params,
+                &fn_params,
+                &fields,
+                &generic_params,
+                &where_clause,
+                &fn_name_postfix,
+                &doc_postfix,
+                schema,
+            ));
+        }
+    }
+
+    output
 }
 
 /// Build a pair of builder methods for a struct.
@@ -362,7 +398,11 @@ fn get_struct_params<'s>(
 
             let (fn_param_ty, generic_type) = if is_default {
                 assert!(generic_details.is_none());
-                let ty = type_def.innermost_type(schema).ty(schema);
+                let ty = if matches!(type_def, TypeDef::Vec(_)) {
+                    type_def.ty(schema)
+                } else {
+                    type_def.innermost_type(schema).ty(schema)
+                };
                 (ty, None)
             } else if let Some((generic_ident, generic_type)) = generic_details {
                 let where_clause_part = match generic_type {
@@ -380,7 +420,16 @@ fn get_struct_params<'s>(
             let fn_param = quote!( #field_ident: #fn_param_ty );
 
             let is_node_id = field.type_id == node_id_cell_type_id;
-            Param { field, ident: field_ident, fn_param, is_default, is_node_id, generic_type }
+            let is_vec_default = is_default && matches!(type_def, TypeDef::Vec(_));
+            Param {
+                field,
+                ident: field_ident,
+                fn_param,
+                is_default,
+                is_vec_default,
+                is_node_id,
+                generic_type,
+            }
         })
         .collect();
 
@@ -410,7 +459,8 @@ fn get_struct_params<'s>(
 /// ```
 fn get_struct_fn_params_and_fields(
     params: &[Param],
-    include_default_fields: bool,
+    include_regular_defaults: bool,
+    include_vec_defaults: bool,
     schema: &Schema,
 ) -> (/* function params */ TokenStream, /* fields */ TokenStream) {
     let mut fields = vec![];
@@ -419,7 +469,9 @@ fn get_struct_fn_params_and_fields(
 
         // Special case: `NodeId` always uses `NodeId::DUMMY` and is never a parameter
         if param.is_default || param.is_node_id {
-            if include_default_fields && !param.is_node_id {
+            let include_default =
+                if param.is_vec_default { include_vec_defaults } else { include_regular_defaults };
+            if include_default && !param.is_node_id {
                 // Builder functions which take default fields receive the innermost type as param.
                 // So wrap the param's value in `Cell::new(...)`, or `Some(...)` if necessary.
                 let field_type = param.field.type_def(schema);
@@ -429,7 +481,12 @@ fn get_struct_fn_params_and_fields(
                 return Some(&param.fn_param);
             }
 
-            fields.push(quote!( #param_ident: Default::default() ));
+            let default = if matches!(param.field.type_def(schema), TypeDef::Vec(_)) {
+                quote!(self.vec())
+            } else {
+                quote!(Default::default())
+            };
+            fields.push(quote!( #param_ident: #default ));
             return None;
         }
 
@@ -495,56 +552,74 @@ fn generate_builder_method_for_enum_variant(
         )
     };
 
-    let (mut params, generic_params, where_clause, has_default_fields) =
+    let (params, generic_params, where_clause, _has_default_fields) =
         get_struct_params(struct_def, node_id_cell_type_id, schema);
 
     let fn_name = enum_variant_builder_name(enum_def, variant);
     let variant_ident = variant.ident();
+    let has_vec_defaults = params.iter().any(|param| param.is_vec_default);
+    let has_regular_defaults =
+        params.iter().any(|param| param.is_default && !param.is_vec_default && !param.is_node_id);
+    let regular_modes: &[bool] = if has_regular_defaults { &[false, true] } else { &[false] };
+    let vec_modes: &[bool] = if has_vec_defaults { &[false, true] } else { &[false] };
+    let mut output = TokenStream::new();
 
-    let output = has_default_fields.then(|| {
-        // Exclude `node_id` from the list of default params (it's always set to `NodeId::DUMMY`)
-        let default_params = params.iter().filter(|param| param.is_default && !param.is_node_id);
-        let fn_name_postfix = format!(
-            "_with_{}",
-            default_params.clone().map(|param| param.field.name()).join("_and_")
-        );
-        let doc_postfix =
-            format!(" with `{}`", default_params.map(|param| param.field.name()).join("` and `"));
-        generate_builder_method_for_enum_variant_impl(
-            enum_def,
-            struct_def,
-            &variant_ident,
-            &params,
-            &fn_name,
-            &generic_params,
-            &where_clause,
-            &fn_name_postfix,
-            &doc_postfix,
-            schema,
-            is_boxed,
-        )
-    });
+    for &include_regular_defaults in regular_modes {
+        for &include_vec_defaults in vec_modes {
+            let method_params = params
+                .iter()
+                .filter(|param| {
+                    !param.is_default
+                        || (param.is_vec_default && include_vec_defaults)
+                        || (!param.is_vec_default && include_regular_defaults)
+                })
+                .cloned()
+                .collect::<Vec<_>>();
+            let regular_names = method_params
+                .iter()
+                .filter(|param| param.is_default && !param.is_vec_default && !param.is_node_id)
+                .map(|param| param.field.name())
+                .join("_and_");
+            let vec_names = method_params
+                .iter()
+                .filter(|param| param.is_vec_default && !param.is_node_id)
+                .map(|param| param.field.name())
+                .join("_and_");
+            let mut fn_name_postfix = String::new();
+            let mut doc_names = vec![];
+            if !regular_names.is_empty() {
+                fn_name_postfix.push_str("_with_");
+                fn_name_postfix.push_str(&regular_names);
+                doc_names.extend(regular_names.split("_and_"));
+            }
+            if !vec_names.is_empty() {
+                fn_name_postfix.push_str("_with_");
+                fn_name_postfix.push_str(&vec_names);
+                doc_names.extend(vec_names.split("_and_"));
+            }
+            let doc_postfix = if doc_names.is_empty() {
+                String::new()
+            } else {
+                format!(" with `{}`", doc_names.iter().join("` and `"))
+            };
 
-    params.retain(|param| !param.is_default);
-    let mut output2 = generate_builder_method_for_enum_variant_impl(
-        enum_def,
-        struct_def,
-        &variant_ident,
-        &params,
-        &fn_name,
-        &generic_params,
-        &where_clause,
-        "",
-        "",
-        schema,
-        is_boxed,
-    );
-
-    if let Some(output) = output {
-        output2.extend(output);
+            output.extend(generate_builder_method_for_enum_variant_impl(
+                enum_def,
+                struct_def,
+                &variant_ident,
+                &method_params,
+                &fn_name,
+                &generic_params,
+                &where_clause,
+                &fn_name_postfix,
+                &doc_postfix,
+                schema,
+                is_boxed,
+            ));
+        }
     }
 
-    output2
+    output
 }
 
 fn generate_builder_method_for_enum_variant_impl(

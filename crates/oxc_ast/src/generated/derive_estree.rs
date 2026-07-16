@@ -3297,7 +3297,11 @@ impl ESTree for StructStatement<'_> {
         state.serialize_field("decorators", &self.decorators);
         state.serialize_field("id", &self.id);
         state.serialize_ts_field("typeParameters", &self.type_parameters);
+        state.serialize_field("superClass", &self.super_class);
+        state.serialize_ts_field("superTypeArguments", &self.super_type_arguments);
+        state.serialize_ts_field("implements", &self.implements);
         state.serialize_field("body", &self.body);
+        state.serialize_ts_field("abstract", &self.r#abstract);
         state.serialize_ts_field("declare", &self.declare);
         state.serialize_span(self.span);
         state.end();
@@ -3319,6 +3323,9 @@ impl ESTree for StructElement<'_> {
         match self {
             Self::PropertyDefinition(it) => it.serialize(serializer),
             Self::MethodDefinition(it) => it.serialize(serializer),
+            Self::StaticBlock(it) => it.serialize(serializer),
+            Self::TSIndexSignature(it) => it.serialize(serializer),
+            Self::AccessorProperty(it) => it.serialize(serializer),
         }
     }
 }

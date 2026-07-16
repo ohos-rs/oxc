@@ -4742,6 +4742,7 @@ function deserializeStructStatement(pos) {
       type: "StructStatement",
       decorators: null,
       id: null,
+      superClass: null,
       body: null,
       start: (start = deserializeI32(pos)),
       end: (end = deserializeI32(pos + 4)),
@@ -4749,7 +4750,8 @@ function deserializeStructStatement(pos) {
     };
   node.decorators = deserializeVecDecorator(pos + 16);
   node.id = deserializeBindingIdentifier(pos + 40);
-  node.body = deserializeBoxStructBody(pos + 80);
+  node.superClass = deserializeOptionExpression(pos + 80);
+  node.body = deserializeBoxStructBody(pos + 128);
   return node;
 }
 
@@ -4773,6 +4775,12 @@ function deserializeStructElement(pos) {
       return deserializeBoxPropertyDefinition(pos + 8);
     case 1:
       return deserializeBoxMethodDefinition(pos + 8);
+    case 2:
+      return deserializeBoxStaticBlock(pos + 8);
+    case 3:
+      return deserializeBoxTSIndexSignature(pos + 8);
+    case 4:
+      return deserializeBoxAccessorProperty(pos + 8);
     default:
       throw Error(`Unexpected discriminant ${uint8[pos]} for StructElement`);
   }

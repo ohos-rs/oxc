@@ -537,7 +537,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         // Allow decorators on classes, and on functions/structs in ArkUI mode
         let decorators_allowed = kind == Kind::Class
             || (self.source_type.is_arkui()
-                && (kind == Kind::Struct || self.at_function_with_async()));
+                && (kind == Kind::Struct || kind == Kind::At || self.at_function_with_async()));
         if !decorators_allowed {
             for decorator in &decorators {
                 self.error(diagnostics::decorators_are_not_valid_here(decorator.span));
@@ -614,6 +614,10 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             Kind::Struct if self.source_type.is_arkui() => {
                 let decl = self.parse_struct_declaration(start_span, modifiers, decorators);
                 Declaration::StructStatement(decl)
+            }
+            Kind::At if self.at_arkts_annotation_declaration() => {
+                let decl = self.parse_annotation_declaration(start_span, modifiers, decorators);
+                Declaration::AnnotationDeclaration(decl)
             }
             _ if self.at_function_with_async() => {
                 let declare = modifiers.contains(ModifierKind::Declare);
@@ -804,6 +808,8 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                 Kind::Var | Kind::Let | Kind::Const | Kind::Function | Kind::Class | Kind::Enum => {
                     return true;
                 }
+                Kind::Struct if self.source_type.is_arkui() => return true,
+                Kind::At if self.at_arkts_annotation_declaration() => return true,
                 Kind::Interface | Kind::Type => {
                     self.bump_any();
                     return self.cur_kind().is_binding_identifier()

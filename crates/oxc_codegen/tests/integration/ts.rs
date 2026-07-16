@@ -114,6 +114,58 @@ fn arkui_chain_codegen_omits_internal_receiver() {
 }
 
 #[test]
+fn arkui_regression_codegen_preserves_empty_children_and_generic_chain() {
+    let allocator = Allocator::default();
+    let source_type = SourceType::ets();
+    let source = r#"@Component
+struct Regression {
+  build() {
+    Column() {}
+    Column() {
+      this.a('one')
+      this.b('two', true)
+    }.attribute<number>(1)
+  }
+}"#;
+    let ret = Parser::new(&allocator, source, source_type).parse();
+    assert!(ret.diagnostics.is_empty(), "Parse errors: {:?}", ret.diagnostics);
+
+    let code = Codegen::new().with_options(default_options()).build(&ret.program).code;
+    assert!(code.contains("Column() {"), "empty child block was lost:\n{code}");
+    assert!(code.contains(".attribute<number>(1)"), "generic chain was lost:\n{code}");
+    assert!(code.contains("this.a(\"one\")"), "first regression call was lost:\n{code}");
+    assert!(code.contains("this.b(\"two\", true)"), "second regression call was lost:\n{code}");
+}
+
+#[test]
+fn arkui_struct_and_annotation_codegen() {
+    let allocator = Allocator::default();
+    let source_type = SourceType::ets();
+    let source = r#"export abstract struct Derived<T> extends Base implements First, Second {
+  static { initialize() }
+  readonly [key: string]: unknown
+  accessor current: T
+  constructor(value: T) { this.current = value }
+  abstract render(): void
+}
+export declare @interface Metadata {}"#;
+    let ret = Parser::new(&allocator, source, source_type).parse();
+    assert!(ret.diagnostics.is_empty(), "Parse errors: {:?}", ret.diagnostics);
+
+    let code = Codegen::new().with_options(default_options()).build(&ret.program).code;
+    assert!(
+        code.contains("export abstract struct Derived<T> extends Base implements First, Second"),
+        "struct heritage was lost:\n{code}"
+    );
+    assert!(code.contains("static {"), "static block was lost:\n{code}");
+    assert!(code.contains("readonly [key: string]: unknown"), "index signature was lost:\n{code}");
+    assert!(code.contains("accessor current: T"), "accessor was lost:\n{code}");
+    assert!(code.contains("constructor(value: T)"), "constructor kind was lost:\n{code}");
+    assert!(code.contains("abstract render(): void"), "abstract method was lost:\n{code}");
+    assert!(code.contains("export declare @interface Metadata"), "annotation was lost:\n{code}");
+}
+
+#[test]
 fn tsx() {
     test_tsx("<T,>() => {}", "<T,>() => {};\n");
     test_tsx("<T, B>() => {}", "<\n\tT,\n\tB\n>() => {};\n");

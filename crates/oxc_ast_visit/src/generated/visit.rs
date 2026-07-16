@@ -4350,7 +4350,6 @@ pub mod walk {
         visitor.leave_node(kind);
     }
 
-    #[inline]
     pub fn walk_struct_statement<'a, V: Visit<'a>>(visitor: &mut V, it: &StructStatement<'a>) {
         let kind = AstKind::StructStatement(visitor.alloc(it));
         visitor.enter_node(kind);
@@ -4361,6 +4360,13 @@ pub mod walk {
         if let Some(type_parameters) = &it.type_parameters {
             visitor.visit_ts_type_parameter_declaration(type_parameters);
         }
+        if let Some(super_class) = &it.super_class {
+            visitor.visit_expression(super_class);
+        }
+        if let Some(super_type_arguments) = &it.super_type_arguments {
+            visitor.visit_ts_type_parameter_instantiation(super_type_arguments);
+        }
+        visitor.visit_ts_class_implements_list(&it.implements);
         visitor.visit_struct_body(&it.body);
         visitor.leave_scope();
         visitor.leave_node(kind);
@@ -4381,6 +4387,9 @@ pub mod walk {
         match it {
             StructElement::PropertyDefinition(it) => visitor.visit_property_definition(it),
             StructElement::MethodDefinition(it) => visitor.visit_method_definition(it),
+            StructElement::StaticBlock(it) => visitor.visit_static_block(it),
+            StructElement::TSIndexSignature(it) => visitor.visit_ts_index_signature(it),
+            StructElement::AccessorProperty(it) => visitor.visit_accessor_property(it),
         }
     }
 

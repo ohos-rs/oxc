@@ -515,7 +515,11 @@ impl<C: Config> ParserImpl<'_, C> {
                 Self::can_follow_modifier(next_kind)
             }
             // Rest modifiers cannot cross line
-            _ => Self::can_follow_modifier(next_kind) && !next.is_on_new_line(),
+            _ => {
+                (Self::can_follow_modifier(next_kind)
+                    || self.source_type.is_arkui() && next_kind == Kind::At)
+                    && !next.is_on_new_line()
+            }
         };
         if is_modifier { Some(modifier_kind) } else { None }
     }

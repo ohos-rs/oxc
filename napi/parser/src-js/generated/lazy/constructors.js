@@ -12000,7 +12000,7 @@ export class StructStatement {
     const cached = nodes.get(pos);
     if (cached !== void 0) return cached;
 
-    this.#internal = { pos, ast, $decorators: void 0 };
+    this.#internal = { pos, ast, $decorators: void 0, $implements: void 0 };
     nodes.set(pos, this);
   }
 
@@ -12031,14 +12031,36 @@ export class StructStatement {
     return constructOptionBoxTSTypeParameterDeclaration(internal.pos + 72, internal.ast);
   }
 
+  get superClass() {
+    const internal = this.#internal;
+    return constructOptionExpression(internal.pos + 80, internal.ast);
+  }
+
+  get superTypeArguments() {
+    const internal = this.#internal;
+    return constructOptionBoxTSTypeParameterInstantiation(internal.pos + 96, internal.ast);
+  }
+
+  get implements() {
+    const internal = this.#internal,
+      cached = internal.$implements;
+    if (cached !== void 0) return cached;
+    return (internal.$implements = constructVecTSClassImplements(internal.pos + 104, internal.ast));
+  }
+
   get body() {
     const internal = this.#internal;
-    return constructBoxStructBody(internal.pos + 80, internal.ast);
+    return constructBoxStructBody(internal.pos + 128, internal.ast);
+  }
+
+  get abstract() {
+    const internal = this.#internal;
+    return constructBool(internal.pos + 136, internal.ast);
   }
 
   get declare() {
     const internal = this.#internal;
-    return constructBool(internal.pos + 88, internal.ast);
+    return constructBool(internal.pos + 137, internal.ast);
   }
 
   toJSON() {
@@ -12049,7 +12071,11 @@ export class StructStatement {
       decorators: this.decorators,
       id: this.id,
       typeParameters: this.typeParameters,
+      superClass: this.superClass,
+      superTypeArguments: this.superTypeArguments,
+      implements: this.implements,
       body: this.body,
+      abstract: this.abstract,
       declare: this.declare,
     };
   }
@@ -12115,6 +12141,12 @@ function constructStructElement(pos, ast) {
       return constructBoxPropertyDefinition(pos + 8, ast);
     case 1:
       return constructBoxMethodDefinition(pos + 8, ast);
+    case 2:
+      return constructBoxStaticBlock(pos + 8, ast);
+    case 3:
+      return constructBoxTSIndexSignature(pos + 8, ast);
+    case 4:
+      return constructBoxAccessorProperty(pos + 8, ast);
     default:
       throw new Error(`Unexpected discriminant ${ast.buffer[pos]} for StructElement`);
   }

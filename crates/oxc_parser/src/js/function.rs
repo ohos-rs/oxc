@@ -261,12 +261,13 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         let (this_param, params) = self.parse_formal_parameters(func_kind, param_kind);
         let return_type = if self.is_ts { self.parse_ts_return_type_annotation() } else { None };
         let body = if self.at(Kind::LCurly) || func_kind == FunctionKind::Expression {
-            let is_arkui_dsl_function = self.source_type.is_arkui()
-                && Self::decorators_enable_arkui_dsl(decorators.as_slice());
+            let is_arkui_dsl_function = self.take_next_arkui_dsl_function()
+                || self.source_type.is_arkui()
+                    && self.decorators_enable_arkui_dsl(decorators.as_slice());
             Some(if is_arkui_dsl_function {
                 self.in_arkui_dsl_context(Self::parse_function_body)
             } else {
-                self.parse_function_body()
+                self.without_arkui_dsl_context(Self::parse_function_body)
             })
         } else {
             None

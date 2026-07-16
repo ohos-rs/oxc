@@ -161,6 +161,7 @@ pub fn check_identifier(
     fn is_allowed_context(symbol_id: Option<SymbolId>, ctx: &SemanticBuilder<'_>) -> bool {
         ctx.source_type.is_typescript_definition()
             || is_current_node_ambient_binding(symbol_id, ctx)
+            || matches!(ctx.ancestry().parent_kind(), AstKind::AnnotationDeclaration(_))
     }
 
     match name {

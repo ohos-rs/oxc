@@ -677,7 +677,6 @@ impl<'a> AstBuilder<'a> {
     /// ## Parameters
     /// * `span`: The [`Span`] covering this node
     /// * `type`
-    /// * `decorators`: Decorators on the function (e.g., `@Builder function ...` in ArkUI)
     /// * `id`: The function identifier. [`None`] for anonymous function expressions.
     /// * `generator`: Is this a generator function?
     /// * `async`
@@ -724,9 +723,23 @@ impl<'a> AstBuilder<'a> {
         ))
     }
 
-    /// Build an [`Expression::FunctionExpression`] with decorators.
+    /// Build an [`Expression::FunctionExpression`] with `decorators`.
     ///
     /// This node contains a [`Function`] that will be stored in the memory arena.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `type`
+    /// * `decorators`: Decorators on the function (e.g., `@Builder function ...` in ArkUI)
+    /// * `id`: The function identifier. [`None`] for anonymous function expressions.
+    /// * `generator`: Is this a generator function?
+    /// * `async`
+    /// * `declare`
+    /// * `type_parameters`
+    /// * `this_param`: Declaring `this` in a Function <https://www.typescriptlang.org/docs/handbook/2/functions.html#declaring-this-in-a-function>
+    /// * `params`: Function parameters.
+    /// * `return_type`: The TypeScript return type annotation.
+    /// * `body`: The function body.
     #[inline]
     pub fn expression_function_with_decorators<T1, T2, T3, T4, T5>(
         self,
@@ -773,7 +786,6 @@ impl<'a> AstBuilder<'a> {
     /// ## Parameters
     /// * `span`: The [`Span`] covering this node
     /// * `type`
-    /// * `decorators`: Decorators on the function (e.g., `@Builder function ...` in ArkUI)
     /// * `id`: The function identifier. [`None`] for anonymous function expressions.
     /// * `generator`: Is this a generator function?
     /// * `async`
@@ -829,9 +841,26 @@ impl<'a> AstBuilder<'a> {
         ))
     }
 
-    /// Build an [`Expression::FunctionExpression`] with decorators, `scope_id`, `pure`, and `pife`.
+    /// Build an [`Expression::FunctionExpression`] with `scope_id` and `pure` and `pife` and `decorators`.
     ///
     /// This node contains a [`Function`] that will be stored in the memory arena.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `type`
+    /// * `decorators`: Decorators on the function (e.g., `@Builder function ...` in ArkUI)
+    /// * `id`: The function identifier. [`None`] for anonymous function expressions.
+    /// * `generator`: Is this a generator function?
+    /// * `async`
+    /// * `declare`
+    /// * `type_parameters`
+    /// * `this_param`: Declaring `this` in a Function <https://www.typescriptlang.org/docs/handbook/2/functions.html#declaring-this-in-a-function>
+    /// * `params`: Function parameters.
+    /// * `return_type`: The TypeScript return type annotation.
+    /// * `body`: The function body.
+    /// * `scope_id`
+    /// * `pure`: `true` if the function is marked with a `/*#__NO_SIDE_EFFECTS__*/` comment
+    /// * `pife`: `true` if the function should be marked as "Possibly-Invoked Function Expression" (PIFE).
     #[inline]
     pub fn expression_function_with_scope_id_and_pure_and_pife_with_decorators<T1, T2, T3, T4, T5>(
         self,
@@ -1316,6 +1345,7 @@ impl<'a> AstBuilder<'a> {
     /// * `type_arguments`: Type arguments for generic components (if supported)
     /// * `arguments`: Arguments passed to the component constructor
     /// * `children`: Children of the component (the content inside `{ ... }`)
+    /// * `has_children`: Whether the component call had an explicit child block. This distinguishes
     /// * `chain_expressions`: Chain expressions (like `.onClick(...)`)
     #[inline]
     pub fn expression_ark_ui_component<T1>(
@@ -1325,6 +1355,7 @@ impl<'a> AstBuilder<'a> {
         type_arguments: T1,
         arguments: Vec<'a, Argument<'a>>,
         children: Vec<'a, ArkUIChild<'a>>,
+        has_children: bool,
         chain_expressions: Vec<'a, CallExpression<'a>>,
     ) -> Expression<'a>
     where
@@ -1336,6 +1367,7 @@ impl<'a> AstBuilder<'a> {
             type_arguments,
             arguments,
             children,
+            has_children,
             chain_expressions,
         ))
     }
@@ -4190,7 +4222,6 @@ impl<'a> AstBuilder<'a> {
     /// ## Parameters
     /// * `span`: The [`Span`] covering this node
     /// * `type`
-    /// * `decorators`: Decorators on the function (e.g., `@Builder function ...` in ArkUI)
     /// * `id`: The function identifier. [`None`] for anonymous function expressions.
     /// * `generator`: Is this a generator function?
     /// * `async`
@@ -4237,9 +4268,23 @@ impl<'a> AstBuilder<'a> {
         ))
     }
 
-    /// Build a [`Declaration::FunctionDeclaration`] with decorators.
+    /// Build a [`Declaration::FunctionDeclaration`] with `decorators`.
     ///
     /// This node contains a [`Function`] that will be stored in the memory arena.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `type`
+    /// * `decorators`: Decorators on the function (e.g., `@Builder function ...` in ArkUI)
+    /// * `id`: The function identifier. [`None`] for anonymous function expressions.
+    /// * `generator`: Is this a generator function?
+    /// * `async`
+    /// * `declare`
+    /// * `type_parameters`
+    /// * `this_param`: Declaring `this` in a Function <https://www.typescriptlang.org/docs/handbook/2/functions.html#declaring-this-in-a-function>
+    /// * `params`: Function parameters.
+    /// * `return_type`: The TypeScript return type annotation.
+    /// * `body`: The function body.
     #[inline]
     pub fn declaration_function_with_decorators<T1, T2, T3, T4, T5>(
         self,
@@ -4286,7 +4331,6 @@ impl<'a> AstBuilder<'a> {
     /// ## Parameters
     /// * `span`: The [`Span`] covering this node
     /// * `type`
-    /// * `decorators`: Decorators on the function (e.g., `@Builder function ...` in ArkUI)
     /// * `id`: The function identifier. [`None`] for anonymous function expressions.
     /// * `generator`: Is this a generator function?
     /// * `async`
@@ -4342,9 +4386,26 @@ impl<'a> AstBuilder<'a> {
         ))
     }
 
-    /// Build a [`Declaration::FunctionDeclaration`] with decorators, `scope_id`, `pure`, and `pife`.
+    /// Build a [`Declaration::FunctionDeclaration`] with `scope_id` and `pure` and `pife` and `decorators`.
     ///
     /// This node contains a [`Function`] that will be stored in the memory arena.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `type`
+    /// * `decorators`: Decorators on the function (e.g., `@Builder function ...` in ArkUI)
+    /// * `id`: The function identifier. [`None`] for anonymous function expressions.
+    /// * `generator`: Is this a generator function?
+    /// * `async`
+    /// * `declare`
+    /// * `type_parameters`
+    /// * `this_param`: Declaring `this` in a Function <https://www.typescriptlang.org/docs/handbook/2/functions.html#declaring-this-in-a-function>
+    /// * `params`: Function parameters.
+    /// * `return_type`: The TypeScript return type annotation.
+    /// * `body`: The function body.
+    /// * `scope_id`
+    /// * `pure`: `true` if the function is marked with a `/*#__NO_SIDE_EFFECTS__*/` comment
+    /// * `pife`: `true` if the function should be marked as "Possibly-Invoked Function Expression" (PIFE).
     #[inline]
     pub fn declaration_function_with_scope_id_and_pure_and_pife_with_decorators<
         T1,
@@ -4802,28 +4863,41 @@ impl<'a> AstBuilder<'a> {
     /// * `decorators`: Decorators applied to the struct.
     /// * `id`: Struct identifier, AKA the name
     /// * `type_parameters`: Type parameters (for generic structs, if supported)
+    /// * `super_class`: Super class declared by an `extends` clause.
+    /// * `super_type_arguments`: Type arguments passed to the super class.
+    /// * `implements`: Interfaces declared by an `implements` clause.
     /// * `body`: Struct body containing properties and methods
+    /// * `abstract`: Whether this struct is marked with `abstract`.
     /// * `declare`: Whether this struct is marked with `declare`.
     #[inline]
-    pub fn declaration_struct_statement<T1, T2>(
+    pub fn declaration_struct_statement<T1, T2, T3>(
         self,
         span: Span,
         decorators: Vec<'a, Decorator<'a>>,
         id: BindingIdentifier<'a>,
         type_parameters: T1,
-        body: T2,
+        super_class: Option<Expression<'a>>,
+        super_type_arguments: T2,
+        implements: Vec<'a, TSClassImplements<'a>>,
+        body: T3,
+        r#abstract: bool,
         declare: bool,
     ) -> Declaration<'a>
     where
         T1: IntoIn<'a, Option<Box<'a, TSTypeParameterDeclaration<'a>>>>,
-        T2: IntoIn<'a, Box<'a, StructBody<'a>>>,
+        T2: IntoIn<'a, Option<Box<'a, TSTypeParameterInstantiation<'a>>>>,
+        T3: IntoIn<'a, Box<'a, StructBody<'a>>>,
     {
         Declaration::StructStatement(self.alloc_struct_statement(
             span,
             decorators,
             id,
             type_parameters,
+            super_class,
+            super_type_arguments,
+            implements,
             body,
+            r#abstract,
             declare,
         ))
     }
@@ -4837,30 +4911,43 @@ impl<'a> AstBuilder<'a> {
     /// * `decorators`: Decorators applied to the struct.
     /// * `id`: Struct identifier, AKA the name
     /// * `type_parameters`: Type parameters (for generic structs, if supported)
+    /// * `super_class`: Super class declared by an `extends` clause.
+    /// * `super_type_arguments`: Type arguments passed to the super class.
+    /// * `implements`: Interfaces declared by an `implements` clause.
     /// * `body`: Struct body containing properties and methods
+    /// * `abstract`: Whether this struct is marked with `abstract`.
     /// * `declare`: Whether this struct is marked with `declare`.
     /// * `scope_id`: Id of the scope created by the [`StructStatement`], including type parameters and
     #[inline]
-    pub fn declaration_struct_statement_with_scope_id<T1, T2>(
+    pub fn declaration_struct_statement_with_scope_id<T1, T2, T3>(
         self,
         span: Span,
         decorators: Vec<'a, Decorator<'a>>,
         id: BindingIdentifier<'a>,
         type_parameters: T1,
-        body: T2,
+        super_class: Option<Expression<'a>>,
+        super_type_arguments: T2,
+        implements: Vec<'a, TSClassImplements<'a>>,
+        body: T3,
+        r#abstract: bool,
         declare: bool,
         scope_id: ScopeId,
     ) -> Declaration<'a>
     where
         T1: IntoIn<'a, Option<Box<'a, TSTypeParameterDeclaration<'a>>>>,
-        T2: IntoIn<'a, Box<'a, StructBody<'a>>>,
+        T2: IntoIn<'a, Option<Box<'a, TSTypeParameterInstantiation<'a>>>>,
+        T3: IntoIn<'a, Box<'a, StructBody<'a>>>,
     {
         Declaration::StructStatement(self.alloc_struct_statement_with_scope_id(
             span,
             decorators,
             id,
             type_parameters,
+            super_class,
+            super_type_arguments,
+            implements,
             body,
+            r#abstract,
             declare,
             scope_id,
         ))
@@ -6437,7 +6524,6 @@ impl<'a> AstBuilder<'a> {
     /// ## Parameters
     /// * `span`: The [`Span`] covering this node
     /// * `type`
-    /// * `decorators`: Decorators on the function (e.g., `@Builder function ...` in ArkUI)
     /// * `id`: The function identifier. [`None`] for anonymous function expressions.
     /// * `generator`: Is this a generator function?
     /// * `async`
@@ -6469,54 +6555,11 @@ impl<'a> AstBuilder<'a> {
         T4: IntoIn<'a, Option<Box<'a, TSTypeAnnotation<'a>>>>,
         T5: IntoIn<'a, Option<Box<'a, FunctionBody<'a>>>>,
     {
-        self.function_with_decorators(
-            span,
-            r#type,
-            self.vec(),
-            id,
-            generator,
-            r#async,
-            declare,
-            type_parameters,
-            this_param,
-            params,
-            return_type,
-            body,
-        )
-    }
-
-    /// Build a [`Function`] with decorators.
-    ///
-    /// If you want the built node to be allocated in the memory arena,
-    /// use [`AstBuilder::alloc_function_with_decorators`] instead.
-    #[inline]
-    pub fn function_with_decorators<T1, T2, T3, T4, T5>(
-        self,
-        span: Span,
-        r#type: FunctionType,
-        decorators: Vec<'a, Decorator<'a>>,
-        id: Option<BindingIdentifier<'a>>,
-        generator: bool,
-        r#async: bool,
-        declare: bool,
-        type_parameters: T1,
-        this_param: T2,
-        params: T3,
-        return_type: T4,
-        body: T5,
-    ) -> Function<'a>
-    where
-        T1: IntoIn<'a, Option<Box<'a, TSTypeParameterDeclaration<'a>>>>,
-        T2: IntoIn<'a, Option<Box<'a, TSThisParameter<'a>>>>,
-        T3: IntoIn<'a, Box<'a, FormalParameters<'a>>>,
-        T4: IntoIn<'a, Option<Box<'a, TSTypeAnnotation<'a>>>>,
-        T5: IntoIn<'a, Option<Box<'a, FunctionBody<'a>>>>,
-    {
         Function {
             node_id: Default::default(),
             span,
             r#type,
-            decorators,
+            decorators: self.vec(),
             id,
             generator,
             r#async,
@@ -6540,7 +6583,6 @@ impl<'a> AstBuilder<'a> {
     /// ## Parameters
     /// * `span`: The [`Span`] covering this node
     /// * `type`
-    /// * `decorators`: Decorators on the function (e.g., `@Builder function ...` in ArkUI)
     /// * `id`: The function identifier. [`None`] for anonymous function expressions.
     /// * `generator`: Is this a generator function?
     /// * `async`
@@ -6590,10 +6632,85 @@ impl<'a> AstBuilder<'a> {
         )
     }
 
-    /// Build a [`Function`] with decorators, and store it in the memory arena.
+    /// Build a [`Function`] with `decorators`.
+    ///
+    /// If you want the built node to be allocated in the memory arena,
+    /// use [`AstBuilder::alloc_function_with_decorators`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `type`
+    /// * `decorators`: Decorators on the function (e.g., `@Builder function ...` in ArkUI)
+    /// * `id`: The function identifier. [`None`] for anonymous function expressions.
+    /// * `generator`: Is this a generator function?
+    /// * `async`
+    /// * `declare`
+    /// * `type_parameters`
+    /// * `this_param`: Declaring `this` in a Function <https://www.typescriptlang.org/docs/handbook/2/functions.html#declaring-this-in-a-function>
+    /// * `params`: Function parameters.
+    /// * `return_type`: The TypeScript return type annotation.
+    /// * `body`: The function body.
+    #[inline]
+    pub fn function_with_decorators<T1, T2, T3, T4, T5>(
+        self,
+        span: Span,
+        r#type: FunctionType,
+        decorators: Vec<'a, Decorator<'a>>,
+        id: Option<BindingIdentifier<'a>>,
+        generator: bool,
+        r#async: bool,
+        declare: bool,
+        type_parameters: T1,
+        this_param: T2,
+        params: T3,
+        return_type: T4,
+        body: T5,
+    ) -> Function<'a>
+    where
+        T1: IntoIn<'a, Option<Box<'a, TSTypeParameterDeclaration<'a>>>>,
+        T2: IntoIn<'a, Option<Box<'a, TSThisParameter<'a>>>>,
+        T3: IntoIn<'a, Box<'a, FormalParameters<'a>>>,
+        T4: IntoIn<'a, Option<Box<'a, TSTypeAnnotation<'a>>>>,
+        T5: IntoIn<'a, Option<Box<'a, FunctionBody<'a>>>>,
+    {
+        Function {
+            node_id: Default::default(),
+            span,
+            r#type,
+            decorators,
+            id,
+            generator,
+            r#async,
+            declare,
+            type_parameters: type_parameters.into_in(self.allocator),
+            this_param: this_param.into_in(self.allocator),
+            params: params.into_in(self.allocator),
+            return_type: return_type.into_in(self.allocator),
+            body: body.into_in(self.allocator),
+            scope_id: Default::default(),
+            pure: Default::default(),
+            pife: Default::default(),
+        }
+    }
+
+    /// Build a [`Function`] with `decorators`, and store it in the memory arena.
     ///
     /// Returns a [`Box`] containing the newly-allocated node.
     /// If you want a stack-allocated node, use [`AstBuilder::function_with_decorators`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `type`
+    /// * `decorators`: Decorators on the function (e.g., `@Builder function ...` in ArkUI)
+    /// * `id`: The function identifier. [`None`] for anonymous function expressions.
+    /// * `generator`: Is this a generator function?
+    /// * `async`
+    /// * `declare`
+    /// * `type_parameters`
+    /// * `this_param`: Declaring `this` in a Function <https://www.typescriptlang.org/docs/handbook/2/functions.html#declaring-this-in-a-function>
+    /// * `params`: Function parameters.
+    /// * `return_type`: The TypeScript return type annotation.
+    /// * `body`: The function body.
     #[inline]
     pub fn alloc_function_with_decorators<T1, T2, T3, T4, T5>(
         self,
@@ -6644,7 +6761,6 @@ impl<'a> AstBuilder<'a> {
     /// ## Parameters
     /// * `span`: The [`Span`] covering this node
     /// * `type`
-    /// * `decorators`: Decorators on the function (e.g., `@Builder function ...` in ArkUI)
     /// * `id`: The function identifier. [`None`] for anonymous function expressions.
     /// * `generator`: Is this a generator function?
     /// * `async`
@@ -6682,60 +6798,11 @@ impl<'a> AstBuilder<'a> {
         T4: IntoIn<'a, Option<Box<'a, TSTypeAnnotation<'a>>>>,
         T5: IntoIn<'a, Option<Box<'a, FunctionBody<'a>>>>,
     {
-        self.function_with_scope_id_and_pure_and_pife_with_decorators(
-            span,
-            r#type,
-            self.vec(),
-            id,
-            generator,
-            r#async,
-            declare,
-            type_parameters,
-            this_param,
-            params,
-            return_type,
-            body,
-            scope_id,
-            pure,
-            pife,
-        )
-    }
-
-    /// Build a [`Function`] with decorators, `scope_id`, `pure`, and `pife`.
-    ///
-    /// If you want the built node to be allocated in the memory arena,
-    /// use [`AstBuilder::alloc_function_with_scope_id_and_pure_and_pife_with_decorators`] instead.
-    #[inline]
-    pub fn function_with_scope_id_and_pure_and_pife_with_decorators<T1, T2, T3, T4, T5>(
-        self,
-        span: Span,
-        r#type: FunctionType,
-        decorators: Vec<'a, Decorator<'a>>,
-        id: Option<BindingIdentifier<'a>>,
-        generator: bool,
-        r#async: bool,
-        declare: bool,
-        type_parameters: T1,
-        this_param: T2,
-        params: T3,
-        return_type: T4,
-        body: T5,
-        scope_id: ScopeId,
-        pure: bool,
-        pife: bool,
-    ) -> Function<'a>
-    where
-        T1: IntoIn<'a, Option<Box<'a, TSTypeParameterDeclaration<'a>>>>,
-        T2: IntoIn<'a, Option<Box<'a, TSThisParameter<'a>>>>,
-        T3: IntoIn<'a, Box<'a, FormalParameters<'a>>>,
-        T4: IntoIn<'a, Option<Box<'a, TSTypeAnnotation<'a>>>>,
-        T5: IntoIn<'a, Option<Box<'a, FunctionBody<'a>>>>,
-    {
         Function {
             node_id: Default::default(),
             span,
             r#type,
-            decorators,
+            decorators: self.vec(),
             id,
             generator,
             r#async,
@@ -6759,7 +6826,6 @@ impl<'a> AstBuilder<'a> {
     /// ## Parameters
     /// * `span`: The [`Span`] covering this node
     /// * `type`
-    /// * `decorators`: Decorators on the function (e.g., `@Builder function ...` in ArkUI)
     /// * `id`: The function identifier. [`None`] for anonymous function expressions.
     /// * `generator`: Is this a generator function?
     /// * `async`
@@ -6818,12 +6884,94 @@ impl<'a> AstBuilder<'a> {
         )
     }
 
-    /// Build a [`Function`] with decorators, `scope_id`, `pure`, and `pife`,
-    /// and store it in the memory arena.
+    /// Build a [`Function`] with `scope_id` and `pure` and `pife` and `decorators`.
+    ///
+    /// If you want the built node to be allocated in the memory arena,
+    /// use [`AstBuilder::alloc_function_with_scope_id_and_pure_and_pife_with_decorators`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `type`
+    /// * `decorators`: Decorators on the function (e.g., `@Builder function ...` in ArkUI)
+    /// * `id`: The function identifier. [`None`] for anonymous function expressions.
+    /// * `generator`: Is this a generator function?
+    /// * `async`
+    /// * `declare`
+    /// * `type_parameters`
+    /// * `this_param`: Declaring `this` in a Function <https://www.typescriptlang.org/docs/handbook/2/functions.html#declaring-this-in-a-function>
+    /// * `params`: Function parameters.
+    /// * `return_type`: The TypeScript return type annotation.
+    /// * `body`: The function body.
+    /// * `scope_id`
+    /// * `pure`: `true` if the function is marked with a `/*#__NO_SIDE_EFFECTS__*/` comment
+    /// * `pife`: `true` if the function should be marked as "Possibly-Invoked Function Expression" (PIFE).
+    #[inline]
+    pub fn function_with_scope_id_and_pure_and_pife_with_decorators<T1, T2, T3, T4, T5>(
+        self,
+        span: Span,
+        r#type: FunctionType,
+        decorators: Vec<'a, Decorator<'a>>,
+        id: Option<BindingIdentifier<'a>>,
+        generator: bool,
+        r#async: bool,
+        declare: bool,
+        type_parameters: T1,
+        this_param: T2,
+        params: T3,
+        return_type: T4,
+        body: T5,
+        scope_id: ScopeId,
+        pure: bool,
+        pife: bool,
+    ) -> Function<'a>
+    where
+        T1: IntoIn<'a, Option<Box<'a, TSTypeParameterDeclaration<'a>>>>,
+        T2: IntoIn<'a, Option<Box<'a, TSThisParameter<'a>>>>,
+        T3: IntoIn<'a, Box<'a, FormalParameters<'a>>>,
+        T4: IntoIn<'a, Option<Box<'a, TSTypeAnnotation<'a>>>>,
+        T5: IntoIn<'a, Option<Box<'a, FunctionBody<'a>>>>,
+    {
+        Function {
+            node_id: Default::default(),
+            span,
+            r#type,
+            decorators,
+            id,
+            generator,
+            r#async,
+            declare,
+            type_parameters: type_parameters.into_in(self.allocator),
+            this_param: this_param.into_in(self.allocator),
+            params: params.into_in(self.allocator),
+            return_type: return_type.into_in(self.allocator),
+            body: body.into_in(self.allocator),
+            scope_id: Cell::new(Some(scope_id)),
+            pure,
+            pife,
+        }
+    }
+
+    /// Build a [`Function`] with `scope_id` and `pure` and `pife` and `decorators`, and store it in the memory arena.
     ///
     /// Returns a [`Box`] containing the newly-allocated node.
-    /// If you want a stack-allocated node, use
-    /// [`AstBuilder::function_with_scope_id_and_pure_and_pife_with_decorators`] instead.
+    /// If you want a stack-allocated node, use [`AstBuilder::function_with_scope_id_and_pure_and_pife_with_decorators`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `type`
+    /// * `decorators`: Decorators on the function (e.g., `@Builder function ...` in ArkUI)
+    /// * `id`: The function identifier. [`None`] for anonymous function expressions.
+    /// * `generator`: Is this a generator function?
+    /// * `async`
+    /// * `declare`
+    /// * `type_parameters`
+    /// * `this_param`: Declaring `this` in a Function <https://www.typescriptlang.org/docs/handbook/2/functions.html#declaring-this-in-a-function>
+    /// * `params`: Function parameters.
+    /// * `return_type`: The TypeScript return type annotation.
+    /// * `body`: The function body.
+    /// * `scope_id`
+    /// * `pure`: `true` if the function is marked with a `/*#__NO_SIDE_EFFECTS__*/` comment
+    /// * `pife`: `true` if the function should be marked as "Possibly-Invoked Function Expression" (PIFE).
     #[inline]
     pub fn alloc_function_with_scope_id_and_pure_and_pife_with_decorators<T1, T2, T3, T4, T5>(
         self,
@@ -8216,7 +8364,6 @@ impl<'a> AstBuilder<'a> {
     ///
     /// ## Parameters
     /// * `span`: The [`Span`] covering this node
-    /// * `decorators`: Decorators on the export declaration (e.g., `@Builder export function ...`)
     /// * `declaration`
     /// * `specifiers`
     /// * `source`
@@ -8245,9 +8392,18 @@ impl<'a> AstBuilder<'a> {
         ))
     }
 
-    /// Build a [`ModuleDeclaration::ExportNamedDeclaration`] with decorators.
+    /// Build a [`ModuleDeclaration::ExportNamedDeclaration`] with `decorators`.
     ///
     /// This node contains an [`ExportNamedDeclaration`] that will be stored in the memory arena.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `decorators`: Decorators on the export declaration (e.g., `@Builder export function ...`)
+    /// * `declaration`
+    /// * `specifiers`
+    /// * `source`
+    /// * `export_kind`: `export type { foo }`
+    /// * `with_clause`: Some(vec![]) for empty assertion
     #[inline]
     pub fn module_declaration_export_named_declaration_with_decorators<T1>(
         self,
@@ -8869,7 +9025,6 @@ impl<'a> AstBuilder<'a> {
     ///
     /// ## Parameters
     /// * `span`: The [`Span`] covering this node
-    /// * `decorators`: Decorators on the export declaration (e.g., `@Builder export function ...`)
     /// * `declaration`
     /// * `specifiers`
     /// * `source`
@@ -8888,39 +9043,10 @@ impl<'a> AstBuilder<'a> {
     where
         T1: IntoIn<'a, Option<Box<'a, WithClause<'a>>>>,
     {
-        self.export_named_declaration_with_decorators(
-            span,
-            self.vec(),
-            declaration,
-            specifiers,
-            source,
-            export_kind,
-            with_clause,
-        )
-    }
-
-    /// Build an [`ExportNamedDeclaration`] with decorators.
-    ///
-    /// If you want the built node to be allocated in the memory arena,
-    /// use [`AstBuilder::alloc_export_named_declaration_with_decorators`] instead.
-    #[inline]
-    pub fn export_named_declaration_with_decorators<T1>(
-        self,
-        span: Span,
-        decorators: Vec<'a, Decorator<'a>>,
-        declaration: Option<Declaration<'a>>,
-        specifiers: Vec<'a, ExportSpecifier<'a>>,
-        source: Option<StringLiteral<'a>>,
-        export_kind: ImportOrExportKind,
-        with_clause: T1,
-    ) -> ExportNamedDeclaration<'a>
-    where
-        T1: IntoIn<'a, Option<Box<'a, WithClause<'a>>>>,
-    {
         ExportNamedDeclaration {
             node_id: Default::default(),
             span,
-            decorators,
+            decorators: self.vec(),
             declaration,
             specifiers,
             source,
@@ -8936,7 +9062,6 @@ impl<'a> AstBuilder<'a> {
     ///
     /// ## Parameters
     /// * `span`: The [`Span`] covering this node
-    /// * `decorators`: Decorators on the export declaration (e.g., `@Builder export function ...`)
     /// * `declaration`
     /// * `specifiers`
     /// * `source`
@@ -8968,11 +9093,58 @@ impl<'a> AstBuilder<'a> {
         )
     }
 
-    /// Build an [`ExportNamedDeclaration`] with decorators, and store it in the memory arena.
+    /// Build an [`ExportNamedDeclaration`] with `decorators`.
+    ///
+    /// If you want the built node to be allocated in the memory arena,
+    /// use [`AstBuilder::alloc_export_named_declaration_with_decorators`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `decorators`: Decorators on the export declaration (e.g., `@Builder export function ...`)
+    /// * `declaration`
+    /// * `specifiers`
+    /// * `source`
+    /// * `export_kind`: `export type { foo }`
+    /// * `with_clause`: Some(vec![]) for empty assertion
+    #[inline]
+    pub fn export_named_declaration_with_decorators<T1>(
+        self,
+        span: Span,
+        decorators: Vec<'a, Decorator<'a>>,
+        declaration: Option<Declaration<'a>>,
+        specifiers: Vec<'a, ExportSpecifier<'a>>,
+        source: Option<StringLiteral<'a>>,
+        export_kind: ImportOrExportKind,
+        with_clause: T1,
+    ) -> ExportNamedDeclaration<'a>
+    where
+        T1: IntoIn<'a, Option<Box<'a, WithClause<'a>>>>,
+    {
+        ExportNamedDeclaration {
+            node_id: Default::default(),
+            span,
+            decorators,
+            declaration,
+            specifiers,
+            source,
+            export_kind,
+            with_clause: with_clause.into_in(self.allocator),
+        }
+    }
+
+    /// Build an [`ExportNamedDeclaration`] with `decorators`, and store it in the memory arena.
     ///
     /// Returns a [`Box`] containing the newly-allocated node.
-    /// If you want a stack-allocated node, use
-    /// [`AstBuilder::export_named_declaration_with_decorators`] instead.
+    /// If you want a stack-allocated node, use [`AstBuilder::export_named_declaration_with_decorators`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `decorators`: Decorators on the export declaration (e.g., `@Builder export function ...`)
+    /// * `declaration`
+    /// * `specifiers`
+    /// * `source`
+    /// * `export_kind`: `export type { foo }`
+    /// * `with_clause`: Some(vec![]) for empty assertion
     #[inline]
     pub fn alloc_export_named_declaration_with_decorators<T1>(
         self,
@@ -9122,7 +9294,6 @@ impl<'a> AstBuilder<'a> {
     /// ## Parameters
     /// * `span`: The [`Span`] covering this node
     /// * `type`
-    /// * `decorators`: Decorators on the function (e.g., `@Builder function ...` in ArkUI)
     /// * `id`: The function identifier. [`None`] for anonymous function expressions.
     /// * `generator`: Is this a generator function?
     /// * `async`
@@ -9169,9 +9340,23 @@ impl<'a> AstBuilder<'a> {
         ))
     }
 
-    /// Build an [`ExportDefaultDeclarationKind::FunctionDeclaration`] with decorators.
+    /// Build an [`ExportDefaultDeclarationKind::FunctionDeclaration`] with `decorators`.
     ///
     /// This node contains a [`Function`] that will be stored in the memory arena.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `type`
+    /// * `decorators`: Decorators on the function (e.g., `@Builder function ...` in ArkUI)
+    /// * `id`: The function identifier. [`None`] for anonymous function expressions.
+    /// * `generator`: Is this a generator function?
+    /// * `async`
+    /// * `declare`
+    /// * `type_parameters`
+    /// * `this_param`: Declaring `this` in a Function <https://www.typescriptlang.org/docs/handbook/2/functions.html#declaring-this-in-a-function>
+    /// * `params`: Function parameters.
+    /// * `return_type`: The TypeScript return type annotation.
+    /// * `body`: The function body.
     #[inline]
     pub fn export_default_declaration_kind_function_declaration_with_decorators<
         T1,
@@ -9224,7 +9409,6 @@ impl<'a> AstBuilder<'a> {
     /// ## Parameters
     /// * `span`: The [`Span`] covering this node
     /// * `type`
-    /// * `decorators`: Decorators on the function (e.g., `@Builder function ...` in ArkUI)
     /// * `id`: The function identifier. [`None`] for anonymous function expressions.
     /// * `generator`: Is this a generator function?
     /// * `async`
@@ -9288,10 +9472,26 @@ impl<'a> AstBuilder<'a> {
         )
     }
 
-    /// Build an [`ExportDefaultDeclarationKind::FunctionDeclaration`] with decorators,
-    /// `scope_id`, `pure`, and `pife`.
+    /// Build an [`ExportDefaultDeclarationKind::FunctionDeclaration`] with `scope_id` and `pure` and `pife` and `decorators`.
     ///
     /// This node contains a [`Function`] that will be stored in the memory arena.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `type`
+    /// * `decorators`: Decorators on the function (e.g., `@Builder function ...` in ArkUI)
+    /// * `id`: The function identifier. [`None`] for anonymous function expressions.
+    /// * `generator`: Is this a generator function?
+    /// * `async`
+    /// * `declare`
+    /// * `type_parameters`
+    /// * `this_param`: Declaring `this` in a Function <https://www.typescriptlang.org/docs/handbook/2/functions.html#declaring-this-in-a-function>
+    /// * `params`: Function parameters.
+    /// * `return_type`: The TypeScript return type annotation.
+    /// * `body`: The function body.
+    /// * `scope_id`
+    /// * `pure`: `true` if the function is marked with a `/*#__NO_SIDE_EFFECTS__*/` comment
+    /// * `pife`: `true` if the function should be marked as "Possibly-Invoked Function Expression" (PIFE).
     #[inline]
     pub fn export_default_declaration_kind_function_declaration_with_scope_id_and_pure_and_pife_with_decorators<
         T1,
@@ -9534,28 +9734,41 @@ impl<'a> AstBuilder<'a> {
     /// * `decorators`: Decorators applied to the struct.
     /// * `id`: Struct identifier, AKA the name
     /// * `type_parameters`: Type parameters (for generic structs, if supported)
+    /// * `super_class`: Super class declared by an `extends` clause.
+    /// * `super_type_arguments`: Type arguments passed to the super class.
+    /// * `implements`: Interfaces declared by an `implements` clause.
     /// * `body`: Struct body containing properties and methods
+    /// * `abstract`: Whether this struct is marked with `abstract`.
     /// * `declare`: Whether this struct is marked with `declare`.
     #[inline]
-    pub fn export_default_declaration_kind_struct_statement<T1, T2>(
+    pub fn export_default_declaration_kind_struct_statement<T1, T2, T3>(
         self,
         span: Span,
         decorators: Vec<'a, Decorator<'a>>,
         id: BindingIdentifier<'a>,
         type_parameters: T1,
-        body: T2,
+        super_class: Option<Expression<'a>>,
+        super_type_arguments: T2,
+        implements: Vec<'a, TSClassImplements<'a>>,
+        body: T3,
+        r#abstract: bool,
         declare: bool,
     ) -> ExportDefaultDeclarationKind<'a>
     where
         T1: IntoIn<'a, Option<Box<'a, TSTypeParameterDeclaration<'a>>>>,
-        T2: IntoIn<'a, Box<'a, StructBody<'a>>>,
+        T2: IntoIn<'a, Option<Box<'a, TSTypeParameterInstantiation<'a>>>>,
+        T3: IntoIn<'a, Box<'a, StructBody<'a>>>,
     {
         ExportDefaultDeclarationKind::StructStatement(self.alloc_struct_statement(
             span,
             decorators,
             id,
             type_parameters,
+            super_class,
+            super_type_arguments,
+            implements,
             body,
+            r#abstract,
             declare,
         ))
     }
@@ -9569,30 +9782,43 @@ impl<'a> AstBuilder<'a> {
     /// * `decorators`: Decorators applied to the struct.
     /// * `id`: Struct identifier, AKA the name
     /// * `type_parameters`: Type parameters (for generic structs, if supported)
+    /// * `super_class`: Super class declared by an `extends` clause.
+    /// * `super_type_arguments`: Type arguments passed to the super class.
+    /// * `implements`: Interfaces declared by an `implements` clause.
     /// * `body`: Struct body containing properties and methods
+    /// * `abstract`: Whether this struct is marked with `abstract`.
     /// * `declare`: Whether this struct is marked with `declare`.
     /// * `scope_id`: Id of the scope created by the [`StructStatement`], including type parameters and
     #[inline]
-    pub fn export_default_declaration_kind_struct_statement_with_scope_id<T1, T2>(
+    pub fn export_default_declaration_kind_struct_statement_with_scope_id<T1, T2, T3>(
         self,
         span: Span,
         decorators: Vec<'a, Decorator<'a>>,
         id: BindingIdentifier<'a>,
         type_parameters: T1,
-        body: T2,
+        super_class: Option<Expression<'a>>,
+        super_type_arguments: T2,
+        implements: Vec<'a, TSClassImplements<'a>>,
+        body: T3,
+        r#abstract: bool,
         declare: bool,
         scope_id: ScopeId,
     ) -> ExportDefaultDeclarationKind<'a>
     where
         T1: IntoIn<'a, Option<Box<'a, TSTypeParameterDeclaration<'a>>>>,
-        T2: IntoIn<'a, Box<'a, StructBody<'a>>>,
+        T2: IntoIn<'a, Option<Box<'a, TSTypeParameterInstantiation<'a>>>>,
+        T3: IntoIn<'a, Box<'a, StructBody<'a>>>,
     {
         ExportDefaultDeclarationKind::StructStatement(self.alloc_struct_statement_with_scope_id(
             span,
             decorators,
             id,
             type_parameters,
+            super_class,
+            super_type_arguments,
+            implements,
             body,
+            r#abstract,
             declare,
             scope_id,
         ))
@@ -16533,21 +16759,30 @@ impl<'a> AstBuilder<'a> {
     /// * `decorators`: Decorators applied to the struct.
     /// * `id`: Struct identifier, AKA the name
     /// * `type_parameters`: Type parameters (for generic structs, if supported)
+    /// * `super_class`: Super class declared by an `extends` clause.
+    /// * `super_type_arguments`: Type arguments passed to the super class.
+    /// * `implements`: Interfaces declared by an `implements` clause.
     /// * `body`: Struct body containing properties and methods
+    /// * `abstract`: Whether this struct is marked with `abstract`.
     /// * `declare`: Whether this struct is marked with `declare`.
     #[inline]
-    pub fn struct_statement<T1, T2>(
+    pub fn struct_statement<T1, T2, T3>(
         self,
         span: Span,
         decorators: Vec<'a, Decorator<'a>>,
         id: BindingIdentifier<'a>,
         type_parameters: T1,
-        body: T2,
+        super_class: Option<Expression<'a>>,
+        super_type_arguments: T2,
+        implements: Vec<'a, TSClassImplements<'a>>,
+        body: T3,
+        r#abstract: bool,
         declare: bool,
     ) -> StructStatement<'a>
     where
         T1: IntoIn<'a, Option<Box<'a, TSTypeParameterDeclaration<'a>>>>,
-        T2: IntoIn<'a, Box<'a, StructBody<'a>>>,
+        T2: IntoIn<'a, Option<Box<'a, TSTypeParameterInstantiation<'a>>>>,
+        T3: IntoIn<'a, Box<'a, StructBody<'a>>>,
     {
         StructStatement {
             node_id: Default::default(),
@@ -16555,7 +16790,11 @@ impl<'a> AstBuilder<'a> {
             decorators,
             id,
             type_parameters: type_parameters.into_in(self.allocator),
+            super_class,
+            super_type_arguments: super_type_arguments.into_in(self.allocator),
+            implements,
             body: body.into_in(self.allocator),
+            r#abstract,
             declare,
             scope_id: Default::default(),
         }
@@ -16571,24 +16810,44 @@ impl<'a> AstBuilder<'a> {
     /// * `decorators`: Decorators applied to the struct.
     /// * `id`: Struct identifier, AKA the name
     /// * `type_parameters`: Type parameters (for generic structs, if supported)
+    /// * `super_class`: Super class declared by an `extends` clause.
+    /// * `super_type_arguments`: Type arguments passed to the super class.
+    /// * `implements`: Interfaces declared by an `implements` clause.
     /// * `body`: Struct body containing properties and methods
+    /// * `abstract`: Whether this struct is marked with `abstract`.
     /// * `declare`: Whether this struct is marked with `declare`.
     #[inline]
-    pub fn alloc_struct_statement<T1, T2>(
+    pub fn alloc_struct_statement<T1, T2, T3>(
         self,
         span: Span,
         decorators: Vec<'a, Decorator<'a>>,
         id: BindingIdentifier<'a>,
         type_parameters: T1,
-        body: T2,
+        super_class: Option<Expression<'a>>,
+        super_type_arguments: T2,
+        implements: Vec<'a, TSClassImplements<'a>>,
+        body: T3,
+        r#abstract: bool,
         declare: bool,
     ) -> Box<'a, StructStatement<'a>>
     where
         T1: IntoIn<'a, Option<Box<'a, TSTypeParameterDeclaration<'a>>>>,
-        T2: IntoIn<'a, Box<'a, StructBody<'a>>>,
+        T2: IntoIn<'a, Option<Box<'a, TSTypeParameterInstantiation<'a>>>>,
+        T3: IntoIn<'a, Box<'a, StructBody<'a>>>,
     {
         Box::new_in(
-            self.struct_statement(span, decorators, id, type_parameters, body, declare),
+            self.struct_statement(
+                span,
+                decorators,
+                id,
+                type_parameters,
+                super_class,
+                super_type_arguments,
+                implements,
+                body,
+                r#abstract,
+                declare,
+            ),
             self.allocator,
         )
     }
@@ -16603,23 +16862,32 @@ impl<'a> AstBuilder<'a> {
     /// * `decorators`: Decorators applied to the struct.
     /// * `id`: Struct identifier, AKA the name
     /// * `type_parameters`: Type parameters (for generic structs, if supported)
+    /// * `super_class`: Super class declared by an `extends` clause.
+    /// * `super_type_arguments`: Type arguments passed to the super class.
+    /// * `implements`: Interfaces declared by an `implements` clause.
     /// * `body`: Struct body containing properties and methods
+    /// * `abstract`: Whether this struct is marked with `abstract`.
     /// * `declare`: Whether this struct is marked with `declare`.
     /// * `scope_id`: Id of the scope created by the [`StructStatement`], including type parameters and
     #[inline]
-    pub fn struct_statement_with_scope_id<T1, T2>(
+    pub fn struct_statement_with_scope_id<T1, T2, T3>(
         self,
         span: Span,
         decorators: Vec<'a, Decorator<'a>>,
         id: BindingIdentifier<'a>,
         type_parameters: T1,
-        body: T2,
+        super_class: Option<Expression<'a>>,
+        super_type_arguments: T2,
+        implements: Vec<'a, TSClassImplements<'a>>,
+        body: T3,
+        r#abstract: bool,
         declare: bool,
         scope_id: ScopeId,
     ) -> StructStatement<'a>
     where
         T1: IntoIn<'a, Option<Box<'a, TSTypeParameterDeclaration<'a>>>>,
-        T2: IntoIn<'a, Box<'a, StructBody<'a>>>,
+        T2: IntoIn<'a, Option<Box<'a, TSTypeParameterInstantiation<'a>>>>,
+        T3: IntoIn<'a, Box<'a, StructBody<'a>>>,
     {
         StructStatement {
             node_id: Default::default(),
@@ -16627,7 +16895,11 @@ impl<'a> AstBuilder<'a> {
             decorators,
             id,
             type_parameters: type_parameters.into_in(self.allocator),
+            super_class,
+            super_type_arguments: super_type_arguments.into_in(self.allocator),
+            implements,
             body: body.into_in(self.allocator),
+            r#abstract,
             declare,
             scope_id: Cell::new(Some(scope_id)),
         }
@@ -16643,23 +16915,32 @@ impl<'a> AstBuilder<'a> {
     /// * `decorators`: Decorators applied to the struct.
     /// * `id`: Struct identifier, AKA the name
     /// * `type_parameters`: Type parameters (for generic structs, if supported)
+    /// * `super_class`: Super class declared by an `extends` clause.
+    /// * `super_type_arguments`: Type arguments passed to the super class.
+    /// * `implements`: Interfaces declared by an `implements` clause.
     /// * `body`: Struct body containing properties and methods
+    /// * `abstract`: Whether this struct is marked with `abstract`.
     /// * `declare`: Whether this struct is marked with `declare`.
     /// * `scope_id`: Id of the scope created by the [`StructStatement`], including type parameters and
     #[inline]
-    pub fn alloc_struct_statement_with_scope_id<T1, T2>(
+    pub fn alloc_struct_statement_with_scope_id<T1, T2, T3>(
         self,
         span: Span,
         decorators: Vec<'a, Decorator<'a>>,
         id: BindingIdentifier<'a>,
         type_parameters: T1,
-        body: T2,
+        super_class: Option<Expression<'a>>,
+        super_type_arguments: T2,
+        implements: Vec<'a, TSClassImplements<'a>>,
+        body: T3,
+        r#abstract: bool,
         declare: bool,
         scope_id: ScopeId,
     ) -> Box<'a, StructStatement<'a>>
     where
         T1: IntoIn<'a, Option<Box<'a, TSTypeParameterDeclaration<'a>>>>,
-        T2: IntoIn<'a, Box<'a, StructBody<'a>>>,
+        T2: IntoIn<'a, Option<Box<'a, TSTypeParameterInstantiation<'a>>>>,
+        T3: IntoIn<'a, Box<'a, StructBody<'a>>>,
     {
         Box::new_in(
             self.struct_statement_with_scope_id(
@@ -16667,7 +16948,11 @@ impl<'a> AstBuilder<'a> {
                 decorators,
                 id,
                 type_parameters,
+                super_class,
+                super_type_arguments,
+                implements,
                 body,
+                r#abstract,
                 declare,
                 scope_id,
             ),
@@ -16716,6 +17001,7 @@ impl<'a> AstBuilder<'a> {
     /// * `type_arguments`: Type arguments for generic components (if supported)
     /// * `arguments`: Arguments passed to the component constructor
     /// * `children`: Children of the component (the content inside `{ ... }`)
+    /// * `has_children`: Whether the component call had an explicit child block. This distinguishes
     /// * `chain_expressions`: Chain expressions (like `.onClick(...)`)
     #[inline]
     pub fn ark_ui_component_expression<T1>(
@@ -16725,6 +17011,7 @@ impl<'a> AstBuilder<'a> {
         type_arguments: T1,
         arguments: Vec<'a, Argument<'a>>,
         children: Vec<'a, ArkUIChild<'a>>,
+        has_children: bool,
         chain_expressions: Vec<'a, CallExpression<'a>>,
     ) -> ArkUIComponentExpression<'a>
     where
@@ -16737,6 +17024,7 @@ impl<'a> AstBuilder<'a> {
             type_arguments: type_arguments.into_in(self.allocator),
             arguments,
             children,
+            has_children,
             chain_expressions,
         }
     }
@@ -16752,6 +17040,7 @@ impl<'a> AstBuilder<'a> {
     /// * `type_arguments`: Type arguments for generic components (if supported)
     /// * `arguments`: Arguments passed to the component constructor
     /// * `children`: Children of the component (the content inside `{ ... }`)
+    /// * `has_children`: Whether the component call had an explicit child block. This distinguishes
     /// * `chain_expressions`: Chain expressions (like `.onClick(...)`)
     #[inline]
     pub fn alloc_ark_ui_component_expression<T1>(
@@ -16761,6 +17050,7 @@ impl<'a> AstBuilder<'a> {
         type_arguments: T1,
         arguments: Vec<'a, Argument<'a>>,
         children: Vec<'a, ArkUIChild<'a>>,
+        has_children: bool,
         chain_expressions: Vec<'a, CallExpression<'a>>,
     ) -> Box<'a, ArkUIComponentExpression<'a>>
     where
@@ -16773,6 +17063,7 @@ impl<'a> AstBuilder<'a> {
                 type_arguments,
                 arguments,
                 children,
+                has_children,
                 chain_expressions,
             ),
             self.allocator,

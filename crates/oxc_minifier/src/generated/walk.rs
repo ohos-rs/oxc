@@ -5876,6 +5876,25 @@ unsafe fn walk_struct_statement<'a, Tr: Traverse<'a>>(
         ctx.retag_stack(AncestorType::StructStatementTypeParameters);
         walk_ts_type_parameter_declaration(traverser, (&mut **field) as *mut _, ctx);
     }
+    if let Some(field) = &mut *((node as *mut u8).add(ancestor::OFFSET_STRUCT_STATEMENT_SUPER_CLASS)
+        as *mut Option<Expression>)
+    {
+        ctx.retag_stack(AncestorType::StructStatementSuperClass);
+        walk_expression(traverser, field as *mut _, ctx);
+    }
+    if let Some(field) = &mut *((node as *mut u8)
+        .add(ancestor::OFFSET_STRUCT_STATEMENT_SUPER_TYPE_ARGUMENTS)
+        as *mut Option<Box<TSTypeParameterInstantiation>>)
+    {
+        ctx.retag_stack(AncestorType::StructStatementSuperTypeArguments);
+        walk_ts_type_parameter_instantiation(traverser, (&mut **field) as *mut _, ctx);
+    }
+    ctx.retag_stack(AncestorType::StructStatementImplements);
+    for item in &mut *((node as *mut u8).add(ancestor::OFFSET_STRUCT_STATEMENT_IMPLEMENTS)
+        as *mut Vec<TSClassImplements>)
+    {
+        walk_ts_class_implements(traverser, item as *mut _, ctx);
+    }
     ctx.retag_stack(AncestorType::StructStatementBody);
     walk_struct_body(
         traverser,
@@ -5917,6 +5936,15 @@ unsafe fn walk_struct_element<'a, Tr: Traverse<'a>>(
         }
         StructElement::MethodDefinition(node) => {
             walk_method_definition(traverser, (&mut **node) as *mut _, ctx)
+        }
+        StructElement::StaticBlock(node) => {
+            walk_static_block(traverser, (&mut **node) as *mut _, ctx)
+        }
+        StructElement::TSIndexSignature(node) => {
+            walk_ts_index_signature(traverser, (&mut **node) as *mut _, ctx)
+        }
+        StructElement::AccessorProperty(node) => {
+            walk_accessor_property(traverser, (&mut **node) as *mut _, ctx)
         }
     }
     traverser.exit_struct_element(&mut *node, ctx);

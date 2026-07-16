@@ -11,6 +11,7 @@ use oxc_syntax::{
 };
 
 use super::{
+    arkui::ArkUIArgumentContext,
     grammar::CoverGrammar,
     operator::{
         kind_to_precedence, map_assignment_operator, map_binary_operator, map_logical_operator,
@@ -1375,21 +1376,38 @@ impl<'a, C: Config> ParserImpl<'a, C> {
     ) -> Expression<'a> {
         // ArgumentList[Yield, Await] :
         //   AssignmentExpression[+In, ?Yield, ?Await]
+        let arkui_argument_context =
+            if self.source_type.is_arkui() && self.is_in_arkui_dsl_context() {
+                self.arkui_argument_context(&lhs)
+            } else {
+                ArkUIArgumentContext::None
+            };
         let opening_span = self.cur_token().span();
         self.expect(Kind::LParen);
+        let mut argument_index = 0usize;
         let (call_arguments, _) = self.context(Context::In, Context::Decorator, |p| {
-            p.parse_delimited_list(
-                Kind::RParen,
-                Kind::Comma,
-                opening_span,
-                Self::parse_call_argument,
-            )
+            p.parse_delimited_list(Kind::RParen, Kind::Comma, opening_span, |p| {
+                let is_ui_callback = match arkui_argument_context {
+                    ArkUIArgumentContext::None => false,
+                    ArkUIArgumentContext::SkipFirst => argument_index > 0,
+                    ArkUIArgumentContext::All => true,
+                };
+                let previous = p.state.arkui_dsl_next_function;
+                p.state.arkui_dsl_next_function = is_ui_callback;
+                let argument = p.parse_call_argument();
+                p.state.arkui_dsl_next_function = previous;
+                argument_index += 1;
+                argument
+            })
         });
         self.expect(Kind::RParen);
 
         // Check if this is an ArkUI component expression (has children block).
         // ETS stays on the TS path unless the enclosing AST is known to be ArkUI DSL.
-        if self.source_type.is_arkui() && self.is_in_arkui_dsl_context() && self.at(Kind::LCurly) {
+        if self.source_type.is_arkui()
+            && self.is_in_arkui_dsl_context()
+            && (self.at(Kind::LCurly) || self.is_builtin_arkui_component(&lhs))
+        {
             // This is an ArkUI component expression
             return self.parse_arkui_component_expression_after_args(
                 lhs_span,
@@ -1971,7 +1989,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
     pub(crate) fn parse_decorators(&mut self) -> Vec<'a, Decorator<'a>> {
         if self.at(Kind::At) {
             let mut decorators = self.ast.vec_with_capacity(1);
-            while self.at(Kind::At) {
+            while self.at(Kind::At) && !self.at_arkts_annotation_declaration() {
                 decorators.push(self.parse_decorator());
             }
             decorators

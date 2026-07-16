@@ -62,6 +62,23 @@ pub fn unexpected_token(span: Span) -> OxcDiagnostic {
 }
 
 #[cold]
+pub fn whitespace_in_annotation_declaration(span: Span) -> OxcDiagnostic {
+    OxcDiagnostic::error("Whitespace is not allowed between `@` and `interface`").with_label(span)
+}
+
+#[cold]
+pub fn annotation_declaration_not_top_level(span: Span) -> OxcDiagnostic {
+    OxcDiagnostic::error("Annotation declarations are only allowed at the top level")
+        .with_label(span)
+}
+
+#[cold]
+pub fn invalid_annotation_member(span: Span) -> OxcDiagnostic {
+    OxcDiagnostic::error("Annotation members must be unmodified identifier properties")
+        .with_label(span)
+}
+
+#[cold]
 pub fn private_identifier_in_property_name(name: &str, span: Span) -> OxcDiagnostic {
     OxcDiagnostic::error(format!("Private identifier '#{name}' is not allowed in property names"))
         .with_label(span)

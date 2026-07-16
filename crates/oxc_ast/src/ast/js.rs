@@ -1836,6 +1836,7 @@ pub struct Function<'a> {
     pub span: Span,
     pub r#type: FunctionType,
     /// Decorators on the function (e.g., `@Builder function ...` in ArkUI)
+    #[builder(default)]
     #[ts]
     pub decorators: Vec<'a, Decorator<'a>>,
     /// The function identifier. [`None`] for anonymous function expressions.
@@ -2749,6 +2750,7 @@ pub struct ExportNamedDeclaration<'a> {
     pub node_id: Cell<NodeId>,
     pub span: Span,
     /// Decorators on the export declaration (e.g., `@Builder export function ...`)
+    #[builder(default)]
     #[ts]
     pub decorators: Vec<'a, Decorator<'a>>,
     pub declaration: Option<Declaration<'a>>,

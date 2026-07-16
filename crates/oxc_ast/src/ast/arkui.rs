@@ -56,8 +56,19 @@ pub struct StructStatement<'a> {
     /// Type parameters (for generic structs, if supported)
     #[ts]
     pub type_parameters: Option<Box<'a, TSTypeParameterDeclaration<'a>>>,
+    /// Super class declared by an `extends` clause.
+    pub super_class: Option<Expression<'a>>,
+    /// Type arguments passed to the super class.
+    #[ts]
+    pub super_type_arguments: Option<Box<'a, TSTypeParameterInstantiation<'a>>>,
+    /// Interfaces declared by an `implements` clause.
+    #[ts]
+    pub implements: Vec<'a, TSClassImplements<'a>>,
     /// Struct body containing properties and methods
     pub body: Box<'a, StructBody<'a>>,
+    /// Whether this struct is marked with `abstract`.
+    #[ts]
+    pub r#abstract: bool,
     /// Whether this struct is marked with `declare`.
     #[ts]
     pub declare: bool,
@@ -107,6 +118,12 @@ pub enum StructElement<'a> {
     PropertyDefinition(Box<'a, PropertyDefinition<'a>>) = 0,
     /// Method definitions (like `build()`)
     MethodDefinition(Box<'a, MethodDefinition<'a>>) = 1,
+    /// Static initialization block.
+    StaticBlock(Box<'a, StaticBlock<'a>>) = 2,
+    /// TypeScript index signature.
+    TSIndexSignature(Box<'a, TSIndexSignature<'a>>) = 3,
+    /// Auto-accessor property.
+    AccessorProperty(Box<'a, AccessorProperty<'a>>) = 4,
 }
 
 /// ArkUI Component Expression
@@ -155,6 +172,10 @@ pub struct ArkUIComponentExpression<'a> {
     /// - Template literals
     /// - Regular expressions
     pub children: Vec<'a, ArkUIChild<'a>>,
+    /// Whether the component call had an explicit child block. This distinguishes
+    /// `Column()` from `Column() {}` when `children` is empty.
+    #[estree(skip)]
+    pub has_children: bool,
     /// Chain expressions (like `.onClick(...)`)
     ///
     /// ArkUI supports method chaining on components:

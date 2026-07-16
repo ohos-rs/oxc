@@ -2344,6 +2344,7 @@ impl<'a> FormatWrite<'a> for AstNode<'a, ArkUIComponentExpression<'a>> {
         let type_arguments = self.type_arguments();
         let arguments = self.arguments();
         let children = self.children();
+        let has_children = self.has_children();
         let chain_expressions = self.chain_expressions();
 
         // Format callee
@@ -2359,12 +2360,11 @@ impl<'a> FormatWrite<'a> for AstNode<'a, ArkUIComponentExpression<'a>> {
         write!(f, [arguments]);
 
         // Format children block
-        // We need to check source text to determine if there's a `{...}` block,
-        // because children Vec can be empty even when there's a block with only comments
-        if !children.as_ref().is_empty() {
+        if has_children && !children.as_ref().is_empty() {
             write!(f, [space(), "{", block_indent(&children), "}"]);
-        } else if let Some(block_span) =
-            find_arkui_children_block_span(self.as_ref(), f.source_text().as_ref())
+        } else if has_children
+            && let Some(block_span) =
+                find_arkui_children_block_span(self.as_ref(), f.source_text().as_ref())
         {
             // Empty children block - handle dangling comments inside
             write!(
@@ -2378,15 +2378,15 @@ impl<'a> FormatWrite<'a> for AstNode<'a, ArkUIComponentExpression<'a>> {
         // Support line breaks when the chain is too long
         if !chain_expressions.as_ref().is_empty() {
             let should_break = should_break_arkui_chain(chain_expressions.as_ref(), f);
-            let has_children = !children.as_ref().is_empty();
 
             // Calculate the starting position for the first chain expression's comment search
             // This should be after the children block or arguments
-            let initial_prev_end = if !children.as_ref().is_empty() {
+            let initial_prev_end = if has_children && !children.as_ref().is_empty() {
                 // After children block - find the end of last child
                 children.as_ref().last().map(|c| c.span().end).unwrap_or(self.span.start)
-            } else if let Some(block_span) =
-                find_arkui_children_block_span(self.as_ref(), f.source_text().as_ref())
+            } else if has_children
+                && let Some(block_span) =
+                    find_arkui_children_block_span(self.as_ref(), f.source_text().as_ref())
             {
                 // Empty children block - use block span end
                 block_span.end

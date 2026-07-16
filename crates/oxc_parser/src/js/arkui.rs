@@ -6,7 +6,7 @@
 //! - ArkUI component expressions (`Column() { ... }`)
 
 use oxc_allocator::{Box, Vec};
-use oxc_ast::{NONE, ast::*};
+use oxc_ast::ast::*;
 use oxc_span::Span;
 
 use crate::{
@@ -17,9 +17,136 @@ use crate::{
 
 use super::FunctionKind;
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(crate) enum ArkUIArgumentContext {
+    None,
+    SkipFirst,
+    All,
+}
+
 impl<'a, C: Config> ParserImpl<'a, C> {
+    pub(crate) fn at_arkts_annotation_declaration(&mut self) -> bool {
+        self.source_type.is_arkui()
+            && self.arkts_options.as_ref().is_none_or(|options| options.annotations)
+            && self.at(Kind::At)
+            && self.lexer.peek_token().kind() == Kind::Interface
+    }
+
     pub(crate) fn is_in_arkui_dsl_context(&self) -> bool {
         self.state.arkui_dsl_depth > 0
+    }
+
+    pub(crate) fn is_builtin_arkui_component(&self, expression: &Expression<'a>) -> bool {
+        let Expression::Identifier(identifier) = expression else { return false };
+        if let Some(options) = &self.arkts_options {
+            return options.components.iter().any(|name| name == identifier.name.as_str());
+        }
+        matches!(
+            identifier.name.as_str(),
+            "AbilityComponent"
+                | "AlphabetIndexer"
+                | "Animator"
+                | "Badge"
+                | "Blank"
+                | "Button"
+                | "Calendar"
+                | "CalendarPicker"
+                | "Camera"
+                | "Canvas"
+                | "Checkbox"
+                | "CheckboxGroup"
+                | "Circle"
+                | "ColorPicker"
+                | "ColorPickerDialog"
+                | "Column"
+                | "ColumnSplit"
+                | "Counter"
+                | "DataPanel"
+                | "DatePicker"
+                | "Divider"
+                | "Ellipse"
+                | "Flex"
+                | "FlowItem"
+                | "FolderStack"
+                | "FormComponent"
+                | "FormLink"
+                | "Gauge"
+                | "GeometryView"
+                | "Grid"
+                | "GridCol"
+                | "GridContainer"
+                | "GridItem"
+                | "GridRow"
+                | "Hyperlink"
+                | "Image"
+                | "ImageAnimator"
+                | "ImageSpan"
+                | "Line"
+                | "List"
+                | "ListItem"
+                | "ListItemGroup"
+                | "LoadingProgress"
+                | "Marquee"
+                | "Menu"
+                | "MenuItem"
+                | "MenuItemGroup"
+                | "NavDestination"
+                | "NavRouter"
+                | "Navigation"
+                | "Navigator"
+                | "NodeContainer"
+                | "Option"
+                | "PageTransitionEnter"
+                | "PageTransitionExit"
+                | "Panel"
+                | "Path"
+                | "PatternLock"
+                | "PluginComponent"
+                | "Polygon"
+                | "Polyline"
+                | "Progress"
+                | "QRCode"
+                | "Radio"
+                | "Rating"
+                | "Rect"
+                | "RelativeContainer"
+                | "Refresh"
+                | "RemoteWindow"
+                | "RichEditor"
+                | "RichText"
+                | "Row"
+                | "RowSplit"
+                | "Scroll"
+                | "ScrollBar"
+                | "Search"
+                | "Section"
+                | "Select"
+                | "Shape"
+                | "Sheet"
+                | "SideBarContainer"
+                | "Slider"
+                | "Span"
+                | "Stack"
+                | "Stepper"
+                | "StepperItem"
+                | "Swiper"
+                | "SymbolGlyph"
+                | "SymbolSpan"
+                | "Tabs"
+                | "TabContent"
+                | "Text"
+                | "TextArea"
+                | "TextClock"
+                | "TextInput"
+                | "TextPicker"
+                | "TextTimer"
+                | "TimePicker"
+                | "Toggle"
+                | "Video"
+                | "WaterFlow"
+                | "Web"
+                | "XComponent"
+        )
     }
 
     pub(crate) fn in_arkui_dsl_context<T>(&mut self, f: impl FnOnce(&mut Self) -> T) -> T {
@@ -29,26 +156,108 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         result
     }
 
-    pub(crate) fn decorators_enable_arkui_dsl(decorators: &[Decorator<'a>]) -> bool {
-        decorators.iter().any(|decorator| Self::is_arkui_dsl_decorator(&decorator.expression))
+    pub(crate) fn without_arkui_dsl_context<T>(&mut self, f: impl FnOnce(&mut Self) -> T) -> T {
+        let depth = self.state.arkui_dsl_depth;
+        self.state.arkui_dsl_depth = 0;
+        let result = f(self);
+        self.state.arkui_dsl_depth = depth;
+        result
     }
 
-    fn is_arkui_dsl_decorator(expression: &Expression<'a>) -> bool {
+    pub(crate) fn take_next_arkui_dsl_function(&mut self) -> bool {
+        std::mem::take(&mut self.state.arkui_dsl_next_function)
+    }
+
+    pub(crate) fn next_function_in_arkui_dsl<T>(&mut self, f: impl FnOnce(&mut Self) -> T) -> T {
+        let previous = self.state.arkui_dsl_next_function;
+        self.state.arkui_dsl_next_function = true;
+        let result = f(self);
+        self.state.arkui_dsl_next_function = previous;
+        result
+    }
+
+    pub(crate) fn is_arkui_render_method(&self, name: &str) -> bool {
+        self.arkts_options.as_ref().map_or_else(
+            || matches!(name, "build" | "pageTransition"),
+            |options| options.render_methods.iter().any(|method| method == name),
+        )
+    }
+
+    pub(crate) fn decorators_enable_arkui_dsl(&self, decorators: &[Decorator<'a>]) -> bool {
+        decorators.iter().any(|decorator| self.is_arkui_dsl_decorator(&decorator.expression))
+    }
+
+    fn is_arkui_dsl_decorator(&self, expression: &Expression<'a>) -> bool {
         match expression {
-            Expression::Identifier(ident) => matches!(
-                ident.name.as_str(),
-                "Builder" | "LocalBuilder" | "Extend" | "AnimatableExtend" | "Styles"
+            Expression::Identifier(ident) => self.arkts_options.as_ref().map_or_else(
+                || matches!(ident.name.as_str(), "Builder" | "LocalBuilder" | "Styles"),
+                |options| {
+                    options.render_decorators.iter().any(|name| name == ident.name.as_str())
+                        || options
+                            .styles_decorator
+                            .as_deref()
+                            .is_some_and(|name| name == ident.name.as_str())
+                },
             ),
-            Expression::CallExpression(call) => Self::is_arkui_dsl_decorator(&call.callee),
-            Expression::StaticMemberExpression(member) => {
-                member.property.name == "Builder"
-                    || member.property.name == "LocalBuilder"
-                    || member.property.name == "Extend"
-                    || member.property.name == "AnimatableExtend"
-                    || member.property.name == "Styles"
+            Expression::CallExpression(call) => {
+                let Expression::Identifier(ident) = &call.callee else { return false };
+                self.arkts_options.as_ref().map_or_else(
+                    || matches!(ident.name.as_str(), "Extend" | "AnimatableExtend"),
+                    |options| {
+                        options.extend_decorators.iter().any(|name| name == ident.name.as_str())
+                    },
+                )
             }
             _ => false,
         }
+    }
+
+    pub(crate) fn arkui_argument_context(
+        &self,
+        expression: &Expression<'a>,
+    ) -> ArkUIArgumentContext {
+        if let Expression::Identifier(identifier) = expression {
+            let is_parameter_callback = self.arkts_options.as_ref().map_or_else(
+                || matches!(identifier.name.as_str(), "ForEach" | "LazyForEach"),
+                |options| {
+                    options
+                        .parameter_ui_callbacks
+                        .iter()
+                        .any(|name| name == identifier.name.as_str())
+                },
+            );
+            if is_parameter_callback {
+                return ArkUIArgumentContext::SkipFirst;
+            }
+        }
+
+        let Expression::StaticMemberExpression(member) = expression else {
+            return ArkUIArgumentContext::None;
+        };
+        let attribute = member.property.name.as_str();
+        let component = match &member.object {
+            Expression::Identifier(identifier) => Some(identifier.name.as_str()),
+            Expression::CallExpression(call) => match &call.callee {
+                Expression::Identifier(identifier) => Some(identifier.name.as_str()),
+                _ => None,
+            },
+            Expression::ArkUIComponentExpression(component) => match &component.callee {
+                Expression::Identifier(identifier) => Some(identifier.name.as_str()),
+                _ => None,
+            },
+            _ => None,
+        };
+        let Some(component) = component else { return ArkUIArgumentContext::None };
+        let is_attribute_callback = self.arkts_options.as_ref().map_or_else(
+            || component == "Repeat" && matches!(attribute, "each" | "template"),
+            |options| {
+                options.attribute_ui_callbacks.iter().any(|callback| {
+                    callback.component == component
+                        && callback.attributes.iter().any(|name| name == attribute)
+                })
+            },
+        );
+        if is_attribute_callback { ArkUIArgumentContext::All } else { ArkUIArgumentContext::None }
     }
 
     /// Parse a struct statement
@@ -102,6 +311,19 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         };
 
         let type_parameters = if self.is_ts { self.parse_ts_type_parameters() } else { None };
+        let (extends, implements) = self.parse_heritage_clause();
+        let mut super_class = None;
+        let mut super_type_arguments = None;
+        if let Some(mut extends) = extends
+            && !extends.is_empty()
+        {
+            let first_extends = extends.remove(0);
+            super_class = Some(first_extends.expression);
+            super_type_arguments = first_extends.type_arguments;
+            for extend in extends {
+                self.error(diagnostics::classes_can_only_extend_single_class(extend.span));
+            }
+        }
         let body = self.parse_struct_body();
 
         self.verify_modifiers(
@@ -113,9 +335,21 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
         let span = self.end_span(start_span);
 
+        let r#abstract = modifiers.contains(ModifierKind::Abstract);
         let declare = modifiers.contains(ModifierKind::Declare);
 
-        self.ast.alloc_struct_statement(span, decorators, id, type_parameters, body, declare)
+        self.ast.alloc_struct_statement(
+            span,
+            decorators,
+            id,
+            type_parameters,
+            super_class,
+            super_type_arguments,
+            implements.map_or_else(|| self.ast.vec(), |(_, implements)| implements),
+            body,
+            r#abstract,
+            declare,
+        )
     }
 
     /// Parse an annotation statement
@@ -153,20 +387,28 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         modifiers: &Modifiers,
         decorators: Vec<'a, Decorator<'a>>,
     ) -> Box<'a, AnnotationDeclaration<'a>> {
-        // We should be at `interface` after `@` was consumed
-        // Consume `interface` keyword
-        if self.at(Kind::Interface) {
-            self.bump_any();
-        } else {
-            // Call unexpected to report error; the return value is () which we intentionally ignore
-            #[allow(unused_must_use, unused_variables)]
-            let _: () = self.unexpected::<()>();
+        let at_span = self.cur_token().span();
+        self.expect(Kind::At);
+        let interface_span = self.cur_token().span();
+        self.expect(Kind::Interface);
+        if at_span.end != interface_span.start {
+            self.error(diagnostics::whitespace_in_annotation_declaration(Span::new(
+                at_span.end,
+                interface_span.start,
+            )));
         }
 
-        // Move span start to @ position
-        let start_span = start_span;
+        if !self.ctx.has_top_level() {
+            self.error(diagnostics::annotation_declaration_not_top_level(Span::new(
+                start_span,
+                interface_span.end,
+            )));
+        }
 
-        let id = if self.cur_kind().is_binding_identifier() {
+        let id = if self.at(Kind::Await) {
+            let name = self.parse_identifier_name();
+            self.ast.binding_identifier(name.span, name.name)
+        } else if self.cur_kind().is_binding_identifier() {
             self.parse_binding_identifier()
         } else {
             self.unexpected::<BindingIdentifier<'a>>()
@@ -176,7 +418,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
         self.verify_modifiers(
             modifiers,
-            ModifierKinds::new([ModifierKind::Declare, ModifierKind::Abstract]),
+            ModifierKinds::new([ModifierKind::Declare]),
             true,
             diagnostics::modifier_cannot_be_used_here,
         );
@@ -193,14 +435,10 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         let span = self.start_span();
         let annotation_elements =
             self.parse_normal_list_breakable(Kind::LCurly, Kind::RCurly, |p| {
-                // Skip empty annotation element `;`
-                if p.eat(Kind::Semicolon) {
-                    while p.eat(Kind::Semicolon) {
-                        // consume multiple semicolons
-                    }
-                    if p.at(Kind::RCurly) {
-                        return None;
-                    }
+                if p.at(Kind::Semicolon) {
+                    let span = p.cur_token().span();
+                    p.bump_any();
+                    p.error(diagnostics::invalid_annotation_member(span));
                 }
                 Some(Self::parse_annotation_element(p))
             });
@@ -214,12 +452,22 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         let decorators = self.parse_decorators();
         let modifiers = self.parse_modifiers(
             /* permit_const_as_modifier */ true,
-            /* stop_on_start_of_class_static_block */ false,
+            /* stop_on_start_of_class_static_block */ true,
         );
+
+        if !decorators.is_empty()
+            || modifiers.kinds() != ModifierKinds::none()
+            || self.cur_kind() != Kind::Ident
+        {
+            self.error(diagnostics::invalid_annotation_member(Span::new(
+                span,
+                self.cur_token().span().end,
+            )));
+        }
 
         self.verify_modifiers(
             &modifiers,
-            ModifierKinds::all_except([ModifierKind::Export]),
+            ModifierKinds::none(),
             false,
             diagnostics::cannot_appear_on_class_elements,
         );
@@ -290,8 +538,24 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         let decorators = self.parse_decorators();
         let modifiers = self.parse_modifiers(
             /* permit_const_as_modifier */ true,
-            /* stop_on_start_of_class_static_block */ false,
+            /* stop_on_start_of_class_static_block */ true,
         );
+
+        if self.at(Kind::Static) && self.lexer.peek_token().kind() == Kind::LCurly {
+            for decorator in decorators {
+                self.error(diagnostics::decorators_are_not_valid_here(decorator.span));
+            }
+            self.verify_modifiers(
+                &modifiers,
+                ModifierKinds::none(),
+                false,
+                diagnostics::modifiers_cannot_appear_here,
+            );
+            let ClassElement::StaticBlock(block) = self.parse_class_static_block(span) else {
+                unreachable!();
+            };
+            return StructElement::StaticBlock(block);
+        }
 
         self.verify_modifiers(
             &modifiers,
@@ -307,7 +571,6 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         } else {
             MethodDefinitionType::MethodDefinition
         };
-
         if self.parse_contextual_modifier(Kind::Get) {
             return StructElement::MethodDefinition(self.parse_struct_accessor_declaration(
                 span,
@@ -326,6 +589,33 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                 &modifiers,
                 decorators,
             ));
+        }
+
+        if matches!(self.cur_kind(), Kind::Constructor | Kind::Str)
+            && !modifiers.contains(ModifierKind::Static)
+            && let Some(name) = self.parse_constructor_name()
+        {
+            let ClassElement::MethodDefinition(method) =
+                self.parse_constructor_declaration(span, r#type, name, &modifiers, decorators)
+            else {
+                unreachable!();
+            };
+            return StructElement::MethodDefinition(method);
+        }
+
+        if self.is_index_signature() {
+            for decorator in decorators {
+                self.error(diagnostics::decorators_are_not_valid_here(decorator.span));
+            }
+            self.verify_modifiers(
+                &modifiers,
+                ModifierKinds::new([ModifierKind::Readonly, ModifierKind::Static]),
+                true,
+                diagnostics::cannot_appear_on_an_index_signature,
+            );
+            return StructElement::TSIndexSignature(
+                self.parse_index_signature_declaration(span, &modifiers),
+            );
         }
 
         // Parse property or method declaration (similar to class)
@@ -370,10 +660,25 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         }
 
         // Otherwise parse as property
+        let definite_token_start = self.at(Kind::Bang).then(|| self.start_span());
         let definite = self.eat(Kind::Bang);
 
         if definite && let Some(optional_span) = optional_span {
             self.error(diagnostics::optional_definite_property(optional_span.expand_right(1)));
+        }
+
+        if modifiers.contains(ModifierKind::Accessor) {
+            let ClassElement::AccessorProperty(property) = self.parse_class_accessor_property(
+                span,
+                name,
+                computed,
+                definite_token_start,
+                modifiers,
+                decorators,
+            ) else {
+                unreachable!();
+            };
+            return StructElement::AccessorProperty(property);
         }
 
         self.parse_property_declaration_for_struct(
@@ -403,10 +708,10 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             && ((!computed
                 && name
                     .static_name()
-                    .is_some_and(|name| matches!(name.as_ref(), "build" | "pageTransition")))
-                || Self::decorators_enable_arkui_dsl(decorators.as_slice()));
+                    .is_some_and(|name| self.is_arkui_render_method(name.as_ref())))
+                || self.decorators_enable_arkui_dsl(decorators.as_slice()));
         let value = if is_arkui_dsl_method {
-            self.in_arkui_dsl_context(|p| {
+            self.next_function_in_arkui_dsl(|p| {
                 p.parse_method(
                     modifiers.contains(ModifierKind::Async),
                     generator,
@@ -559,70 +864,6 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         )
     }
 
-    /// Parse an ArkUI component expression
-    ///
-    /// ## Example
-    /// ```arkui
-    /// Column() {
-    ///   Text('Hello')
-    ///   Button('Click')
-    /// }
-    /// ```
-    pub(crate) fn parse_arkui_component_expression(
-        &mut self,
-        callee: Expression<'a>,
-    ) -> Expression<'a> {
-        let span = self.start_span();
-
-        // Parse type arguments if present (for generic components)
-        let type_arguments = if self.is_ts { self.try_parse_type_arguments() } else { None };
-
-        // Parse arguments
-        let opening_span = self.cur_token().span();
-        self.expect(Kind::LParen);
-        let (exprs, _) = self.parse_delimited_list(
-            Kind::RParen,
-            Kind::Comma,
-            opening_span,
-            Self::parse_assignment_expression_or_higher,
-        );
-        let mut arguments = self.ast.vec();
-        for expr in exprs {
-            arguments.push(Argument::from(expr));
-        }
-        self.expect(Kind::RParen);
-
-        // Parse children block if present
-        let children = if self.eat(Kind::LCurly) {
-            self.in_arkui_dsl_context(|p| {
-                let mut children_vec = p.ast.vec();
-                while !p.at(Kind::RCurly) && !p.has_fatal_error() {
-                    // Parse child element
-                    let child = p.parse_arkui_child();
-                    children_vec.push(child);
-
-                    // Optional semicolon between children
-                    let _ = p.eat(Kind::Semicolon);
-                }
-                p.expect(Kind::RCurly);
-                children_vec
-            })
-        } else {
-            self.ast.vec()
-        };
-
-        let component_span = self.end_span(span);
-        let chain_expressions = self.parse_arkui_component_chain_expressions();
-        Expression::ArkUIComponentExpression(self.ast.alloc_ark_ui_component_expression(
-            component_span,
-            callee,
-            type_arguments,
-            arguments,
-            children,
-            chain_expressions,
-        ))
-    }
-
     /// Parse an ArkUI component expression after arguments have been parsed
     pub(crate) fn parse_arkui_component_expression_after_args(
         &mut self,
@@ -632,23 +873,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         arguments: Vec<'a, Argument<'a>>,
     ) -> Expression<'a> {
         // Parse children block
-        let children = if self.eat(Kind::LCurly) {
-            self.in_arkui_dsl_context(|p| {
-                let mut children_vec = p.ast.vec();
-                while !p.at(Kind::RCurly) && !p.has_fatal_error() {
-                    // Parse child element
-                    let child = p.parse_arkui_child();
-                    children_vec.push(child);
-
-                    // Optional semicolon between children
-                    let _ = p.eat(Kind::Semicolon);
-                }
-                p.expect(Kind::RCurly);
-                children_vec
-            })
-        } else {
-            self.ast.vec()
-        };
+        let (children, has_children) = self.parse_arkui_component_children();
 
         let component_span = self.end_span(span);
         let chain_expressions = self.parse_arkui_component_chain_expressions();
@@ -658,19 +883,25 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             type_arguments,
             arguments,
             children,
+            has_children,
             chain_expressions,
         ))
     }
 
     fn parse_arkui_component_chain_expressions(&mut self) -> Vec<'a, CallExpression<'a>> {
         let mut chain_expressions = self.ast.vec();
-        while self.eat(Kind::Dot) {
+        while self.at(Kind::Dot) {
+            let checkpoint = self.checkpoint();
+            self.bump_any();
             if !self.cur_kind().is_identifier_or_keyword() {
+                self.rewind(checkpoint);
                 break;
             }
             let ident_span = self.start_span();
             let ident = self.parse_identifier_name();
+            let type_arguments = if self.is_ts { self.try_parse_type_arguments() } else { None };
             if !self.at(Kind::LParen) {
+                self.rewind(checkpoint);
                 break;
             }
             let member_span = self.end_span(ident_span);
@@ -697,7 +928,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             chain_expressions.push(self.ast.call_expression(
                 self.end_span(call_span),
                 Expression::from(member_expr),
-                NONE,
+                type_arguments,
                 call_args,
                 false,
             ));
@@ -705,53 +936,30 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         chain_expressions
     }
 
+    fn parse_arkui_component_children(&mut self) -> (Vec<'a, ArkUIChild<'a>>, bool) {
+        if !self.eat(Kind::LCurly) {
+            return (self.ast.vec(), false);
+        }
+        let children = self.in_arkui_dsl_context(|p| {
+            let mut children = p.ast.vec();
+            while !p.at(Kind::RCurly) && !p.has_fatal_error() {
+                children.push(p.parse_arkui_child());
+            }
+            p.expect(Kind::RCurly);
+            children
+        });
+        (children, true)
+    }
+
     /// Parse an ArkUI child element
     fn parse_arkui_child(&mut self) -> ArkUIChild<'a> {
-        // Check for control flow statements first (if, for, while, switch, etc.)
-        // These are commonly used in ArkUI children for conditional rendering
-        match self.cur_kind() {
-            Kind::If
-            | Kind::For
-            | Kind::While
-            | Kind::Do
-            | Kind::Switch
-            | Kind::Try
-            | Kind::With
-            | Kind::Break
-            | Kind::Continue
-            | Kind::Return
-            | Kind::Throw
-            | Kind::Debugger => {
-                // Parse as statement
-                let stmt = self.parse_statement_list_item(StatementContext::StatementList);
-                return ArkUIChild::Statement(self.alloc(stmt));
-            }
-            _ => {}
+        let statement = self.parse_statement_list_item(StatementContext::StatementList);
+        match statement {
+            Statement::ExpressionStatement(statement) => match statement.unbox().expression {
+                Expression::ArkUIComponentExpression(component) => ArkUIChild::Component(component),
+                expression => ArkUIChild::Expression(self.alloc(expression)),
+            },
+            statement => ArkUIChild::Statement(self.alloc(statement)),
         }
-
-        // Check if this is another component expression
-        if self.cur_kind().is_identifier_or_keyword() {
-            let checkpoint = self.checkpoint();
-            let ident_expr = self.parse_identifier_expression();
-
-            if self.at(Kind::LParen) {
-                // This is a component expression
-                let component_expr = self.parse_arkui_component_expression(ident_expr);
-                if let Expression::ArkUIComponentExpression(expr) = component_expr {
-                    return ArkUIChild::Component(expr);
-                } else {
-                    unreachable!(
-                        "parse_arkui_component_expression should return ArkUIComponentExpression"
-                    );
-                }
-            } else {
-                // Not a component, restore and parse as regular expression
-                self.rewind(checkpoint);
-            }
-        }
-
-        // Parse as regular expression
-        let expr = self.parse_assignment_expression_or_higher();
-        ArkUIChild::Expression(self.alloc(expr))
     }
 }

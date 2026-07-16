@@ -557,6 +557,11 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                 }
             }
             Kind::At => {
+                if self.at_arkts_annotation_declaration() {
+                    return Statement::from(ModuleDeclaration::ExportNamedDeclaration(
+                        self.parse_export_named_declaration(span, decorators),
+                    ));
+                }
                 let class_span = self.start_span();
                 let after_export_decorators = self.parse_decorators();
                 if !decorators.is_empty() {

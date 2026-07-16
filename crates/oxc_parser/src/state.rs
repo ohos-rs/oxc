@@ -39,6 +39,10 @@ pub struct ParserState<'a> {
     /// that are already known to be ArkUI DSL, such as `struct build()` methods,
     /// ArkUI-decorated functions, and component children.
     pub arkui_dsl_depth: u32,
+
+    /// The next function or arrow function parsed is a configured ArkUI UI callback.
+    /// The flag is consumed by the function body parser and restored by the argument parser.
+    pub arkui_dsl_next_function: bool,
 }
 
 impl ParserState<'_> {
@@ -50,6 +54,7 @@ impl ParserState<'_> {
             potential_await_reparse: Vec::new(),
             encountered_await_identifier: false,
             arkui_dsl_depth: 0,
+            arkui_dsl_next_function: false,
         }
     }
 }

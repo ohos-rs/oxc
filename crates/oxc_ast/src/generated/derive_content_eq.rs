@@ -2591,7 +2591,11 @@ impl ContentEq for StructStatement<'_> {
         ContentEq::content_eq(&self.decorators, &other.decorators)
             && ContentEq::content_eq(&self.id, &other.id)
             && ContentEq::content_eq(&self.type_parameters, &other.type_parameters)
+            && ContentEq::content_eq(&self.super_class, &other.super_class)
+            && ContentEq::content_eq(&self.super_type_arguments, &other.super_type_arguments)
+            && ContentEq::content_eq(&self.implements, &other.implements)
             && ContentEq::content_eq(&self.body, &other.body)
+            && ContentEq::content_eq(&self.r#abstract, &other.r#abstract)
             && ContentEq::content_eq(&self.declare, &other.declare)
     }
 }
@@ -2607,6 +2611,9 @@ impl ContentEq for StructElement<'_> {
         match (self, other) {
             (Self::PropertyDefinition(a), Self::PropertyDefinition(b)) => a.content_eq(b),
             (Self::MethodDefinition(a), Self::MethodDefinition(b)) => a.content_eq(b),
+            (Self::StaticBlock(a), Self::StaticBlock(b)) => a.content_eq(b),
+            (Self::TSIndexSignature(a), Self::TSIndexSignature(b)) => a.content_eq(b),
+            (Self::AccessorProperty(a), Self::AccessorProperty(b)) => a.content_eq(b),
             _ => false,
         }
     }
@@ -2618,6 +2625,7 @@ impl ContentEq for ArkUIComponentExpression<'_> {
             && ContentEq::content_eq(&self.type_arguments, &other.type_arguments)
             && ContentEq::content_eq(&self.arguments, &other.arguments)
             && ContentEq::content_eq(&self.children, &other.children)
+            && ContentEq::content_eq(&self.has_children, &other.has_children)
             && ContentEq::content_eq(&self.chain_expressions, &other.chain_expressions)
     }
 }

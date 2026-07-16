@@ -4577,7 +4577,6 @@ pub mod walk_mut {
         visitor.leave_node(kind);
     }
 
-    #[inline]
     pub fn walk_struct_statement<'a, V: VisitMut<'a>>(
         visitor: &mut V,
         it: &mut StructStatement<'a>,
@@ -4591,6 +4590,13 @@ pub mod walk_mut {
         if let Some(type_parameters) = &mut it.type_parameters {
             visitor.visit_ts_type_parameter_declaration(type_parameters);
         }
+        if let Some(super_class) = &mut it.super_class {
+            visitor.visit_expression(super_class);
+        }
+        if let Some(super_type_arguments) = &mut it.super_type_arguments {
+            visitor.visit_ts_type_parameter_instantiation(super_type_arguments);
+        }
+        visitor.visit_ts_class_implements_list(&mut it.implements);
         visitor.visit_struct_body(&mut it.body);
         visitor.leave_scope();
         visitor.leave_node(kind);
@@ -4611,6 +4617,9 @@ pub mod walk_mut {
         match it {
             StructElement::PropertyDefinition(it) => visitor.visit_property_definition(it),
             StructElement::MethodDefinition(it) => visitor.visit_method_definition(it),
+            StructElement::StaticBlock(it) => visitor.visit_static_block(it),
+            StructElement::TSIndexSignature(it) => visitor.visit_ts_index_signature(it),
+            StructElement::AccessorProperty(it) => visitor.visit_accessor_property(it),
         }
     }
 

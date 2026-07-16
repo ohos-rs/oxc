@@ -8675,7 +8675,11 @@ impl<'new_alloc> CloneIn<'new_alloc> for StructStatement<'_> {
             decorators: CloneIn::clone_in(&self.decorators, allocator),
             id: CloneIn::clone_in(&self.id, allocator),
             type_parameters: CloneIn::clone_in(&self.type_parameters, allocator),
+            super_class: CloneIn::clone_in(&self.super_class, allocator),
+            super_type_arguments: CloneIn::clone_in(&self.super_type_arguments, allocator),
+            implements: CloneIn::clone_in(&self.implements, allocator),
             body: CloneIn::clone_in(&self.body, allocator),
+            r#abstract: CloneIn::clone_in(&self.r#abstract, allocator),
             declare: CloneIn::clone_in(&self.declare, allocator),
             scope_id: Default::default(),
         }
@@ -8688,7 +8692,14 @@ impl<'new_alloc> CloneIn<'new_alloc> for StructStatement<'_> {
             decorators: CloneIn::clone_in_with_semantic_ids(&self.decorators, allocator),
             id: CloneIn::clone_in_with_semantic_ids(&self.id, allocator),
             type_parameters: CloneIn::clone_in_with_semantic_ids(&self.type_parameters, allocator),
+            super_class: CloneIn::clone_in_with_semantic_ids(&self.super_class, allocator),
+            super_type_arguments: CloneIn::clone_in_with_semantic_ids(
+                &self.super_type_arguments,
+                allocator,
+            ),
+            implements: CloneIn::clone_in_with_semantic_ids(&self.implements, allocator),
             body: CloneIn::clone_in_with_semantic_ids(&self.body, allocator),
+            r#abstract: CloneIn::clone_in_with_semantic_ids(&self.r#abstract, allocator),
             declare: CloneIn::clone_in_with_semantic_ids(&self.declare, allocator),
             scope_id: CloneIn::clone_in_with_semantic_ids(&self.scope_id, allocator),
         }
@@ -8726,6 +8737,13 @@ impl<'new_alloc> CloneIn<'new_alloc> for StructElement<'_> {
             Self::MethodDefinition(it) => {
                 StructElement::MethodDefinition(CloneIn::clone_in(it, allocator))
             }
+            Self::StaticBlock(it) => StructElement::StaticBlock(CloneIn::clone_in(it, allocator)),
+            Self::TSIndexSignature(it) => {
+                StructElement::TSIndexSignature(CloneIn::clone_in(it, allocator))
+            }
+            Self::AccessorProperty(it) => {
+                StructElement::AccessorProperty(CloneIn::clone_in(it, allocator))
+            }
         }
     }
 
@@ -8736,6 +8754,15 @@ impl<'new_alloc> CloneIn<'new_alloc> for StructElement<'_> {
             ),
             Self::MethodDefinition(it) => {
                 StructElement::MethodDefinition(CloneIn::clone_in_with_semantic_ids(it, allocator))
+            }
+            Self::StaticBlock(it) => {
+                StructElement::StaticBlock(CloneIn::clone_in_with_semantic_ids(it, allocator))
+            }
+            Self::TSIndexSignature(it) => {
+                StructElement::TSIndexSignature(CloneIn::clone_in_with_semantic_ids(it, allocator))
+            }
+            Self::AccessorProperty(it) => {
+                StructElement::AccessorProperty(CloneIn::clone_in_with_semantic_ids(it, allocator))
             }
         }
     }
@@ -8752,6 +8779,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ArkUIComponentExpression<'_> {
             type_arguments: CloneIn::clone_in(&self.type_arguments, allocator),
             arguments: CloneIn::clone_in(&self.arguments, allocator),
             children: CloneIn::clone_in(&self.children, allocator),
+            has_children: CloneIn::clone_in(&self.has_children, allocator),
             chain_expressions: CloneIn::clone_in(&self.chain_expressions, allocator),
         }
     }
@@ -8764,6 +8792,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ArkUIComponentExpression<'_> {
             type_arguments: CloneIn::clone_in_with_semantic_ids(&self.type_arguments, allocator),
             arguments: CloneIn::clone_in_with_semantic_ids(&self.arguments, allocator),
             children: CloneIn::clone_in_with_semantic_ids(&self.children, allocator),
+            has_children: CloneIn::clone_in_with_semantic_ids(&self.has_children, allocator),
             chain_expressions: CloneIn::clone_in_with_semantic_ids(
                 &self.chain_expressions,
                 allocator,

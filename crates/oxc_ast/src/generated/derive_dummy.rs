@@ -3274,7 +3274,11 @@ impl<'a> Dummy<'a> for StructStatement<'a> {
             decorators: Dummy::dummy(allocator),
             id: Dummy::dummy(allocator),
             type_parameters: Dummy::dummy(allocator),
+            super_class: Dummy::dummy(allocator),
+            super_type_arguments: Dummy::dummy(allocator),
+            implements: Dummy::dummy(allocator),
             body: Dummy::dummy(allocator),
+            r#abstract: Dummy::dummy(allocator),
             declare: Dummy::dummy(allocator),
             scope_id: Dummy::dummy(allocator),
         }
@@ -3297,9 +3301,9 @@ impl<'a> Dummy<'a> for StructBody<'a> {
 impl<'a> Dummy<'a> for StructElement<'a> {
     /// Create a dummy [`StructElement`].
     ///
-    /// Has cost of making 2 allocations (104 bytes).
+    /// Has cost of making 1 allocation (40 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
-        Self::PropertyDefinition(Dummy::dummy(allocator))
+        Self::StaticBlock(Dummy::dummy(allocator))
     }
 }
 
@@ -3315,6 +3319,7 @@ impl<'a> Dummy<'a> for ArkUIComponentExpression<'a> {
             type_arguments: Dummy::dummy(allocator),
             arguments: Dummy::dummy(allocator),
             children: Dummy::dummy(allocator),
+            has_children: Dummy::dummy(allocator),
             chain_expressions: Dummy::dummy(allocator),
         }
     }

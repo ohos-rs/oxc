@@ -1838,8 +1838,8 @@ const _: () = {
     assert!(offset_of!(Comment, newlines) == 14);
     assert!(offset_of!(Comment, content) == 15);
 
-    // Padding: 7 bytes
-    assert!(size_of::<StructStatement>() == 96);
+    // Padding: 6 bytes
+    assert!(size_of::<StructStatement>() == 144);
     assert!(align_of::<StructStatement>() == 8);
     assert!(offset_of!(StructStatement, span) == 0);
     assert!(offset_of!(StructStatement, node_id) == 8);
@@ -1847,8 +1847,12 @@ const _: () = {
     assert!(offset_of!(StructStatement, decorators) == 16);
     assert!(offset_of!(StructStatement, id) == 40);
     assert!(offset_of!(StructStatement, type_parameters) == 72);
-    assert!(offset_of!(StructStatement, body) == 80);
-    assert!(offset_of!(StructStatement, declare) == 88);
+    assert!(offset_of!(StructStatement, super_class) == 80);
+    assert!(offset_of!(StructStatement, super_type_arguments) == 96);
+    assert!(offset_of!(StructStatement, implements) == 104);
+    assert!(offset_of!(StructStatement, body) == 128);
+    assert!(offset_of!(StructStatement, r#abstract) == 136);
+    assert!(offset_of!(StructStatement, declare) == 137);
 
     // Padding: 4 bytes
     assert!(size_of::<StructBody>() == 40);
@@ -1860,11 +1864,12 @@ const _: () = {
     assert!(size_of::<StructElement>() == 16);
     assert!(align_of::<StructElement>() == 8);
 
-    // Padding: 4 bytes
+    // Padding: 3 bytes
     assert!(size_of::<ArkUIComponentExpression>() == 112);
     assert!(align_of::<ArkUIComponentExpression>() == 8);
     assert!(offset_of!(ArkUIComponentExpression, span) == 0);
     assert!(offset_of!(ArkUIComponentExpression, node_id) == 8);
+    assert!(offset_of!(ArkUIComponentExpression, has_children) == 12);
     assert!(offset_of!(ArkUIComponentExpression, callee) == 16);
     assert!(offset_of!(ArkUIComponentExpression, type_arguments) == 32);
     assert!(offset_of!(ArkUIComponentExpression, arguments) == 40);
@@ -3727,8 +3732,8 @@ const _: () = if cfg!(target_family = "wasm") || align_of::<u64>() == 8 {
     assert!(offset_of!(Comment, newlines) == 14);
     assert!(offset_of!(Comment, content) == 15);
 
-    // Padding: 3 bytes
-    assert!(size_of::<StructStatement>() == 72);
+    // Padding: 2 bytes
+    assert!(size_of::<StructStatement>() == 100);
     assert!(align_of::<StructStatement>() == 4);
     assert!(offset_of!(StructStatement, span) == 0);
     assert!(offset_of!(StructStatement, node_id) == 8);
@@ -3736,8 +3741,12 @@ const _: () = if cfg!(target_family = "wasm") || align_of::<u64>() == 8 {
     assert!(offset_of!(StructStatement, decorators) == 16);
     assert!(offset_of!(StructStatement, id) == 32);
     assert!(offset_of!(StructStatement, type_parameters) == 60);
-    assert!(offset_of!(StructStatement, body) == 64);
-    assert!(offset_of!(StructStatement, declare) == 68);
+    assert!(offset_of!(StructStatement, super_class) == 64);
+    assert!(offset_of!(StructStatement, super_type_arguments) == 72);
+    assert!(offset_of!(StructStatement, implements) == 76);
+    assert!(offset_of!(StructStatement, body) == 92);
+    assert!(offset_of!(StructStatement, r#abstract) == 96);
+    assert!(offset_of!(StructStatement, declare) == 97);
 
     // Padding: 0 bytes
     assert!(size_of::<StructBody>() == 28);
@@ -3749,16 +3758,17 @@ const _: () = if cfg!(target_family = "wasm") || align_of::<u64>() == 8 {
     assert!(size_of::<StructElement>() == 8);
     assert!(align_of::<StructElement>() == 4);
 
-    // Padding: 0 bytes
-    assert!(size_of::<ArkUIComponentExpression>() == 72);
+    // Padding: 3 bytes
+    assert!(size_of::<ArkUIComponentExpression>() == 76);
     assert!(align_of::<ArkUIComponentExpression>() == 4);
     assert!(offset_of!(ArkUIComponentExpression, span) == 0);
     assert!(offset_of!(ArkUIComponentExpression, node_id) == 8);
-    assert!(offset_of!(ArkUIComponentExpression, callee) == 12);
-    assert!(offset_of!(ArkUIComponentExpression, type_arguments) == 20);
-    assert!(offset_of!(ArkUIComponentExpression, arguments) == 24);
-    assert!(offset_of!(ArkUIComponentExpression, children) == 40);
-    assert!(offset_of!(ArkUIComponentExpression, chain_expressions) == 56);
+    assert!(offset_of!(ArkUIComponentExpression, has_children) == 12);
+    assert!(offset_of!(ArkUIComponentExpression, callee) == 16);
+    assert!(offset_of!(ArkUIComponentExpression, type_arguments) == 24);
+    assert!(offset_of!(ArkUIComponentExpression, arguments) == 28);
+    assert!(offset_of!(ArkUIComponentExpression, children) == 44);
+    assert!(offset_of!(ArkUIComponentExpression, chain_expressions) == 60);
 
     assert!(size_of::<ArkUIChild>() == 8);
     assert!(align_of::<ArkUIChild>() == 4);

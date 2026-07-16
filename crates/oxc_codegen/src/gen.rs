@@ -2866,11 +2866,27 @@ impl Gen for StructStatement<'_> {
         if self.declare {
             p.print_str("declare ");
         }
+        if self.r#abstract {
+            p.print_str("abstract ");
+        }
         p.print_str("struct");
         p.print_hard_space();
         self.id.print(p, ctx);
         if let Some(type_parameters) = self.type_parameters.as_ref() {
             type_parameters.print(p, ctx);
+        }
+        if let Some(super_class) = self.super_class.as_ref() {
+            p.print_soft_space();
+            p.print_str("extends ");
+            super_class.print_expr(p, Precedence::Postfix, Context::empty());
+            if let Some(super_type_arguments) = &self.super_type_arguments {
+                super_type_arguments.print(p, ctx);
+            }
+        }
+        if !self.implements.is_empty() {
+            p.print_soft_space();
+            p.print_str("implements ");
+            p.print_list(&self.implements, ctx);
         }
         p.print_soft_space();
         self.body.print(p, ctx);
@@ -2938,6 +2954,18 @@ impl Gen for StructElement<'_> {
                 elem.print(p, ctx);
                 p.print_semicolon_after_statement();
             }
+            Self::StaticBlock(elem) => {
+                elem.print(p, ctx);
+                p.print_soft_newline();
+            }
+            Self::TSIndexSignature(elem) => {
+                elem.print(p, ctx);
+                p.print_semicolon_after_statement();
+            }
+            Self::AccessorProperty(elem) => {
+                elem.print(p, ctx);
+                p.print_semicolon_after_statement();
+            }
         }
     }
 }
@@ -2959,7 +2987,7 @@ impl GenExpr for ArkUIComponentExpression<'_> {
                 type_arguments.print(p, ctx);
             }
             p.print_arguments(self.span, &self.arguments, ctx);
-            if !self.children.is_empty() {
+            if self.has_children {
                 p.print_soft_space();
                 p.print_ascii_byte(b'{');
                 p.print_soft_newline();

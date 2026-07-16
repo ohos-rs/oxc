@@ -4612,6 +4612,9 @@ impl StructElement<'_> {
         match self {
             Self::PropertyDefinition(it) => it.node_id(),
             Self::MethodDefinition(it) => it.node_id(),
+            Self::StaticBlock(it) => it.node_id(),
+            Self::TSIndexSignature(it) => it.node_id(),
+            Self::AccessorProperty(it) => it.node_id(),
         }
     }
 }

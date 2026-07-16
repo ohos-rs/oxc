@@ -167,7 +167,7 @@ impl FileExtension {
             // https://github.com/microsoft/TypeScript/issues/50133
             FileExtension::Ts => file_name.rfind(".d.").is_some_and(|i| i != 0),
             #[expect(clippy::case_sensitive_file_extension_comparisons)]
-            FileExtension::Mts | FileExtension::Cts => {
+            FileExtension::Mts | FileExtension::Cts | FileExtension::Ets => {
                 let base_file_name = &file_name[..file_name.len() - 4];
                 base_file_name.len() > 2 && base_file_name.ends_with(".d")
             }
@@ -878,6 +878,10 @@ mod file_extension_tests {
             ("index.cts", false),
             ("d.cts", false),
             (".d.cts", false),
+            ("index.d.ets", true),
+            ("index.ets", false),
+            ("d.ets", false),
+            (".d.ets", false),
             ("index.d.js", false),
             ("index.js", false),
             ("index.d.jsx", false),

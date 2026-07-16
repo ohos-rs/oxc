@@ -1704,7 +1704,11 @@ export interface StructStatement extends Span {
   decorators: Array<Decorator>;
   id: BindingIdentifier;
   typeParameters?: TSTypeParameterDeclaration | null;
+  superClass: Expression | null;
+  superTypeArguments?: TSTypeParameterInstantiation | null;
+  implements?: Array<TSClassImplements>;
   body: StructBody;
+  abstract?: boolean;
   declare?: boolean;
   parent?: Node;
 }
@@ -1715,7 +1719,12 @@ export interface StructBody extends Span {
   parent?: Node;
 }
 
-export type StructElement = PropertyDefinition | MethodDefinition;
+export type StructElement =
+  | PropertyDefinition
+  | MethodDefinition
+  | StaticBlock
+  | TSIndexSignature
+  | AccessorProperty;
 
 export interface ArkUIComponentExpression extends Span {
   type: "ArkUIComponentExpression";

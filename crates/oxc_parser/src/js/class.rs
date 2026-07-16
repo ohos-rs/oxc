@@ -377,7 +377,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
     /// `ClassStaticBlockStatementList` :
     ///    `StatementList`[~Yield, +Await, ~Return]
-    fn parse_class_static_block(&mut self, span: u32) -> ClassElement<'a> {
+    pub(crate) fn parse_class_static_block(&mut self, span: u32) -> ClassElement<'a> {
         self.bump_any(); // bump `static`
         let block = self.context(
             Context::Await | Context::NewTarget,
@@ -388,7 +388,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
     }
 
     /// <https://github.com/tc39/proposal-decorators>
-    fn parse_class_accessor_property(
+    pub(crate) fn parse_class_accessor_property(
         &mut self,
         span: u32,
         key: PropertyKey<'a>,
@@ -483,7 +483,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         ClassElement::MethodDefinition(method_definition)
     }
 
-    fn parse_constructor_declaration(
+    pub(crate) fn parse_constructor_declaration(
         &mut self,
         span: u32,
         r#type: MethodDefinitionType,
@@ -517,7 +517,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         ClassElement::MethodDefinition(method_definition)
     }
 
-    fn parse_constructor_name(&mut self) -> Option<PropertyKey<'a>> {
+    pub(crate) fn parse_constructor_name(&mut self) -> Option<PropertyKey<'a>> {
         if self.at(Kind::Constructor) {
             let ident = self.parse_identifier_name();
             return Some(PropertyKey::StaticIdentifier(self.alloc(ident)));
@@ -628,9 +628,9 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         decorators: Vec<'a, Decorator<'a>>,
     ) -> ClassElement<'a> {
         let is_arkui_dsl_method =
-            self.source_type.is_arkui() && Self::decorators_enable_arkui_dsl(decorators.as_slice());
+            self.source_type.is_arkui() && self.decorators_enable_arkui_dsl(decorators.as_slice());
         let value = if is_arkui_dsl_method {
-            self.in_arkui_dsl_context(|p| {
+            self.next_function_in_arkui_dsl(|p| {
                 p.parse_method(
                     modifiers.contains(ModifierKind::Async),
                     generator,

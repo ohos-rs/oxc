@@ -1,0 +1,5 @@
+@interface Invalid {
+  var
+  public
+}
+

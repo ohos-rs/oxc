@@ -312,18 +312,35 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         let has_await = self.ctx.has_await();
         let has_yield = self.ctx.has_yield();
         self.ctx = self.ctx.and_await(r#async).and_yield(false);
+        let is_arkui_dsl_function = self.take_next_arkui_dsl_function();
 
         let expression = !self.at(Kind::LCurly);
         let body = if expression {
             // Remove TopLevel context for arrow function expression body
-            let expr = self.context_remove(Context::TopLevel, |p| {
-                p.parse_assignment_expression_or_higher_impl(allow_return_type_in_arrow_function)
-            });
+            let expr = if is_arkui_dsl_function {
+                self.in_arkui_dsl_context(|p| {
+                    p.context_remove(Context::TopLevel, |p| {
+                        p.parse_assignment_expression_or_higher_impl(
+                            allow_return_type_in_arrow_function,
+                        )
+                    })
+                })
+            } else {
+                self.without_arkui_dsl_context(|p| {
+                    p.context_remove(Context::TopLevel, |p| {
+                        p.parse_assignment_expression_or_higher_impl(
+                            allow_return_type_in_arrow_function,
+                        )
+                    })
+                })
+            };
             let span = expr.span();
             let expr_stmt = self.ast.statement_expression(span, expr);
             self.ast.alloc_function_body(span, self.ast.vec(), self.ast.vec1(expr_stmt))
+        } else if is_arkui_dsl_function {
+            self.in_arkui_dsl_context(Self::parse_function_body)
         } else {
-            self.parse_function_body()
+            self.without_arkui_dsl_context(Self::parse_function_body)
         };
 
         self.ctx = self.ctx.and_await(has_await).and_yield(has_yield);

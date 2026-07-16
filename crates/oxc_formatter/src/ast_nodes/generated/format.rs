@@ -5857,6 +5857,36 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, StructElement<'a>> {
                     })
                     .fmt(f);
             }
+            StructElement::StaticBlock(inner) => {
+                allocator
+                    .alloc(AstNode::<StaticBlock> {
+                        inner,
+                        parent,
+                        allocator,
+                        following_span_start: self.following_span_start,
+                    })
+                    .fmt(f);
+            }
+            StructElement::TSIndexSignature(inner) => {
+                allocator
+                    .alloc(AstNode::<TSIndexSignature> {
+                        inner,
+                        parent,
+                        allocator,
+                        following_span_start: self.following_span_start,
+                    })
+                    .fmt(f);
+            }
+            StructElement::AccessorProperty(inner) => {
+                allocator
+                    .alloc(AstNode::<AccessorProperty> {
+                        inner,
+                        parent,
+                        allocator,
+                        following_span_start: self.following_span_start,
+                    })
+                    .fmt(f);
+            }
         }
     }
 }

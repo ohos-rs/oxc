@@ -109,7 +109,7 @@ pub static STRUCTS: phf::Map<&'static str, StructDetails> = ::phf::Map {
         ),
         (
             "ArkUIComponentExpression",
-            StructDetails { field_order: Some(&[1, 0, 2, 3, 4, 5, 6]), is_node: true },
+            StructDetails { field_order: Some(&[1, 0, 3, 4, 5, 6, 2, 7]), is_node: true },
         ),
         (
             "LazyImportDeclaration",
@@ -220,7 +220,10 @@ pub static STRUCTS: phf::Map<&'static str, StructDetails> = ::phf::Map {
         ),
         (
             "StructStatement",
-            StructDetails { field_order: Some(&[1, 0, 3, 4, 5, 6, 7, 2]), is_node: true },
+            StructDetails {
+                field_order: Some(&[1, 0, 3, 4, 5, 6, 7, 8, 9, 10, 11, 2]),
+                is_node: true,
+            },
         ),
         ("JSDocNonNullableType", StructDetails { field_order: Some(&[1, 0, 3, 2]), is_node: true }),
         ("ArrayExpression", StructDetails { field_order: Some(&[1, 0, 2]), is_node: true }),

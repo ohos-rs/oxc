@@ -2235,6 +2235,9 @@ impl GetSpanMut for StructElement<'_> {
         match self {
             Self::PropertyDefinition(it) => GetSpanMut::span_mut(&mut **it),
             Self::MethodDefinition(it) => GetSpanMut::span_mut(&mut **it),
+            Self::StaticBlock(it) => GetSpanMut::span_mut(&mut **it),
+            Self::TSIndexSignature(it) => GetSpanMut::span_mut(&mut **it),
+            Self::AccessorProperty(it) => GetSpanMut::span_mut(&mut **it),
         }
     }
 }
