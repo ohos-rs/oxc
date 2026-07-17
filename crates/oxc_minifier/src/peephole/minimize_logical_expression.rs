@@ -4,7 +4,7 @@ use oxc_compat::ESFeature;
 use oxc_semantic::ReferenceFlags;
 use oxc_span::{ContentEq, GetSpan, SPAN};
 
-use crate::TraverseCtx;
+use crate::{TraverseCtx, symbol_facts::SymbolFact};
 
 use super::PeepholeOptimizations;
 
@@ -63,11 +63,12 @@ impl<'a> PeepholeOptimizations {
             ctx,
         )
         .map(|new_expr| {
-            ctx.ast.expression_logical(
+            Expression::new_logical_expression(
                 expr.span,
-                left.left.take_in(ctx.ast),
+                left.left.take_in(ctx),
                 expr.operator,
                 new_expr,
+                ctx,
             )
         })
     }
@@ -140,11 +141,12 @@ impl<'a> PeepholeOptimizations {
             LeftPairValueResult::Null(span) => span,
             LeftPairValueResult::Undefined => right_value.unwrap(),
         };
-        Some(ctx.ast.expression_binary(
+        Some(Expression::new_binary_expression(
             span,
-            left_non_value_expr.take_in(ctx.ast),
+            left_non_value_expr.take_in(&ctx.ast),
             replace_op,
-            ctx.ast.expression_null_literal(null_expr_span),
+            Expression::new_null_literal(null_expr_span, ctx),
+            ctx,
         ))
     }
 
@@ -245,13 +247,14 @@ impl<'a> PeepholeOptimizations {
 
             Self::mark_assignment_target_as_read(&assignment_expr.left, ctx);
 
-            let assign_value = assignment_expr.right.take_in(ctx.ast);
+            let assign_value = assignment_expr.right.take_in(&ctx.ast);
             sequence_expr.expressions.push(assign_value);
-            let new_expr = ctx.ast.expression_assignment(
+            let new_expr = Expression::new_assignment_expression(
                 e.span,
                 e.operator.to_assignment_operator(),
-                assignment_expr.left.take_in(ctx.ast),
-                e.right.take_in(ctx.ast),
+                assignment_expr.left.take_in(ctx),
+                e.right.take_in(ctx),
+                ctx,
             );
             ctx.replace_expression(expr, new_expr);
             return;
@@ -277,7 +280,7 @@ impl<'a> PeepholeOptimizations {
         };
         assignment_expr.span = span;
         assignment_expr.operator = new_op;
-        let new_expr = e.right.take_in(ctx.ast);
+        let new_expr = e.right.take_in(&ctx.ast);
         ctx.replace_expression(expr, new_expr);
     }
 
@@ -285,13 +288,34 @@ impl<'a> PeepholeOptimizations {
     ///
     /// When creating AssignmentTargetIdentifier from normal expressions, the identifier only has ReferenceFlags::Write.
     /// But assignment expressions changes the value, so we should add ReferenceFlags::Read.
+    ///
+    /// This is the single choke point where the fixed-point loop FORMS new
+    /// compound/logical assignments (`o.x = o.x + 1` → `o.x += 1`,
+    /// `o.x = o.x || y` → `o.x ||= y`). For member targets, the formed
+    /// operator READS the property, so the base symbol is also inserted into
+    /// the program-wide member-write hazard set — Normalize only saw the
+    /// plain-`=` source shape (whose blocking RHS read this rewrite consumes),
+    /// and the default-mode drop of write-only property assignments must not
+    /// remove a sibling plain write whose value the formed read observes.
     pub fn mark_assignment_target_as_read(
         assign_target: &AssignmentTarget,
         ctx: &mut TraverseCtx<'a>,
     ) {
-        if let AssignmentTarget::AssignmentTargetIdentifier(id) = assign_target {
-            let reference = ctx.scoping_mut().get_reference_mut(id.reference_id());
-            reference.flags_mut().insert(ReferenceFlags::Read);
+        let object = match assign_target {
+            AssignmentTarget::AssignmentTargetIdentifier(id) => {
+                let reference = ctx.scoping_mut().get_reference_mut(id.reference_id());
+                reference.flags_mut().insert(ReferenceFlags::Read);
+                return;
+            }
+            AssignmentTarget::StaticMemberExpression(e) => &e.object,
+            AssignmentTarget::ComputedMemberExpression(e) => &e.object,
+            AssignmentTarget::PrivateFieldExpression(e) => &e.object,
+            _ => return,
+        };
+        if let Expression::Identifier(ident) = object.get_inner_expression()
+            && let Some(symbol_id) = ctx.scoping().get_reference(ident.reference_id()).symbol_id()
+        {
+            ctx.state.symbol_facts.insert(symbol_id, SymbolFact::MEMBER_WRITE_HAZARD);
         }
     }
 }

@@ -4,6 +4,22 @@ All notable changes to this package will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0).
 
+## [0.140.0] - 2026-07-13
+
+### 🐛 Bug Fixes
+
+- 058a62f semantic: Track ambient contexts in `SemanticBuilder` (#24327) (camc314)
+
+## [0.138.0] - 2026-06-29
+
+### 🐛 Bug Fixes
+
+- da0e5bf minifier: Don't reorder a closed-over TDZ read when inlining a var (#23771) (Dunqing)
+
+### 📚 Documentation
+
+- 419ec80 syntax: Fix typo in doc comment (#23674) (overlookmotel)
+
 ## [0.128.0] - 2026-04-27
 
 ### 💥 BREAKING CHANGES

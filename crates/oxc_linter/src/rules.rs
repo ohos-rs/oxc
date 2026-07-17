@@ -175,6 +175,7 @@ pub(crate) mod eslint {
     pub mod no_unmodified_loop_condition;
     pub mod no_unneeded_ternary;
     pub mod no_unreachable;
+    pub mod no_unreachable_loop;
     pub mod no_unsafe_finally;
     pub mod no_unsafe_negation;
     pub mod no_unsafe_optional_chaining;
@@ -416,6 +417,7 @@ pub(crate) mod react {
     pub mod forbid_dom_props;
     pub mod forbid_elements;
     pub mod forward_ref_uses_ref;
+    pub mod function_component_definition;
     pub mod hook_use_state;
     pub mod iframe_missing_sandbox;
     pub mod jsx_boolean_value;
@@ -495,6 +497,7 @@ pub(crate) mod unicorn {
     pub mod error_message;
     pub mod escape_case;
     pub mod explicit_length_check;
+    pub mod explicit_timer_delay;
     pub mod filename_case;
     pub mod import_style;
     pub mod max_nested_calls;
@@ -511,6 +514,7 @@ pub(crate) mod unicorn {
     pub mod no_array_sort;
     pub mod no_await_expression_member;
     pub mod no_await_in_promise_methods;
+    pub mod no_confusing_array_with;
     pub mod no_console_spaces;
     pub mod no_document_cookie;
     pub mod no_empty_file;
@@ -793,6 +797,7 @@ pub(crate) mod vitest {
     pub mod no_test_return_statement;
     pub mod no_unneeded_async_expect_function;
     pub mod padding_around_after_all_blocks;
+    pub mod padding_around_test_blocks;
     pub mod prefer_called_exactly_once_with;
     pub mod prefer_called_once;
     pub mod prefer_called_times;

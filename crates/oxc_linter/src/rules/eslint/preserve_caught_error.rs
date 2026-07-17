@@ -3,7 +3,7 @@ use oxc_ast::ast::{
     Argument, BindingPattern, CatchClause, Expression, Function, IdentifierReference,
     ObjectExpression, ObjectPropertyKind, PropertyKey, ThrowStatement, TryStatement,
 };
-use oxc_ast_visit::Visit;
+use oxc_ast_visit::VisitJs;
 use oxc_diagnostics::OxcDiagnostic;
 use oxc_macros::declare_oxc_lint;
 use oxc_semantic::{IsGlobalReference, ScopeFlags};
@@ -53,7 +53,7 @@ struct ThrowFinder<'a, 'ctx> {
     ctx: &'ctx LintContext<'a>,
 }
 
-impl<'a> Visit<'a> for ThrowFinder<'a, '_> {
+impl<'a> VisitJs<'a> for ThrowFinder<'a, '_> {
     fn visit_throw_statement(&mut self, throw_stmt: &ThrowStatement<'a>) {
         let (callee, args) = match &throw_stmt.argument {
             Expression::NewExpression(new_expr) => (&new_expr.callee, &new_expr.arguments),
@@ -234,9 +234,7 @@ fn is_catch_parameter(expr: &Expression, catch_param: &BindingPattern, ctx: &Lin
         return false;
     };
 
-    let Some(catch_symbol_id) = binding.symbol_id.get() else {
-        return false;
-    };
+    let catch_symbol_id = binding.symbol_id();
 
     let Expression::Identifier(ident) = expr else {
         return false;

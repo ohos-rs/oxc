@@ -17,7 +17,9 @@ mod remove_unused_private_members;
 mod replace_known_methods;
 mod substitute_alternate_syntax;
 
-use oxc_ast_visit::{Visit, walk::walk_call_expression};
+#[cfg(debug_assertions)]
+use oxc_ast_visit::Visit;
+use oxc_ast_visit::{VisitJs, walk_js::walk_call_expression};
 use oxc_semantic::Scoping;
 use oxc_syntax::{
     scope::{ScopeFlags, ScopeId},
@@ -25,7 +27,7 @@ use oxc_syntax::{
 };
 use rustc_hash::FxHashSet;
 
-use oxc_allocator::{BitSet, Vec};
+use oxc_allocator::{ArenaVec, BitSet, GetAllocator};
 use oxc_ast::ast::*;
 
 use crate::{
@@ -200,6 +202,21 @@ impl<'a> PeepholeOptimizations {
         }
     }
 
+    /// True if the scope chain from `read_scope` up to (excluding) `body_scope`
+    /// crosses a function boundary — i.e. the read is in a closure relative to
+    /// `body_scope`. Async/generator/arrow scopes are all `Function`.
+    fn read_crosses_function_boundary(
+        read_scope: ScopeId,
+        body_scope: ScopeId,
+        ctx: &TraverseCtx<'a>,
+    ) -> bool {
+        let scoping = ctx.scoping();
+        scoping
+            .scope_ancestors(read_scope)
+            .take_while(|&s| s != body_scope)
+            .any(|s| scoping.scope_flags(s).is_function())
+    }
+
     /// Refresh `ScopeFlags::DirectEval` from live direct-eval call sites.
     ///
     /// `direct_eval_scopes` lists scopes that still contain a direct `eval(...)` call.
@@ -298,7 +315,7 @@ impl<'a> PeepholeOptimizations {
                 }
             }
         }
-        let mut live = BitSet::new_in(initial_references_len, ctx.ast.allocator);
+        let mut live = BitSet::new_in(initial_references_len, ctx.allocator());
         LiveRefCollector { live: &mut live }.visit_program(program);
         for reference_ids in ctx.scoping().resolved_references() {
             for reference_id in reference_ids {
@@ -345,7 +362,7 @@ impl<'a> PeepholeOptimizations {
         struct DirectEvalFlagCheck<'s> {
             scoping: &'s Scoping,
         }
-        impl<'a> Visit<'a> for DirectEvalFlagCheck<'_> {
+        impl<'a> VisitJs<'a> for DirectEvalFlagCheck<'_> {
             fn visit_call_expression(&mut self, it: &CallExpression<'a>) {
                 if let Some(ident) = as_direct_eval_call(it)
                     && let Some(reference_id) = ident.reference_id.get()
@@ -425,7 +442,7 @@ impl<'a> PeepholeOptimizations {
                 ctx.state.dirty.dead_refs.clear();
             }
         } else {
-            ctx.state.dirty.dead_refs = BitSet::new_in(refs_len, ctx.ast.allocator);
+            ctx.state.dirty.dead_refs = BitSet::new_in(refs_len, ctx.allocator());
         }
         ctx.state.dirty.eval_dropped = false;
     }
@@ -434,7 +451,6 @@ impl<'a> PeepholeOptimizations {
 impl<'a> Traverse<'a> for PeepholeOptimizations {
     fn enter_program(&mut self, program: &mut Program<'a>, ctx: &mut TraverseCtx<'a>) {
         ctx.state.symbol_values.reset();
-        ctx.state.proto_write_symbols.clear();
         // Any module loader (`import`, `export * from`, `export … from`) can, on a
         // cycle, evaluate a foreign module that observes a not-yet-assigned binding
         // our exports close over. So the program root starts its prelude "unsafe"
@@ -467,7 +483,11 @@ impl<'a> Traverse<'a> for PeepholeOptimizations {
         debug_assert!(ctx.state.dce || ctx.state.class_symbols_stack.is_exhausted());
     }
 
-    fn exit_statements(&mut self, stmts: &mut Vec<'a, Statement<'a>>, ctx: &mut TraverseCtx<'a>) {
+    fn exit_statements(
+        &mut self,
+        stmts: &mut ArenaVec<'a, Statement<'a>>,
+        ctx: &mut TraverseCtx<'a>,
+    ) {
         Self::minimize_statements(stmts, ctx);
     }
 
@@ -587,6 +607,13 @@ impl<'a> Traverse<'a> for PeepholeOptimizations {
     }
 
     fn exit_expression(&mut self, expr: &mut Expression<'a>, ctx: &mut TraverseCtx<'a>) {
+        // Tree-shaking mode: fewer passes than full minify below. Only the ones
+        // that remove code, plus the constant folds those removals need. The
+        // folds stay on because the removal passes don't evaluate compound
+        // conditions themselves: `if ('production' === 'production')` must fold
+        // to `true` before the dead branch can be dropped. Passes that only
+        // shrink code (`substitute_*`, `minimize_*`) are left out. See the `dce`
+        // docs in `state.rs`.
         if ctx.state.dce {
             match expr {
                 Expression::TemplateLiteral(t) => {
@@ -633,6 +660,7 @@ impl<'a> Traverse<'a> for PeepholeOptimizations {
                     Self::substitute_swap_binary_expressions(e);
                     Self::fold_binary_expr(expr, ctx);
                     Self::fold_binary_typeof_comparison(expr, ctx);
+                    Self::fold_sequence_expression(expr, ctx);
                     Self::minimize_loose_boolean(expr, ctx);
                     Self::minimize_binary(expr, ctx);
                     Self::substitute_loose_equals_undefined(expr, ctx);
@@ -643,6 +671,10 @@ impl<'a> Traverse<'a> for PeepholeOptimizations {
                     Self::fold_unary_expr(expr, ctx);
                     Self::minimize_unary(expr, ctx);
                     Self::substitute_unary_plus(expr, ctx);
+                    Self::fold_sequence_expression(expr, ctx);
+                }
+                Expression::YieldExpression(_) | Expression::AwaitExpression(_) => {
+                    Self::fold_sequence_expression(expr, ctx);
                 }
                 Expression::StaticMemberExpression(_) => {
                     Self::fold_static_member_expr(expr, ctx);
@@ -654,6 +686,7 @@ impl<'a> Traverse<'a> for PeepholeOptimizations {
                 }
                 Expression::LogicalExpression(_) => {
                     Self::fold_logical_expr(expr, ctx);
+                    Self::fold_sequence_expression(expr, ctx);
                     Self::minimize_logical_expression(expr, ctx);
                     Self::substitute_is_object_and_not_null(expr, ctx);
                     Self::substitute_rotate_logical_expression(expr, ctx);
@@ -872,7 +905,7 @@ impl<'s> LiveDirectEvalCollector<'s> {
     }
 }
 
-impl<'a> Visit<'a> for LiveDirectEvalCollector<'_> {
+impl<'a> VisitJs<'a> for LiveDirectEvalCollector<'_> {
     fn visit_call_expression(&mut self, it: &CallExpression<'a>) {
         if let Some(ident) = as_direct_eval_call(it)
             && let Some(reference_id) = ident.reference_id.get()

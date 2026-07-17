@@ -12,7 +12,7 @@
 
 use std::{cell::Cell, marker::PhantomData, mem::offset_of};
 
-use oxc_allocator::{Address, Box, GetAddress, Vec};
+use oxc_allocator::{Address, ArenaBox, ArenaVec, GetAddress};
 use oxc_ast::ast::*;
 use oxc_syntax::{node::NodeId, scope::ScopeId};
 
@@ -49,305 +49,303 @@ pub(crate) enum AncestorType {
     NewExpressionCallee = 25,
     NewExpressionTypeArguments = 26,
     NewExpressionArguments = 27,
-    MetaPropertyMeta = 28,
-    MetaPropertyProperty = 29,
-    SpreadElementArgument = 30,
-    UpdateExpressionArgument = 31,
-    UnaryExpressionArgument = 32,
-    BinaryExpressionLeft = 33,
-    BinaryExpressionRight = 34,
-    PrivateInExpressionLeft = 35,
-    PrivateInExpressionRight = 36,
-    LogicalExpressionLeft = 37,
-    LogicalExpressionRight = 38,
-    ConditionalExpressionTest = 39,
-    ConditionalExpressionConsequent = 40,
-    ConditionalExpressionAlternate = 41,
-    AssignmentExpressionLeft = 42,
-    AssignmentExpressionRight = 43,
-    ArrayAssignmentTargetElements = 44,
-    ArrayAssignmentTargetRest = 45,
-    ObjectAssignmentTargetProperties = 46,
-    ObjectAssignmentTargetRest = 47,
-    AssignmentTargetRestTarget = 48,
-    AssignmentTargetWithDefaultBinding = 49,
-    AssignmentTargetWithDefaultInit = 50,
-    AssignmentTargetPropertyIdentifierBinding = 51,
-    AssignmentTargetPropertyIdentifierInit = 52,
-    AssignmentTargetPropertyPropertyName = 53,
-    AssignmentTargetPropertyPropertyBinding = 54,
-    SequenceExpressionExpressions = 55,
-    AwaitExpressionArgument = 56,
-    ChainExpressionExpression = 57,
-    ParenthesizedExpressionExpression = 58,
-    DirectiveExpression = 59,
-    BlockStatementBody = 60,
-    VariableDeclarationDeclarations = 61,
-    VariableDeclaratorId = 62,
-    VariableDeclaratorTypeAnnotation = 63,
-    VariableDeclaratorInit = 64,
-    ExpressionStatementExpression = 65,
-    IfStatementTest = 66,
-    IfStatementConsequent = 67,
-    IfStatementAlternate = 68,
-    DoWhileStatementBody = 69,
-    DoWhileStatementTest = 70,
-    WhileStatementTest = 71,
-    WhileStatementBody = 72,
-    ForStatementInit = 73,
-    ForStatementTest = 74,
-    ForStatementUpdate = 75,
-    ForStatementBody = 76,
-    ForInStatementLeft = 77,
-    ForInStatementRight = 78,
-    ForInStatementBody = 79,
-    ForOfStatementLeft = 80,
-    ForOfStatementRight = 81,
-    ForOfStatementBody = 82,
-    ContinueStatementLabel = 83,
-    BreakStatementLabel = 84,
-    ReturnStatementArgument = 85,
-    WithStatementObject = 86,
-    WithStatementBody = 87,
-    SwitchStatementDiscriminant = 88,
-    SwitchStatementCases = 89,
-    SwitchCaseTest = 90,
-    SwitchCaseConsequent = 91,
-    LabeledStatementLabel = 92,
-    LabeledStatementBody = 93,
-    ThrowStatementArgument = 94,
-    TryStatementBlock = 95,
-    TryStatementHandler = 96,
-    TryStatementFinalizer = 97,
-    CatchClauseParam = 98,
-    CatchClauseBody = 99,
-    CatchParameterPattern = 100,
-    CatchParameterTypeAnnotation = 101,
-    AssignmentPatternLeft = 102,
-    AssignmentPatternRight = 103,
-    ObjectPatternProperties = 104,
-    ObjectPatternRest = 105,
-    BindingPropertyKey = 106,
-    BindingPropertyValue = 107,
-    ArrayPatternElements = 108,
-    ArrayPatternRest = 109,
-    BindingRestElementArgument = 110,
-    FunctionDecorators = 111,
-    FunctionId = 112,
-    FunctionTypeParameters = 113,
-    FunctionThisParam = 114,
-    FunctionParams = 115,
-    FunctionReturnType = 116,
-    FunctionBody = 117,
-    FormalParametersItems = 118,
-    FormalParametersRest = 119,
-    FormalParameterDecorators = 120,
-    FormalParameterPattern = 121,
-    FormalParameterTypeAnnotation = 122,
-    FormalParameterInitializer = 123,
-    FormalParameterRestDecorators = 124,
-    FormalParameterRestRest = 125,
-    FormalParameterRestTypeAnnotation = 126,
-    FunctionBodyDirectives = 127,
-    FunctionBodyStatements = 128,
-    ArrowFunctionExpressionTypeParameters = 129,
-    ArrowFunctionExpressionParams = 130,
-    ArrowFunctionExpressionReturnType = 131,
-    ArrowFunctionExpressionBody = 132,
-    YieldExpressionArgument = 133,
-    ClassDecorators = 134,
-    ClassId = 135,
-    ClassTypeParameters = 136,
-    ClassSuperClass = 137,
-    ClassSuperTypeArguments = 138,
-    ClassImplements = 139,
-    ClassBody = 140,
-    ClassBodyBody = 141,
-    MethodDefinitionDecorators = 142,
-    MethodDefinitionKey = 143,
-    MethodDefinitionValue = 144,
-    PropertyDefinitionDecorators = 145,
-    PropertyDefinitionKey = 146,
-    PropertyDefinitionTypeAnnotation = 147,
-    PropertyDefinitionValue = 148,
-    StaticBlockBody = 149,
-    AccessorPropertyDecorators = 150,
-    AccessorPropertyKey = 151,
-    AccessorPropertyTypeAnnotation = 152,
-    AccessorPropertyValue = 153,
-    ImportExpressionSource = 154,
-    ImportExpressionOptions = 155,
-    ImportDeclarationSpecifiers = 156,
-    ImportDeclarationSource = 157,
-    ImportDeclarationWithClause = 158,
-    LazyImportDeclarationSpecifiers = 159,
-    LazyImportDeclarationSource = 160,
-    LazyImportDeclarationWithClause = 161,
-    ImportSpecifierImported = 162,
-    ImportSpecifierLocal = 163,
-    ImportDefaultSpecifierLocal = 164,
-    ImportNamespaceSpecifierLocal = 165,
-    WithClauseWithEntries = 166,
-    ImportAttributeKey = 167,
-    ImportAttributeValue = 168,
-    ExportNamedDeclarationDecorators = 169,
-    ExportNamedDeclarationDeclaration = 170,
-    ExportNamedDeclarationSpecifiers = 171,
-    ExportNamedDeclarationSource = 172,
-    ExportNamedDeclarationWithClause = 173,
-    ExportDefaultDeclarationDeclaration = 174,
-    ExportAllDeclarationExported = 175,
-    ExportAllDeclarationSource = 176,
-    ExportAllDeclarationWithClause = 177,
-    ExportSpecifierLocal = 178,
-    ExportSpecifierExported = 179,
-    V8IntrinsicExpressionName = 180,
-    V8IntrinsicExpressionArguments = 181,
-    JSXElementOpeningElement = 182,
-    JSXElementChildren = 183,
-    JSXElementClosingElement = 184,
-    JSXOpeningElementName = 185,
-    JSXOpeningElementTypeArguments = 186,
-    JSXOpeningElementAttributes = 187,
-    JSXClosingElementName = 188,
-    JSXFragmentOpeningFragment = 189,
-    JSXFragmentChildren = 190,
-    JSXFragmentClosingFragment = 191,
-    JSXNamespacedNameNamespace = 192,
-    JSXNamespacedNameName = 193,
-    JSXMemberExpressionObject = 194,
-    JSXMemberExpressionProperty = 195,
-    JSXExpressionContainerExpression = 196,
-    JSXAttributeName = 197,
-    JSXAttributeValue = 198,
-    JSXSpreadAttributeArgument = 199,
-    JSXSpreadChildExpression = 200,
-    TSThisParameterTypeAnnotation = 201,
-    TSEnumDeclarationId = 202,
-    TSEnumDeclarationBody = 203,
-    TSEnumBodyMembers = 204,
-    TSEnumMemberId = 205,
-    TSEnumMemberInitializer = 206,
-    TSTypeAnnotationTypeAnnotation = 207,
-    TSLiteralTypeLiteral = 208,
-    TSConditionalTypeCheckType = 209,
-    TSConditionalTypeExtendsType = 210,
-    TSConditionalTypeTrueType = 211,
-    TSConditionalTypeFalseType = 212,
-    TSUnionTypeTypes = 213,
-    TSIntersectionTypeTypes = 214,
-    TSParenthesizedTypeTypeAnnotation = 215,
-    TSTypeOperatorTypeAnnotation = 216,
-    TSArrayTypeElementType = 217,
-    TSIndexedAccessTypeObjectType = 218,
-    TSIndexedAccessTypeIndexType = 219,
-    TSTupleTypeElementTypes = 220,
-    TSNamedTupleMemberLabel = 221,
-    TSNamedTupleMemberElementType = 222,
-    TSOptionalTypeTypeAnnotation = 223,
-    TSRestTypeTypeAnnotation = 224,
-    TSTypeReferenceTypeName = 225,
-    TSTypeReferenceTypeArguments = 226,
-    TSQualifiedNameLeft = 227,
-    TSQualifiedNameRight = 228,
-    TSTypeParameterInstantiationParams = 229,
-    TSTypeParameterName = 230,
-    TSTypeParameterConstraint = 231,
-    TSTypeParameterDefault = 232,
-    TSTypeParameterDeclarationParams = 233,
-    TSTypeAliasDeclarationId = 234,
-    TSTypeAliasDeclarationTypeParameters = 235,
-    TSTypeAliasDeclarationTypeAnnotation = 236,
-    TSClassImplementsExpression = 237,
-    TSClassImplementsTypeArguments = 238,
-    TSInterfaceDeclarationId = 239,
-    TSInterfaceDeclarationTypeParameters = 240,
-    TSInterfaceDeclarationExtends = 241,
-    TSInterfaceDeclarationBody = 242,
-    TSInterfaceBodyBody = 243,
-    TSPropertySignatureKey = 244,
-    TSPropertySignatureTypeAnnotation = 245,
-    TSIndexSignatureParameters = 246,
-    TSIndexSignatureTypeAnnotation = 247,
-    TSCallSignatureDeclarationTypeParameters = 248,
-    TSCallSignatureDeclarationThisParam = 249,
-    TSCallSignatureDeclarationParams = 250,
-    TSCallSignatureDeclarationReturnType = 251,
-    TSMethodSignatureKey = 252,
-    TSMethodSignatureTypeParameters = 253,
-    TSMethodSignatureThisParam = 254,
-    TSMethodSignatureParams = 255,
-    TSMethodSignatureReturnType = 256,
-    TSConstructSignatureDeclarationTypeParameters = 257,
-    TSConstructSignatureDeclarationParams = 258,
-    TSConstructSignatureDeclarationReturnType = 259,
-    TSIndexSignatureNameTypeAnnotation = 260,
-    TSInterfaceHeritageExpression = 261,
-    TSInterfaceHeritageTypeArguments = 262,
-    TSTypePredicateParameterName = 263,
-    TSTypePredicateTypeAnnotation = 264,
-    TSModuleDeclarationId = 265,
-    TSModuleDeclarationBody = 266,
-    TSGlobalDeclarationBody = 267,
-    TSModuleBlockDirectives = 268,
-    TSModuleBlockBody = 269,
-    TSTypeLiteralMembers = 270,
-    TSInferTypeTypeParameter = 271,
-    TSTypeQueryExprName = 272,
-    TSTypeQueryTypeArguments = 273,
-    TSImportTypeSource = 274,
-    TSImportTypeOptions = 275,
-    TSImportTypeQualifier = 276,
-    TSImportTypeTypeArguments = 277,
-    TSImportTypeQualifiedNameLeft = 278,
-    TSImportTypeQualifiedNameRight = 279,
-    TSFunctionTypeTypeParameters = 280,
-    TSFunctionTypeThisParam = 281,
-    TSFunctionTypeParams = 282,
-    TSFunctionTypeReturnType = 283,
-    TSConstructorTypeTypeParameters = 284,
-    TSConstructorTypeParams = 285,
-    TSConstructorTypeReturnType = 286,
-    TSMappedTypeKey = 287,
-    TSMappedTypeConstraint = 288,
-    TSMappedTypeNameType = 289,
-    TSMappedTypeTypeAnnotation = 290,
-    TSTemplateLiteralTypeQuasis = 291,
-    TSTemplateLiteralTypeTypes = 292,
-    TSAsExpressionExpression = 293,
-    TSAsExpressionTypeAnnotation = 294,
-    TSSatisfiesExpressionExpression = 295,
-    TSSatisfiesExpressionTypeAnnotation = 296,
-    TSTypeAssertionTypeAnnotation = 297,
-    TSTypeAssertionExpression = 298,
-    TSImportEqualsDeclarationId = 299,
-    TSImportEqualsDeclarationModuleReference = 300,
-    TSExternalModuleReferenceExpression = 301,
-    TSNonNullExpressionExpression = 302,
-    DecoratorExpression = 303,
-    TSExportAssignmentExpression = 304,
-    TSNamespaceExportDeclarationId = 305,
-    TSInstantiationExpressionExpression = 306,
-    TSInstantiationExpressionTypeArguments = 307,
-    JSDocNullableTypeTypeAnnotation = 308,
-    JSDocNonNullableTypeTypeAnnotation = 309,
-    StructStatementDecorators = 310,
-    StructStatementId = 311,
-    StructStatementTypeParameters = 312,
-    StructStatementSuperClass = 313,
-    StructStatementSuperTypeArguments = 314,
-    StructStatementImplements = 315,
-    StructStatementBody = 316,
-    StructBodyBody = 317,
-    ArkUIComponentExpressionCallee = 318,
-    ArkUIComponentExpressionTypeArguments = 319,
-    ArkUIComponentExpressionArguments = 320,
-    ArkUIComponentExpressionChildren = 321,
-    ArkUIComponentExpressionChainExpressions = 322,
-    AnnotationDeclarationDecorators = 323,
-    AnnotationDeclarationId = 324,
-    AnnotationDeclarationBody = 325,
-    AnnotationBodyBody = 326,
+    SpreadElementArgument = 28,
+    UpdateExpressionArgument = 29,
+    UnaryExpressionArgument = 30,
+    BinaryExpressionLeft = 31,
+    BinaryExpressionRight = 32,
+    PrivateInExpressionLeft = 33,
+    PrivateInExpressionRight = 34,
+    LogicalExpressionLeft = 35,
+    LogicalExpressionRight = 36,
+    ConditionalExpressionTest = 37,
+    ConditionalExpressionConsequent = 38,
+    ConditionalExpressionAlternate = 39,
+    AssignmentExpressionLeft = 40,
+    AssignmentExpressionRight = 41,
+    ArrayAssignmentTargetElements = 42,
+    ArrayAssignmentTargetRest = 43,
+    ObjectAssignmentTargetProperties = 44,
+    ObjectAssignmentTargetRest = 45,
+    AssignmentTargetRestTarget = 46,
+    AssignmentTargetWithDefaultBinding = 47,
+    AssignmentTargetWithDefaultInit = 48,
+    AssignmentTargetPropertyIdentifierBinding = 49,
+    AssignmentTargetPropertyIdentifierInit = 50,
+    AssignmentTargetPropertyPropertyName = 51,
+    AssignmentTargetPropertyPropertyBinding = 52,
+    SequenceExpressionExpressions = 53,
+    AwaitExpressionArgument = 54,
+    ChainExpressionExpression = 55,
+    ParenthesizedExpressionExpression = 56,
+    DirectiveExpression = 57,
+    BlockStatementBody = 58,
+    VariableDeclarationDeclarations = 59,
+    VariableDeclaratorId = 60,
+    VariableDeclaratorTypeAnnotation = 61,
+    VariableDeclaratorInit = 62,
+    ExpressionStatementExpression = 63,
+    IfStatementTest = 64,
+    IfStatementConsequent = 65,
+    IfStatementAlternate = 66,
+    DoWhileStatementBody = 67,
+    DoWhileStatementTest = 68,
+    WhileStatementTest = 69,
+    WhileStatementBody = 70,
+    ForStatementInit = 71,
+    ForStatementTest = 72,
+    ForStatementUpdate = 73,
+    ForStatementBody = 74,
+    ForInStatementLeft = 75,
+    ForInStatementRight = 76,
+    ForInStatementBody = 77,
+    ForOfStatementLeft = 78,
+    ForOfStatementRight = 79,
+    ForOfStatementBody = 80,
+    ContinueStatementLabel = 81,
+    BreakStatementLabel = 82,
+    ReturnStatementArgument = 83,
+    WithStatementObject = 84,
+    WithStatementBody = 85,
+    SwitchStatementDiscriminant = 86,
+    SwitchStatementCases = 87,
+    SwitchCaseTest = 88,
+    SwitchCaseConsequent = 89,
+    LabeledStatementLabel = 90,
+    LabeledStatementBody = 91,
+    ThrowStatementArgument = 92,
+    TryStatementBlock = 93,
+    TryStatementHandler = 94,
+    TryStatementFinalizer = 95,
+    CatchClauseParam = 96,
+    CatchClauseBody = 97,
+    CatchParameterPattern = 98,
+    CatchParameterTypeAnnotation = 99,
+    AssignmentPatternLeft = 100,
+    AssignmentPatternRight = 101,
+    ObjectPatternProperties = 102,
+    ObjectPatternRest = 103,
+    BindingPropertyKey = 104,
+    BindingPropertyValue = 105,
+    ArrayPatternElements = 106,
+    ArrayPatternRest = 107,
+    BindingRestElementArgument = 108,
+    FunctionDecorators = 109,
+    FunctionId = 110,
+    FunctionTypeParameters = 111,
+    FunctionThisParam = 112,
+    FunctionParams = 113,
+    FunctionReturnType = 114,
+    FunctionBody = 115,
+    FormalParametersItems = 116,
+    FormalParametersRest = 117,
+    FormalParameterDecorators = 118,
+    FormalParameterPattern = 119,
+    FormalParameterTypeAnnotation = 120,
+    FormalParameterInitializer = 121,
+    FormalParameterRestDecorators = 122,
+    FormalParameterRestRest = 123,
+    FormalParameterRestTypeAnnotation = 124,
+    FunctionBodyDirectives = 125,
+    FunctionBodyStatements = 126,
+    ArrowFunctionExpressionTypeParameters = 127,
+    ArrowFunctionExpressionParams = 128,
+    ArrowFunctionExpressionReturnType = 129,
+    ArrowFunctionExpressionBody = 130,
+    YieldExpressionArgument = 131,
+    ClassDecorators = 132,
+    ClassId = 133,
+    ClassTypeParameters = 134,
+    ClassSuperClass = 135,
+    ClassSuperTypeArguments = 136,
+    ClassImplements = 137,
+    ClassBody = 138,
+    ClassBodyBody = 139,
+    MethodDefinitionDecorators = 140,
+    MethodDefinitionKey = 141,
+    MethodDefinitionValue = 142,
+    PropertyDefinitionDecorators = 143,
+    PropertyDefinitionKey = 144,
+    PropertyDefinitionTypeAnnotation = 145,
+    PropertyDefinitionValue = 146,
+    StaticBlockBody = 147,
+    AccessorPropertyDecorators = 148,
+    AccessorPropertyKey = 149,
+    AccessorPropertyTypeAnnotation = 150,
+    AccessorPropertyValue = 151,
+    ImportExpressionSource = 152,
+    ImportExpressionOptions = 153,
+    ImportDeclarationSpecifiers = 154,
+    ImportDeclarationSource = 155,
+    ImportDeclarationWithClause = 156,
+    LazyImportDeclarationSpecifiers = 157,
+    LazyImportDeclarationSource = 158,
+    LazyImportDeclarationWithClause = 159,
+    ImportSpecifierImported = 160,
+    ImportSpecifierLocal = 161,
+    ImportDefaultSpecifierLocal = 162,
+    ImportNamespaceSpecifierLocal = 163,
+    WithClauseWithEntries = 164,
+    ImportAttributeKey = 165,
+    ImportAttributeValue = 166,
+    ExportNamedDeclarationDecorators = 167,
+    ExportNamedDeclarationDeclaration = 168,
+    ExportNamedDeclarationSpecifiers = 169,
+    ExportNamedDeclarationSource = 170,
+    ExportNamedDeclarationWithClause = 171,
+    ExportDefaultDeclarationDeclaration = 172,
+    ExportAllDeclarationExported = 173,
+    ExportAllDeclarationSource = 174,
+    ExportAllDeclarationWithClause = 175,
+    ExportSpecifierLocal = 176,
+    ExportSpecifierExported = 177,
+    V8IntrinsicExpressionName = 178,
+    V8IntrinsicExpressionArguments = 179,
+    JSXElementOpeningElement = 180,
+    JSXElementChildren = 181,
+    JSXElementClosingElement = 182,
+    JSXOpeningElementName = 183,
+    JSXOpeningElementTypeArguments = 184,
+    JSXOpeningElementAttributes = 185,
+    JSXClosingElementName = 186,
+    JSXFragmentOpeningFragment = 187,
+    JSXFragmentChildren = 188,
+    JSXFragmentClosingFragment = 189,
+    JSXNamespacedNameNamespace = 190,
+    JSXNamespacedNameName = 191,
+    JSXMemberExpressionObject = 192,
+    JSXMemberExpressionProperty = 193,
+    JSXExpressionContainerExpression = 194,
+    JSXAttributeName = 195,
+    JSXAttributeValue = 196,
+    JSXSpreadAttributeArgument = 197,
+    JSXSpreadChildExpression = 198,
+    TSThisParameterTypeAnnotation = 199,
+    TSEnumDeclarationId = 200,
+    TSEnumDeclarationBody = 201,
+    TSEnumBodyMembers = 202,
+    TSEnumMemberId = 203,
+    TSEnumMemberInitializer = 204,
+    TSTypeAnnotationTypeAnnotation = 205,
+    TSLiteralTypeLiteral = 206,
+    TSConditionalTypeCheckType = 207,
+    TSConditionalTypeExtendsType = 208,
+    TSConditionalTypeTrueType = 209,
+    TSConditionalTypeFalseType = 210,
+    TSUnionTypeTypes = 211,
+    TSIntersectionTypeTypes = 212,
+    TSParenthesizedTypeTypeAnnotation = 213,
+    TSTypeOperatorTypeAnnotation = 214,
+    TSArrayTypeElementType = 215,
+    TSIndexedAccessTypeObjectType = 216,
+    TSIndexedAccessTypeIndexType = 217,
+    TSTupleTypeElementTypes = 218,
+    TSNamedTupleMemberLabel = 219,
+    TSNamedTupleMemberElementType = 220,
+    TSOptionalTypeTypeAnnotation = 221,
+    TSRestTypeTypeAnnotation = 222,
+    TSTypeReferenceTypeName = 223,
+    TSTypeReferenceTypeArguments = 224,
+    TSQualifiedNameLeft = 225,
+    TSQualifiedNameRight = 226,
+    TSTypeParameterInstantiationParams = 227,
+    TSTypeParameterName = 228,
+    TSTypeParameterConstraint = 229,
+    TSTypeParameterDefault = 230,
+    TSTypeParameterDeclarationParams = 231,
+    TSTypeAliasDeclarationId = 232,
+    TSTypeAliasDeclarationTypeParameters = 233,
+    TSTypeAliasDeclarationTypeAnnotation = 234,
+    TSClassImplementsExpression = 235,
+    TSClassImplementsTypeArguments = 236,
+    TSInterfaceDeclarationId = 237,
+    TSInterfaceDeclarationTypeParameters = 238,
+    TSInterfaceDeclarationExtends = 239,
+    TSInterfaceDeclarationBody = 240,
+    TSInterfaceBodyBody = 241,
+    TSPropertySignatureKey = 242,
+    TSPropertySignatureTypeAnnotation = 243,
+    TSIndexSignatureParameters = 244,
+    TSIndexSignatureTypeAnnotation = 245,
+    TSCallSignatureDeclarationTypeParameters = 246,
+    TSCallSignatureDeclarationThisParam = 247,
+    TSCallSignatureDeclarationParams = 248,
+    TSCallSignatureDeclarationReturnType = 249,
+    TSMethodSignatureKey = 250,
+    TSMethodSignatureTypeParameters = 251,
+    TSMethodSignatureThisParam = 252,
+    TSMethodSignatureParams = 253,
+    TSMethodSignatureReturnType = 254,
+    TSConstructSignatureDeclarationTypeParameters = 255,
+    TSConstructSignatureDeclarationParams = 256,
+    TSConstructSignatureDeclarationReturnType = 257,
+    TSIndexSignatureNameTypeAnnotation = 258,
+    TSInterfaceHeritageExpression = 259,
+    TSInterfaceHeritageTypeArguments = 260,
+    TSTypePredicateParameterName = 261,
+    TSTypePredicateTypeAnnotation = 262,
+    TSModuleDeclarationId = 263,
+    TSModuleDeclarationBody = 264,
+    TSGlobalDeclarationBody = 265,
+    TSModuleBlockDirectives = 266,
+    TSModuleBlockBody = 267,
+    TSTypeLiteralMembers = 268,
+    TSInferTypeTypeParameter = 269,
+    TSTypeQueryExprName = 270,
+    TSTypeQueryTypeArguments = 271,
+    TSImportTypeSource = 272,
+    TSImportTypeOptions = 273,
+    TSImportTypeQualifier = 274,
+    TSImportTypeTypeArguments = 275,
+    TSImportTypeQualifiedNameLeft = 276,
+    TSImportTypeQualifiedNameRight = 277,
+    TSFunctionTypeTypeParameters = 278,
+    TSFunctionTypeThisParam = 279,
+    TSFunctionTypeParams = 280,
+    TSFunctionTypeReturnType = 281,
+    TSConstructorTypeTypeParameters = 282,
+    TSConstructorTypeParams = 283,
+    TSConstructorTypeReturnType = 284,
+    TSMappedTypeKey = 285,
+    TSMappedTypeConstraint = 286,
+    TSMappedTypeNameType = 287,
+    TSMappedTypeTypeAnnotation = 288,
+    TSTemplateLiteralTypeQuasis = 289,
+    TSTemplateLiteralTypeTypes = 290,
+    TSAsExpressionExpression = 291,
+    TSAsExpressionTypeAnnotation = 292,
+    TSSatisfiesExpressionExpression = 293,
+    TSSatisfiesExpressionTypeAnnotation = 294,
+    TSTypeAssertionTypeAnnotation = 295,
+    TSTypeAssertionExpression = 296,
+    TSImportEqualsDeclarationId = 297,
+    TSImportEqualsDeclarationModuleReference = 298,
+    TSExternalModuleReferenceExpression = 299,
+    TSNonNullExpressionExpression = 300,
+    DecoratorExpression = 301,
+    TSExportAssignmentExpression = 302,
+    TSNamespaceExportDeclarationId = 303,
+    TSInstantiationExpressionExpression = 304,
+    TSInstantiationExpressionTypeArguments = 305,
+    JSDocNullableTypeTypeAnnotation = 306,
+    JSDocNonNullableTypeTypeAnnotation = 307,
+    StructStatementDecorators = 308,
+    StructStatementId = 309,
+    StructStatementTypeParameters = 310,
+    StructStatementSuperClass = 311,
+    StructStatementSuperTypeArguments = 312,
+    StructStatementImplements = 313,
+    StructStatementBody = 314,
+    StructBodyBody = 315,
+    ArkUIComponentExpressionCallee = 316,
+    ArkUIComponentExpressionTypeArguments = 317,
+    ArkUIComponentExpressionArguments = 318,
+    ArkUIComponentExpressionChildren = 319,
+    ArkUIComponentExpressionChainExpressions = 320,
+    AnnotationDeclarationDecorators = 321,
+    AnnotationDeclarationId = 322,
+    AnnotationDeclarationBody = 323,
+    AnnotationBodyBody = 324,
 }
 
 /// Ancestor type used in AST traversal.
@@ -422,9 +420,6 @@ pub enum Ancestor<'a, 't> {
         AncestorType::NewExpressionTypeArguments as u16,
     NewExpressionArguments(NewExpressionWithoutArguments<'a, 't>) =
         AncestorType::NewExpressionArguments as u16,
-    MetaPropertyMeta(MetaPropertyWithoutMeta<'a, 't>) = AncestorType::MetaPropertyMeta as u16,
-    MetaPropertyProperty(MetaPropertyWithoutProperty<'a, 't>) =
-        AncestorType::MetaPropertyProperty as u16,
     SpreadElementArgument(SpreadElementWithoutArgument<'a, 't>) =
         AncestorType::SpreadElementArgument as u16,
     UpdateExpressionArgument(UpdateExpressionWithoutArgument<'a, 't>) =
@@ -1066,11 +1061,6 @@ impl<'a, 't> Ancestor<'a, 't> {
                 | Self::NewExpressionTypeArguments(_)
                 | Self::NewExpressionArguments(_)
         )
-    }
-
-    #[inline]
-    pub fn is_meta_property(self) -> bool {
-        matches!(self, Self::MetaPropertyMeta(_) | Self::MetaPropertyProperty(_))
     }
 
     #[inline]
@@ -2448,8 +2438,6 @@ impl<'a, 't> GetAddress for Ancestor<'a, 't> {
             Self::NewExpressionCallee(a) => a.address(),
             Self::NewExpressionTypeArguments(a) => a.address(),
             Self::NewExpressionArguments(a) => a.address(),
-            Self::MetaPropertyMeta(a) => a.address(),
-            Self::MetaPropertyProperty(a) => a.address(),
             Self::SpreadElementArgument(a) => a.address(),
             Self::UpdateExpressionArgument(a) => a.address(),
             Self::UnaryExpressionArgument(a) => a.address(),
@@ -2790,22 +2778,24 @@ impl<'a, 't> ProgramWithoutHashbang<'a, 't> {
     }
 
     #[inline]
-    pub fn comments(self) -> &'t Vec<'a, Comment> {
-        unsafe { &*((self.0 as *const u8).add(OFFSET_PROGRAM_COMMENTS) as *const Vec<'a, Comment>) }
-    }
-
-    #[inline]
-    pub fn directives(self) -> &'t Vec<'a, Directive<'a>> {
+    pub fn comments(self) -> &'t ArenaVec<'a, Comment> {
         unsafe {
-            &*((self.0 as *const u8).add(OFFSET_PROGRAM_DIRECTIVES)
-                as *const Vec<'a, Directive<'a>>)
+            &*((self.0 as *const u8).add(OFFSET_PROGRAM_COMMENTS) as *const ArenaVec<'a, Comment>)
         }
     }
 
     #[inline]
-    pub fn body(self) -> &'t Vec<'a, Statement<'a>> {
+    pub fn directives(self) -> &'t ArenaVec<'a, Directive<'a>> {
         unsafe {
-            &*((self.0 as *const u8).add(OFFSET_PROGRAM_BODY) as *const Vec<'a, Statement<'a>>)
+            &*((self.0 as *const u8).add(OFFSET_PROGRAM_DIRECTIVES)
+                as *const ArenaVec<'a, Directive<'a>>)
+        }
+    }
+
+    #[inline]
+    pub fn body(self) -> &'t ArenaVec<'a, Statement<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_PROGRAM_BODY) as *const ArenaVec<'a, Statement<'a>>)
         }
     }
 
@@ -2853,8 +2843,10 @@ impl<'a, 't> ProgramWithoutDirectives<'a, 't> {
     }
 
     #[inline]
-    pub fn comments(self) -> &'t Vec<'a, Comment> {
-        unsafe { &*((self.0 as *const u8).add(OFFSET_PROGRAM_COMMENTS) as *const Vec<'a, Comment>) }
+    pub fn comments(self) -> &'t ArenaVec<'a, Comment> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_PROGRAM_COMMENTS) as *const ArenaVec<'a, Comment>)
+        }
     }
 
     #[inline]
@@ -2865,9 +2857,9 @@ impl<'a, 't> ProgramWithoutDirectives<'a, 't> {
     }
 
     #[inline]
-    pub fn body(self) -> &'t Vec<'a, Statement<'a>> {
+    pub fn body(self) -> &'t ArenaVec<'a, Statement<'a>> {
         unsafe {
-            &*((self.0 as *const u8).add(OFFSET_PROGRAM_BODY) as *const Vec<'a, Statement<'a>>)
+            &*((self.0 as *const u8).add(OFFSET_PROGRAM_BODY) as *const ArenaVec<'a, Statement<'a>>)
         }
     }
 
@@ -2915,8 +2907,10 @@ impl<'a, 't> ProgramWithoutBody<'a, 't> {
     }
 
     #[inline]
-    pub fn comments(self) -> &'t Vec<'a, Comment> {
-        unsafe { &*((self.0 as *const u8).add(OFFSET_PROGRAM_COMMENTS) as *const Vec<'a, Comment>) }
+    pub fn comments(self) -> &'t ArenaVec<'a, Comment> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_PROGRAM_COMMENTS) as *const ArenaVec<'a, Comment>)
+        }
     }
 
     #[inline]
@@ -2927,10 +2921,10 @@ impl<'a, 't> ProgramWithoutBody<'a, 't> {
     }
 
     #[inline]
-    pub fn directives(self) -> &'t Vec<'a, Directive<'a>> {
+    pub fn directives(self) -> &'t ArenaVec<'a, Directive<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_PROGRAM_DIRECTIVES)
-                as *const Vec<'a, Directive<'a>>)
+                as *const ArenaVec<'a, Directive<'a>>)
         }
     }
 
@@ -3160,10 +3154,10 @@ impl<'a, 't> TemplateLiteralWithoutQuasis<'a, 't> {
     }
 
     #[inline]
-    pub fn expressions(self) -> &'t Vec<'a, Expression<'a>> {
+    pub fn expressions(self) -> &'t ArenaVec<'a, Expression<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TEMPLATE_LITERAL_EXPRESSIONS)
-                as *const Vec<'a, Expression<'a>>)
+                as *const ArenaVec<'a, Expression<'a>>)
         }
     }
 }
@@ -3196,10 +3190,10 @@ impl<'a, 't> TemplateLiteralWithoutExpressions<'a, 't> {
     }
 
     #[inline]
-    pub fn quasis(self) -> &'t Vec<'a, TemplateElement<'a>> {
+    pub fn quasis(self) -> &'t ArenaVec<'a, TemplateElement<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TEMPLATE_LITERAL_QUASIS)
-                as *const Vec<'a, TemplateElement<'a>>)
+                as *const ArenaVec<'a, TemplateElement<'a>>)
         }
     }
 }
@@ -3246,10 +3240,10 @@ impl<'a, 't> TaggedTemplateExpressionWithoutTag<'a, 't> {
     }
 
     #[inline]
-    pub fn type_arguments(self) -> &'t Option<Box<'a, TSTypeParameterInstantiation<'a>>> {
+    pub fn type_arguments(self) -> &'t Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TAGGED_TEMPLATE_EXPRESSION_TYPE_ARGUMENTS)
-                as *const Option<Box<'a, TSTypeParameterInstantiation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>>)
         }
     }
 
@@ -3348,10 +3342,10 @@ impl<'a, 't> TaggedTemplateExpressionWithoutQuasi<'a, 't> {
     }
 
     #[inline]
-    pub fn type_arguments(self) -> &'t Option<Box<'a, TSTypeParameterInstantiation<'a>>> {
+    pub fn type_arguments(self) -> &'t Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TAGGED_TEMPLATE_EXPRESSION_TYPE_ARGUMENTS)
-                as *const Option<Box<'a, TSTypeParameterInstantiation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>>)
         }
     }
 }
@@ -3713,10 +3707,10 @@ impl<'a, 't> LeadingDotExpressionWithoutTypeArguments<'a, 't> {
     }
 
     #[inline]
-    pub fn arguments(self) -> &'t Vec<'a, Argument<'a>> {
+    pub fn arguments(self) -> &'t ArenaVec<'a, Argument<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_LEADING_DOT_EXPRESSION_ARGUMENTS)
-                as *const Vec<'a, Argument<'a>>)
+                as *const ArenaVec<'a, Argument<'a>>)
         }
     }
 
@@ -3765,10 +3759,10 @@ impl<'a, 't> LeadingDotExpressionWithoutArguments<'a, 't> {
     }
 
     #[inline]
-    pub fn type_arguments(self) -> &'t Option<Box<'a, TSTypeParameterInstantiation<'a>>> {
+    pub fn type_arguments(self) -> &'t Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_LEADING_DOT_EXPRESSION_TYPE_ARGUMENTS)
-                as *const Option<Box<'a, TSTypeParameterInstantiation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>>)
         }
     }
 
@@ -3817,18 +3811,18 @@ impl<'a, 't> LeadingDotExpressionWithoutExpression<'a, 't> {
     }
 
     #[inline]
-    pub fn type_arguments(self) -> &'t Option<Box<'a, TSTypeParameterInstantiation<'a>>> {
+    pub fn type_arguments(self) -> &'t Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_LEADING_DOT_EXPRESSION_TYPE_ARGUMENTS)
-                as *const Option<Box<'a, TSTypeParameterInstantiation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>>)
         }
     }
 
     #[inline]
-    pub fn arguments(self) -> &'t Vec<'a, Argument<'a>> {
+    pub fn arguments(self) -> &'t ArenaVec<'a, Argument<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_LEADING_DOT_EXPRESSION_ARGUMENTS)
-                as *const Vec<'a, Argument<'a>>)
+                as *const ArenaVec<'a, Argument<'a>>)
         }
     }
 }
@@ -3870,18 +3864,18 @@ impl<'a, 't> CallExpressionWithoutCallee<'a, 't> {
     }
 
     #[inline]
-    pub fn type_arguments(self) -> &'t Option<Box<'a, TSTypeParameterInstantiation<'a>>> {
+    pub fn type_arguments(self) -> &'t Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_CALL_EXPRESSION_TYPE_ARGUMENTS)
-                as *const Option<Box<'a, TSTypeParameterInstantiation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>>)
         }
     }
 
     #[inline]
-    pub fn arguments(self) -> &'t Vec<'a, Argument<'a>> {
+    pub fn arguments(self) -> &'t ArenaVec<'a, Argument<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_CALL_EXPRESSION_ARGUMENTS)
-                as *const Vec<'a, Argument<'a>>)
+                as *const ArenaVec<'a, Argument<'a>>)
         }
     }
 
@@ -3931,10 +3925,10 @@ impl<'a, 't> CallExpressionWithoutTypeArguments<'a, 't> {
     }
 
     #[inline]
-    pub fn arguments(self) -> &'t Vec<'a, Argument<'a>> {
+    pub fn arguments(self) -> &'t ArenaVec<'a, Argument<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_CALL_EXPRESSION_ARGUMENTS)
-                as *const Vec<'a, Argument<'a>>)
+                as *const ArenaVec<'a, Argument<'a>>)
         }
     }
 
@@ -3984,10 +3978,10 @@ impl<'a, 't> CallExpressionWithoutArguments<'a, 't> {
     }
 
     #[inline]
-    pub fn type_arguments(self) -> &'t Option<Box<'a, TSTypeParameterInstantiation<'a>>> {
+    pub fn type_arguments(self) -> &'t Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_CALL_EXPRESSION_TYPE_ARGUMENTS)
-                as *const Option<Box<'a, TSTypeParameterInstantiation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>>)
         }
     }
 
@@ -4038,18 +4032,18 @@ impl<'a, 't> NewExpressionWithoutCallee<'a, 't> {
     }
 
     #[inline]
-    pub fn type_arguments(self) -> &'t Option<Box<'a, TSTypeParameterInstantiation<'a>>> {
+    pub fn type_arguments(self) -> &'t Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_NEW_EXPRESSION_TYPE_ARGUMENTS)
-                as *const Option<Box<'a, TSTypeParameterInstantiation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>>)
         }
     }
 
     #[inline]
-    pub fn arguments(self) -> &'t Vec<'a, Argument<'a>> {
+    pub fn arguments(self) -> &'t ArenaVec<'a, Argument<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_NEW_EXPRESSION_ARGUMENTS)
-                as *const Vec<'a, Argument<'a>>)
+                as *const ArenaVec<'a, Argument<'a>>)
         }
     }
 
@@ -4094,10 +4088,10 @@ impl<'a, 't> NewExpressionWithoutTypeArguments<'a, 't> {
     }
 
     #[inline]
-    pub fn arguments(self) -> &'t Vec<'a, Argument<'a>> {
+    pub fn arguments(self) -> &'t ArenaVec<'a, Argument<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_NEW_EXPRESSION_ARGUMENTS)
-                as *const Vec<'a, Argument<'a>>)
+                as *const ArenaVec<'a, Argument<'a>>)
         }
     }
 
@@ -4142,10 +4136,10 @@ impl<'a, 't> NewExpressionWithoutArguments<'a, 't> {
     }
 
     #[inline]
-    pub fn type_arguments(self) -> &'t Option<Box<'a, TSTypeParameterInstantiation<'a>>> {
+    pub fn type_arguments(self) -> &'t Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_NEW_EXPRESSION_TYPE_ARGUMENTS)
-                as *const Option<Box<'a, TSTypeParameterInstantiation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>>)
         }
     }
 
@@ -4156,82 +4150,6 @@ impl<'a, 't> NewExpressionWithoutArguments<'a, 't> {
 }
 
 impl<'a, 't> GetAddress for NewExpressionWithoutArguments<'a, 't> {
-    #[inline]
-    fn address(&self) -> Address {
-        unsafe { Address::from_ptr(self.0) }
-    }
-}
-
-pub(crate) const OFFSET_META_PROPERTY_NODE_ID: usize = offset_of!(MetaProperty, node_id);
-pub(crate) const OFFSET_META_PROPERTY_SPAN: usize = offset_of!(MetaProperty, span);
-pub(crate) const OFFSET_META_PROPERTY_META: usize = offset_of!(MetaProperty, meta);
-pub(crate) const OFFSET_META_PROPERTY_PROPERTY: usize = offset_of!(MetaProperty, property);
-
-#[repr(transparent)]
-#[derive(Clone, Copy, Debug)]
-pub struct MetaPropertyWithoutMeta<'a, 't>(
-    pub(crate) *const MetaProperty<'a>,
-    pub(crate) PhantomData<&'t ()>,
-);
-
-impl<'a, 't> MetaPropertyWithoutMeta<'a, 't> {
-    #[inline]
-    pub fn node_id(self) -> &'t Cell<NodeId> {
-        unsafe {
-            &*((self.0 as *const u8).add(OFFSET_META_PROPERTY_NODE_ID) as *const Cell<NodeId>)
-        }
-    }
-
-    #[inline]
-    pub fn span(self) -> &'t Span {
-        unsafe { &*((self.0 as *const u8).add(OFFSET_META_PROPERTY_SPAN) as *const Span) }
-    }
-
-    #[inline]
-    pub fn property(self) -> &'t IdentifierName<'a> {
-        unsafe {
-            &*((self.0 as *const u8).add(OFFSET_META_PROPERTY_PROPERTY)
-                as *const IdentifierName<'a>)
-        }
-    }
-}
-
-impl<'a, 't> GetAddress for MetaPropertyWithoutMeta<'a, 't> {
-    #[inline]
-    fn address(&self) -> Address {
-        unsafe { Address::from_ptr(self.0) }
-    }
-}
-
-#[repr(transparent)]
-#[derive(Clone, Copy, Debug)]
-pub struct MetaPropertyWithoutProperty<'a, 't>(
-    pub(crate) *const MetaProperty<'a>,
-    pub(crate) PhantomData<&'t ()>,
-);
-
-impl<'a, 't> MetaPropertyWithoutProperty<'a, 't> {
-    #[inline]
-    pub fn node_id(self) -> &'t Cell<NodeId> {
-        unsafe {
-            &*((self.0 as *const u8).add(OFFSET_META_PROPERTY_NODE_ID) as *const Cell<NodeId>)
-        }
-    }
-
-    #[inline]
-    pub fn span(self) -> &'t Span {
-        unsafe { &*((self.0 as *const u8).add(OFFSET_META_PROPERTY_SPAN) as *const Span) }
-    }
-
-    #[inline]
-    pub fn meta(self) -> &'t IdentifierName<'a> {
-        unsafe {
-            &*((self.0 as *const u8).add(OFFSET_META_PROPERTY_META) as *const IdentifierName<'a>)
-        }
-    }
-}
-
-impl<'a, 't> GetAddress for MetaPropertyWithoutProperty<'a, 't> {
     #[inline]
     fn address(&self) -> Address {
         unsafe { Address::from_ptr(self.0) }
@@ -4898,10 +4816,10 @@ impl<'a, 't> ArrayAssignmentTargetWithoutElements<'a, 't> {
     }
 
     #[inline]
-    pub fn rest(self) -> &'t Option<Box<'a, AssignmentTargetRest<'a>>> {
+    pub fn rest(self) -> &'t Option<ArenaBox<'a, AssignmentTargetRest<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_ARRAY_ASSIGNMENT_TARGET_REST)
-                as *const Option<Box<'a, AssignmentTargetRest<'a>>>)
+                as *const Option<ArenaBox<'a, AssignmentTargetRest<'a>>>)
         }
     }
 }
@@ -4935,10 +4853,10 @@ impl<'a, 't> ArrayAssignmentTargetWithoutRest<'a, 't> {
     }
 
     #[inline]
-    pub fn elements(self) -> &'t Vec<'a, Option<AssignmentTargetMaybeDefault<'a>>> {
+    pub fn elements(self) -> &'t ArenaVec<'a, Option<AssignmentTargetMaybeDefault<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_ARRAY_ASSIGNMENT_TARGET_ELEMENTS)
-                as *const Vec<'a, Option<AssignmentTargetMaybeDefault<'a>>>)
+                as *const ArenaVec<'a, Option<AssignmentTargetMaybeDefault<'a>>>)
         }
     }
 }
@@ -4983,10 +4901,10 @@ impl<'a, 't> ObjectAssignmentTargetWithoutProperties<'a, 't> {
     }
 
     #[inline]
-    pub fn rest(self) -> &'t Option<Box<'a, AssignmentTargetRest<'a>>> {
+    pub fn rest(self) -> &'t Option<ArenaBox<'a, AssignmentTargetRest<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_OBJECT_ASSIGNMENT_TARGET_REST)
-                as *const Option<Box<'a, AssignmentTargetRest<'a>>>)
+                as *const Option<ArenaBox<'a, AssignmentTargetRest<'a>>>)
         }
     }
 }
@@ -5022,10 +4940,10 @@ impl<'a, 't> ObjectAssignmentTargetWithoutRest<'a, 't> {
     }
 
     #[inline]
-    pub fn properties(self) -> &'t Vec<'a, AssignmentTargetProperty<'a>> {
+    pub fn properties(self) -> &'t ArenaVec<'a, AssignmentTargetProperty<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_OBJECT_ASSIGNMENT_TARGET_PROPERTIES)
-                as *const Vec<'a, AssignmentTargetProperty<'a>>)
+                as *const ArenaVec<'a, AssignmentTargetProperty<'a>>)
         }
     }
 }
@@ -5660,10 +5578,10 @@ impl<'a, 't> VariableDeclaratorWithoutId<'a, 't> {
     }
 
     #[inline]
-    pub fn type_annotation(self) -> &'t Option<Box<'a, TSTypeAnnotation<'a>>> {
+    pub fn type_annotation(self) -> &'t Option<ArenaBox<'a, TSTypeAnnotation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_VARIABLE_DECLARATOR_TYPE_ANNOTATION)
-                as *const Option<Box<'a, TSTypeAnnotation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeAnnotation<'a>>>)
         }
     }
 
@@ -5782,10 +5700,10 @@ impl<'a, 't> VariableDeclaratorWithoutInit<'a, 't> {
     }
 
     #[inline]
-    pub fn type_annotation(self) -> &'t Option<Box<'a, TSTypeAnnotation<'a>>> {
+    pub fn type_annotation(self) -> &'t Option<ArenaBox<'a, TSTypeAnnotation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_VARIABLE_DECLARATOR_TYPE_ANNOTATION)
-                as *const Option<Box<'a, TSTypeAnnotation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeAnnotation<'a>>>)
         }
     }
 
@@ -6898,10 +6816,10 @@ impl<'a, 't> SwitchStatementWithoutDiscriminant<'a, 't> {
     }
 
     #[inline]
-    pub fn cases(self) -> &'t Vec<'a, SwitchCase<'a>> {
+    pub fn cases(self) -> &'t ArenaVec<'a, SwitchCase<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_SWITCH_STATEMENT_CASES)
-                as *const Vec<'a, SwitchCase<'a>>)
+                as *const ArenaVec<'a, SwitchCase<'a>>)
         }
     }
 
@@ -6989,10 +6907,10 @@ impl<'a, 't> SwitchCaseWithoutTest<'a, 't> {
     }
 
     #[inline]
-    pub fn consequent(self) -> &'t Vec<'a, Statement<'a>> {
+    pub fn consequent(self) -> &'t ArenaVec<'a, Statement<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_SWITCH_CASE_CONSEQUENT)
-                as *const Vec<'a, Statement<'a>>)
+                as *const ArenaVec<'a, Statement<'a>>)
         }
     }
 }
@@ -7172,18 +7090,18 @@ impl<'a, 't> TryStatementWithoutBlock<'a, 't> {
     }
 
     #[inline]
-    pub fn handler(self) -> &'t Option<Box<'a, CatchClause<'a>>> {
+    pub fn handler(self) -> &'t Option<ArenaBox<'a, CatchClause<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TRY_STATEMENT_HANDLER)
-                as *const Option<Box<'a, CatchClause<'a>>>)
+                as *const Option<ArenaBox<'a, CatchClause<'a>>>)
         }
     }
 
     #[inline]
-    pub fn finalizer(self) -> &'t Option<Box<'a, BlockStatement<'a>>> {
+    pub fn finalizer(self) -> &'t Option<ArenaBox<'a, BlockStatement<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TRY_STATEMENT_FINALIZER)
-                as *const Option<Box<'a, BlockStatement<'a>>>)
+                as *const Option<ArenaBox<'a, BlockStatement<'a>>>)
         }
     }
 }
@@ -7216,18 +7134,18 @@ impl<'a, 't> TryStatementWithoutHandler<'a, 't> {
     }
 
     #[inline]
-    pub fn block(self) -> &'t Box<'a, BlockStatement<'a>> {
+    pub fn block(self) -> &'t ArenaBox<'a, BlockStatement<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TRY_STATEMENT_BLOCK)
-                as *const Box<'a, BlockStatement<'a>>)
+                as *const ArenaBox<'a, BlockStatement<'a>>)
         }
     }
 
     #[inline]
-    pub fn finalizer(self) -> &'t Option<Box<'a, BlockStatement<'a>>> {
+    pub fn finalizer(self) -> &'t Option<ArenaBox<'a, BlockStatement<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TRY_STATEMENT_FINALIZER)
-                as *const Option<Box<'a, BlockStatement<'a>>>)
+                as *const Option<ArenaBox<'a, BlockStatement<'a>>>)
         }
     }
 }
@@ -7260,18 +7178,18 @@ impl<'a, 't> TryStatementWithoutFinalizer<'a, 't> {
     }
 
     #[inline]
-    pub fn block(self) -> &'t Box<'a, BlockStatement<'a>> {
+    pub fn block(self) -> &'t ArenaBox<'a, BlockStatement<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TRY_STATEMENT_BLOCK)
-                as *const Box<'a, BlockStatement<'a>>)
+                as *const ArenaBox<'a, BlockStatement<'a>>)
         }
     }
 
     #[inline]
-    pub fn handler(self) -> &'t Option<Box<'a, CatchClause<'a>>> {
+    pub fn handler(self) -> &'t Option<ArenaBox<'a, CatchClause<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TRY_STATEMENT_HANDLER)
-                as *const Option<Box<'a, CatchClause<'a>>>)
+                as *const Option<ArenaBox<'a, CatchClause<'a>>>)
         }
     }
 }
@@ -7308,10 +7226,10 @@ impl<'a, 't> CatchClauseWithoutParam<'a, 't> {
     }
 
     #[inline]
-    pub fn body(self) -> &'t Box<'a, BlockStatement<'a>> {
+    pub fn body(self) -> &'t ArenaBox<'a, BlockStatement<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_CATCH_CLAUSE_BODY)
-                as *const Box<'a, BlockStatement<'a>>)
+                as *const ArenaBox<'a, BlockStatement<'a>>)
         }
     }
 
@@ -7400,10 +7318,10 @@ impl<'a, 't> CatchParameterWithoutPattern<'a, 't> {
     }
 
     #[inline]
-    pub fn type_annotation(self) -> &'t Option<Box<'a, TSTypeAnnotation<'a>>> {
+    pub fn type_annotation(self) -> &'t Option<ArenaBox<'a, TSTypeAnnotation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_CATCH_PARAMETER_TYPE_ANNOTATION)
-                as *const Option<Box<'a, TSTypeAnnotation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeAnnotation<'a>>>)
         }
     }
 }
@@ -7553,10 +7471,10 @@ impl<'a, 't> ObjectPatternWithoutProperties<'a, 't> {
     }
 
     #[inline]
-    pub fn rest(self) -> &'t Option<Box<'a, BindingRestElement<'a>>> {
+    pub fn rest(self) -> &'t Option<ArenaBox<'a, BindingRestElement<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_OBJECT_PATTERN_REST)
-                as *const Option<Box<'a, BindingRestElement<'a>>>)
+                as *const Option<ArenaBox<'a, BindingRestElement<'a>>>)
         }
     }
 }
@@ -7589,10 +7507,10 @@ impl<'a, 't> ObjectPatternWithoutRest<'a, 't> {
     }
 
     #[inline]
-    pub fn properties(self) -> &'t Vec<'a, BindingProperty<'a>> {
+    pub fn properties(self) -> &'t ArenaVec<'a, BindingProperty<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_OBJECT_PATTERN_PROPERTIES)
-                as *const Vec<'a, BindingProperty<'a>>)
+                as *const ArenaVec<'a, BindingProperty<'a>>)
         }
     }
 }
@@ -7728,10 +7646,10 @@ impl<'a, 't> ArrayPatternWithoutElements<'a, 't> {
     }
 
     #[inline]
-    pub fn rest(self) -> &'t Option<Box<'a, BindingRestElement<'a>>> {
+    pub fn rest(self) -> &'t Option<ArenaBox<'a, BindingRestElement<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_ARRAY_PATTERN_REST)
-                as *const Option<Box<'a, BindingRestElement<'a>>>)
+                as *const Option<ArenaBox<'a, BindingRestElement<'a>>>)
         }
     }
 }
@@ -7764,10 +7682,10 @@ impl<'a, 't> ArrayPatternWithoutRest<'a, 't> {
     }
 
     #[inline]
-    pub fn elements(self) -> &'t Vec<'a, Option<BindingPattern<'a>>> {
+    pub fn elements(self) -> &'t ArenaVec<'a, Option<BindingPattern<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_ARRAY_PATTERN_ELEMENTS)
-                as *const Vec<'a, Option<BindingPattern<'a>>>)
+                as *const ArenaVec<'a, Option<BindingPattern<'a>>>)
         }
     }
 }
@@ -7878,42 +7796,42 @@ impl<'a, 't> FunctionWithoutDecorators<'a, 't> {
     }
 
     #[inline]
-    pub fn type_parameters(self) -> &'t Option<Box<'a, TSTypeParameterDeclaration<'a>>> {
+    pub fn type_parameters(self) -> &'t Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FUNCTION_TYPE_PARAMETERS)
-                as *const Option<Box<'a, TSTypeParameterDeclaration<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>>)
         }
     }
 
     #[inline]
-    pub fn this_param(self) -> &'t Option<Box<'a, TSThisParameter<'a>>> {
+    pub fn this_param(self) -> &'t Option<ArenaBox<'a, TSThisParameter<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FUNCTION_THIS_PARAM)
-                as *const Option<Box<'a, TSThisParameter<'a>>>)
+                as *const Option<ArenaBox<'a, TSThisParameter<'a>>>)
         }
     }
 
     #[inline]
-    pub fn params(self) -> &'t Box<'a, FormalParameters<'a>> {
+    pub fn params(self) -> &'t ArenaBox<'a, FormalParameters<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FUNCTION_PARAMS)
-                as *const Box<'a, FormalParameters<'a>>)
+                as *const ArenaBox<'a, FormalParameters<'a>>)
         }
     }
 
     #[inline]
-    pub fn return_type(self) -> &'t Option<Box<'a, TSTypeAnnotation<'a>>> {
+    pub fn return_type(self) -> &'t Option<ArenaBox<'a, TSTypeAnnotation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FUNCTION_RETURN_TYPE)
-                as *const Option<Box<'a, TSTypeAnnotation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeAnnotation<'a>>>)
         }
     }
 
     #[inline]
-    pub fn body(self) -> &'t Option<Box<'a, FunctionBody<'a>>> {
+    pub fn body(self) -> &'t Option<ArenaBox<'a, FunctionBody<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FUNCTION_BODY)
-                as *const Option<Box<'a, FunctionBody<'a>>>)
+                as *const Option<ArenaBox<'a, FunctionBody<'a>>>)
         }
     }
 
@@ -7966,10 +7884,10 @@ impl<'a, 't> FunctionWithoutId<'a, 't> {
     }
 
     #[inline]
-    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+    pub fn decorators(self) -> &'t ArenaVec<'a, Decorator<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FUNCTION_DECORATORS)
-                as *const Vec<'a, Decorator<'a>>)
+                as *const ArenaVec<'a, Decorator<'a>>)
         }
     }
 
@@ -7989,42 +7907,42 @@ impl<'a, 't> FunctionWithoutId<'a, 't> {
     }
 
     #[inline]
-    pub fn type_parameters(self) -> &'t Option<Box<'a, TSTypeParameterDeclaration<'a>>> {
+    pub fn type_parameters(self) -> &'t Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FUNCTION_TYPE_PARAMETERS)
-                as *const Option<Box<'a, TSTypeParameterDeclaration<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>>)
         }
     }
 
     #[inline]
-    pub fn this_param(self) -> &'t Option<Box<'a, TSThisParameter<'a>>> {
+    pub fn this_param(self) -> &'t Option<ArenaBox<'a, TSThisParameter<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FUNCTION_THIS_PARAM)
-                as *const Option<Box<'a, TSThisParameter<'a>>>)
+                as *const Option<ArenaBox<'a, TSThisParameter<'a>>>)
         }
     }
 
     #[inline]
-    pub fn params(self) -> &'t Box<'a, FormalParameters<'a>> {
+    pub fn params(self) -> &'t ArenaBox<'a, FormalParameters<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FUNCTION_PARAMS)
-                as *const Box<'a, FormalParameters<'a>>)
+                as *const ArenaBox<'a, FormalParameters<'a>>)
         }
     }
 
     #[inline]
-    pub fn return_type(self) -> &'t Option<Box<'a, TSTypeAnnotation<'a>>> {
+    pub fn return_type(self) -> &'t Option<ArenaBox<'a, TSTypeAnnotation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FUNCTION_RETURN_TYPE)
-                as *const Option<Box<'a, TSTypeAnnotation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeAnnotation<'a>>>)
         }
     }
 
     #[inline]
-    pub fn body(self) -> &'t Option<Box<'a, FunctionBody<'a>>> {
+    pub fn body(self) -> &'t Option<ArenaBox<'a, FunctionBody<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FUNCTION_BODY)
-                as *const Option<Box<'a, FunctionBody<'a>>>)
+                as *const Option<ArenaBox<'a, FunctionBody<'a>>>)
         }
     }
 
@@ -8077,10 +7995,10 @@ impl<'a, 't> FunctionWithoutTypeParameters<'a, 't> {
     }
 
     #[inline]
-    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+    pub fn decorators(self) -> &'t ArenaVec<'a, Decorator<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FUNCTION_DECORATORS)
-                as *const Vec<'a, Decorator<'a>>)
+                as *const ArenaVec<'a, Decorator<'a>>)
         }
     }
 
@@ -8108,34 +8026,34 @@ impl<'a, 't> FunctionWithoutTypeParameters<'a, 't> {
     }
 
     #[inline]
-    pub fn this_param(self) -> &'t Option<Box<'a, TSThisParameter<'a>>> {
+    pub fn this_param(self) -> &'t Option<ArenaBox<'a, TSThisParameter<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FUNCTION_THIS_PARAM)
-                as *const Option<Box<'a, TSThisParameter<'a>>>)
+                as *const Option<ArenaBox<'a, TSThisParameter<'a>>>)
         }
     }
 
     #[inline]
-    pub fn params(self) -> &'t Box<'a, FormalParameters<'a>> {
+    pub fn params(self) -> &'t ArenaBox<'a, FormalParameters<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FUNCTION_PARAMS)
-                as *const Box<'a, FormalParameters<'a>>)
+                as *const ArenaBox<'a, FormalParameters<'a>>)
         }
     }
 
     #[inline]
-    pub fn return_type(self) -> &'t Option<Box<'a, TSTypeAnnotation<'a>>> {
+    pub fn return_type(self) -> &'t Option<ArenaBox<'a, TSTypeAnnotation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FUNCTION_RETURN_TYPE)
-                as *const Option<Box<'a, TSTypeAnnotation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeAnnotation<'a>>>)
         }
     }
 
     #[inline]
-    pub fn body(self) -> &'t Option<Box<'a, FunctionBody<'a>>> {
+    pub fn body(self) -> &'t Option<ArenaBox<'a, FunctionBody<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FUNCTION_BODY)
-                as *const Option<Box<'a, FunctionBody<'a>>>)
+                as *const Option<ArenaBox<'a, FunctionBody<'a>>>)
         }
     }
 
@@ -8188,10 +8106,10 @@ impl<'a, 't> FunctionWithoutThisParam<'a, 't> {
     }
 
     #[inline]
-    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+    pub fn decorators(self) -> &'t ArenaVec<'a, Decorator<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FUNCTION_DECORATORS)
-                as *const Vec<'a, Decorator<'a>>)
+                as *const ArenaVec<'a, Decorator<'a>>)
         }
     }
 
@@ -8219,34 +8137,34 @@ impl<'a, 't> FunctionWithoutThisParam<'a, 't> {
     }
 
     #[inline]
-    pub fn type_parameters(self) -> &'t Option<Box<'a, TSTypeParameterDeclaration<'a>>> {
+    pub fn type_parameters(self) -> &'t Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FUNCTION_TYPE_PARAMETERS)
-                as *const Option<Box<'a, TSTypeParameterDeclaration<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>>)
         }
     }
 
     #[inline]
-    pub fn params(self) -> &'t Box<'a, FormalParameters<'a>> {
+    pub fn params(self) -> &'t ArenaBox<'a, FormalParameters<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FUNCTION_PARAMS)
-                as *const Box<'a, FormalParameters<'a>>)
+                as *const ArenaBox<'a, FormalParameters<'a>>)
         }
     }
 
     #[inline]
-    pub fn return_type(self) -> &'t Option<Box<'a, TSTypeAnnotation<'a>>> {
+    pub fn return_type(self) -> &'t Option<ArenaBox<'a, TSTypeAnnotation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FUNCTION_RETURN_TYPE)
-                as *const Option<Box<'a, TSTypeAnnotation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeAnnotation<'a>>>)
         }
     }
 
     #[inline]
-    pub fn body(self) -> &'t Option<Box<'a, FunctionBody<'a>>> {
+    pub fn body(self) -> &'t Option<ArenaBox<'a, FunctionBody<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FUNCTION_BODY)
-                as *const Option<Box<'a, FunctionBody<'a>>>)
+                as *const Option<ArenaBox<'a, FunctionBody<'a>>>)
         }
     }
 
@@ -8299,10 +8217,10 @@ impl<'a, 't> FunctionWithoutParams<'a, 't> {
     }
 
     #[inline]
-    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+    pub fn decorators(self) -> &'t ArenaVec<'a, Decorator<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FUNCTION_DECORATORS)
-                as *const Vec<'a, Decorator<'a>>)
+                as *const ArenaVec<'a, Decorator<'a>>)
         }
     }
 
@@ -8330,34 +8248,34 @@ impl<'a, 't> FunctionWithoutParams<'a, 't> {
     }
 
     #[inline]
-    pub fn type_parameters(self) -> &'t Option<Box<'a, TSTypeParameterDeclaration<'a>>> {
+    pub fn type_parameters(self) -> &'t Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FUNCTION_TYPE_PARAMETERS)
-                as *const Option<Box<'a, TSTypeParameterDeclaration<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>>)
         }
     }
 
     #[inline]
-    pub fn this_param(self) -> &'t Option<Box<'a, TSThisParameter<'a>>> {
+    pub fn this_param(self) -> &'t Option<ArenaBox<'a, TSThisParameter<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FUNCTION_THIS_PARAM)
-                as *const Option<Box<'a, TSThisParameter<'a>>>)
+                as *const Option<ArenaBox<'a, TSThisParameter<'a>>>)
         }
     }
 
     #[inline]
-    pub fn return_type(self) -> &'t Option<Box<'a, TSTypeAnnotation<'a>>> {
+    pub fn return_type(self) -> &'t Option<ArenaBox<'a, TSTypeAnnotation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FUNCTION_RETURN_TYPE)
-                as *const Option<Box<'a, TSTypeAnnotation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeAnnotation<'a>>>)
         }
     }
 
     #[inline]
-    pub fn body(self) -> &'t Option<Box<'a, FunctionBody<'a>>> {
+    pub fn body(self) -> &'t Option<ArenaBox<'a, FunctionBody<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FUNCTION_BODY)
-                as *const Option<Box<'a, FunctionBody<'a>>>)
+                as *const Option<ArenaBox<'a, FunctionBody<'a>>>)
         }
     }
 
@@ -8410,10 +8328,10 @@ impl<'a, 't> FunctionWithoutReturnType<'a, 't> {
     }
 
     #[inline]
-    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+    pub fn decorators(self) -> &'t ArenaVec<'a, Decorator<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FUNCTION_DECORATORS)
-                as *const Vec<'a, Decorator<'a>>)
+                as *const ArenaVec<'a, Decorator<'a>>)
         }
     }
 
@@ -8441,34 +8359,34 @@ impl<'a, 't> FunctionWithoutReturnType<'a, 't> {
     }
 
     #[inline]
-    pub fn type_parameters(self) -> &'t Option<Box<'a, TSTypeParameterDeclaration<'a>>> {
+    pub fn type_parameters(self) -> &'t Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FUNCTION_TYPE_PARAMETERS)
-                as *const Option<Box<'a, TSTypeParameterDeclaration<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>>)
         }
     }
 
     #[inline]
-    pub fn this_param(self) -> &'t Option<Box<'a, TSThisParameter<'a>>> {
+    pub fn this_param(self) -> &'t Option<ArenaBox<'a, TSThisParameter<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FUNCTION_THIS_PARAM)
-                as *const Option<Box<'a, TSThisParameter<'a>>>)
+                as *const Option<ArenaBox<'a, TSThisParameter<'a>>>)
         }
     }
 
     #[inline]
-    pub fn params(self) -> &'t Box<'a, FormalParameters<'a>> {
+    pub fn params(self) -> &'t ArenaBox<'a, FormalParameters<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FUNCTION_PARAMS)
-                as *const Box<'a, FormalParameters<'a>>)
+                as *const ArenaBox<'a, FormalParameters<'a>>)
         }
     }
 
     #[inline]
-    pub fn body(self) -> &'t Option<Box<'a, FunctionBody<'a>>> {
+    pub fn body(self) -> &'t Option<ArenaBox<'a, FunctionBody<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FUNCTION_BODY)
-                as *const Option<Box<'a, FunctionBody<'a>>>)
+                as *const Option<ArenaBox<'a, FunctionBody<'a>>>)
         }
     }
 
@@ -8521,10 +8439,10 @@ impl<'a, 't> FunctionWithoutBody<'a, 't> {
     }
 
     #[inline]
-    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+    pub fn decorators(self) -> &'t ArenaVec<'a, Decorator<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FUNCTION_DECORATORS)
-                as *const Vec<'a, Decorator<'a>>)
+                as *const ArenaVec<'a, Decorator<'a>>)
         }
     }
 
@@ -8552,34 +8470,34 @@ impl<'a, 't> FunctionWithoutBody<'a, 't> {
     }
 
     #[inline]
-    pub fn type_parameters(self) -> &'t Option<Box<'a, TSTypeParameterDeclaration<'a>>> {
+    pub fn type_parameters(self) -> &'t Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FUNCTION_TYPE_PARAMETERS)
-                as *const Option<Box<'a, TSTypeParameterDeclaration<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>>)
         }
     }
 
     #[inline]
-    pub fn this_param(self) -> &'t Option<Box<'a, TSThisParameter<'a>>> {
+    pub fn this_param(self) -> &'t Option<ArenaBox<'a, TSThisParameter<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FUNCTION_THIS_PARAM)
-                as *const Option<Box<'a, TSThisParameter<'a>>>)
+                as *const Option<ArenaBox<'a, TSThisParameter<'a>>>)
         }
     }
 
     #[inline]
-    pub fn params(self) -> &'t Box<'a, FormalParameters<'a>> {
+    pub fn params(self) -> &'t ArenaBox<'a, FormalParameters<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FUNCTION_PARAMS)
-                as *const Box<'a, FormalParameters<'a>>)
+                as *const ArenaBox<'a, FormalParameters<'a>>)
         }
     }
 
     #[inline]
-    pub fn return_type(self) -> &'t Option<Box<'a, TSTypeAnnotation<'a>>> {
+    pub fn return_type(self) -> &'t Option<ArenaBox<'a, TSTypeAnnotation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FUNCTION_RETURN_TYPE)
-                as *const Option<Box<'a, TSTypeAnnotation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeAnnotation<'a>>>)
         }
     }
 
@@ -8643,10 +8561,10 @@ impl<'a, 't> FormalParametersWithoutItems<'a, 't> {
     }
 
     #[inline]
-    pub fn rest(self) -> &'t Option<Box<'a, FormalParameterRest<'a>>> {
+    pub fn rest(self) -> &'t Option<ArenaBox<'a, FormalParameterRest<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FORMAL_PARAMETERS_REST)
-                as *const Option<Box<'a, FormalParameterRest<'a>>>)
+                as *const Option<ArenaBox<'a, FormalParameterRest<'a>>>)
         }
     }
 }
@@ -8687,10 +8605,10 @@ impl<'a, 't> FormalParametersWithoutRest<'a, 't> {
     }
 
     #[inline]
-    pub fn items(self) -> &'t Vec<'a, FormalParameter<'a>> {
+    pub fn items(self) -> &'t ArenaVec<'a, FormalParameter<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FORMAL_PARAMETERS_ITEMS)
-                as *const Vec<'a, FormalParameter<'a>>)
+                as *const ArenaVec<'a, FormalParameter<'a>>)
         }
     }
 }
@@ -8746,18 +8664,18 @@ impl<'a, 't> FormalParameterWithoutDecorators<'a, 't> {
     }
 
     #[inline]
-    pub fn type_annotation(self) -> &'t Option<Box<'a, TSTypeAnnotation<'a>>> {
+    pub fn type_annotation(self) -> &'t Option<ArenaBox<'a, TSTypeAnnotation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FORMAL_PARAMETER_TYPE_ANNOTATION)
-                as *const Option<Box<'a, TSTypeAnnotation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeAnnotation<'a>>>)
         }
     }
 
     #[inline]
-    pub fn initializer(self) -> &'t Option<Box<'a, Expression<'a>>> {
+    pub fn initializer(self) -> &'t Option<ArenaBox<'a, Expression<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FORMAL_PARAMETER_INITIALIZER)
-                as *const Option<Box<'a, Expression<'a>>>)
+                as *const Option<ArenaBox<'a, Expression<'a>>>)
         }
     }
 
@@ -8813,26 +8731,26 @@ impl<'a, 't> FormalParameterWithoutPattern<'a, 't> {
     }
 
     #[inline]
-    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+    pub fn decorators(self) -> &'t ArenaVec<'a, Decorator<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FORMAL_PARAMETER_DECORATORS)
-                as *const Vec<'a, Decorator<'a>>)
+                as *const ArenaVec<'a, Decorator<'a>>)
         }
     }
 
     #[inline]
-    pub fn type_annotation(self) -> &'t Option<Box<'a, TSTypeAnnotation<'a>>> {
+    pub fn type_annotation(self) -> &'t Option<ArenaBox<'a, TSTypeAnnotation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FORMAL_PARAMETER_TYPE_ANNOTATION)
-                as *const Option<Box<'a, TSTypeAnnotation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeAnnotation<'a>>>)
         }
     }
 
     #[inline]
-    pub fn initializer(self) -> &'t Option<Box<'a, Expression<'a>>> {
+    pub fn initializer(self) -> &'t Option<ArenaBox<'a, Expression<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FORMAL_PARAMETER_INITIALIZER)
-                as *const Option<Box<'a, Expression<'a>>>)
+                as *const Option<ArenaBox<'a, Expression<'a>>>)
         }
     }
 
@@ -8888,10 +8806,10 @@ impl<'a, 't> FormalParameterWithoutTypeAnnotation<'a, 't> {
     }
 
     #[inline]
-    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+    pub fn decorators(self) -> &'t ArenaVec<'a, Decorator<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FORMAL_PARAMETER_DECORATORS)
-                as *const Vec<'a, Decorator<'a>>)
+                as *const ArenaVec<'a, Decorator<'a>>)
         }
     }
 
@@ -8904,10 +8822,10 @@ impl<'a, 't> FormalParameterWithoutTypeAnnotation<'a, 't> {
     }
 
     #[inline]
-    pub fn initializer(self) -> &'t Option<Box<'a, Expression<'a>>> {
+    pub fn initializer(self) -> &'t Option<ArenaBox<'a, Expression<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FORMAL_PARAMETER_INITIALIZER)
-                as *const Option<Box<'a, Expression<'a>>>)
+                as *const Option<ArenaBox<'a, Expression<'a>>>)
         }
     }
 
@@ -8963,10 +8881,10 @@ impl<'a, 't> FormalParameterWithoutInitializer<'a, 't> {
     }
 
     #[inline]
-    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+    pub fn decorators(self) -> &'t ArenaVec<'a, Decorator<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FORMAL_PARAMETER_DECORATORS)
-                as *const Vec<'a, Decorator<'a>>)
+                as *const ArenaVec<'a, Decorator<'a>>)
         }
     }
 
@@ -8979,10 +8897,10 @@ impl<'a, 't> FormalParameterWithoutInitializer<'a, 't> {
     }
 
     #[inline]
-    pub fn type_annotation(self) -> &'t Option<Box<'a, TSTypeAnnotation<'a>>> {
+    pub fn type_annotation(self) -> &'t Option<ArenaBox<'a, TSTypeAnnotation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FORMAL_PARAMETER_TYPE_ANNOTATION)
-                as *const Option<Box<'a, TSTypeAnnotation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeAnnotation<'a>>>)
         }
     }
 
@@ -9056,10 +8974,10 @@ impl<'a, 't> FormalParameterRestWithoutDecorators<'a, 't> {
     }
 
     #[inline]
-    pub fn type_annotation(self) -> &'t Option<Box<'a, TSTypeAnnotation<'a>>> {
+    pub fn type_annotation(self) -> &'t Option<ArenaBox<'a, TSTypeAnnotation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FORMAL_PARAMETER_REST_TYPE_ANNOTATION)
-                as *const Option<Box<'a, TSTypeAnnotation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeAnnotation<'a>>>)
         }
     }
 }
@@ -9093,18 +9011,18 @@ impl<'a, 't> FormalParameterRestWithoutRest<'a, 't> {
     }
 
     #[inline]
-    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+    pub fn decorators(self) -> &'t ArenaVec<'a, Decorator<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FORMAL_PARAMETER_REST_DECORATORS)
-                as *const Vec<'a, Decorator<'a>>)
+                as *const ArenaVec<'a, Decorator<'a>>)
         }
     }
 
     #[inline]
-    pub fn type_annotation(self) -> &'t Option<Box<'a, TSTypeAnnotation<'a>>> {
+    pub fn type_annotation(self) -> &'t Option<ArenaBox<'a, TSTypeAnnotation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FORMAL_PARAMETER_REST_TYPE_ANNOTATION)
-                as *const Option<Box<'a, TSTypeAnnotation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeAnnotation<'a>>>)
         }
     }
 }
@@ -9138,10 +9056,10 @@ impl<'a, 't> FormalParameterRestWithoutTypeAnnotation<'a, 't> {
     }
 
     #[inline]
-    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+    pub fn decorators(self) -> &'t ArenaVec<'a, Decorator<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FORMAL_PARAMETER_REST_DECORATORS)
-                as *const Vec<'a, Decorator<'a>>)
+                as *const ArenaVec<'a, Decorator<'a>>)
         }
     }
 
@@ -9187,10 +9105,10 @@ impl<'a, 't> FunctionBodyWithoutDirectives<'a, 't> {
     }
 
     #[inline]
-    pub fn statements(self) -> &'t Vec<'a, Statement<'a>> {
+    pub fn statements(self) -> &'t ArenaVec<'a, Statement<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FUNCTION_BODY_STATEMENTS)
-                as *const Vec<'a, Statement<'a>>)
+                as *const ArenaVec<'a, Statement<'a>>)
         }
     }
 }
@@ -9223,10 +9141,10 @@ impl<'a, 't> FunctionBodyWithoutStatements<'a, 't> {
     }
 
     #[inline]
-    pub fn directives(self) -> &'t Vec<'a, Directive<'a>> {
+    pub fn directives(self) -> &'t ArenaVec<'a, Directive<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_FUNCTION_BODY_DIRECTIVES)
-                as *const Vec<'a, Directive<'a>>)
+                as *const ArenaVec<'a, Directive<'a>>)
         }
     }
 }
@@ -9300,26 +9218,26 @@ impl<'a, 't> ArrowFunctionExpressionWithoutTypeParameters<'a, 't> {
     }
 
     #[inline]
-    pub fn params(self) -> &'t Box<'a, FormalParameters<'a>> {
+    pub fn params(self) -> &'t ArenaBox<'a, FormalParameters<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_ARROW_FUNCTION_EXPRESSION_PARAMS)
-                as *const Box<'a, FormalParameters<'a>>)
+                as *const ArenaBox<'a, FormalParameters<'a>>)
         }
     }
 
     #[inline]
-    pub fn return_type(self) -> &'t Option<Box<'a, TSTypeAnnotation<'a>>> {
+    pub fn return_type(self) -> &'t Option<ArenaBox<'a, TSTypeAnnotation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_ARROW_FUNCTION_EXPRESSION_RETURN_TYPE)
-                as *const Option<Box<'a, TSTypeAnnotation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeAnnotation<'a>>>)
         }
     }
 
     #[inline]
-    pub fn body(self) -> &'t Box<'a, FunctionBody<'a>> {
+    pub fn body(self) -> &'t ArenaBox<'a, FunctionBody<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_ARROW_FUNCTION_EXPRESSION_BODY)
-                as *const Box<'a, FunctionBody<'a>>)
+                as *const ArenaBox<'a, FunctionBody<'a>>)
         }
     }
 
@@ -9392,26 +9310,26 @@ impl<'a, 't> ArrowFunctionExpressionWithoutParams<'a, 't> {
     }
 
     #[inline]
-    pub fn type_parameters(self) -> &'t Option<Box<'a, TSTypeParameterDeclaration<'a>>> {
+    pub fn type_parameters(self) -> &'t Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_ARROW_FUNCTION_EXPRESSION_TYPE_PARAMETERS)
-                as *const Option<Box<'a, TSTypeParameterDeclaration<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>>)
         }
     }
 
     #[inline]
-    pub fn return_type(self) -> &'t Option<Box<'a, TSTypeAnnotation<'a>>> {
+    pub fn return_type(self) -> &'t Option<ArenaBox<'a, TSTypeAnnotation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_ARROW_FUNCTION_EXPRESSION_RETURN_TYPE)
-                as *const Option<Box<'a, TSTypeAnnotation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeAnnotation<'a>>>)
         }
     }
 
     #[inline]
-    pub fn body(self) -> &'t Box<'a, FunctionBody<'a>> {
+    pub fn body(self) -> &'t ArenaBox<'a, FunctionBody<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_ARROW_FUNCTION_EXPRESSION_BODY)
-                as *const Box<'a, FunctionBody<'a>>)
+                as *const ArenaBox<'a, FunctionBody<'a>>)
         }
     }
 
@@ -9484,26 +9402,26 @@ impl<'a, 't> ArrowFunctionExpressionWithoutReturnType<'a, 't> {
     }
 
     #[inline]
-    pub fn type_parameters(self) -> &'t Option<Box<'a, TSTypeParameterDeclaration<'a>>> {
+    pub fn type_parameters(self) -> &'t Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_ARROW_FUNCTION_EXPRESSION_TYPE_PARAMETERS)
-                as *const Option<Box<'a, TSTypeParameterDeclaration<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>>)
         }
     }
 
     #[inline]
-    pub fn params(self) -> &'t Box<'a, FormalParameters<'a>> {
+    pub fn params(self) -> &'t ArenaBox<'a, FormalParameters<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_ARROW_FUNCTION_EXPRESSION_PARAMS)
-                as *const Box<'a, FormalParameters<'a>>)
+                as *const ArenaBox<'a, FormalParameters<'a>>)
         }
     }
 
     #[inline]
-    pub fn body(self) -> &'t Box<'a, FunctionBody<'a>> {
+    pub fn body(self) -> &'t ArenaBox<'a, FunctionBody<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_ARROW_FUNCTION_EXPRESSION_BODY)
-                as *const Box<'a, FunctionBody<'a>>)
+                as *const ArenaBox<'a, FunctionBody<'a>>)
         }
     }
 
@@ -9576,26 +9494,26 @@ impl<'a, 't> ArrowFunctionExpressionWithoutBody<'a, 't> {
     }
 
     #[inline]
-    pub fn type_parameters(self) -> &'t Option<Box<'a, TSTypeParameterDeclaration<'a>>> {
+    pub fn type_parameters(self) -> &'t Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_ARROW_FUNCTION_EXPRESSION_TYPE_PARAMETERS)
-                as *const Option<Box<'a, TSTypeParameterDeclaration<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>>)
         }
     }
 
     #[inline]
-    pub fn params(self) -> &'t Box<'a, FormalParameters<'a>> {
+    pub fn params(self) -> &'t ArenaBox<'a, FormalParameters<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_ARROW_FUNCTION_EXPRESSION_PARAMS)
-                as *const Box<'a, FormalParameters<'a>>)
+                as *const ArenaBox<'a, FormalParameters<'a>>)
         }
     }
 
     #[inline]
-    pub fn return_type(self) -> &'t Option<Box<'a, TSTypeAnnotation<'a>>> {
+    pub fn return_type(self) -> &'t Option<ArenaBox<'a, TSTypeAnnotation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_ARROW_FUNCTION_EXPRESSION_RETURN_TYPE)
-                as *const Option<Box<'a, TSTypeAnnotation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeAnnotation<'a>>>)
         }
     }
 
@@ -9712,10 +9630,10 @@ impl<'a, 't> ClassWithoutDecorators<'a, 't> {
     }
 
     #[inline]
-    pub fn type_parameters(self) -> &'t Option<Box<'a, TSTypeParameterDeclaration<'a>>> {
+    pub fn type_parameters(self) -> &'t Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_CLASS_TYPE_PARAMETERS)
-                as *const Option<Box<'a, TSTypeParameterDeclaration<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>>)
         }
     }
 
@@ -9727,24 +9645,28 @@ impl<'a, 't> ClassWithoutDecorators<'a, 't> {
     }
 
     #[inline]
-    pub fn super_type_arguments(self) -> &'t Option<Box<'a, TSTypeParameterInstantiation<'a>>> {
+    pub fn super_type_arguments(
+        self,
+    ) -> &'t Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_CLASS_SUPER_TYPE_ARGUMENTS)
-                as *const Option<Box<'a, TSTypeParameterInstantiation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>>)
         }
     }
 
     #[inline]
-    pub fn implements(self) -> &'t Vec<'a, TSClassImplements<'a>> {
+    pub fn implements(self) -> &'t ArenaVec<'a, TSClassImplements<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_CLASS_IMPLEMENTS)
-                as *const Vec<'a, TSClassImplements<'a>>)
+                as *const ArenaVec<'a, TSClassImplements<'a>>)
         }
     }
 
     #[inline]
-    pub fn body(self) -> &'t Box<'a, ClassBody<'a>> {
-        unsafe { &*((self.0 as *const u8).add(OFFSET_CLASS_BODY) as *const Box<'a, ClassBody<'a>>) }
+    pub fn body(self) -> &'t ArenaBox<'a, ClassBody<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_CLASS_BODY) as *const ArenaBox<'a, ClassBody<'a>>)
+        }
     }
 
     #[inline]
@@ -9793,17 +9715,18 @@ impl<'a, 't> ClassWithoutId<'a, 't> {
     }
 
     #[inline]
-    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+    pub fn decorators(self) -> &'t ArenaVec<'a, Decorator<'a>> {
         unsafe {
-            &*((self.0 as *const u8).add(OFFSET_CLASS_DECORATORS) as *const Vec<'a, Decorator<'a>>)
+            &*((self.0 as *const u8).add(OFFSET_CLASS_DECORATORS)
+                as *const ArenaVec<'a, Decorator<'a>>)
         }
     }
 
     #[inline]
-    pub fn type_parameters(self) -> &'t Option<Box<'a, TSTypeParameterDeclaration<'a>>> {
+    pub fn type_parameters(self) -> &'t Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_CLASS_TYPE_PARAMETERS)
-                as *const Option<Box<'a, TSTypeParameterDeclaration<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>>)
         }
     }
 
@@ -9815,24 +9738,28 @@ impl<'a, 't> ClassWithoutId<'a, 't> {
     }
 
     #[inline]
-    pub fn super_type_arguments(self) -> &'t Option<Box<'a, TSTypeParameterInstantiation<'a>>> {
+    pub fn super_type_arguments(
+        self,
+    ) -> &'t Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_CLASS_SUPER_TYPE_ARGUMENTS)
-                as *const Option<Box<'a, TSTypeParameterInstantiation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>>)
         }
     }
 
     #[inline]
-    pub fn implements(self) -> &'t Vec<'a, TSClassImplements<'a>> {
+    pub fn implements(self) -> &'t ArenaVec<'a, TSClassImplements<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_CLASS_IMPLEMENTS)
-                as *const Vec<'a, TSClassImplements<'a>>)
+                as *const ArenaVec<'a, TSClassImplements<'a>>)
         }
     }
 
     #[inline]
-    pub fn body(self) -> &'t Box<'a, ClassBody<'a>> {
-        unsafe { &*((self.0 as *const u8).add(OFFSET_CLASS_BODY) as *const Box<'a, ClassBody<'a>>) }
+    pub fn body(self) -> &'t ArenaBox<'a, ClassBody<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_CLASS_BODY) as *const ArenaBox<'a, ClassBody<'a>>)
+        }
     }
 
     #[inline]
@@ -9884,9 +9811,10 @@ impl<'a, 't> ClassWithoutTypeParameters<'a, 't> {
     }
 
     #[inline]
-    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+    pub fn decorators(self) -> &'t ArenaVec<'a, Decorator<'a>> {
         unsafe {
-            &*((self.0 as *const u8).add(OFFSET_CLASS_DECORATORS) as *const Vec<'a, Decorator<'a>>)
+            &*((self.0 as *const u8).add(OFFSET_CLASS_DECORATORS)
+                as *const ArenaVec<'a, Decorator<'a>>)
         }
     }
 
@@ -9905,24 +9833,28 @@ impl<'a, 't> ClassWithoutTypeParameters<'a, 't> {
     }
 
     #[inline]
-    pub fn super_type_arguments(self) -> &'t Option<Box<'a, TSTypeParameterInstantiation<'a>>> {
+    pub fn super_type_arguments(
+        self,
+    ) -> &'t Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_CLASS_SUPER_TYPE_ARGUMENTS)
-                as *const Option<Box<'a, TSTypeParameterInstantiation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>>)
         }
     }
 
     #[inline]
-    pub fn implements(self) -> &'t Vec<'a, TSClassImplements<'a>> {
+    pub fn implements(self) -> &'t ArenaVec<'a, TSClassImplements<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_CLASS_IMPLEMENTS)
-                as *const Vec<'a, TSClassImplements<'a>>)
+                as *const ArenaVec<'a, TSClassImplements<'a>>)
         }
     }
 
     #[inline]
-    pub fn body(self) -> &'t Box<'a, ClassBody<'a>> {
-        unsafe { &*((self.0 as *const u8).add(OFFSET_CLASS_BODY) as *const Box<'a, ClassBody<'a>>) }
+    pub fn body(self) -> &'t ArenaBox<'a, ClassBody<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_CLASS_BODY) as *const ArenaBox<'a, ClassBody<'a>>)
+        }
     }
 
     #[inline]
@@ -9974,9 +9906,10 @@ impl<'a, 't> ClassWithoutSuperClass<'a, 't> {
     }
 
     #[inline]
-    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+    pub fn decorators(self) -> &'t ArenaVec<'a, Decorator<'a>> {
         unsafe {
-            &*((self.0 as *const u8).add(OFFSET_CLASS_DECORATORS) as *const Vec<'a, Decorator<'a>>)
+            &*((self.0 as *const u8).add(OFFSET_CLASS_DECORATORS)
+                as *const ArenaVec<'a, Decorator<'a>>)
         }
     }
 
@@ -9988,32 +9921,36 @@ impl<'a, 't> ClassWithoutSuperClass<'a, 't> {
     }
 
     #[inline]
-    pub fn type_parameters(self) -> &'t Option<Box<'a, TSTypeParameterDeclaration<'a>>> {
+    pub fn type_parameters(self) -> &'t Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_CLASS_TYPE_PARAMETERS)
-                as *const Option<Box<'a, TSTypeParameterDeclaration<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>>)
         }
     }
 
     #[inline]
-    pub fn super_type_arguments(self) -> &'t Option<Box<'a, TSTypeParameterInstantiation<'a>>> {
+    pub fn super_type_arguments(
+        self,
+    ) -> &'t Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_CLASS_SUPER_TYPE_ARGUMENTS)
-                as *const Option<Box<'a, TSTypeParameterInstantiation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>>)
         }
     }
 
     #[inline]
-    pub fn implements(self) -> &'t Vec<'a, TSClassImplements<'a>> {
+    pub fn implements(self) -> &'t ArenaVec<'a, TSClassImplements<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_CLASS_IMPLEMENTS)
-                as *const Vec<'a, TSClassImplements<'a>>)
+                as *const ArenaVec<'a, TSClassImplements<'a>>)
         }
     }
 
     #[inline]
-    pub fn body(self) -> &'t Box<'a, ClassBody<'a>> {
-        unsafe { &*((self.0 as *const u8).add(OFFSET_CLASS_BODY) as *const Box<'a, ClassBody<'a>>) }
+    pub fn body(self) -> &'t ArenaBox<'a, ClassBody<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_CLASS_BODY) as *const ArenaBox<'a, ClassBody<'a>>)
+        }
     }
 
     #[inline]
@@ -10065,9 +10002,10 @@ impl<'a, 't> ClassWithoutSuperTypeArguments<'a, 't> {
     }
 
     #[inline]
-    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+    pub fn decorators(self) -> &'t ArenaVec<'a, Decorator<'a>> {
         unsafe {
-            &*((self.0 as *const u8).add(OFFSET_CLASS_DECORATORS) as *const Vec<'a, Decorator<'a>>)
+            &*((self.0 as *const u8).add(OFFSET_CLASS_DECORATORS)
+                as *const ArenaVec<'a, Decorator<'a>>)
         }
     }
 
@@ -10079,10 +10017,10 @@ impl<'a, 't> ClassWithoutSuperTypeArguments<'a, 't> {
     }
 
     #[inline]
-    pub fn type_parameters(self) -> &'t Option<Box<'a, TSTypeParameterDeclaration<'a>>> {
+    pub fn type_parameters(self) -> &'t Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_CLASS_TYPE_PARAMETERS)
-                as *const Option<Box<'a, TSTypeParameterDeclaration<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>>)
         }
     }
 
@@ -10094,16 +10032,18 @@ impl<'a, 't> ClassWithoutSuperTypeArguments<'a, 't> {
     }
 
     #[inline]
-    pub fn implements(self) -> &'t Vec<'a, TSClassImplements<'a>> {
+    pub fn implements(self) -> &'t ArenaVec<'a, TSClassImplements<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_CLASS_IMPLEMENTS)
-                as *const Vec<'a, TSClassImplements<'a>>)
+                as *const ArenaVec<'a, TSClassImplements<'a>>)
         }
     }
 
     #[inline]
-    pub fn body(self) -> &'t Box<'a, ClassBody<'a>> {
-        unsafe { &*((self.0 as *const u8).add(OFFSET_CLASS_BODY) as *const Box<'a, ClassBody<'a>>) }
+    pub fn body(self) -> &'t ArenaBox<'a, ClassBody<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_CLASS_BODY) as *const ArenaBox<'a, ClassBody<'a>>)
+        }
     }
 
     #[inline]
@@ -10155,9 +10095,10 @@ impl<'a, 't> ClassWithoutImplements<'a, 't> {
     }
 
     #[inline]
-    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+    pub fn decorators(self) -> &'t ArenaVec<'a, Decorator<'a>> {
         unsafe {
-            &*((self.0 as *const u8).add(OFFSET_CLASS_DECORATORS) as *const Vec<'a, Decorator<'a>>)
+            &*((self.0 as *const u8).add(OFFSET_CLASS_DECORATORS)
+                as *const ArenaVec<'a, Decorator<'a>>)
         }
     }
 
@@ -10169,10 +10110,10 @@ impl<'a, 't> ClassWithoutImplements<'a, 't> {
     }
 
     #[inline]
-    pub fn type_parameters(self) -> &'t Option<Box<'a, TSTypeParameterDeclaration<'a>>> {
+    pub fn type_parameters(self) -> &'t Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_CLASS_TYPE_PARAMETERS)
-                as *const Option<Box<'a, TSTypeParameterDeclaration<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>>)
         }
     }
 
@@ -10184,16 +10125,20 @@ impl<'a, 't> ClassWithoutImplements<'a, 't> {
     }
 
     #[inline]
-    pub fn super_type_arguments(self) -> &'t Option<Box<'a, TSTypeParameterInstantiation<'a>>> {
+    pub fn super_type_arguments(
+        self,
+    ) -> &'t Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_CLASS_SUPER_TYPE_ARGUMENTS)
-                as *const Option<Box<'a, TSTypeParameterInstantiation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>>)
         }
     }
 
     #[inline]
-    pub fn body(self) -> &'t Box<'a, ClassBody<'a>> {
-        unsafe { &*((self.0 as *const u8).add(OFFSET_CLASS_BODY) as *const Box<'a, ClassBody<'a>>) }
+    pub fn body(self) -> &'t ArenaBox<'a, ClassBody<'a>> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_CLASS_BODY) as *const ArenaBox<'a, ClassBody<'a>>)
+        }
     }
 
     #[inline]
@@ -10242,9 +10187,10 @@ impl<'a, 't> ClassWithoutBody<'a, 't> {
     }
 
     #[inline]
-    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+    pub fn decorators(self) -> &'t ArenaVec<'a, Decorator<'a>> {
         unsafe {
-            &*((self.0 as *const u8).add(OFFSET_CLASS_DECORATORS) as *const Vec<'a, Decorator<'a>>)
+            &*((self.0 as *const u8).add(OFFSET_CLASS_DECORATORS)
+                as *const ArenaVec<'a, Decorator<'a>>)
         }
     }
 
@@ -10256,10 +10202,10 @@ impl<'a, 't> ClassWithoutBody<'a, 't> {
     }
 
     #[inline]
-    pub fn type_parameters(self) -> &'t Option<Box<'a, TSTypeParameterDeclaration<'a>>> {
+    pub fn type_parameters(self) -> &'t Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_CLASS_TYPE_PARAMETERS)
-                as *const Option<Box<'a, TSTypeParameterDeclaration<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>>)
         }
     }
 
@@ -10271,18 +10217,20 @@ impl<'a, 't> ClassWithoutBody<'a, 't> {
     }
 
     #[inline]
-    pub fn super_type_arguments(self) -> &'t Option<Box<'a, TSTypeParameterInstantiation<'a>>> {
+    pub fn super_type_arguments(
+        self,
+    ) -> &'t Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_CLASS_SUPER_TYPE_ARGUMENTS)
-                as *const Option<Box<'a, TSTypeParameterInstantiation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>>)
         }
     }
 
     #[inline]
-    pub fn implements(self) -> &'t Vec<'a, TSClassImplements<'a>> {
+    pub fn implements(self) -> &'t ArenaVec<'a, TSClassImplements<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_CLASS_IMPLEMENTS)
-                as *const Vec<'a, TSClassImplements<'a>>)
+                as *const ArenaVec<'a, TSClassImplements<'a>>)
         }
     }
 
@@ -10393,10 +10341,10 @@ impl<'a, 't> MethodDefinitionWithoutDecorators<'a, 't> {
     }
 
     #[inline]
-    pub fn value(self) -> &'t Box<'a, Function<'a>> {
+    pub fn value(self) -> &'t ArenaBox<'a, Function<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_METHOD_DEFINITION_VALUE)
-                as *const Box<'a, Function<'a>>)
+                as *const ArenaBox<'a, Function<'a>>)
         }
     }
 
@@ -10473,18 +10421,18 @@ impl<'a, 't> MethodDefinitionWithoutKey<'a, 't> {
     }
 
     #[inline]
-    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+    pub fn decorators(self) -> &'t ArenaVec<'a, Decorator<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_METHOD_DEFINITION_DECORATORS)
-                as *const Vec<'a, Decorator<'a>>)
+                as *const ArenaVec<'a, Decorator<'a>>)
         }
     }
 
     #[inline]
-    pub fn value(self) -> &'t Box<'a, Function<'a>> {
+    pub fn value(self) -> &'t ArenaBox<'a, Function<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_METHOD_DEFINITION_VALUE)
-                as *const Box<'a, Function<'a>>)
+                as *const ArenaBox<'a, Function<'a>>)
         }
     }
 
@@ -10561,10 +10509,10 @@ impl<'a, 't> MethodDefinitionWithoutValue<'a, 't> {
     }
 
     #[inline]
-    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+    pub fn decorators(self) -> &'t ArenaVec<'a, Decorator<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_METHOD_DEFINITION_DECORATORS)
-                as *const Vec<'a, Decorator<'a>>)
+                as *const ArenaVec<'a, Decorator<'a>>)
         }
     }
 
@@ -10682,10 +10630,10 @@ impl<'a, 't> PropertyDefinitionWithoutDecorators<'a, 't> {
     }
 
     #[inline]
-    pub fn type_annotation(self) -> &'t Option<Box<'a, TSTypeAnnotation<'a>>> {
+    pub fn type_annotation(self) -> &'t Option<ArenaBox<'a, TSTypeAnnotation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_PROPERTY_DEFINITION_TYPE_ANNOTATION)
-                as *const Option<Box<'a, TSTypeAnnotation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeAnnotation<'a>>>)
         }
     }
 
@@ -10777,18 +10725,18 @@ impl<'a, 't> PropertyDefinitionWithoutKey<'a, 't> {
     }
 
     #[inline]
-    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+    pub fn decorators(self) -> &'t ArenaVec<'a, Decorator<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_PROPERTY_DEFINITION_DECORATORS)
-                as *const Vec<'a, Decorator<'a>>)
+                as *const ArenaVec<'a, Decorator<'a>>)
         }
     }
 
     #[inline]
-    pub fn type_annotation(self) -> &'t Option<Box<'a, TSTypeAnnotation<'a>>> {
+    pub fn type_annotation(self) -> &'t Option<ArenaBox<'a, TSTypeAnnotation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_PROPERTY_DEFINITION_TYPE_ANNOTATION)
-                as *const Option<Box<'a, TSTypeAnnotation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeAnnotation<'a>>>)
         }
     }
 
@@ -10880,10 +10828,10 @@ impl<'a, 't> PropertyDefinitionWithoutTypeAnnotation<'a, 't> {
     }
 
     #[inline]
-    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+    pub fn decorators(self) -> &'t ArenaVec<'a, Decorator<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_PROPERTY_DEFINITION_DECORATORS)
-                as *const Vec<'a, Decorator<'a>>)
+                as *const ArenaVec<'a, Decorator<'a>>)
         }
     }
 
@@ -10982,10 +10930,10 @@ impl<'a, 't> PropertyDefinitionWithoutValue<'a, 't> {
     }
 
     #[inline]
-    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+    pub fn decorators(self) -> &'t ArenaVec<'a, Decorator<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_PROPERTY_DEFINITION_DECORATORS)
-                as *const Vec<'a, Decorator<'a>>)
+                as *const ArenaVec<'a, Decorator<'a>>)
         }
     }
 
@@ -10997,10 +10945,10 @@ impl<'a, 't> PropertyDefinitionWithoutValue<'a, 't> {
     }
 
     #[inline]
-    pub fn type_annotation(self) -> &'t Option<Box<'a, TSTypeAnnotation<'a>>> {
+    pub fn type_annotation(self) -> &'t Option<ArenaBox<'a, TSTypeAnnotation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_PROPERTY_DEFINITION_TYPE_ANNOTATION)
-                as *const Option<Box<'a, TSTypeAnnotation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeAnnotation<'a>>>)
         }
     }
 
@@ -11147,10 +11095,10 @@ impl<'a, 't> AccessorPropertyWithoutDecorators<'a, 't> {
     }
 
     #[inline]
-    pub fn type_annotation(self) -> &'t Option<Box<'a, TSTypeAnnotation<'a>>> {
+    pub fn type_annotation(self) -> &'t Option<ArenaBox<'a, TSTypeAnnotation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_ACCESSOR_PROPERTY_TYPE_ANNOTATION)
-                as *const Option<Box<'a, TSTypeAnnotation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeAnnotation<'a>>>)
         }
     }
 
@@ -11227,18 +11175,18 @@ impl<'a, 't> AccessorPropertyWithoutKey<'a, 't> {
     }
 
     #[inline]
-    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+    pub fn decorators(self) -> &'t ArenaVec<'a, Decorator<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_ACCESSOR_PROPERTY_DECORATORS)
-                as *const Vec<'a, Decorator<'a>>)
+                as *const ArenaVec<'a, Decorator<'a>>)
         }
     }
 
     #[inline]
-    pub fn type_annotation(self) -> &'t Option<Box<'a, TSTypeAnnotation<'a>>> {
+    pub fn type_annotation(self) -> &'t Option<ArenaBox<'a, TSTypeAnnotation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_ACCESSOR_PROPERTY_TYPE_ANNOTATION)
-                as *const Option<Box<'a, TSTypeAnnotation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeAnnotation<'a>>>)
         }
     }
 
@@ -11315,10 +11263,10 @@ impl<'a, 't> AccessorPropertyWithoutTypeAnnotation<'a, 't> {
     }
 
     #[inline]
-    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+    pub fn decorators(self) -> &'t ArenaVec<'a, Decorator<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_ACCESSOR_PROPERTY_DECORATORS)
-                as *const Vec<'a, Decorator<'a>>)
+                as *const ArenaVec<'a, Decorator<'a>>)
         }
     }
 
@@ -11402,10 +11350,10 @@ impl<'a, 't> AccessorPropertyWithoutValue<'a, 't> {
     }
 
     #[inline]
-    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+    pub fn decorators(self) -> &'t ArenaVec<'a, Decorator<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_ACCESSOR_PROPERTY_DECORATORS)
-                as *const Vec<'a, Decorator<'a>>)
+                as *const ArenaVec<'a, Decorator<'a>>)
         }
     }
 
@@ -11417,10 +11365,10 @@ impl<'a, 't> AccessorPropertyWithoutValue<'a, 't> {
     }
 
     #[inline]
-    pub fn type_annotation(self) -> &'t Option<Box<'a, TSTypeAnnotation<'a>>> {
+    pub fn type_annotation(self) -> &'t Option<ArenaBox<'a, TSTypeAnnotation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_ACCESSOR_PROPERTY_TYPE_ANNOTATION)
-                as *const Option<Box<'a, TSTypeAnnotation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeAnnotation<'a>>>)
         }
     }
 
@@ -11601,10 +11549,10 @@ impl<'a, 't> ImportDeclarationWithoutSpecifiers<'a, 't> {
     }
 
     #[inline]
-    pub fn with_clause(self) -> &'t Option<Box<'a, WithClause<'a>>> {
+    pub fn with_clause(self) -> &'t Option<ArenaBox<'a, WithClause<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_IMPORT_DECLARATION_WITH_CLAUSE)
-                as *const Option<Box<'a, WithClause<'a>>>)
+                as *const Option<ArenaBox<'a, WithClause<'a>>>)
         }
     }
 
@@ -11645,10 +11593,10 @@ impl<'a, 't> ImportDeclarationWithoutSource<'a, 't> {
     }
 
     #[inline]
-    pub fn specifiers(self) -> &'t Option<Vec<'a, ImportDeclarationSpecifier<'a>>> {
+    pub fn specifiers(self) -> &'t Option<ArenaVec<'a, ImportDeclarationSpecifier<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_IMPORT_DECLARATION_SPECIFIERS)
-                as *const Option<Vec<'a, ImportDeclarationSpecifier<'a>>>)
+                as *const Option<ArenaVec<'a, ImportDeclarationSpecifier<'a>>>)
         }
     }
 
@@ -11661,10 +11609,10 @@ impl<'a, 't> ImportDeclarationWithoutSource<'a, 't> {
     }
 
     #[inline]
-    pub fn with_clause(self) -> &'t Option<Box<'a, WithClause<'a>>> {
+    pub fn with_clause(self) -> &'t Option<ArenaBox<'a, WithClause<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_IMPORT_DECLARATION_WITH_CLAUSE)
-                as *const Option<Box<'a, WithClause<'a>>>)
+                as *const Option<ArenaBox<'a, WithClause<'a>>>)
         }
     }
 
@@ -11705,10 +11653,10 @@ impl<'a, 't> ImportDeclarationWithoutWithClause<'a, 't> {
     }
 
     #[inline]
-    pub fn specifiers(self) -> &'t Option<Vec<'a, ImportDeclarationSpecifier<'a>>> {
+    pub fn specifiers(self) -> &'t Option<ArenaVec<'a, ImportDeclarationSpecifier<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_IMPORT_DECLARATION_SPECIFIERS)
-                as *const Option<Vec<'a, ImportDeclarationSpecifier<'a>>>)
+                as *const Option<ArenaVec<'a, ImportDeclarationSpecifier<'a>>>)
         }
     }
 
@@ -11785,10 +11733,10 @@ impl<'a, 't> LazyImportDeclarationWithoutSpecifiers<'a, 't> {
     }
 
     #[inline]
-    pub fn with_clause(self) -> &'t Option<Box<'a, WithClause<'a>>> {
+    pub fn with_clause(self) -> &'t Option<ArenaBox<'a, WithClause<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_LAZY_IMPORT_DECLARATION_WITH_CLAUSE)
-                as *const Option<Box<'a, WithClause<'a>>>)
+                as *const Option<ArenaBox<'a, WithClause<'a>>>)
         }
     }
 }
@@ -11822,18 +11770,18 @@ impl<'a, 't> LazyImportDeclarationWithoutSource<'a, 't> {
     }
 
     #[inline]
-    pub fn specifiers(self) -> &'t Option<Vec<'a, ImportDeclarationSpecifier<'a>>> {
+    pub fn specifiers(self) -> &'t Option<ArenaVec<'a, ImportDeclarationSpecifier<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_LAZY_IMPORT_DECLARATION_SPECIFIERS)
-                as *const Option<Vec<'a, ImportDeclarationSpecifier<'a>>>)
+                as *const Option<ArenaVec<'a, ImportDeclarationSpecifier<'a>>>)
         }
     }
 
     #[inline]
-    pub fn with_clause(self) -> &'t Option<Box<'a, WithClause<'a>>> {
+    pub fn with_clause(self) -> &'t Option<ArenaBox<'a, WithClause<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_LAZY_IMPORT_DECLARATION_WITH_CLAUSE)
-                as *const Option<Box<'a, WithClause<'a>>>)
+                as *const Option<ArenaBox<'a, WithClause<'a>>>)
         }
     }
 }
@@ -11867,10 +11815,10 @@ impl<'a, 't> LazyImportDeclarationWithoutWithClause<'a, 't> {
     }
 
     #[inline]
-    pub fn specifiers(self) -> &'t Option<Vec<'a, ImportDeclarationSpecifier<'a>>> {
+    pub fn specifiers(self) -> &'t Option<ArenaVec<'a, ImportDeclarationSpecifier<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_LAZY_IMPORT_DECLARATION_SPECIFIERS)
-                as *const Option<Vec<'a, ImportDeclarationSpecifier<'a>>>)
+                as *const Option<ArenaVec<'a, ImportDeclarationSpecifier<'a>>>)
         }
     }
 
@@ -12224,10 +12172,10 @@ impl<'a, 't> ExportNamedDeclarationWithoutDecorators<'a, 't> {
     }
 
     #[inline]
-    pub fn specifiers(self) -> &'t Vec<'a, ExportSpecifier<'a>> {
+    pub fn specifiers(self) -> &'t ArenaVec<'a, ExportSpecifier<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_EXPORT_NAMED_DECLARATION_SPECIFIERS)
-                as *const Vec<'a, ExportSpecifier<'a>>)
+                as *const ArenaVec<'a, ExportSpecifier<'a>>)
         }
     }
 
@@ -12248,10 +12196,10 @@ impl<'a, 't> ExportNamedDeclarationWithoutDecorators<'a, 't> {
     }
 
     #[inline]
-    pub fn with_clause(self) -> &'t Option<Box<'a, WithClause<'a>>> {
+    pub fn with_clause(self) -> &'t Option<ArenaBox<'a, WithClause<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_EXPORT_NAMED_DECLARATION_WITH_CLAUSE)
-                as *const Option<Box<'a, WithClause<'a>>>)
+                as *const Option<ArenaBox<'a, WithClause<'a>>>)
         }
     }
 }
@@ -12287,18 +12235,18 @@ impl<'a, 't> ExportNamedDeclarationWithoutDeclaration<'a, 't> {
     }
 
     #[inline]
-    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+    pub fn decorators(self) -> &'t ArenaVec<'a, Decorator<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_EXPORT_NAMED_DECLARATION_DECORATORS)
-                as *const Vec<'a, Decorator<'a>>)
+                as *const ArenaVec<'a, Decorator<'a>>)
         }
     }
 
     #[inline]
-    pub fn specifiers(self) -> &'t Vec<'a, ExportSpecifier<'a>> {
+    pub fn specifiers(self) -> &'t ArenaVec<'a, ExportSpecifier<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_EXPORT_NAMED_DECLARATION_SPECIFIERS)
-                as *const Vec<'a, ExportSpecifier<'a>>)
+                as *const ArenaVec<'a, ExportSpecifier<'a>>)
         }
     }
 
@@ -12319,10 +12267,10 @@ impl<'a, 't> ExportNamedDeclarationWithoutDeclaration<'a, 't> {
     }
 
     #[inline]
-    pub fn with_clause(self) -> &'t Option<Box<'a, WithClause<'a>>> {
+    pub fn with_clause(self) -> &'t Option<ArenaBox<'a, WithClause<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_EXPORT_NAMED_DECLARATION_WITH_CLAUSE)
-                as *const Option<Box<'a, WithClause<'a>>>)
+                as *const Option<ArenaBox<'a, WithClause<'a>>>)
         }
     }
 }
@@ -12358,10 +12306,10 @@ impl<'a, 't> ExportNamedDeclarationWithoutSpecifiers<'a, 't> {
     }
 
     #[inline]
-    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+    pub fn decorators(self) -> &'t ArenaVec<'a, Decorator<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_EXPORT_NAMED_DECLARATION_DECORATORS)
-                as *const Vec<'a, Decorator<'a>>)
+                as *const ArenaVec<'a, Decorator<'a>>)
         }
     }
 
@@ -12390,10 +12338,10 @@ impl<'a, 't> ExportNamedDeclarationWithoutSpecifiers<'a, 't> {
     }
 
     #[inline]
-    pub fn with_clause(self) -> &'t Option<Box<'a, WithClause<'a>>> {
+    pub fn with_clause(self) -> &'t Option<ArenaBox<'a, WithClause<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_EXPORT_NAMED_DECLARATION_WITH_CLAUSE)
-                as *const Option<Box<'a, WithClause<'a>>>)
+                as *const Option<ArenaBox<'a, WithClause<'a>>>)
         }
     }
 }
@@ -12429,10 +12377,10 @@ impl<'a, 't> ExportNamedDeclarationWithoutSource<'a, 't> {
     }
 
     #[inline]
-    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+    pub fn decorators(self) -> &'t ArenaVec<'a, Decorator<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_EXPORT_NAMED_DECLARATION_DECORATORS)
-                as *const Vec<'a, Decorator<'a>>)
+                as *const ArenaVec<'a, Decorator<'a>>)
         }
     }
 
@@ -12445,10 +12393,10 @@ impl<'a, 't> ExportNamedDeclarationWithoutSource<'a, 't> {
     }
 
     #[inline]
-    pub fn specifiers(self) -> &'t Vec<'a, ExportSpecifier<'a>> {
+    pub fn specifiers(self) -> &'t ArenaVec<'a, ExportSpecifier<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_EXPORT_NAMED_DECLARATION_SPECIFIERS)
-                as *const Vec<'a, ExportSpecifier<'a>>)
+                as *const ArenaVec<'a, ExportSpecifier<'a>>)
         }
     }
 
@@ -12461,10 +12409,10 @@ impl<'a, 't> ExportNamedDeclarationWithoutSource<'a, 't> {
     }
 
     #[inline]
-    pub fn with_clause(self) -> &'t Option<Box<'a, WithClause<'a>>> {
+    pub fn with_clause(self) -> &'t Option<ArenaBox<'a, WithClause<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_EXPORT_NAMED_DECLARATION_WITH_CLAUSE)
-                as *const Option<Box<'a, WithClause<'a>>>)
+                as *const Option<ArenaBox<'a, WithClause<'a>>>)
         }
     }
 }
@@ -12500,10 +12448,10 @@ impl<'a, 't> ExportNamedDeclarationWithoutWithClause<'a, 't> {
     }
 
     #[inline]
-    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+    pub fn decorators(self) -> &'t ArenaVec<'a, Decorator<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_EXPORT_NAMED_DECLARATION_DECORATORS)
-                as *const Vec<'a, Decorator<'a>>)
+                as *const ArenaVec<'a, Decorator<'a>>)
         }
     }
 
@@ -12516,10 +12464,10 @@ impl<'a, 't> ExportNamedDeclarationWithoutWithClause<'a, 't> {
     }
 
     #[inline]
-    pub fn specifiers(self) -> &'t Vec<'a, ExportSpecifier<'a>> {
+    pub fn specifiers(self) -> &'t ArenaVec<'a, ExportSpecifier<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_EXPORT_NAMED_DECLARATION_SPECIFIERS)
-                as *const Vec<'a, ExportSpecifier<'a>>)
+                as *const ArenaVec<'a, ExportSpecifier<'a>>)
         }
     }
 
@@ -12627,10 +12575,10 @@ impl<'a, 't> ExportAllDeclarationWithoutExported<'a, 't> {
     }
 
     #[inline]
-    pub fn with_clause(self) -> &'t Option<Box<'a, WithClause<'a>>> {
+    pub fn with_clause(self) -> &'t Option<ArenaBox<'a, WithClause<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_EXPORT_ALL_DECLARATION_WITH_CLAUSE)
-                as *const Option<Box<'a, WithClause<'a>>>)
+                as *const Option<ArenaBox<'a, WithClause<'a>>>)
         }
     }
 
@@ -12680,10 +12628,10 @@ impl<'a, 't> ExportAllDeclarationWithoutSource<'a, 't> {
     }
 
     #[inline]
-    pub fn with_clause(self) -> &'t Option<Box<'a, WithClause<'a>>> {
+    pub fn with_clause(self) -> &'t Option<ArenaBox<'a, WithClause<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_EXPORT_ALL_DECLARATION_WITH_CLAUSE)
-                as *const Option<Box<'a, WithClause<'a>>>)
+                as *const Option<ArenaBox<'a, WithClause<'a>>>)
         }
     }
 
@@ -12882,10 +12830,10 @@ impl<'a, 't> V8IntrinsicExpressionWithoutName<'a, 't> {
     }
 
     #[inline]
-    pub fn arguments(self) -> &'t Vec<'a, Argument<'a>> {
+    pub fn arguments(self) -> &'t ArenaVec<'a, Argument<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_V8_INTRINSIC_EXPRESSION_ARGUMENTS)
-                as *const Vec<'a, Argument<'a>>)
+                as *const ArenaVec<'a, Argument<'a>>)
         }
     }
 }
@@ -12961,18 +12909,18 @@ impl<'a, 't> JSXElementWithoutOpeningElement<'a, 't> {
     }
 
     #[inline]
-    pub fn children(self) -> &'t Vec<'a, JSXChild<'a>> {
+    pub fn children(self) -> &'t ArenaVec<'a, JSXChild<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_JSX_ELEMENT_CHILDREN)
-                as *const Vec<'a, JSXChild<'a>>)
+                as *const ArenaVec<'a, JSXChild<'a>>)
         }
     }
 
     #[inline]
-    pub fn closing_element(self) -> &'t Option<Box<'a, JSXClosingElement<'a>>> {
+    pub fn closing_element(self) -> &'t Option<ArenaBox<'a, JSXClosingElement<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_JSX_ELEMENT_CLOSING_ELEMENT)
-                as *const Option<Box<'a, JSXClosingElement<'a>>>)
+                as *const Option<ArenaBox<'a, JSXClosingElement<'a>>>)
         }
     }
 }
@@ -13003,18 +12951,18 @@ impl<'a, 't> JSXElementWithoutChildren<'a, 't> {
     }
 
     #[inline]
-    pub fn opening_element(self) -> &'t Box<'a, JSXOpeningElement<'a>> {
+    pub fn opening_element(self) -> &'t ArenaBox<'a, JSXOpeningElement<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_JSX_ELEMENT_OPENING_ELEMENT)
-                as *const Box<'a, JSXOpeningElement<'a>>)
+                as *const ArenaBox<'a, JSXOpeningElement<'a>>)
         }
     }
 
     #[inline]
-    pub fn closing_element(self) -> &'t Option<Box<'a, JSXClosingElement<'a>>> {
+    pub fn closing_element(self) -> &'t Option<ArenaBox<'a, JSXClosingElement<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_JSX_ELEMENT_CLOSING_ELEMENT)
-                as *const Option<Box<'a, JSXClosingElement<'a>>>)
+                as *const Option<ArenaBox<'a, JSXClosingElement<'a>>>)
         }
     }
 }
@@ -13045,18 +12993,18 @@ impl<'a, 't> JSXElementWithoutClosingElement<'a, 't> {
     }
 
     #[inline]
-    pub fn opening_element(self) -> &'t Box<'a, JSXOpeningElement<'a>> {
+    pub fn opening_element(self) -> &'t ArenaBox<'a, JSXOpeningElement<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_JSX_ELEMENT_OPENING_ELEMENT)
-                as *const Box<'a, JSXOpeningElement<'a>>)
+                as *const ArenaBox<'a, JSXOpeningElement<'a>>)
         }
     }
 
     #[inline]
-    pub fn children(self) -> &'t Vec<'a, JSXChild<'a>> {
+    pub fn children(self) -> &'t ArenaVec<'a, JSXChild<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_JSX_ELEMENT_CHILDREN)
-                as *const Vec<'a, JSXChild<'a>>)
+                as *const ArenaVec<'a, JSXChild<'a>>)
         }
     }
 }
@@ -13097,18 +13045,18 @@ impl<'a, 't> JSXOpeningElementWithoutName<'a, 't> {
     }
 
     #[inline]
-    pub fn type_arguments(self) -> &'t Option<Box<'a, TSTypeParameterInstantiation<'a>>> {
+    pub fn type_arguments(self) -> &'t Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_JSX_OPENING_ELEMENT_TYPE_ARGUMENTS)
-                as *const Option<Box<'a, TSTypeParameterInstantiation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>>)
         }
     }
 
     #[inline]
-    pub fn attributes(self) -> &'t Vec<'a, JSXAttributeItem<'a>> {
+    pub fn attributes(self) -> &'t ArenaVec<'a, JSXAttributeItem<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_JSX_OPENING_ELEMENT_ATTRIBUTES)
-                as *const Vec<'a, JSXAttributeItem<'a>>)
+                as *const ArenaVec<'a, JSXAttributeItem<'a>>)
         }
     }
 }
@@ -13149,10 +13097,10 @@ impl<'a, 't> JSXOpeningElementWithoutTypeArguments<'a, 't> {
     }
 
     #[inline]
-    pub fn attributes(self) -> &'t Vec<'a, JSXAttributeItem<'a>> {
+    pub fn attributes(self) -> &'t ArenaVec<'a, JSXAttributeItem<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_JSX_OPENING_ELEMENT_ATTRIBUTES)
-                as *const Vec<'a, JSXAttributeItem<'a>>)
+                as *const ArenaVec<'a, JSXAttributeItem<'a>>)
         }
     }
 }
@@ -13193,10 +13141,10 @@ impl<'a, 't> JSXOpeningElementWithoutAttributes<'a, 't> {
     }
 
     #[inline]
-    pub fn type_arguments(self) -> &'t Option<Box<'a, TSTypeParameterInstantiation<'a>>> {
+    pub fn type_arguments(self) -> &'t Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_JSX_OPENING_ELEMENT_TYPE_ARGUMENTS)
-                as *const Option<Box<'a, TSTypeParameterInstantiation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>>)
         }
     }
 }
@@ -13267,10 +13215,10 @@ impl<'a, 't> JSXFragmentWithoutOpeningFragment<'a, 't> {
     }
 
     #[inline]
-    pub fn children(self) -> &'t Vec<'a, JSXChild<'a>> {
+    pub fn children(self) -> &'t ArenaVec<'a, JSXChild<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_JSX_FRAGMENT_CHILDREN)
-                as *const Vec<'a, JSXChild<'a>>)
+                as *const ArenaVec<'a, JSXChild<'a>>)
         }
     }
 
@@ -13359,10 +13307,10 @@ impl<'a, 't> JSXFragmentWithoutClosingFragment<'a, 't> {
     }
 
     #[inline]
-    pub fn children(self) -> &'t Vec<'a, JSXChild<'a>> {
+    pub fn children(self) -> &'t ArenaVec<'a, JSXChild<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_JSX_FRAGMENT_CHILDREN)
-                as *const Vec<'a, JSXChild<'a>>)
+                as *const ArenaVec<'a, JSXChild<'a>>)
         }
     }
 }
@@ -14759,10 +14707,10 @@ impl<'a, 't> TSTypeReferenceWithoutTypeName<'a, 't> {
     }
 
     #[inline]
-    pub fn type_arguments(self) -> &'t Option<Box<'a, TSTypeParameterInstantiation<'a>>> {
+    pub fn type_arguments(self) -> &'t Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_TYPE_REFERENCE_TYPE_ARGUMENTS)
-                as *const Option<Box<'a, TSTypeParameterInstantiation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>>)
         }
     }
 }
@@ -15189,10 +15137,10 @@ impl<'a, 't> TSTypeAliasDeclarationWithoutId<'a, 't> {
     }
 
     #[inline]
-    pub fn type_parameters(self) -> &'t Option<Box<'a, TSTypeParameterDeclaration<'a>>> {
+    pub fn type_parameters(self) -> &'t Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_TYPE_ALIAS_DECLARATION_TYPE_PARAMETERS)
-                as *const Option<Box<'a, TSTypeParameterDeclaration<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>>)
         }
     }
 
@@ -15321,10 +15269,10 @@ impl<'a, 't> TSTypeAliasDeclarationWithoutTypeAnnotation<'a, 't> {
     }
 
     #[inline]
-    pub fn type_parameters(self) -> &'t Option<Box<'a, TSTypeParameterDeclaration<'a>>> {
+    pub fn type_parameters(self) -> &'t Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_TYPE_ALIAS_DECLARATION_TYPE_PARAMETERS)
-                as *const Option<Box<'a, TSTypeParameterDeclaration<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>>)
         }
     }
 
@@ -15379,10 +15327,10 @@ impl<'a, 't> TSClassImplementsWithoutExpression<'a, 't> {
     }
 
     #[inline]
-    pub fn type_arguments(self) -> &'t Option<Box<'a, TSTypeParameterInstantiation<'a>>> {
+    pub fn type_arguments(self) -> &'t Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_CLASS_IMPLEMENTS_TYPE_ARGUMENTS)
-                as *const Option<Box<'a, TSTypeParameterInstantiation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>>)
         }
     }
 }
@@ -15470,26 +15418,26 @@ impl<'a, 't> TSInterfaceDeclarationWithoutId<'a, 't> {
     }
 
     #[inline]
-    pub fn type_parameters(self) -> &'t Option<Box<'a, TSTypeParameterDeclaration<'a>>> {
+    pub fn type_parameters(self) -> &'t Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_INTERFACE_DECLARATION_TYPE_PARAMETERS)
-                as *const Option<Box<'a, TSTypeParameterDeclaration<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>>)
         }
     }
 
     #[inline]
-    pub fn extends(self) -> &'t Vec<'a, TSInterfaceHeritage<'a>> {
+    pub fn extends(self) -> &'t ArenaVec<'a, TSInterfaceHeritage<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_INTERFACE_DECLARATION_EXTENDS)
-                as *const Vec<'a, TSInterfaceHeritage<'a>>)
+                as *const ArenaVec<'a, TSInterfaceHeritage<'a>>)
         }
     }
 
     #[inline]
-    pub fn body(self) -> &'t Box<'a, TSInterfaceBody<'a>> {
+    pub fn body(self) -> &'t ArenaBox<'a, TSInterfaceBody<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_INTERFACE_DECLARATION_BODY)
-                as *const Box<'a, TSInterfaceBody<'a>>)
+                as *const ArenaBox<'a, TSInterfaceBody<'a>>)
         }
     }
 
@@ -15548,18 +15496,18 @@ impl<'a, 't> TSInterfaceDeclarationWithoutTypeParameters<'a, 't> {
     }
 
     #[inline]
-    pub fn extends(self) -> &'t Vec<'a, TSInterfaceHeritage<'a>> {
+    pub fn extends(self) -> &'t ArenaVec<'a, TSInterfaceHeritage<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_INTERFACE_DECLARATION_EXTENDS)
-                as *const Vec<'a, TSInterfaceHeritage<'a>>)
+                as *const ArenaVec<'a, TSInterfaceHeritage<'a>>)
         }
     }
 
     #[inline]
-    pub fn body(self) -> &'t Box<'a, TSInterfaceBody<'a>> {
+    pub fn body(self) -> &'t ArenaBox<'a, TSInterfaceBody<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_INTERFACE_DECLARATION_BODY)
-                as *const Box<'a, TSInterfaceBody<'a>>)
+                as *const ArenaBox<'a, TSInterfaceBody<'a>>)
         }
     }
 
@@ -15618,18 +15566,18 @@ impl<'a, 't> TSInterfaceDeclarationWithoutExtends<'a, 't> {
     }
 
     #[inline]
-    pub fn type_parameters(self) -> &'t Option<Box<'a, TSTypeParameterDeclaration<'a>>> {
+    pub fn type_parameters(self) -> &'t Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_INTERFACE_DECLARATION_TYPE_PARAMETERS)
-                as *const Option<Box<'a, TSTypeParameterDeclaration<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>>)
         }
     }
 
     #[inline]
-    pub fn body(self) -> &'t Box<'a, TSInterfaceBody<'a>> {
+    pub fn body(self) -> &'t ArenaBox<'a, TSInterfaceBody<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_INTERFACE_DECLARATION_BODY)
-                as *const Box<'a, TSInterfaceBody<'a>>)
+                as *const ArenaBox<'a, TSInterfaceBody<'a>>)
         }
     }
 
@@ -15688,18 +15636,18 @@ impl<'a, 't> TSInterfaceDeclarationWithoutBody<'a, 't> {
     }
 
     #[inline]
-    pub fn type_parameters(self) -> &'t Option<Box<'a, TSTypeParameterDeclaration<'a>>> {
+    pub fn type_parameters(self) -> &'t Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_INTERFACE_DECLARATION_TYPE_PARAMETERS)
-                as *const Option<Box<'a, TSTypeParameterDeclaration<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>>)
         }
     }
 
     #[inline]
-    pub fn extends(self) -> &'t Vec<'a, TSInterfaceHeritage<'a>> {
+    pub fn extends(self) -> &'t ArenaVec<'a, TSInterfaceHeritage<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_INTERFACE_DECLARATION_EXTENDS)
-                as *const Vec<'a, TSInterfaceHeritage<'a>>)
+                as *const ArenaVec<'a, TSInterfaceHeritage<'a>>)
         }
     }
 
@@ -15814,10 +15762,10 @@ impl<'a, 't> TSPropertySignatureWithoutKey<'a, 't> {
     }
 
     #[inline]
-    pub fn type_annotation(self) -> &'t Option<Box<'a, TSTypeAnnotation<'a>>> {
+    pub fn type_annotation(self) -> &'t Option<ArenaBox<'a, TSTypeAnnotation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_PROPERTY_SIGNATURE_TYPE_ANNOTATION)
-                as *const Option<Box<'a, TSTypeAnnotation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeAnnotation<'a>>>)
         }
     }
 }
@@ -15917,10 +15865,10 @@ impl<'a, 't> TSIndexSignatureWithoutParameters<'a, 't> {
     }
 
     #[inline]
-    pub fn type_annotation(self) -> &'t Box<'a, TSTypeAnnotation<'a>> {
+    pub fn type_annotation(self) -> &'t ArenaBox<'a, TSTypeAnnotation<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_INDEX_SIGNATURE_TYPE_ANNOTATION)
-                as *const Box<'a, TSTypeAnnotation<'a>>)
+                as *const ArenaBox<'a, TSTypeAnnotation<'a>>)
         }
     }
 
@@ -15963,10 +15911,10 @@ impl<'a, 't> TSIndexSignatureWithoutTypeAnnotation<'a, 't> {
     }
 
     #[inline]
-    pub fn parameters(self) -> &'t Vec<'a, TSIndexSignatureName<'a>> {
+    pub fn parameters(self) -> &'t ArenaVec<'a, TSIndexSignatureName<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_INDEX_SIGNATURE_PARAMETERS)
-                as *const Vec<'a, TSIndexSignatureName<'a>>)
+                as *const ArenaVec<'a, TSIndexSignatureName<'a>>)
         }
     }
 
@@ -16027,26 +15975,26 @@ impl<'a, 't> TSCallSignatureDeclarationWithoutTypeParameters<'a, 't> {
     }
 
     #[inline]
-    pub fn this_param(self) -> &'t Option<Box<'a, TSThisParameter<'a>>> {
+    pub fn this_param(self) -> &'t Option<ArenaBox<'a, TSThisParameter<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_CALL_SIGNATURE_DECLARATION_THIS_PARAM)
-                as *const Option<Box<'a, TSThisParameter<'a>>>)
+                as *const Option<ArenaBox<'a, TSThisParameter<'a>>>)
         }
     }
 
     #[inline]
-    pub fn params(self) -> &'t Box<'a, FormalParameters<'a>> {
+    pub fn params(self) -> &'t ArenaBox<'a, FormalParameters<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_CALL_SIGNATURE_DECLARATION_PARAMS)
-                as *const Box<'a, FormalParameters<'a>>)
+                as *const ArenaBox<'a, FormalParameters<'a>>)
         }
     }
 
     #[inline]
-    pub fn return_type(self) -> &'t Option<Box<'a, TSTypeAnnotation<'a>>> {
+    pub fn return_type(self) -> &'t Option<ArenaBox<'a, TSTypeAnnotation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_CALL_SIGNATURE_DECLARATION_RETURN_TYPE)
-                as *const Option<Box<'a, TSTypeAnnotation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeAnnotation<'a>>>)
         }
     }
 
@@ -16090,26 +16038,26 @@ impl<'a, 't> TSCallSignatureDeclarationWithoutThisParam<'a, 't> {
     }
 
     #[inline]
-    pub fn type_parameters(self) -> &'t Option<Box<'a, TSTypeParameterDeclaration<'a>>> {
+    pub fn type_parameters(self) -> &'t Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_CALL_SIGNATURE_DECLARATION_TYPE_PARAMETERS)
-                as *const Option<Box<'a, TSTypeParameterDeclaration<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>>)
         }
     }
 
     #[inline]
-    pub fn params(self) -> &'t Box<'a, FormalParameters<'a>> {
+    pub fn params(self) -> &'t ArenaBox<'a, FormalParameters<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_CALL_SIGNATURE_DECLARATION_PARAMS)
-                as *const Box<'a, FormalParameters<'a>>)
+                as *const ArenaBox<'a, FormalParameters<'a>>)
         }
     }
 
     #[inline]
-    pub fn return_type(self) -> &'t Option<Box<'a, TSTypeAnnotation<'a>>> {
+    pub fn return_type(self) -> &'t Option<ArenaBox<'a, TSTypeAnnotation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_CALL_SIGNATURE_DECLARATION_RETURN_TYPE)
-                as *const Option<Box<'a, TSTypeAnnotation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeAnnotation<'a>>>)
         }
     }
 
@@ -16153,26 +16101,26 @@ impl<'a, 't> TSCallSignatureDeclarationWithoutParams<'a, 't> {
     }
 
     #[inline]
-    pub fn type_parameters(self) -> &'t Option<Box<'a, TSTypeParameterDeclaration<'a>>> {
+    pub fn type_parameters(self) -> &'t Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_CALL_SIGNATURE_DECLARATION_TYPE_PARAMETERS)
-                as *const Option<Box<'a, TSTypeParameterDeclaration<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>>)
         }
     }
 
     #[inline]
-    pub fn this_param(self) -> &'t Option<Box<'a, TSThisParameter<'a>>> {
+    pub fn this_param(self) -> &'t Option<ArenaBox<'a, TSThisParameter<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_CALL_SIGNATURE_DECLARATION_THIS_PARAM)
-                as *const Option<Box<'a, TSThisParameter<'a>>>)
+                as *const Option<ArenaBox<'a, TSThisParameter<'a>>>)
         }
     }
 
     #[inline]
-    pub fn return_type(self) -> &'t Option<Box<'a, TSTypeAnnotation<'a>>> {
+    pub fn return_type(self) -> &'t Option<ArenaBox<'a, TSTypeAnnotation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_CALL_SIGNATURE_DECLARATION_RETURN_TYPE)
-                as *const Option<Box<'a, TSTypeAnnotation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeAnnotation<'a>>>)
         }
     }
 
@@ -16216,26 +16164,26 @@ impl<'a, 't> TSCallSignatureDeclarationWithoutReturnType<'a, 't> {
     }
 
     #[inline]
-    pub fn type_parameters(self) -> &'t Option<Box<'a, TSTypeParameterDeclaration<'a>>> {
+    pub fn type_parameters(self) -> &'t Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_CALL_SIGNATURE_DECLARATION_TYPE_PARAMETERS)
-                as *const Option<Box<'a, TSTypeParameterDeclaration<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>>)
         }
     }
 
     #[inline]
-    pub fn this_param(self) -> &'t Option<Box<'a, TSThisParameter<'a>>> {
+    pub fn this_param(self) -> &'t Option<ArenaBox<'a, TSThisParameter<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_CALL_SIGNATURE_DECLARATION_THIS_PARAM)
-                as *const Option<Box<'a, TSThisParameter<'a>>>)
+                as *const Option<ArenaBox<'a, TSThisParameter<'a>>>)
         }
     }
 
     #[inline]
-    pub fn params(self) -> &'t Box<'a, FormalParameters<'a>> {
+    pub fn params(self) -> &'t ArenaBox<'a, FormalParameters<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_CALL_SIGNATURE_DECLARATION_PARAMS)
-                as *const Box<'a, FormalParameters<'a>>)
+                as *const ArenaBox<'a, FormalParameters<'a>>)
         }
     }
 
@@ -16312,34 +16260,34 @@ impl<'a, 't> TSMethodSignatureWithoutKey<'a, 't> {
     }
 
     #[inline]
-    pub fn type_parameters(self) -> &'t Option<Box<'a, TSTypeParameterDeclaration<'a>>> {
+    pub fn type_parameters(self) -> &'t Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_METHOD_SIGNATURE_TYPE_PARAMETERS)
-                as *const Option<Box<'a, TSTypeParameterDeclaration<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>>)
         }
     }
 
     #[inline]
-    pub fn this_param(self) -> &'t Option<Box<'a, TSThisParameter<'a>>> {
+    pub fn this_param(self) -> &'t Option<ArenaBox<'a, TSThisParameter<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_METHOD_SIGNATURE_THIS_PARAM)
-                as *const Option<Box<'a, TSThisParameter<'a>>>)
+                as *const Option<ArenaBox<'a, TSThisParameter<'a>>>)
         }
     }
 
     #[inline]
-    pub fn params(self) -> &'t Box<'a, FormalParameters<'a>> {
+    pub fn params(self) -> &'t ArenaBox<'a, FormalParameters<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_METHOD_SIGNATURE_PARAMS)
-                as *const Box<'a, FormalParameters<'a>>)
+                as *const ArenaBox<'a, FormalParameters<'a>>)
         }
     }
 
     #[inline]
-    pub fn return_type(self) -> &'t Option<Box<'a, TSTypeAnnotation<'a>>> {
+    pub fn return_type(self) -> &'t Option<ArenaBox<'a, TSTypeAnnotation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_METHOD_SIGNATURE_RETURN_TYPE)
-                as *const Option<Box<'a, TSTypeAnnotation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeAnnotation<'a>>>)
         }
     }
 
@@ -16405,26 +16353,26 @@ impl<'a, 't> TSMethodSignatureWithoutTypeParameters<'a, 't> {
     }
 
     #[inline]
-    pub fn this_param(self) -> &'t Option<Box<'a, TSThisParameter<'a>>> {
+    pub fn this_param(self) -> &'t Option<ArenaBox<'a, TSThisParameter<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_METHOD_SIGNATURE_THIS_PARAM)
-                as *const Option<Box<'a, TSThisParameter<'a>>>)
+                as *const Option<ArenaBox<'a, TSThisParameter<'a>>>)
         }
     }
 
     #[inline]
-    pub fn params(self) -> &'t Box<'a, FormalParameters<'a>> {
+    pub fn params(self) -> &'t ArenaBox<'a, FormalParameters<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_METHOD_SIGNATURE_PARAMS)
-                as *const Box<'a, FormalParameters<'a>>)
+                as *const ArenaBox<'a, FormalParameters<'a>>)
         }
     }
 
     #[inline]
-    pub fn return_type(self) -> &'t Option<Box<'a, TSTypeAnnotation<'a>>> {
+    pub fn return_type(self) -> &'t Option<ArenaBox<'a, TSTypeAnnotation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_METHOD_SIGNATURE_RETURN_TYPE)
-                as *const Option<Box<'a, TSTypeAnnotation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeAnnotation<'a>>>)
         }
     }
 
@@ -16490,26 +16438,26 @@ impl<'a, 't> TSMethodSignatureWithoutThisParam<'a, 't> {
     }
 
     #[inline]
-    pub fn type_parameters(self) -> &'t Option<Box<'a, TSTypeParameterDeclaration<'a>>> {
+    pub fn type_parameters(self) -> &'t Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_METHOD_SIGNATURE_TYPE_PARAMETERS)
-                as *const Option<Box<'a, TSTypeParameterDeclaration<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>>)
         }
     }
 
     #[inline]
-    pub fn params(self) -> &'t Box<'a, FormalParameters<'a>> {
+    pub fn params(self) -> &'t ArenaBox<'a, FormalParameters<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_METHOD_SIGNATURE_PARAMS)
-                as *const Box<'a, FormalParameters<'a>>)
+                as *const ArenaBox<'a, FormalParameters<'a>>)
         }
     }
 
     #[inline]
-    pub fn return_type(self) -> &'t Option<Box<'a, TSTypeAnnotation<'a>>> {
+    pub fn return_type(self) -> &'t Option<ArenaBox<'a, TSTypeAnnotation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_METHOD_SIGNATURE_RETURN_TYPE)
-                as *const Option<Box<'a, TSTypeAnnotation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeAnnotation<'a>>>)
         }
     }
 
@@ -16575,26 +16523,26 @@ impl<'a, 't> TSMethodSignatureWithoutParams<'a, 't> {
     }
 
     #[inline]
-    pub fn type_parameters(self) -> &'t Option<Box<'a, TSTypeParameterDeclaration<'a>>> {
+    pub fn type_parameters(self) -> &'t Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_METHOD_SIGNATURE_TYPE_PARAMETERS)
-                as *const Option<Box<'a, TSTypeParameterDeclaration<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>>)
         }
     }
 
     #[inline]
-    pub fn this_param(self) -> &'t Option<Box<'a, TSThisParameter<'a>>> {
+    pub fn this_param(self) -> &'t Option<ArenaBox<'a, TSThisParameter<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_METHOD_SIGNATURE_THIS_PARAM)
-                as *const Option<Box<'a, TSThisParameter<'a>>>)
+                as *const Option<ArenaBox<'a, TSThisParameter<'a>>>)
         }
     }
 
     #[inline]
-    pub fn return_type(self) -> &'t Option<Box<'a, TSTypeAnnotation<'a>>> {
+    pub fn return_type(self) -> &'t Option<ArenaBox<'a, TSTypeAnnotation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_METHOD_SIGNATURE_RETURN_TYPE)
-                as *const Option<Box<'a, TSTypeAnnotation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeAnnotation<'a>>>)
         }
     }
 
@@ -16660,26 +16608,26 @@ impl<'a, 't> TSMethodSignatureWithoutReturnType<'a, 't> {
     }
 
     #[inline]
-    pub fn type_parameters(self) -> &'t Option<Box<'a, TSTypeParameterDeclaration<'a>>> {
+    pub fn type_parameters(self) -> &'t Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_METHOD_SIGNATURE_TYPE_PARAMETERS)
-                as *const Option<Box<'a, TSTypeParameterDeclaration<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>>)
         }
     }
 
     #[inline]
-    pub fn this_param(self) -> &'t Option<Box<'a, TSThisParameter<'a>>> {
+    pub fn this_param(self) -> &'t Option<ArenaBox<'a, TSThisParameter<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_METHOD_SIGNATURE_THIS_PARAM)
-                as *const Option<Box<'a, TSThisParameter<'a>>>)
+                as *const Option<ArenaBox<'a, TSThisParameter<'a>>>)
         }
     }
 
     #[inline]
-    pub fn params(self) -> &'t Box<'a, FormalParameters<'a>> {
+    pub fn params(self) -> &'t ArenaBox<'a, FormalParameters<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_METHOD_SIGNATURE_PARAMS)
-                as *const Box<'a, FormalParameters<'a>>)
+                as *const ArenaBox<'a, FormalParameters<'a>>)
         }
     }
 
@@ -16737,18 +16685,18 @@ impl<'a, 't> TSConstructSignatureDeclarationWithoutTypeParameters<'a, 't> {
     }
 
     #[inline]
-    pub fn params(self) -> &'t Box<'a, FormalParameters<'a>> {
+    pub fn params(self) -> &'t ArenaBox<'a, FormalParameters<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_CONSTRUCT_SIGNATURE_DECLARATION_PARAMS)
-                as *const Box<'a, FormalParameters<'a>>)
+                as *const ArenaBox<'a, FormalParameters<'a>>)
         }
     }
 
     #[inline]
-    pub fn return_type(self) -> &'t Option<Box<'a, TSTypeAnnotation<'a>>> {
+    pub fn return_type(self) -> &'t Option<ArenaBox<'a, TSTypeAnnotation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_CONSTRUCT_SIGNATURE_DECLARATION_RETURN_TYPE)
-                as *const Option<Box<'a, TSTypeAnnotation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeAnnotation<'a>>>)
         }
     }
 
@@ -16793,18 +16741,18 @@ impl<'a, 't> TSConstructSignatureDeclarationWithoutParams<'a, 't> {
     }
 
     #[inline]
-    pub fn type_parameters(self) -> &'t Option<Box<'a, TSTypeParameterDeclaration<'a>>> {
+    pub fn type_parameters(self) -> &'t Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_CONSTRUCT_SIGNATURE_DECLARATION_TYPE_PARAMETERS)
-                as *const Option<Box<'a, TSTypeParameterDeclaration<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>>)
         }
     }
 
     #[inline]
-    pub fn return_type(self) -> &'t Option<Box<'a, TSTypeAnnotation<'a>>> {
+    pub fn return_type(self) -> &'t Option<ArenaBox<'a, TSTypeAnnotation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_CONSTRUCT_SIGNATURE_DECLARATION_RETURN_TYPE)
-                as *const Option<Box<'a, TSTypeAnnotation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeAnnotation<'a>>>)
         }
     }
 
@@ -16849,18 +16797,18 @@ impl<'a, 't> TSConstructSignatureDeclarationWithoutReturnType<'a, 't> {
     }
 
     #[inline]
-    pub fn type_parameters(self) -> &'t Option<Box<'a, TSTypeParameterDeclaration<'a>>> {
+    pub fn type_parameters(self) -> &'t Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_CONSTRUCT_SIGNATURE_DECLARATION_TYPE_PARAMETERS)
-                as *const Option<Box<'a, TSTypeParameterDeclaration<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>>)
         }
     }
 
     #[inline]
-    pub fn params(self) -> &'t Box<'a, FormalParameters<'a>> {
+    pub fn params(self) -> &'t ArenaBox<'a, FormalParameters<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_CONSTRUCT_SIGNATURE_DECLARATION_PARAMS)
-                as *const Box<'a, FormalParameters<'a>>)
+                as *const ArenaBox<'a, FormalParameters<'a>>)
         }
     }
 
@@ -16955,10 +16903,10 @@ impl<'a, 't> TSInterfaceHeritageWithoutExpression<'a, 't> {
     }
 
     #[inline]
-    pub fn type_arguments(self) -> &'t Option<Box<'a, TSTypeParameterInstantiation<'a>>> {
+    pub fn type_arguments(self) -> &'t Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_INTERFACE_HERITAGE_TYPE_ARGUMENTS)
-                as *const Option<Box<'a, TSTypeParameterInstantiation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>>)
         }
     }
 }
@@ -17041,10 +16989,10 @@ impl<'a, 't> TSTypePredicateWithoutParameterName<'a, 't> {
     }
 
     #[inline]
-    pub fn type_annotation(self) -> &'t Option<Box<'a, TSTypeAnnotation<'a>>> {
+    pub fn type_annotation(self) -> &'t Option<ArenaBox<'a, TSTypeAnnotation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_TYPE_PREDICATE_TYPE_ANNOTATION)
-                as *const Option<Box<'a, TSTypeAnnotation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeAnnotation<'a>>>)
         }
     }
 }
@@ -17316,10 +17264,10 @@ impl<'a, 't> TSModuleBlockWithoutDirectives<'a, 't> {
     }
 
     #[inline]
-    pub fn body(self) -> &'t Vec<'a, Statement<'a>> {
+    pub fn body(self) -> &'t ArenaVec<'a, Statement<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_MODULE_BLOCK_BODY)
-                as *const Vec<'a, Statement<'a>>)
+                as *const ArenaVec<'a, Statement<'a>>)
         }
     }
 }
@@ -17352,10 +17300,10 @@ impl<'a, 't> TSModuleBlockWithoutBody<'a, 't> {
     }
 
     #[inline]
-    pub fn directives(self) -> &'t Vec<'a, Directive<'a>> {
+    pub fn directives(self) -> &'t ArenaVec<'a, Directive<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_MODULE_BLOCK_DIRECTIVES)
-                as *const Vec<'a, Directive<'a>>)
+                as *const ArenaVec<'a, Directive<'a>>)
         }
     }
 }
@@ -17459,10 +17407,10 @@ impl<'a, 't> TSTypeQueryWithoutExprName<'a, 't> {
     }
 
     #[inline]
-    pub fn type_arguments(self) -> &'t Option<Box<'a, TSTypeParameterInstantiation<'a>>> {
+    pub fn type_arguments(self) -> &'t Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_TYPE_QUERY_TYPE_ARGUMENTS)
-                as *const Option<Box<'a, TSTypeParameterInstantiation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>>)
         }
     }
 }
@@ -17539,10 +17487,10 @@ impl<'a, 't> TSImportTypeWithoutSource<'a, 't> {
     }
 
     #[inline]
-    pub fn options(self) -> &'t Option<Box<'a, ObjectExpression<'a>>> {
+    pub fn options(self) -> &'t Option<ArenaBox<'a, ObjectExpression<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_IMPORT_TYPE_OPTIONS)
-                as *const Option<Box<'a, ObjectExpression<'a>>>)
+                as *const Option<ArenaBox<'a, ObjectExpression<'a>>>)
         }
     }
 
@@ -17555,10 +17503,10 @@ impl<'a, 't> TSImportTypeWithoutSource<'a, 't> {
     }
 
     #[inline]
-    pub fn type_arguments(self) -> &'t Option<Box<'a, TSTypeParameterInstantiation<'a>>> {
+    pub fn type_arguments(self) -> &'t Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_IMPORT_TYPE_TYPE_ARGUMENTS)
-                as *const Option<Box<'a, TSTypeParameterInstantiation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>>)
         }
     }
 }
@@ -17606,10 +17554,10 @@ impl<'a, 't> TSImportTypeWithoutOptions<'a, 't> {
     }
 
     #[inline]
-    pub fn type_arguments(self) -> &'t Option<Box<'a, TSTypeParameterInstantiation<'a>>> {
+    pub fn type_arguments(self) -> &'t Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_IMPORT_TYPE_TYPE_ARGUMENTS)
-                as *const Option<Box<'a, TSTypeParameterInstantiation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>>)
         }
     }
 }
@@ -17649,18 +17597,18 @@ impl<'a, 't> TSImportTypeWithoutQualifier<'a, 't> {
     }
 
     #[inline]
-    pub fn options(self) -> &'t Option<Box<'a, ObjectExpression<'a>>> {
+    pub fn options(self) -> &'t Option<ArenaBox<'a, ObjectExpression<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_IMPORT_TYPE_OPTIONS)
-                as *const Option<Box<'a, ObjectExpression<'a>>>)
+                as *const Option<ArenaBox<'a, ObjectExpression<'a>>>)
         }
     }
 
     #[inline]
-    pub fn type_arguments(self) -> &'t Option<Box<'a, TSTypeParameterInstantiation<'a>>> {
+    pub fn type_arguments(self) -> &'t Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_IMPORT_TYPE_TYPE_ARGUMENTS)
-                as *const Option<Box<'a, TSTypeParameterInstantiation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>>)
         }
     }
 }
@@ -17700,10 +17648,10 @@ impl<'a, 't> TSImportTypeWithoutTypeArguments<'a, 't> {
     }
 
     #[inline]
-    pub fn options(self) -> &'t Option<Box<'a, ObjectExpression<'a>>> {
+    pub fn options(self) -> &'t Option<ArenaBox<'a, ObjectExpression<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_IMPORT_TYPE_OPTIONS)
-                as *const Option<Box<'a, ObjectExpression<'a>>>)
+                as *const Option<ArenaBox<'a, ObjectExpression<'a>>>)
         }
     }
 
@@ -17841,26 +17789,26 @@ impl<'a, 't> TSFunctionTypeWithoutTypeParameters<'a, 't> {
     }
 
     #[inline]
-    pub fn this_param(self) -> &'t Option<Box<'a, TSThisParameter<'a>>> {
+    pub fn this_param(self) -> &'t Option<ArenaBox<'a, TSThisParameter<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_FUNCTION_TYPE_THIS_PARAM)
-                as *const Option<Box<'a, TSThisParameter<'a>>>)
+                as *const Option<ArenaBox<'a, TSThisParameter<'a>>>)
         }
     }
 
     #[inline]
-    pub fn params(self) -> &'t Box<'a, FormalParameters<'a>> {
+    pub fn params(self) -> &'t ArenaBox<'a, FormalParameters<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_FUNCTION_TYPE_PARAMS)
-                as *const Box<'a, FormalParameters<'a>>)
+                as *const ArenaBox<'a, FormalParameters<'a>>)
         }
     }
 
     #[inline]
-    pub fn return_type(self) -> &'t Box<'a, TSTypeAnnotation<'a>> {
+    pub fn return_type(self) -> &'t ArenaBox<'a, TSTypeAnnotation<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_FUNCTION_TYPE_RETURN_TYPE)
-                as *const Box<'a, TSTypeAnnotation<'a>>)
+                as *const ArenaBox<'a, TSTypeAnnotation<'a>>)
         }
     }
 
@@ -17901,26 +17849,26 @@ impl<'a, 't> TSFunctionTypeWithoutThisParam<'a, 't> {
     }
 
     #[inline]
-    pub fn type_parameters(self) -> &'t Option<Box<'a, TSTypeParameterDeclaration<'a>>> {
+    pub fn type_parameters(self) -> &'t Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_FUNCTION_TYPE_TYPE_PARAMETERS)
-                as *const Option<Box<'a, TSTypeParameterDeclaration<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>>)
         }
     }
 
     #[inline]
-    pub fn params(self) -> &'t Box<'a, FormalParameters<'a>> {
+    pub fn params(self) -> &'t ArenaBox<'a, FormalParameters<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_FUNCTION_TYPE_PARAMS)
-                as *const Box<'a, FormalParameters<'a>>)
+                as *const ArenaBox<'a, FormalParameters<'a>>)
         }
     }
 
     #[inline]
-    pub fn return_type(self) -> &'t Box<'a, TSTypeAnnotation<'a>> {
+    pub fn return_type(self) -> &'t ArenaBox<'a, TSTypeAnnotation<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_FUNCTION_TYPE_RETURN_TYPE)
-                as *const Box<'a, TSTypeAnnotation<'a>>)
+                as *const ArenaBox<'a, TSTypeAnnotation<'a>>)
         }
     }
 
@@ -17961,26 +17909,26 @@ impl<'a, 't> TSFunctionTypeWithoutParams<'a, 't> {
     }
 
     #[inline]
-    pub fn type_parameters(self) -> &'t Option<Box<'a, TSTypeParameterDeclaration<'a>>> {
+    pub fn type_parameters(self) -> &'t Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_FUNCTION_TYPE_TYPE_PARAMETERS)
-                as *const Option<Box<'a, TSTypeParameterDeclaration<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>>)
         }
     }
 
     #[inline]
-    pub fn this_param(self) -> &'t Option<Box<'a, TSThisParameter<'a>>> {
+    pub fn this_param(self) -> &'t Option<ArenaBox<'a, TSThisParameter<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_FUNCTION_TYPE_THIS_PARAM)
-                as *const Option<Box<'a, TSThisParameter<'a>>>)
+                as *const Option<ArenaBox<'a, TSThisParameter<'a>>>)
         }
     }
 
     #[inline]
-    pub fn return_type(self) -> &'t Box<'a, TSTypeAnnotation<'a>> {
+    pub fn return_type(self) -> &'t ArenaBox<'a, TSTypeAnnotation<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_FUNCTION_TYPE_RETURN_TYPE)
-                as *const Box<'a, TSTypeAnnotation<'a>>)
+                as *const ArenaBox<'a, TSTypeAnnotation<'a>>)
         }
     }
 
@@ -18021,26 +17969,26 @@ impl<'a, 't> TSFunctionTypeWithoutReturnType<'a, 't> {
     }
 
     #[inline]
-    pub fn type_parameters(self) -> &'t Option<Box<'a, TSTypeParameterDeclaration<'a>>> {
+    pub fn type_parameters(self) -> &'t Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_FUNCTION_TYPE_TYPE_PARAMETERS)
-                as *const Option<Box<'a, TSTypeParameterDeclaration<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>>)
         }
     }
 
     #[inline]
-    pub fn this_param(self) -> &'t Option<Box<'a, TSThisParameter<'a>>> {
+    pub fn this_param(self) -> &'t Option<ArenaBox<'a, TSThisParameter<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_FUNCTION_TYPE_THIS_PARAM)
-                as *const Option<Box<'a, TSThisParameter<'a>>>)
+                as *const Option<ArenaBox<'a, TSThisParameter<'a>>>)
         }
     }
 
     #[inline]
-    pub fn params(self) -> &'t Box<'a, FormalParameters<'a>> {
+    pub fn params(self) -> &'t ArenaBox<'a, FormalParameters<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_FUNCTION_TYPE_PARAMS)
-                as *const Box<'a, FormalParameters<'a>>)
+                as *const ArenaBox<'a, FormalParameters<'a>>)
         }
     }
 
@@ -18098,18 +18046,18 @@ impl<'a, 't> TSConstructorTypeWithoutTypeParameters<'a, 't> {
     }
 
     #[inline]
-    pub fn params(self) -> &'t Box<'a, FormalParameters<'a>> {
+    pub fn params(self) -> &'t ArenaBox<'a, FormalParameters<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_CONSTRUCTOR_TYPE_PARAMS)
-                as *const Box<'a, FormalParameters<'a>>)
+                as *const ArenaBox<'a, FormalParameters<'a>>)
         }
     }
 
     #[inline]
-    pub fn return_type(self) -> &'t Box<'a, TSTypeAnnotation<'a>> {
+    pub fn return_type(self) -> &'t ArenaBox<'a, TSTypeAnnotation<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_CONSTRUCTOR_TYPE_RETURN_TYPE)
-                as *const Box<'a, TSTypeAnnotation<'a>>)
+                as *const ArenaBox<'a, TSTypeAnnotation<'a>>)
         }
     }
 
@@ -18155,18 +18103,18 @@ impl<'a, 't> TSConstructorTypeWithoutParams<'a, 't> {
     }
 
     #[inline]
-    pub fn type_parameters(self) -> &'t Option<Box<'a, TSTypeParameterDeclaration<'a>>> {
+    pub fn type_parameters(self) -> &'t Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_CONSTRUCTOR_TYPE_TYPE_PARAMETERS)
-                as *const Option<Box<'a, TSTypeParameterDeclaration<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>>)
         }
     }
 
     #[inline]
-    pub fn return_type(self) -> &'t Box<'a, TSTypeAnnotation<'a>> {
+    pub fn return_type(self) -> &'t ArenaBox<'a, TSTypeAnnotation<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_CONSTRUCTOR_TYPE_RETURN_TYPE)
-                as *const Box<'a, TSTypeAnnotation<'a>>)
+                as *const ArenaBox<'a, TSTypeAnnotation<'a>>)
         }
     }
 
@@ -18212,18 +18160,18 @@ impl<'a, 't> TSConstructorTypeWithoutReturnType<'a, 't> {
     }
 
     #[inline]
-    pub fn type_parameters(self) -> &'t Option<Box<'a, TSTypeParameterDeclaration<'a>>> {
+    pub fn type_parameters(self) -> &'t Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_CONSTRUCTOR_TYPE_TYPE_PARAMETERS)
-                as *const Option<Box<'a, TSTypeParameterDeclaration<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>>)
         }
     }
 
     #[inline]
-    pub fn params(self) -> &'t Box<'a, FormalParameters<'a>> {
+    pub fn params(self) -> &'t ArenaBox<'a, FormalParameters<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_CONSTRUCTOR_TYPE_PARAMS)
-                as *const Box<'a, FormalParameters<'a>>)
+                as *const ArenaBox<'a, FormalParameters<'a>>)
         }
     }
 
@@ -18585,10 +18533,10 @@ impl<'a, 't> TSTemplateLiteralTypeWithoutQuasis<'a, 't> {
     }
 
     #[inline]
-    pub fn types(self) -> &'t Vec<'a, TSType<'a>> {
+    pub fn types(self) -> &'t ArenaVec<'a, TSType<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_TEMPLATE_LITERAL_TYPE_TYPES)
-                as *const Vec<'a, TSType<'a>>)
+                as *const ArenaVec<'a, TSType<'a>>)
         }
     }
 }
@@ -18624,10 +18572,10 @@ impl<'a, 't> TSTemplateLiteralTypeWithoutTypes<'a, 't> {
     }
 
     #[inline]
-    pub fn quasis(self) -> &'t Vec<'a, TemplateElement<'a>> {
+    pub fn quasis(self) -> &'t ArenaVec<'a, TemplateElement<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_TEMPLATE_LITERAL_TYPE_QUASIS)
-                as *const Vec<'a, TemplateElement<'a>>)
+                as *const ArenaVec<'a, TemplateElement<'a>>)
         }
     }
 }
@@ -19194,10 +19142,10 @@ impl<'a, 't> TSInstantiationExpressionWithoutExpression<'a, 't> {
     }
 
     #[inline]
-    pub fn type_arguments(self) -> &'t Box<'a, TSTypeParameterInstantiation<'a>> {
+    pub fn type_arguments(self) -> &'t ArenaBox<'a, TSTypeParameterInstantiation<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_TS_INSTANTIATION_EXPRESSION_TYPE_ARGUMENTS)
-                as *const Box<'a, TSTypeParameterInstantiation<'a>>)
+                as *const ArenaBox<'a, TSTypeParameterInstantiation<'a>>)
         }
     }
 }
@@ -19384,10 +19332,10 @@ impl<'a, 't> StructStatementWithoutDecorators<'a, 't> {
     }
 
     #[inline]
-    pub fn type_parameters(self) -> &'t Option<Box<'a, TSTypeParameterDeclaration<'a>>> {
+    pub fn type_parameters(self) -> &'t Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_TYPE_PARAMETERS)
-                as *const Option<Box<'a, TSTypeParameterDeclaration<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>>)
         }
     }
 
@@ -19400,26 +19348,28 @@ impl<'a, 't> StructStatementWithoutDecorators<'a, 't> {
     }
 
     #[inline]
-    pub fn super_type_arguments(self) -> &'t Option<Box<'a, TSTypeParameterInstantiation<'a>>> {
+    pub fn super_type_arguments(
+        self,
+    ) -> &'t Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_SUPER_TYPE_ARGUMENTS)
-                as *const Option<Box<'a, TSTypeParameterInstantiation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>>)
         }
     }
 
     #[inline]
-    pub fn implements(self) -> &'t Vec<'a, TSClassImplements<'a>> {
+    pub fn implements(self) -> &'t ArenaVec<'a, TSClassImplements<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_IMPLEMENTS)
-                as *const Vec<'a, TSClassImplements<'a>>)
+                as *const ArenaVec<'a, TSClassImplements<'a>>)
         }
     }
 
     #[inline]
-    pub fn body(self) -> &'t Box<'a, StructBody<'a>> {
+    pub fn body(self) -> &'t ArenaBox<'a, StructBody<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_BODY)
-                as *const Box<'a, StructBody<'a>>)
+                as *const ArenaBox<'a, StructBody<'a>>)
         }
     }
 
@@ -19470,18 +19420,18 @@ impl<'a, 't> StructStatementWithoutId<'a, 't> {
     }
 
     #[inline]
-    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+    pub fn decorators(self) -> &'t ArenaVec<'a, Decorator<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_DECORATORS)
-                as *const Vec<'a, Decorator<'a>>)
+                as *const ArenaVec<'a, Decorator<'a>>)
         }
     }
 
     #[inline]
-    pub fn type_parameters(self) -> &'t Option<Box<'a, TSTypeParameterDeclaration<'a>>> {
+    pub fn type_parameters(self) -> &'t Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_TYPE_PARAMETERS)
-                as *const Option<Box<'a, TSTypeParameterDeclaration<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>>)
         }
     }
 
@@ -19494,26 +19444,28 @@ impl<'a, 't> StructStatementWithoutId<'a, 't> {
     }
 
     #[inline]
-    pub fn super_type_arguments(self) -> &'t Option<Box<'a, TSTypeParameterInstantiation<'a>>> {
+    pub fn super_type_arguments(
+        self,
+    ) -> &'t Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_SUPER_TYPE_ARGUMENTS)
-                as *const Option<Box<'a, TSTypeParameterInstantiation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>>)
         }
     }
 
     #[inline]
-    pub fn implements(self) -> &'t Vec<'a, TSClassImplements<'a>> {
+    pub fn implements(self) -> &'t ArenaVec<'a, TSClassImplements<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_IMPLEMENTS)
-                as *const Vec<'a, TSClassImplements<'a>>)
+                as *const ArenaVec<'a, TSClassImplements<'a>>)
         }
     }
 
     #[inline]
-    pub fn body(self) -> &'t Box<'a, StructBody<'a>> {
+    pub fn body(self) -> &'t ArenaBox<'a, StructBody<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_BODY)
-                as *const Box<'a, StructBody<'a>>)
+                as *const ArenaBox<'a, StructBody<'a>>)
         }
     }
 
@@ -19564,10 +19516,10 @@ impl<'a, 't> StructStatementWithoutTypeParameters<'a, 't> {
     }
 
     #[inline]
-    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+    pub fn decorators(self) -> &'t ArenaVec<'a, Decorator<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_DECORATORS)
-                as *const Vec<'a, Decorator<'a>>)
+                as *const ArenaVec<'a, Decorator<'a>>)
         }
     }
 
@@ -19588,26 +19540,28 @@ impl<'a, 't> StructStatementWithoutTypeParameters<'a, 't> {
     }
 
     #[inline]
-    pub fn super_type_arguments(self) -> &'t Option<Box<'a, TSTypeParameterInstantiation<'a>>> {
+    pub fn super_type_arguments(
+        self,
+    ) -> &'t Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_SUPER_TYPE_ARGUMENTS)
-                as *const Option<Box<'a, TSTypeParameterInstantiation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>>)
         }
     }
 
     #[inline]
-    pub fn implements(self) -> &'t Vec<'a, TSClassImplements<'a>> {
+    pub fn implements(self) -> &'t ArenaVec<'a, TSClassImplements<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_IMPLEMENTS)
-                as *const Vec<'a, TSClassImplements<'a>>)
+                as *const ArenaVec<'a, TSClassImplements<'a>>)
         }
     }
 
     #[inline]
-    pub fn body(self) -> &'t Box<'a, StructBody<'a>> {
+    pub fn body(self) -> &'t ArenaBox<'a, StructBody<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_BODY)
-                as *const Box<'a, StructBody<'a>>)
+                as *const ArenaBox<'a, StructBody<'a>>)
         }
     }
 
@@ -19658,10 +19612,10 @@ impl<'a, 't> StructStatementWithoutSuperClass<'a, 't> {
     }
 
     #[inline]
-    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+    pub fn decorators(self) -> &'t ArenaVec<'a, Decorator<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_DECORATORS)
-                as *const Vec<'a, Decorator<'a>>)
+                as *const ArenaVec<'a, Decorator<'a>>)
         }
     }
 
@@ -19674,34 +19628,36 @@ impl<'a, 't> StructStatementWithoutSuperClass<'a, 't> {
     }
 
     #[inline]
-    pub fn type_parameters(self) -> &'t Option<Box<'a, TSTypeParameterDeclaration<'a>>> {
+    pub fn type_parameters(self) -> &'t Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_TYPE_PARAMETERS)
-                as *const Option<Box<'a, TSTypeParameterDeclaration<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>>)
         }
     }
 
     #[inline]
-    pub fn super_type_arguments(self) -> &'t Option<Box<'a, TSTypeParameterInstantiation<'a>>> {
+    pub fn super_type_arguments(
+        self,
+    ) -> &'t Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_SUPER_TYPE_ARGUMENTS)
-                as *const Option<Box<'a, TSTypeParameterInstantiation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>>)
         }
     }
 
     #[inline]
-    pub fn implements(self) -> &'t Vec<'a, TSClassImplements<'a>> {
+    pub fn implements(self) -> &'t ArenaVec<'a, TSClassImplements<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_IMPLEMENTS)
-                as *const Vec<'a, TSClassImplements<'a>>)
+                as *const ArenaVec<'a, TSClassImplements<'a>>)
         }
     }
 
     #[inline]
-    pub fn body(self) -> &'t Box<'a, StructBody<'a>> {
+    pub fn body(self) -> &'t ArenaBox<'a, StructBody<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_BODY)
-                as *const Box<'a, StructBody<'a>>)
+                as *const ArenaBox<'a, StructBody<'a>>)
         }
     }
 
@@ -19752,10 +19708,10 @@ impl<'a, 't> StructStatementWithoutSuperTypeArguments<'a, 't> {
     }
 
     #[inline]
-    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+    pub fn decorators(self) -> &'t ArenaVec<'a, Decorator<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_DECORATORS)
-                as *const Vec<'a, Decorator<'a>>)
+                as *const ArenaVec<'a, Decorator<'a>>)
         }
     }
 
@@ -19768,10 +19724,10 @@ impl<'a, 't> StructStatementWithoutSuperTypeArguments<'a, 't> {
     }
 
     #[inline]
-    pub fn type_parameters(self) -> &'t Option<Box<'a, TSTypeParameterDeclaration<'a>>> {
+    pub fn type_parameters(self) -> &'t Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_TYPE_PARAMETERS)
-                as *const Option<Box<'a, TSTypeParameterDeclaration<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>>)
         }
     }
 
@@ -19784,18 +19740,18 @@ impl<'a, 't> StructStatementWithoutSuperTypeArguments<'a, 't> {
     }
 
     #[inline]
-    pub fn implements(self) -> &'t Vec<'a, TSClassImplements<'a>> {
+    pub fn implements(self) -> &'t ArenaVec<'a, TSClassImplements<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_IMPLEMENTS)
-                as *const Vec<'a, TSClassImplements<'a>>)
+                as *const ArenaVec<'a, TSClassImplements<'a>>)
         }
     }
 
     #[inline]
-    pub fn body(self) -> &'t Box<'a, StructBody<'a>> {
+    pub fn body(self) -> &'t ArenaBox<'a, StructBody<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_BODY)
-                as *const Box<'a, StructBody<'a>>)
+                as *const ArenaBox<'a, StructBody<'a>>)
         }
     }
 
@@ -19846,10 +19802,10 @@ impl<'a, 't> StructStatementWithoutImplements<'a, 't> {
     }
 
     #[inline]
-    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+    pub fn decorators(self) -> &'t ArenaVec<'a, Decorator<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_DECORATORS)
-                as *const Vec<'a, Decorator<'a>>)
+                as *const ArenaVec<'a, Decorator<'a>>)
         }
     }
 
@@ -19862,10 +19818,10 @@ impl<'a, 't> StructStatementWithoutImplements<'a, 't> {
     }
 
     #[inline]
-    pub fn type_parameters(self) -> &'t Option<Box<'a, TSTypeParameterDeclaration<'a>>> {
+    pub fn type_parameters(self) -> &'t Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_TYPE_PARAMETERS)
-                as *const Option<Box<'a, TSTypeParameterDeclaration<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>>)
         }
     }
 
@@ -19878,18 +19834,20 @@ impl<'a, 't> StructStatementWithoutImplements<'a, 't> {
     }
 
     #[inline]
-    pub fn super_type_arguments(self) -> &'t Option<Box<'a, TSTypeParameterInstantiation<'a>>> {
+    pub fn super_type_arguments(
+        self,
+    ) -> &'t Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_SUPER_TYPE_ARGUMENTS)
-                as *const Option<Box<'a, TSTypeParameterInstantiation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>>)
         }
     }
 
     #[inline]
-    pub fn body(self) -> &'t Box<'a, StructBody<'a>> {
+    pub fn body(self) -> &'t ArenaBox<'a, StructBody<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_BODY)
-                as *const Box<'a, StructBody<'a>>)
+                as *const ArenaBox<'a, StructBody<'a>>)
         }
     }
 
@@ -19940,10 +19898,10 @@ impl<'a, 't> StructStatementWithoutBody<'a, 't> {
     }
 
     #[inline]
-    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+    pub fn decorators(self) -> &'t ArenaVec<'a, Decorator<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_DECORATORS)
-                as *const Vec<'a, Decorator<'a>>)
+                as *const ArenaVec<'a, Decorator<'a>>)
         }
     }
 
@@ -19956,10 +19914,10 @@ impl<'a, 't> StructStatementWithoutBody<'a, 't> {
     }
 
     #[inline]
-    pub fn type_parameters(self) -> &'t Option<Box<'a, TSTypeParameterDeclaration<'a>>> {
+    pub fn type_parameters(self) -> &'t Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_TYPE_PARAMETERS)
-                as *const Option<Box<'a, TSTypeParameterDeclaration<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterDeclaration<'a>>>)
         }
     }
 
@@ -19972,18 +19930,20 @@ impl<'a, 't> StructStatementWithoutBody<'a, 't> {
     }
 
     #[inline]
-    pub fn super_type_arguments(self) -> &'t Option<Box<'a, TSTypeParameterInstantiation<'a>>> {
+    pub fn super_type_arguments(
+        self,
+    ) -> &'t Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_SUPER_TYPE_ARGUMENTS)
-                as *const Option<Box<'a, TSTypeParameterInstantiation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>>)
         }
     }
 
     #[inline]
-    pub fn implements(self) -> &'t Vec<'a, TSClassImplements<'a>> {
+    pub fn implements(self) -> &'t ArenaVec<'a, TSClassImplements<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_STRUCT_STATEMENT_IMPLEMENTS)
-                as *const Vec<'a, TSClassImplements<'a>>)
+                as *const ArenaVec<'a, TSClassImplements<'a>>)
         }
     }
 
@@ -20084,26 +20044,26 @@ impl<'a, 't> ArkUIComponentExpressionWithoutCallee<'a, 't> {
     }
 
     #[inline]
-    pub fn type_arguments(self) -> &'t Option<Box<'a, TSTypeParameterInstantiation<'a>>> {
+    pub fn type_arguments(self) -> &'t Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_ARK_UI_COMPONENT_EXPRESSION_TYPE_ARGUMENTS)
-                as *const Option<Box<'a, TSTypeParameterInstantiation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>>)
         }
     }
 
     #[inline]
-    pub fn arguments(self) -> &'t Vec<'a, Argument<'a>> {
+    pub fn arguments(self) -> &'t ArenaVec<'a, Argument<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_ARK_UI_COMPONENT_EXPRESSION_ARGUMENTS)
-                as *const Vec<'a, Argument<'a>>)
+                as *const ArenaVec<'a, Argument<'a>>)
         }
     }
 
     #[inline]
-    pub fn children(self) -> &'t Vec<'a, ArkUIChild<'a>> {
+    pub fn children(self) -> &'t ArenaVec<'a, ArkUIChild<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_ARK_UI_COMPONENT_EXPRESSION_CHILDREN)
-                as *const Vec<'a, ArkUIChild<'a>>)
+                as *const ArenaVec<'a, ArkUIChild<'a>>)
         }
     }
 
@@ -20116,10 +20076,10 @@ impl<'a, 't> ArkUIComponentExpressionWithoutCallee<'a, 't> {
     }
 
     #[inline]
-    pub fn chain_expressions(self) -> &'t Vec<'a, CallExpression<'a>> {
+    pub fn chain_expressions(self) -> &'t ArenaVec<'a, CallExpression<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_ARK_UI_COMPONENT_EXPRESSION_CHAIN_EXPRESSIONS)
-                as *const Vec<'a, CallExpression<'a>>)
+                as *const ArenaVec<'a, CallExpression<'a>>)
         }
     }
 }
@@ -20163,18 +20123,18 @@ impl<'a, 't> ArkUIComponentExpressionWithoutTypeArguments<'a, 't> {
     }
 
     #[inline]
-    pub fn arguments(self) -> &'t Vec<'a, Argument<'a>> {
+    pub fn arguments(self) -> &'t ArenaVec<'a, Argument<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_ARK_UI_COMPONENT_EXPRESSION_ARGUMENTS)
-                as *const Vec<'a, Argument<'a>>)
+                as *const ArenaVec<'a, Argument<'a>>)
         }
     }
 
     #[inline]
-    pub fn children(self) -> &'t Vec<'a, ArkUIChild<'a>> {
+    pub fn children(self) -> &'t ArenaVec<'a, ArkUIChild<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_ARK_UI_COMPONENT_EXPRESSION_CHILDREN)
-                as *const Vec<'a, ArkUIChild<'a>>)
+                as *const ArenaVec<'a, ArkUIChild<'a>>)
         }
     }
 
@@ -20187,10 +20147,10 @@ impl<'a, 't> ArkUIComponentExpressionWithoutTypeArguments<'a, 't> {
     }
 
     #[inline]
-    pub fn chain_expressions(self) -> &'t Vec<'a, CallExpression<'a>> {
+    pub fn chain_expressions(self) -> &'t ArenaVec<'a, CallExpression<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_ARK_UI_COMPONENT_EXPRESSION_CHAIN_EXPRESSIONS)
-                as *const Vec<'a, CallExpression<'a>>)
+                as *const ArenaVec<'a, CallExpression<'a>>)
         }
     }
 }
@@ -20234,18 +20194,18 @@ impl<'a, 't> ArkUIComponentExpressionWithoutArguments<'a, 't> {
     }
 
     #[inline]
-    pub fn type_arguments(self) -> &'t Option<Box<'a, TSTypeParameterInstantiation<'a>>> {
+    pub fn type_arguments(self) -> &'t Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_ARK_UI_COMPONENT_EXPRESSION_TYPE_ARGUMENTS)
-                as *const Option<Box<'a, TSTypeParameterInstantiation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>>)
         }
     }
 
     #[inline]
-    pub fn children(self) -> &'t Vec<'a, ArkUIChild<'a>> {
+    pub fn children(self) -> &'t ArenaVec<'a, ArkUIChild<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_ARK_UI_COMPONENT_EXPRESSION_CHILDREN)
-                as *const Vec<'a, ArkUIChild<'a>>)
+                as *const ArenaVec<'a, ArkUIChild<'a>>)
         }
     }
 
@@ -20258,10 +20218,10 @@ impl<'a, 't> ArkUIComponentExpressionWithoutArguments<'a, 't> {
     }
 
     #[inline]
-    pub fn chain_expressions(self) -> &'t Vec<'a, CallExpression<'a>> {
+    pub fn chain_expressions(self) -> &'t ArenaVec<'a, CallExpression<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_ARK_UI_COMPONENT_EXPRESSION_CHAIN_EXPRESSIONS)
-                as *const Vec<'a, CallExpression<'a>>)
+                as *const ArenaVec<'a, CallExpression<'a>>)
         }
     }
 }
@@ -20305,18 +20265,18 @@ impl<'a, 't> ArkUIComponentExpressionWithoutChildren<'a, 't> {
     }
 
     #[inline]
-    pub fn type_arguments(self) -> &'t Option<Box<'a, TSTypeParameterInstantiation<'a>>> {
+    pub fn type_arguments(self) -> &'t Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_ARK_UI_COMPONENT_EXPRESSION_TYPE_ARGUMENTS)
-                as *const Option<Box<'a, TSTypeParameterInstantiation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>>)
         }
     }
 
     #[inline]
-    pub fn arguments(self) -> &'t Vec<'a, Argument<'a>> {
+    pub fn arguments(self) -> &'t ArenaVec<'a, Argument<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_ARK_UI_COMPONENT_EXPRESSION_ARGUMENTS)
-                as *const Vec<'a, Argument<'a>>)
+                as *const ArenaVec<'a, Argument<'a>>)
         }
     }
 
@@ -20329,10 +20289,10 @@ impl<'a, 't> ArkUIComponentExpressionWithoutChildren<'a, 't> {
     }
 
     #[inline]
-    pub fn chain_expressions(self) -> &'t Vec<'a, CallExpression<'a>> {
+    pub fn chain_expressions(self) -> &'t ArenaVec<'a, CallExpression<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_ARK_UI_COMPONENT_EXPRESSION_CHAIN_EXPRESSIONS)
-                as *const Vec<'a, CallExpression<'a>>)
+                as *const ArenaVec<'a, CallExpression<'a>>)
         }
     }
 }
@@ -20376,26 +20336,26 @@ impl<'a, 't> ArkUIComponentExpressionWithoutChainExpressions<'a, 't> {
     }
 
     #[inline]
-    pub fn type_arguments(self) -> &'t Option<Box<'a, TSTypeParameterInstantiation<'a>>> {
+    pub fn type_arguments(self) -> &'t Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_ARK_UI_COMPONENT_EXPRESSION_TYPE_ARGUMENTS)
-                as *const Option<Box<'a, TSTypeParameterInstantiation<'a>>>)
+                as *const Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>>)
         }
     }
 
     #[inline]
-    pub fn arguments(self) -> &'t Vec<'a, Argument<'a>> {
+    pub fn arguments(self) -> &'t ArenaVec<'a, Argument<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_ARK_UI_COMPONENT_EXPRESSION_ARGUMENTS)
-                as *const Vec<'a, Argument<'a>>)
+                as *const ArenaVec<'a, Argument<'a>>)
         }
     }
 
     #[inline]
-    pub fn children(self) -> &'t Vec<'a, ArkUIChild<'a>> {
+    pub fn children(self) -> &'t ArenaVec<'a, ArkUIChild<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_ARK_UI_COMPONENT_EXPRESSION_CHILDREN)
-                as *const Vec<'a, ArkUIChild<'a>>)
+                as *const ArenaVec<'a, ArkUIChild<'a>>)
         }
     }
 
@@ -20459,10 +20419,10 @@ impl<'a, 't> AnnotationDeclarationWithoutDecorators<'a, 't> {
     }
 
     #[inline]
-    pub fn body(self) -> &'t Box<'a, AnnotationBody<'a>> {
+    pub fn body(self) -> &'t ArenaBox<'a, AnnotationBody<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_ANNOTATION_DECLARATION_BODY)
-                as *const Box<'a, AnnotationBody<'a>>)
+                as *const ArenaBox<'a, AnnotationBody<'a>>)
         }
     }
 
@@ -20511,18 +20471,18 @@ impl<'a, 't> AnnotationDeclarationWithoutId<'a, 't> {
     }
 
     #[inline]
-    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+    pub fn decorators(self) -> &'t ArenaVec<'a, Decorator<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_ANNOTATION_DECLARATION_DECORATORS)
-                as *const Vec<'a, Decorator<'a>>)
+                as *const ArenaVec<'a, Decorator<'a>>)
         }
     }
 
     #[inline]
-    pub fn body(self) -> &'t Box<'a, AnnotationBody<'a>> {
+    pub fn body(self) -> &'t ArenaBox<'a, AnnotationBody<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_ANNOTATION_DECLARATION_BODY)
-                as *const Box<'a, AnnotationBody<'a>>)
+                as *const ArenaBox<'a, AnnotationBody<'a>>)
         }
     }
 
@@ -20571,10 +20531,10 @@ impl<'a, 't> AnnotationDeclarationWithoutBody<'a, 't> {
     }
 
     #[inline]
-    pub fn decorators(self) -> &'t Vec<'a, Decorator<'a>> {
+    pub fn decorators(self) -> &'t ArenaVec<'a, Decorator<'a>> {
         unsafe {
             &*((self.0 as *const u8).add(OFFSET_ANNOTATION_DECLARATION_DECORATORS)
-                as *const Vec<'a, Decorator<'a>>)
+                as *const ArenaVec<'a, Decorator<'a>>)
         }
     }
 

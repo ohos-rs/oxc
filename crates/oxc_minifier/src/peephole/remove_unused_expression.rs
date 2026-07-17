@@ -1,15 +1,19 @@
 use std::iter;
 
-use crate::{CompressOptionsUnused, TraverseCtx, generated::ancestor::Ancestor};
-use oxc_allocator::{TakeIn, Vec};
+use crate::{
+    CompressOptionsUnused, TraverseCtx, generated::ancestor::Ancestor, symbol_facts::SymbolFact,
+    symbol_value::FreshValueKind,
+};
+use oxc_allocator::{ArenaVec, TakeIn};
 use oxc_ast::ast::*;
 use oxc_compat::ESFeature;
 use oxc_ecmascript::{
     ToPrimitive,
     side_effects::{MayHaveSideEffects, MayHaveSideEffectsContext},
 };
+use oxc_semantic::Scoping;
 use oxc_span::GetSpan;
-use oxc_syntax::symbol::SymbolId;
+use oxc_syntax::symbol::{SymbolFlags, SymbolId};
 
 use super::PeepholeOptimizations;
 use super::fold_constants::is_cjs_module_exports_hint;
@@ -17,24 +21,34 @@ use super::fold_constants::is_cjs_module_exports_hint;
 impl<'a> PeepholeOptimizations {
     /// `SimplifyUnusedExpr`: <https://github.com/evanw/esbuild/blob/v0.24.2/internal/js_ast/js_ast_helpers.go#L534>
     pub fn remove_unused_expression(e: &mut Expression<'a>, ctx: &mut TraverseCtx<'a>) -> bool {
-        match e {
-            Expression::ArrayExpression(_) => Self::remove_unused_array_expr(e, ctx),
-            Expression::AssignmentExpression(_) => Self::remove_unused_assignment_expr(e, ctx),
-            Expression::BinaryExpression(_) => Self::remove_unused_binary_expr(e, ctx),
-            Expression::CallExpression(_) => Self::remove_unused_call_expr(e, ctx),
-            Expression::ClassExpression(_) => Self::remove_unused_class_expr(e, ctx),
-            Expression::ConditionalExpression(_) => Self::remove_unused_conditional_expr(e, ctx),
-            Expression::LogicalExpression(_) => Self::remove_unused_logical_expr(e, ctx),
-            Expression::NewExpression(_) => Self::remove_unused_new_expr(e, ctx),
-            Expression::ObjectExpression(_) => Self::remove_unused_object_expr(e, ctx),
-            Expression::SequenceExpression(_) => Self::remove_unused_sequence_expr(e, ctx),
-            Expression::TemplateLiteral(_) => Self::remove_unused_template_literal(e, ctx),
-            Expression::UnaryExpression(_) => Self::remove_unused_unary_expr(e, ctx),
-            // In a derived class constructor, accessing `this` before `super()` throws
-            // a `ReferenceError`, so we must keep it. In all other positions (including
-            // non-derived constructors) `this` is always initialized and can be dropped.
-            Expression::ThisExpression(_) => !Self::this_is_inside_derived_constructor(ctx),
-            _ => !e.may_have_side_effects(ctx),
+        // Routed through `expr_has_specialized_unused_handler` so the
+        // predicate cannot drift from the dispatch (see its doc).
+        if Self::expr_has_specialized_unused_handler(e) {
+            match e {
+                Expression::ArrayExpression(_) => Self::remove_unused_array_expr(e, ctx),
+                Expression::AssignmentExpression(_) => Self::remove_unused_assignment_expr(e, ctx),
+                Expression::BinaryExpression(_) => Self::remove_unused_binary_expr(e, ctx),
+                Expression::CallExpression(_) => Self::remove_unused_call_expr(e, ctx),
+                Expression::ClassExpression(_) => Self::remove_unused_class_expr(e, ctx),
+                Expression::ConditionalExpression(_) => {
+                    Self::remove_unused_conditional_expr(e, ctx)
+                }
+                Expression::LogicalExpression(_) => Self::remove_unused_logical_expr(e, ctx),
+                Expression::NewExpression(_) => Self::remove_unused_new_expr(e, ctx),
+                Expression::ObjectExpression(_) => Self::remove_unused_object_expr(e, ctx),
+                Expression::SequenceExpression(_) => Self::remove_unused_sequence_expr(e, ctx),
+                Expression::TemplateLiteral(_) => Self::remove_unused_template_literal(e, ctx),
+                Expression::UnaryExpression(_) => Self::remove_unused_unary_expr(e, ctx),
+                // In a derived class constructor, accessing `this` before `super()` throws
+                // a `ReferenceError`, so we must keep it. In all other positions (including
+                // non-derived constructors) `this` is always initialized and can be dropped.
+                Expression::ThisExpression(_) => !Self::this_is_inside_derived_constructor(ctx),
+                _ => unreachable!(
+                    "expr_has_specialized_unused_handler is out of sync with this dispatch"
+                ),
+            }
+        } else {
+            !e.may_have_side_effects(ctx)
         }
     }
 
@@ -65,7 +79,7 @@ impl<'a> PeepholeOptimizations {
         let Expression::UnaryExpression(unary_expr) = e else { return false };
         match unary_expr.operator {
             UnaryOperator::Void | UnaryOperator::LogicalNot => {
-                let new_expr = unary_expr.argument.take_in(ctx.ast);
+                let new_expr = unary_expr.argument.take_in(&ctx.ast);
                 ctx.replace_expression(e, new_expr);
                 Self::remove_unused_expression(e, ctx)
             }
@@ -73,7 +87,7 @@ impl<'a> PeepholeOptimizations {
                 if unary_expr.argument.is_identifier_reference() {
                     true
                 } else {
-                    let new_expr = unary_expr.argument.take_in(ctx.ast);
+                    let new_expr = unary_expr.argument.take_in(&ctx.ast);
                     ctx.replace_expression(e, new_expr);
                     Self::remove_unused_expression(e, ctx)
                 }
@@ -118,7 +132,7 @@ impl<'a> PeepholeOptimizations {
         }
         if Self::remove_unused_expression(&mut logical_expr.right, ctx) {
             Self::remove_unused_expression(&mut logical_expr.left, ctx);
-            let new_expr = logical_expr.left.take_in(ctx.ast);
+            let new_expr = logical_expr.left.take_in(&ctx.ast);
             ctx.replace_expression(e, new_expr);
             return false;
         }
@@ -159,7 +173,7 @@ impl<'a> PeepholeOptimizations {
                                 ctx,
                             )
                         {
-                            let new_expr = logical_right.take_in(ctx.ast);
+                            let new_expr = logical_right.take_in(&ctx.ast);
                             ctx.replace_expression(e, new_expr);
                             return false;
                         }
@@ -198,16 +212,17 @@ impl<'a> PeepholeOptimizations {
                                 assignment_expr.operator = AssignmentOperator::LogicalNullish;
                                 // `??=` reads the LHS to check for nullish, so update reference flags.
                                 Self::mark_assignment_target_as_read(&assignment_expr.left, ctx);
-                                let new_expr = logical_right.take_in(ctx.ast);
+                                let new_expr = logical_right.take_in(&ctx.ast);
                                 ctx.replace_expression(e, new_expr);
                                 return false;
                             }
 
-                            let new_expr = ctx.ast.expression_logical(
+                            let new_expr = Expression::new_logical_expression(
                                 *logical_span,
-                                new_left_hand_expr.take_in(ctx.ast),
+                                new_left_hand_expr.take_in(&ctx.ast),
                                 LogicalOperator::Coalesce,
-                                logical_right.take_in(ctx.ast),
+                                logical_right.take_in(ctx),
+                                ctx,
                             );
                             ctx.replace_expression(e, new_expr);
                             return false;
@@ -279,8 +294,9 @@ impl<'a> PeepholeOptimizations {
             return false;
         }
 
-        let mut expressions = ctx.ast.vec_from_iter(
+        let mut expressions = ArenaVec::from_iter_in(
             array_expr.elements.drain(..).map(ArrayExpressionElement::into_expression),
+            ctx,
         );
         if expressions.is_empty() {
             return true;
@@ -291,7 +307,7 @@ impl<'a> PeepholeOptimizations {
         }
 
         let span = array_expr.span;
-        let new_expr = ctx.ast.expression_sequence(span, expressions);
+        let new_expr = Expression::new_sequence_expression(span, expressions, ctx);
         ctx.replace_expression(e, new_expr);
         false
     }
@@ -308,7 +324,7 @@ impl<'a> PeepholeOptimizations {
                 ctx.replace_expression(e, folded);
                 return false;
             }
-            let folded = ctx.ast.expression_sequence(new_expr.span, exprs);
+            let folded = Expression::new_sequence_expression(new_expr.span, exprs, ctx);
             ctx.replace_expression(e, folded);
             return false;
         }
@@ -327,8 +343,8 @@ impl<'a> PeepholeOptimizations {
             return false;
         }
 
-        let mut transformed_elements = ctx.ast.vec();
-        let mut pending_to_string_required_exprs = ctx.ast.vec();
+        let mut transformed_elements = ArenaVec::new_in(ctx);
+        let mut pending_to_string_required_exprs = ArenaVec::new_in(ctx);
 
         for mut e in temp_lit.expressions.drain(..) {
             if e.to_primitive(ctx).is_symbol() != Some(false) {
@@ -342,25 +358,28 @@ impl<'a> PeepholeOptimizations {
                 if !pending_to_string_required_exprs.is_empty() {
                     // flush pending to string required expressions
                     let expressions =
-                        ctx.ast.vec_from_iter(pending_to_string_required_exprs.drain(..));
-                    let mut quasis = ctx.ast.vec_from_iter(
+                        ArenaVec::from_iter_in(pending_to_string_required_exprs.drain(..), ctx);
+                    let mut quasis = ArenaVec::from_iter_in(
                         iter::repeat_with(|| {
-                            ctx.ast.template_element(
+                            TemplateElement::new(
                                 e.span(),
                                 TemplateElementValue { raw: "".into(), cooked: Some("".into()) },
                                 false,
+                                ctx,
                             )
                         })
                         .take(expressions.len() + 1),
+                        ctx,
                     );
                     quasis
                         .last_mut()
                         .expect("template literal must have at least one quasi")
                         .tail = true;
-                    transformed_elements.push(ctx.ast.expression_template_literal(
+                    transformed_elements.push(Expression::new_template_literal(
                         e.span(),
                         quasis,
                         expressions,
+                        ctx,
                     ));
                 }
                 transformed_elements.push(e);
@@ -368,22 +387,26 @@ impl<'a> PeepholeOptimizations {
         }
 
         if !pending_to_string_required_exprs.is_empty() {
-            let expressions = ctx.ast.vec_from_iter(pending_to_string_required_exprs.drain(..));
-            let mut quasis = ctx.ast.vec_from_iter(
+            let expressions =
+                ArenaVec::from_iter_in(pending_to_string_required_exprs.drain(..), ctx);
+            let mut quasis = ArenaVec::from_iter_in(
                 iter::repeat_with(|| {
-                    ctx.ast.template_element(
+                    TemplateElement::new(
                         temp_lit.span,
                         TemplateElementValue { raw: "".into(), cooked: Some("".into()) },
                         false,
+                        ctx,
                     )
                 })
                 .take(expressions.len() + 1),
+                ctx,
             );
             quasis.last_mut().expect("template literal must have at least one quasi").tail = true;
-            transformed_elements.push(ctx.ast.expression_template_literal(
+            transformed_elements.push(Expression::new_template_literal(
                 temp_lit.span,
                 quasis,
                 expressions,
+                ctx,
             ));
         }
 
@@ -395,7 +418,8 @@ impl<'a> PeepholeOptimizations {
             return false;
         }
 
-        let new_expr = ctx.ast.expression_sequence(temp_lit.span, transformed_elements);
+        let new_expr =
+            Expression::new_sequence_expression(temp_lit.span, transformed_elements, ctx);
         ctx.replace_expression(e, new_expr);
         false
     }
@@ -417,8 +441,8 @@ impl<'a> PeepholeOptimizations {
                 .any(|property| property.may_have_side_effects(ctx));
         }
 
-        let mut transformed_elements = ctx.ast.vec();
-        let mut pending_spread_elements = ctx.ast.vec();
+        let mut transformed_elements = ArenaVec::new_in(ctx);
+        let mut pending_spread_elements = ArenaVec::new_in(ctx);
 
         for prop in object_expr.properties.drain(..) {
             match prop {
@@ -428,9 +452,12 @@ impl<'a> PeepholeOptimizations {
                 ObjectPropertyKind::ObjectProperty(prop) => {
                     if !pending_spread_elements.is_empty() {
                         // flush pending spread elements
-                        transformed_elements
-                            .push(ctx.ast.expression_object(prop.span(), pending_spread_elements));
-                        pending_spread_elements = ctx.ast.vec();
+                        transformed_elements.push(Expression::new_object_expression(
+                            prop.span(),
+                            pending_spread_elements,
+                            ctx,
+                        ));
+                        pending_spread_elements = ArenaVec::new_in(ctx);
                     }
 
                     let ObjectProperty { key, mut value, .. } = prop.unbox();
@@ -464,8 +491,11 @@ impl<'a> PeepholeOptimizations {
         }
 
         if !pending_spread_elements.is_empty() {
-            transformed_elements
-                .push(ctx.ast.expression_object(object_expr.span, pending_spread_elements));
+            transformed_elements.push(Expression::new_object_expression(
+                object_expr.span,
+                pending_spread_elements,
+                ctx,
+            ));
         }
 
         if transformed_elements.is_empty() {
@@ -476,7 +506,8 @@ impl<'a> PeepholeOptimizations {
             return false;
         }
 
-        let new_expr = ctx.ast.expression_sequence(object_expr.span, transformed_elements);
+        let new_expr =
+            Expression::new_sequence_expression(object_expr.span, transformed_elements, ctx);
         ctx.replace_expression(e, new_expr);
         false
     }
@@ -498,7 +529,7 @@ impl<'a> PeepholeOptimizations {
             if test {
                 return true;
             }
-            let new_expr = conditional_expr.test.take_in(ctx.ast);
+            let new_expr = conditional_expr.test.take_in(&ctx.ast);
             ctx.replace_expression(e, new_expr);
             return false;
         }
@@ -508,8 +539,8 @@ impl<'a> PeepholeOptimizations {
             let new_expr = Self::join_with_left_associative_op(
                 conditional_expr.span,
                 LogicalOperator::Or,
-                conditional_expr.test.take_in(ctx.ast),
-                conditional_expr.alternate.take_in(ctx.ast),
+                conditional_expr.test.take_in(&ctx.ast),
+                conditional_expr.alternate.take_in(&ctx.ast),
                 ctx,
             );
             ctx.replace_expression(e, new_expr);
@@ -521,8 +552,8 @@ impl<'a> PeepholeOptimizations {
             let new_expr = Self::join_with_left_associative_op(
                 conditional_expr.span,
                 LogicalOperator::And,
-                conditional_expr.test.take_in(ctx.ast),
-                conditional_expr.consequent.take_in(ctx.ast),
+                conditional_expr.test.take_in(&ctx.ast),
+                conditional_expr.consequent.take_in(&ctx.ast),
                 ctx,
             );
             ctx.replace_expression(e, new_expr);
@@ -551,22 +582,20 @@ impl<'a> PeepholeOptimizations {
                 match (left, right) {
                     (true, true) => true,
                     (true, false) => {
-                        let new_expr = binary_expr.right.take_in(ctx.ast);
+                        let new_expr = binary_expr.right.take_in(&ctx.ast);
                         ctx.replace_expression(e, new_expr);
                         false
                     }
                     (false, true) => {
-                        let new_expr = binary_expr.left.take_in(ctx.ast);
+                        let new_expr = binary_expr.left.take_in(&ctx.ast);
                         ctx.replace_expression(e, new_expr);
                         false
                     }
                     (false, false) => {
-                        let new_expr = ctx.ast.expression_sequence(
+                        let new_expr = Expression::new_sequence_expression(
                             binary_expr.span,
-                            ctx.ast.vec_from_array([
-                                binary_expr.left.take_in(ctx.ast),
-                                binary_expr.right.take_in(ctx.ast),
-                            ]),
+                            [binary_expr.left.take_in(ctx), binary_expr.right.take_in(ctx)],
+                            ctx,
                         );
                         ctx.replace_expression(e, new_expr);
                         false
@@ -596,7 +625,7 @@ impl<'a> PeepholeOptimizations {
                 && !binary_expr.left.is_specific_string_literal("")
             {
                 let left_span = binary_expr.left.span();
-                let new_left = ctx.ast.expression_string_literal(left_span, "", None);
+                let new_left = Expression::new_string_literal(left_span, "", None, ctx);
                 ctx.replace_expression(&mut binary_expr.left, new_left);
             }
 
@@ -604,7 +633,7 @@ impl<'a> PeepholeOptimizations {
             if right_as_primitive.is_symbol() == Some(false)
                 && !binary_expr.right.may_have_side_effects(ctx)
             {
-                let new_expr = binary_expr.left.take_in(ctx.ast);
+                let new_expr = binary_expr.left.take_in(&ctx.ast);
                 ctx.replace_expression(e, new_expr);
                 return true;
             }
@@ -617,7 +646,7 @@ impl<'a> PeepholeOptimizations {
                 && !binary_expr.right.is_specific_string_literal("")
             {
                 let right_span = binary_expr.right.span();
-                let new_right = ctx.ast.expression_string_literal(right_span, "", None);
+                let new_right = Expression::new_string_literal(right_span, "", None, ctx);
                 ctx.replace_expression(&mut binary_expr.right, new_right);
             }
             return true;
@@ -651,28 +680,50 @@ impl<'a> PeepholeOptimizations {
                 ctx.replace_expression(e, new_expr);
                 return false;
             }
-            let new_expr = ctx.ast.expression_sequence(call_expr.span, exprs);
+            let new_expr = Expression::new_sequence_expression(call_expr.span, exprs, ctx);
             ctx.replace_expression(e, new_expr);
             return false;
         }
 
-        !e.may_have_side_effects(ctx)
+        !Self::has_side_effects_or_preserved_iife(e, ctx)
+    }
+
+    /// `Expression::may_have_side_effects`, except that in DCE-only mode an IIFE
+    /// call (`(function () {...})()` / `(() => {...})()`) is reported as
+    /// effectful so its structure survives — matching Rollup / esbuild
+    /// tree-shaking (see `preserve_iife_in_dce_mode`). Full minification still
+    /// drops a pure-bodied IIFE, just as it inlines IIFE bodies. Every
+    /// unused-removal site that can face an IIFE call routes through here, so
+    /// the policy lives in one place.
+    pub(super) fn has_side_effects_or_preserved_iife(
+        e: &Expression<'a>,
+        ctx: &TraverseCtx<'a>,
+    ) -> bool {
+        // Check the cheap DCE-preservation case first: in DCE-only mode an IIFE
+        // call is always kept, so its (potentially deep) body walk is skipped.
+        if ctx.state.dce
+            && matches!(e, Expression::CallExpression(call) if call.callee.is_function())
+        {
+            return true;
+        }
+        e.may_have_side_effects(ctx)
     }
 
     pub fn fold_arguments_into_needed_expressions(
-        args: &mut Vec<'a, Argument<'a>>,
+        args: &mut ArenaVec<'a, Argument<'a>>,
         ctx: &mut TraverseCtx<'a>,
-    ) -> Vec<'a, Expression<'a>> {
+    ) -> ArenaVec<'a, Expression<'a>> {
         // `args.drain(..)` would silently move owned `Argument`s out and the
         // filter would drop any whose inner expression `remove_unused_expression`
         // collapsed to nothing — leaking references in the dropped subtree.
         // Use a manual loop so we can `drop_expression` before discarding.
-        let mut out: Vec<'a, Expression<'a>> = ctx.ast.vec_with_capacity(args.len());
+        let mut out: ArenaVec<'a, Expression<'a>> = ArenaVec::with_capacity_in(args.len(), ctx);
         for arg in args.drain(..) {
             let mut expr = match arg {
-                Argument::SpreadElement(e) => ctx.ast.expression_array(
+                Argument::SpreadElement(e) => Expression::new_array_expression(
                     e.span,
-                    ctx.ast.vec1(ArrayExpressionElement::SpreadElement(e)),
+                    [ArrayExpressionElement::SpreadElement(e)],
+                    ctx,
                 ),
                 match_expression!(Argument) => arg.into_expression(),
             };
@@ -733,61 +784,161 @@ impl<'a> PeepholeOptimizations {
         if symbol_value.read_references_count > 0 {
             return false;
         }
-        let new_expr = assign_expr.right.take_in(ctx.ast);
+        let new_expr = assign_expr.right.take_in(&ctx.ast);
         ctx.replace_expression(e, new_expr);
         false
     }
 
-    /// Try to remove a member expression assignment (e.g. `A.from = () => {}`).
-    /// Checks side-effect analysis (respects `property_write_side_effects`) and
-    /// verifies the root object is an unused local binding.
-    fn remove_unused_member_assignment(e: &Expression<'a>, ctx: &mut TraverseCtx<'a>) -> bool {
+    /// Try to remove a member expression assignment (e.g. `A.from = () => {}`)
+    /// whose root object is an unused local binding.
+    ///
+    /// Two paths:
+    /// - Opt-in (`property_write_side_effects: false`): the whole assignment is
+    ///   side-effect free, so `is_member_assign_to_unused_binding` alone decides.
+    /// - Default: property writes count as side effects in general, but a plain
+    ///   `=` write to a safe single-level member of a provably-unused fresh
+    ///   local is unobservable (terser parity) — unless the symbol carries a
+    ///   member-write hazard (compound/update/chained ops, potential
+    ///   `__proto__` setters) — the `MEMBER_WRITE_HAZARD` fact in
+    ///   `MinifierState::symbol_facts`. See `docs/ASSUMPTIONS.md`.
+    fn remove_unused_member_assignment(e: &mut Expression<'a>, ctx: &mut TraverseCtx<'a>) -> bool {
         if Self::keep_top_level_var_in_script_mode(ctx) {
             return false;
         }
-        let Expression::AssignmentExpression(assign_expr) = e else { unreachable!() };
+        let Expression::AssignmentExpression(assign_expr) = &*e else { unreachable!() };
 
-        // Track `__proto__` and computed member writes before checking side effects.
-        // Even if this expression has side effects and can't be removed, we need to
-        // record proto writes so that subsequent property writes on the same symbol
-        // are preserved (the `__proto__` assignment may install setters).
-        Self::track_proto_write(assign_expr, ctx);
+        let Some(symbol_id) = Self::resolve_member_assign_object_symbol(assign_expr, ctx) else {
+            return false;
+        };
 
-        if e.may_have_side_effects(ctx) {
+        if !e.may_have_side_effects(ctx) {
+            // Opt-in path (`property_write_side_effects: false`) — with a pure
+            // RHS the whole assignment is free; only the binding check remains.
+            return Self::is_member_assign_to_unused_binding(symbol_id, ctx);
+        }
+
+        // Default path. Full-minify only: in DCE (tree-shaking) mode rolldown
+        // owns `property_write_side_effects` as its opt-in knob.
+        if ctx.state.dce {
             return false;
         }
-        Self::is_member_assign_to_unused_binding(assign_expr, ctx)
+        if ctx.current_scope_flags().contains_direct_eval() {
+            return false;
+        }
+        let Expression::AssignmentExpression(assign_expr) = &*e else { unreachable!() };
+        // Compound / logical assignments READ the property (getters, coercion).
+        if assign_expr.operator != AssignmentOperator::Assign {
+            return false;
+        }
+        // Single-level member with a key that provably isn't `__proto__`.
+        if !Self::member_write_shape_is_safe(&assign_expr.left) {
+            return false;
+        }
+        if !Self::is_member_assign_to_unused_binding(symbol_id, ctx) {
+            return false;
+        }
+        // Kind-aware key denylist: writing certain keys on a fresh
+        // function/class/array throws a strict-mode `TypeError` or has an
+        // observable value-domain effect (see `member_write_key_denied`), so the
+        // write is not dead even though the binding is otherwise unused.
+        let kind = ctx
+            .state
+            .symbol_values
+            .get_symbol_value(symbol_id)
+            .map_or(FreshValueKind::None, |sv| sv.kind);
+        if Self::member_write_key_denied(&assign_expr.left, kind) {
+            return false;
+        }
+        // Program-wide, execution-order-independent hazards: another member op
+        // on this symbol reads the property or may install setters.
+        if ctx.state.symbol_facts.has(symbol_id, SymbolFact::MEMBER_WRITE_HAZARD) {
+            return false;
+        }
+        if !assign_expr.right.may_have_side_effects(ctx) {
+            // Pure RHS: the statement-position caller drops the whole thing.
+            return true;
+        }
+        // Impure RHS: hoist it in place (take FIRST so surviving RHS refs stay
+        // live; `replace_expression`'s DropDiff walk then marks only the LHS
+        // refs dead). Safe in value positions too — a plain `=` assignment's
+        // value IS the RHS value.
+        let Expression::AssignmentExpression(assign_expr) = e else { unreachable!() };
+        let new_expr = assign_expr.right.take_in(ctx);
+        ctx.replace_expression(e, new_expr);
+        false
     }
 
-    /// Track `__proto__` and computed member writes on local bindings.
-    /// Must be called before side-effect checks so that proto writes with
-    /// side-effectful RHS still mark the symbol.
-    fn track_proto_write(assign_expr: &AssignmentExpression<'a>, ctx: &mut TraverseCtx<'a>) {
-        // Skip when property_write_side_effects is true (default) — the optimization
-        // that drops member writes is disabled, so tracking is unnecessary.
-        if ctx.state.options.treeshake.property_write_side_effects {
-            return;
-        }
-        // Match only potential `__proto__` writes: explicit `a.__proto__` or
-        // computed `a[b]` (where the key could evaluate to `"__proto__"`).
-        let object = match &assign_expr.left {
-            AssignmentTarget::StaticMemberExpression(e) if e.property.name == "__proto__" => {
-                &e.object
+    /// Whether a member assignment target is a single-level member write
+    /// (`o.x`, `o["x"]`, `o[0]` — object is an identifier) whose key provably
+    /// isn't `"__proto__"` (which would swap the prototype chain and could
+    /// install setters). Non-literal computed keys (`o[k]`, `o[k()]`) are unsafe:
+    /// they may evaluate to `"__proto__"`.
+    ///
+    /// Private-field writes (`o.#x = 1`) are NOT safe: they are a brand check
+    /// that throws a `TypeError` unless `o` is an instance of the class that
+    /// declares `#x`, which a fresh object / function / class / array literal
+    /// never is — so the write always throws and must be kept.
+    fn member_write_shape_is_safe(target: &AssignmentTarget<'a>) -> bool {
+        match target {
+            AssignmentTarget::StaticMemberExpression(e) => {
+                matches!(e.object, Expression::Identifier(_)) && e.property.name != "__proto__"
             }
-            // Computed key like `a[b]` could be `"__proto__"`
-            AssignmentTarget::ComputedMemberExpression(e) => &e.object,
-            _ => return,
-        };
-        let Expression::Identifier(ident) = object else { return };
-        let reference_id = ident.reference_id();
-        let Some(symbol_id) = ctx.scoping().get_reference(reference_id).symbol_id() else {
-            return;
-        };
-        // Only mark if there are other member writes — if __proto__ is the only
-        // reference, the setter is installed but never triggered, so dropping is safe.
-        let ref_count = ctx.scoping().get_resolved_reference_ids(symbol_id).len();
-        if ref_count > 1 {
-            ctx.state.proto_write_symbols.insert(symbol_id);
+            AssignmentTarget::ComputedMemberExpression(e) => {
+                matches!(e.object, Expression::Identifier(_))
+                    && Self::member_key_is_safe(&e.expression)
+            }
+            _ => false,
+        }
+    }
+
+    /// The property key name a safe-shaped member write targets, when it is a
+    /// static identifier (`o.length`) or a computed string literal (`o["length"]`).
+    /// `None` for a numeric computed key (`o[0]`), whose `ToString` can never
+    /// equal one of the denied names. Used by the kind-aware key denylist.
+    fn member_write_key_name<'k>(target: &'k AssignmentTarget<'a>) -> Option<&'k str> {
+        match target {
+            AssignmentTarget::StaticMemberExpression(e) => Some(e.property.name.as_str()),
+            AssignmentTarget::ComputedMemberExpression(e) => match &e.expression {
+                Expression::StringLiteral(s) => Some(s.value.as_str()),
+                _ => None,
+            },
+            _ => None,
+        }
+    }
+
+    /// Whether writing `key` on a fresh value of `kind` throws a strict-mode
+    /// `TypeError` or has an observable value-domain effect, so the write is NOT
+    /// dead even on an otherwise-unused binding:
+    /// - `Function` / `Class`: `caller` / `arguments` (the `%ThrowTypeError%`
+    ///   poison) and the non-writable own `name` / `length` all throw on write;
+    /// - `Class` additionally: `prototype` is non-writable (a plain function's
+    ///   `prototype` IS writable, so it stays droppable);
+    /// - `Array`: `length` can throw a `RangeError` (`a.length = -1`) or run a
+    ///   `valueOf` coercion (`a.length = { valueOf() {...} }`).
+    ///
+    /// `Object` literals have ordinary writable properties, so nothing is denied.
+    fn member_write_key_denied(target: &AssignmentTarget<'a>, kind: FreshValueKind) -> bool {
+        let Some(key) = Self::member_write_key_name(target) else { return false };
+        match kind {
+            FreshValueKind::Function => {
+                matches!(key, "caller" | "arguments" | "name" | "length")
+            }
+            FreshValueKind::Class => {
+                matches!(key, "caller" | "arguments" | "name" | "length" | "prototype")
+            }
+            FreshValueKind::Array => key == "length",
+            FreshValueKind::Object | FreshValueKind::None => false,
+        }
+    }
+
+    /// Whether a computed member key provably isn't `"__proto__"`:
+    /// a string literal other than `"__proto__"`, or a number (whose string
+    /// coercion can never be `"__proto__"`).
+    pub(crate) fn member_key_is_safe(key: &Expression<'a>) -> bool {
+        match key {
+            Expression::StringLiteral(s) => s.value != "__proto__",
+            Expression::NumericLiteral(_) => true,
+            _ => false,
         }
     }
 
@@ -811,23 +962,25 @@ impl<'a> PeepholeOptimizations {
 
     /// Check if a member expression assignment (e.g. `A.from = () => {}`) targets
     /// a local binding whose only references are property-write targets.
+    /// `symbol_id` is the resolved base-object symbol
+    /// (`resolve_member_assign_object_symbol`).
     ///
-    /// Three conditions must hold:
+    /// Four conditions must hold:
     /// 1. The target is a single-level member expression (`A.foo`, not `a.b.c`)
     /// 2. ALL references to the symbol are member write targets
     /// 3. The symbol creates a fresh value (not an alias) and is not exported
-    /// 4. The symbol has no `__proto__` member writes (which could install setters)
-    fn is_member_assign_to_unused_binding(
-        assign_expr: &AssignmentExpression<'a>,
-        ctx: &TraverseCtx<'a>,
-    ) -> bool {
-        let Some(symbol_id) = Self::resolve_member_assign_object_symbol(assign_expr, ctx) else {
-            return false;
-        };
-
-        // If this symbol has `__proto__` or computed member writes, don't drop any
-        // property writes — the `__proto__` assignment may have installed setters.
-        if ctx.state.proto_write_symbols.contains(&symbol_id) {
+    /// 4. No `__proto__` write may have installed a setter that another
+    ///    reference could trigger
+    fn is_member_assign_to_unused_binding(symbol_id: SymbolId, ctx: &TraverseCtx<'a>) -> bool {
+        // A potential `__proto__` write anywhere in the program (`PROTO_WRITTEN`
+        // is seeded by `Normalize`, so traversal order doesn't matter) may have
+        // installed a setter that a sibling property write triggers. Bail while
+        // any OTHER reference exists; when the candidate is the symbol's only
+        // remaining reference, it either is the proto write itself or the proto
+        // write is already gone, so no setter can ever fire.
+        if ctx.state.symbol_facts.has(symbol_id, SymbolFact::PROTO_WRITTEN)
+            && ctx.scoping().get_resolved_reference_ids(symbol_id).len() > 1
+        {
             return false;
         }
 
@@ -835,7 +988,7 @@ impl<'a> PeepholeOptimizations {
         let Some(sv) = ctx.state.symbol_values.get_symbol_value(symbol_id) else {
             return false;
         };
-        if !sv.is_fresh_value || sv.exported {
+        if sv.kind == FreshValueKind::None || sv.exported {
             return false;
         }
         // Check: all references are member write targets (O(1) via pre-computed count).
@@ -850,7 +1003,7 @@ impl<'a> PeepholeOptimizations {
                 return true;
             }
             let span = c.span;
-            let new_expr = ctx.ast.expression_sequence(span, exprs);
+            let new_expr = Expression::new_sequence_expression(span, exprs, ctx);
             ctx.replace_expression(e, new_expr);
         }
         false
@@ -859,79 +1012,202 @@ impl<'a> PeepholeOptimizations {
     pub fn remove_unused_class(
         c: &mut Class<'a>,
         ctx: &mut TraverseCtx<'a>,
-    ) -> Option<Vec<'a, Expression<'a>>> {
-        // TypeError `class C extends (() => {}) {}`
-        if c.super_class
-            .as_ref()
-            .is_some_and(|e| matches!(e, Expression::ArrowFunctionExpression(_)))
-        {
-            return None;
-        }
-        // Don't remove classes with decorators - they may have side effects
-        if !c.decorators.is_empty() {
-            return None;
-        }
-        // Keep the entire class if there are class level side effects.
-        for e in &c.body.body {
-            match e {
-                e if e.has_decorator() => return None,
-                ClassElement::TSIndexSignature(_) => return None,
-                ClassElement::StaticBlock(block) if !block.body.is_empty() => return None,
-                ClassElement::PropertyDefinition(prop)
-                    if prop.r#static
-                        && prop.value.as_ref().is_some_and(|v| v.may_have_side_effects(ctx)) =>
+    ) -> Option<ArenaVec<'a, Expression<'a>>> {
+        match Self::classify_class_removability(c, &*ctx, ctx.scoping()) {
+            ClassRemovability::Keep => return None,
+            // Nothing to extract by construction: `RemovesClean` means pure
+            // heritage, no present static values, pure computed keys — so
+            // the extraction walk (which would re-run the classifier's
+            // purity checks to extract nothing) is skipped.
+            ClassRemovability::RemovesClean => {}
+            ClassRemovability::Extracts => {
+                // Extract the evaluation-time expressions. The heritage and
+                // computed-key purity checks below repeat the classifier's:
+                // the classifier is shared with callers that never extract,
+                // so it reports no extraction plan. Cold path — it only runs
+                // when an `Extracts` class is actually removed.
+                let mut exprs = ArenaVec::new_in(ctx);
+
+                if let Some(e) = &mut c.super_class
+                    && e.may_have_side_effects(ctx)
                 {
-                    return None;
+                    exprs.push(c.super_class.take().unwrap());
                 }
-                ClassElement::AccessorProperty(prop)
-                    if prop.r#static
-                        && prop.value.as_ref().is_some_and(|v| v.may_have_side_effects(ctx)) =>
-                {
-                    return None;
-                }
-                _ => {}
-            }
-        }
 
-        // Otherwise extract the expressions.
-        let mut exprs = ctx.ast.vec();
-
-        if let Some(e) = &mut c.super_class
-            && e.may_have_side_effects(ctx)
-        {
-            exprs.push(c.super_class.take().unwrap());
-        }
-
-        for e in &mut c.body.body {
-            // Save computed key.
-            if e.computed()
-                && let Some(key) = match e {
-                    ClassElement::TSIndexSignature(_) | ClassElement::StaticBlock(_) => None,
-                    ClassElement::MethodDefinition(def) => Some(&mut def.key),
-                    ClassElement::PropertyDefinition(def) => Some(&mut def.key),
-                    ClassElement::AccessorProperty(def) => Some(&mut def.key),
+                for e in &mut c.body.body {
+                    // Save computed key.
+                    if e.computed()
+                        && let Some(key) = match e {
+                            ClassElement::TSIndexSignature(_) | ClassElement::StaticBlock(_) => {
+                                None
+                            }
+                            ClassElement::MethodDefinition(def) => Some(&mut def.key),
+                            ClassElement::PropertyDefinition(def) => Some(&mut def.key),
+                            ClassElement::AccessorProperty(def) => Some(&mut def.key),
+                        }
+                        && let Some(expr) = key.as_expression_mut()
+                        && expr.may_have_side_effects(ctx)
+                    {
+                        exprs.push(expr.take_in(ctx));
+                    }
+                    // Save static initializer.
+                    if e.r#static()
+                        && let Some(init) = match e {
+                            ClassElement::TSIndexSignature(_)
+                            | ClassElement::StaticBlock(_)
+                            | ClassElement::MethodDefinition(_) => None,
+                            ClassElement::PropertyDefinition(def) => def.value.take(),
+                            ClassElement::AccessorProperty(def) => def.value.take(),
+                        }
+                    {
+                        // Already checked side effects above.
+                        exprs.push(init);
+                    }
                 }
-                && let Some(expr) = key.as_expression_mut()
-                && expr.may_have_side_effects(ctx)
-            {
-                exprs.push(expr.take_in(ctx.ast));
-            }
-            // Save static initializer.
-            if e.r#static()
-                && let Some(init) = match e {
-                    ClassElement::TSIndexSignature(_)
-                    | ClassElement::StaticBlock(_)
-                    | ClassElement::MethodDefinition(_) => None,
-                    ClassElement::PropertyDefinition(def) => def.value.take(),
-                    ClassElement::AccessorProperty(def) => def.value.take(),
-                }
-            {
-                // Already checked side effects above.
-                exprs.push(init);
+
+                ctx.notice_change();
+                return Some(exprs);
             }
         }
 
         ctx.notice_change();
-        Some(exprs)
+        Some(ArenaVec::new_in(ctx))
     }
+
+    /// How `remove_unused_class` treats an unused class. The classifier is
+    /// the single source of truth for its bail-outs; the extraction loop in
+    /// `remove_unused_class` keys off it.
+    pub(crate) fn classify_class_removability(
+        c: &Class<'a>,
+        ctx: &impl MayHaveSideEffectsContext<'a>,
+        scoping: &Scoping,
+    ) -> ClassRemovability {
+        // Don't remove classes with decorators - they may have side effects.
+        if !c.decorators.is_empty() {
+            return ClassRemovability::Keep;
+        }
+        if let Some(super_class) = &c.super_class {
+            // Unwrap parens and sequence tails — `(0, x)` — so the
+            // classification does not change when a later fold surfaces
+            // the inner expression.
+            let mut e = super_class.get_inner_expression();
+            while let Expression::SequenceExpression(seq) = e {
+                let Some(last) = seq.expressions.last() else { break };
+                e = last.get_inner_expression();
+            }
+            match e {
+                // TypeError `class C extends (() => {}) {}`.
+                Expression::ArrowFunctionExpression(_) => return ClassRemovability::Keep,
+                Expression::Identifier(ident)
+                    if Self::heritage_may_be_uninitialized(ident, scoping) =>
+                {
+                    return ClassRemovability::Keep;
+                }
+                _ => {}
+            }
+        }
+        let mut extracts = false;
+        for e in &c.body.body {
+            // Cheap structural bail-outs first; purity walks after.
+            if e.has_decorator() {
+                return ClassRemovability::Keep;
+            }
+            match e {
+                ClassElement::TSIndexSignature(_) => return ClassRemovability::Keep,
+                ClassElement::StaticBlock(block) if !block.body.is_empty() => {
+                    return ClassRemovability::Keep;
+                }
+                _ => {}
+            }
+            if e.r#static() {
+                let value = match e {
+                    ClassElement::PropertyDefinition(prop) => prop.value.as_ref(),
+                    ClassElement::AccessorProperty(prop) => prop.value.as_ref(),
+                    _ => None,
+                };
+                if let Some(value) = value {
+                    if value.may_have_side_effects(ctx) {
+                        return ClassRemovability::Keep;
+                    }
+                    // Every PRESENT static value is extracted, pure or not.
+                    extracts = true;
+                }
+            }
+            if e.computed()
+                && let Some(key) = e.property_key()
+                && let Some(expr) = key.as_expression()
+                && expr.may_have_side_effects(ctx)
+            {
+                extracts = true;
+            }
+        }
+        if c.super_class.as_ref().is_some_and(|e| e.may_have_side_effects(ctx)) {
+            extracts = true;
+        }
+        if extracts { ClassRemovability::Extracts } else { ClassRemovability::RemovesClean }
+    }
+
+    /// A heritage identifier can throw at class-evaluation time regardless
+    /// of expression purity: the class's own name and any lexical binding
+    /// declared later are in their TDZ (ReferenceError — test262
+    /// class/name-binding/in-extends-expression.js), and a
+    /// hoisted-but-unassigned `var` or missing parameter evaluates to
+    /// `undefined` (TypeError: not a constructor). Reference order cannot be
+    /// proven mid-minification (transforms copy and move spans), so any
+    /// heritage resolving to a class, lexical, or `var` binding is
+    /// conservatively unremovable. Hoisted plain function declarations and
+    /// import bindings are initialized before evaluation and stay removable;
+    /// unresolved identifiers keep flowing through the global side-effect
+    /// machinery. The deeper fix — modeling potentially-uninitialized
+    /// identifier reads — belongs in `oxc_ecmascript`'s side-effect layer,
+    /// which currently treats every resolved identifier read as pure.
+    fn heritage_may_be_uninitialized(ident: &IdentifierReference<'_>, scoping: &Scoping) -> bool {
+        const UNINIT_RISK: SymbolFlags = SymbolFlags::Variable.union(SymbolFlags::Class);
+        ident
+            .reference_id
+            .get()
+            .and_then(|reference_id| scoping.get_reference(reference_id).symbol_id())
+            .is_some_and(|symbol_id| scoping.symbol_flags(symbol_id).intersects(UNINIT_RISK))
+    }
+
+    /// Expression kinds the `remove_unused_expression` dispatch above sends
+    /// to a specialized handler, which may REDUCE the expression (leaving
+    /// residue) instead of dropping it whole (`ThisExpression` counts as
+    /// specialized: its removal depends on traversal position).
+    ///
+    /// The dispatch routes through this predicate, so the two cannot drift
+    /// silently: a new specialized arm without a predicate entry is dead
+    /// code (its author's own tests fail), and a predicate entry without a
+    /// dispatch arm hits the `unreachable!`.
+    pub(crate) fn expr_has_specialized_unused_handler(e: &Expression<'a>) -> bool {
+        matches!(
+            e,
+            Expression::ArrayExpression(_)
+                | Expression::AssignmentExpression(_)
+                | Expression::BinaryExpression(_)
+                | Expression::CallExpression(_)
+                | Expression::ClassExpression(_)
+                | Expression::ConditionalExpression(_)
+                | Expression::LogicalExpression(_)
+                | Expression::NewExpression(_)
+                | Expression::ObjectExpression(_)
+                | Expression::SequenceExpression(_)
+                | Expression::TemplateLiteral(_)
+                | Expression::UnaryExpression(_)
+                | Expression::ThisExpression(_)
+        )
+    }
+}
+
+/// See [`PeepholeOptimizations::classify_class_removability`].
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum ClassRemovability {
+    /// Removal must bail (`remove_unused_class` returns `None`).
+    Keep,
+    /// Removable, but evaluation-time expressions (side-effectful heritage
+    /// or computed keys, any present static value) are extracted into the
+    /// surrounding code.
+    Extracts,
+    /// Removable with nothing extracted.
+    RemovesClean,
 }

@@ -1,4 +1,4 @@
-use oxc_allocator::Box;
+use oxc_allocator::{ArenaBox, ArenaVec};
 use oxc_ast::ast::*;
 use oxc_str::Ident;
 use oxc_syntax::operator::AssignmentOperator;
@@ -17,7 +17,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
     ///     { }
     ///     { `PropertyDefinitionList`[?Yield, ?Await] }
     ///     { `PropertyDefinitionList`[?Yield, ?Await] , }
-    pub(crate) fn parse_object_expression(&mut self) -> Box<'a, ObjectExpression<'a>> {
+    pub(crate) fn parse_object_expression(&mut self) -> ArenaBox<'a, ObjectExpression<'a>> {
         let span = self.start_span();
         let opening_span = self.cur_token().span();
         self.expect(Kind::LCurly);
@@ -41,7 +41,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             self.state.trailing_commas.insert(span, self.end_span(comma_span));
         }
         self.expect(Kind::RCurly);
-        self.ast.alloc_object_expression(self.end_span(span), object_expression_properties)
+        ObjectExpression::boxed(self.end_span(span), object_expression_properties, self)
     }
 
     /// Parse ArkUI object literal with expression statements
@@ -51,9 +51,9 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         &mut self,
         span: u32,
         _opening_span: Span,
-    ) -> Box<'a, ObjectExpression<'a>> {
+    ) -> ArenaBox<'a, ObjectExpression<'a>> {
         use crate::lexer::Kind;
-        let mut properties = self.ast.vec();
+        let mut properties = ArenaVec::new_in(self);
 
         // Parse expression statements until closing brace
         while !self.at(Kind::RCurly) && !self.has_fatal_error() {
@@ -65,9 +65,12 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
                 // Create a property with the expression as value
                 // Use a synthetic key for the expression statement
-                let key_name = self.ast.identifier_name(expr_end_span, Ident::from(""));
-                let key = PropertyKey::StaticIdentifier(self.alloc(key_name));
-                let property = self.ast.alloc_object_property(
+                let key = PropertyKey::StaticIdentifier(IdentifierName::boxed(
+                    expr_end_span,
+                    Ident::from(""),
+                    self,
+                ));
+                let property = ObjectProperty::boxed(
                     expr_end_span,
                     PropertyKind::Init,
                     key,
@@ -75,6 +78,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                     false, // not a method
                     false, // not shorthand
                     false, // not computed
+                    self,
                 );
                 properties.push(ObjectPropertyKind::ObjectProperty(property));
 
@@ -99,7 +103,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         }
 
         self.expect(Kind::RCurly);
-        self.ast.alloc_object_expression(self.end_span(span), properties)
+        ObjectExpression::boxed(self.end_span(span), properties, self)
     }
 
     fn parse_object_expression_property(&mut self) -> ObjectPropertyKind<'a> {
@@ -110,7 +114,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
     }
 
     /// `PropertyDefinition`[Yield, Await]
-    fn parse_object_literal_element(&mut self) -> Box<'a, ObjectProperty<'a>> {
+    fn parse_object_literal_element(&mut self) -> ArenaBox<'a, ObjectProperty<'a>> {
         let span = self.start_span();
 
         let modifiers = self.parse_modifiers(
@@ -143,7 +147,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                 asterisk_token,
                 FunctionKind::ObjectMethod,
             );
-            return self.ast.alloc_object_property(
+            return ObjectProperty::boxed(
                 self.end_span(span),
                 PropertyKind::Init,
                 key,
@@ -151,6 +155,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                 /* method */ true,
                 /* shorthand */ false,
                 computed,
+                self,
             );
         }
 
@@ -168,22 +173,23 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                 // CoverInitializedName ({ foo = bar })
                 if self.eat(Kind::Eq) {
                     let right = self.parse_assignment_expression_or_higher();
-                    let left = AssignmentTarget::AssignmentTargetIdentifier(
-                        self.ast
-                            .alloc_identifier_reference(identifier_name.span, identifier_name.name),
+                    let left = AssignmentTarget::new_assignment_target_identifier(
+                        identifier_name.span,
+                        identifier_name.name,
+                        self,
                     );
-                    let expr = self.ast.assignment_expression(
+                    let expr = AssignmentExpression::new(
                         self.end_span(span),
                         AssignmentOperator::Assign,
                         left,
                         right,
+                        self,
                     );
                     self.state.cover_initialized_name.insert(span, expr);
                 }
-                let value = Expression::Identifier(
-                    self.ast.alloc_identifier_reference(identifier_name.span, identifier_name.name),
-                );
-                self.ast.alloc_object_property(
+                let value =
+                    Expression::new_identifier(identifier_name.span, identifier_name.name, self);
+                ObjectProperty::boxed(
                     self.end_span(span),
                     PropertyKind::Init,
                     PropertyKey::StaticIdentifier(identifier_name),
@@ -191,6 +197,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                     /* method */ false,
                     /* shorthand */ true,
                     computed,
+                    self,
                 )
             } else {
                 self.unexpected()
@@ -202,11 +209,11 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
     /// `PropertyDefinition`[Yield, Await] :
     ///   ... `AssignmentExpression`[+In, ?Yield, ?Await]
-    pub(crate) fn parse_spread_element(&mut self) -> Box<'a, SpreadElement<'a>> {
+    pub(crate) fn parse_spread_element(&mut self) -> ArenaBox<'a, SpreadElement<'a>> {
         let span = self.start_span();
         self.bump_any(); // advance `...`
         let argument = self.parse_assignment_expression_or_higher();
-        self.ast.alloc_spread_element(self.end_span(span), argument)
+        SpreadElement::boxed(self.end_span(span), argument, self)
     }
 
     /// `PropertyDefinition`[Yield, Await] :
@@ -216,104 +223,39 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         span: u32,
         key: PropertyKey<'a>,
         computed: bool,
-    ) -> Box<'a, ObjectProperty<'a>> {
+    ) -> ArenaBox<'a, ObjectProperty<'a>> {
         self.expect(Kind::Colon);
-
-        // Check if the value is an ArkUI object literal with leading-dot expressions
-        // Example: normal: { .borderRadius(20) .borderWidth(1) }
         let value = if self.source_type.is_arkui()
             && self.is_in_arkui_dsl_context()
             && self.at(Kind::LCurly)
         {
-            // Check if after the opening brace, there's a dot
-            // We'll parse the opening brace and then check
             let obj_span = self.start_span();
             let opening_span = self.cur_token().span();
             self.expect(Kind::LCurly);
 
-            // Check if next token is Dot (after consuming whitespace)
-            if self.at(Kind::Dot) {
-                // Parse as ArkUI object literal with expression statements
-                // We've already consumed the opening brace, so we need to handle it differently
-                let mut properties = self.ast.vec();
-
-                // Parse expression statements until closing brace
-                while !self.at(Kind::RCurly) && !self.has_fatal_error() {
-                    if self.at(Kind::Dot) {
-                        // Parse expression statement starting with dot as LeadingDotExpression
-                        let expr_span = self.start_span();
-                        let expr = self.parse_leading_dot_expression();
-                        let expr_end_span = self.end_span(expr_span);
-
-                        // Create a property with the expression as value
-                        // Use a synthetic key for the expression statement
-                        let key_name = self.ast.identifier_name(expr_end_span, Ident::from(""));
-                        let key = PropertyKey::StaticIdentifier(self.alloc(key_name));
-                        let property = self.ast.alloc_object_property(
-                            expr_end_span,
-                            PropertyKind::Init,
-                            key,
-                            expr,
-                            false, // not a method
-                            false, // not shorthand
-                            false, // not computed
-                        );
-                        properties.push(ObjectPropertyKind::ObjectProperty(property));
-
-                        // Optional semicolon or comma (both are allowed after expression statements)
-                        if self.eat(Kind::Semicolon) {
-                            // Semicolon consumed
-                        } else if self.at(Kind::Comma) {
-                            // Comma after expression statement (e.g., .method1().method2(),)
-                            self.expect(Kind::Comma);
-                        }
-                        // If neither semicolon nor comma, continue to next token (could be closing brace or next property)
-                    } else {
-                        // Parse as normal object property
-                        let property = self.parse_object_expression_property();
-                        properties.push(property);
-
-                        // Expect comma or closing brace
-                        if !self.at(Kind::RCurly) {
-                            self.expect(Kind::Comma);
-                        }
-                    }
-                }
-
-                self.expect(Kind::RCurly);
-                let obj_expr = Expression::ObjectExpression(
-                    self.ast.alloc_object_expression(self.end_span(obj_span), properties),
-                );
-                // Check for type assertion after object expression
-                self.parse_type_assertion_if_present(obj_expr)
+            let object = if self.at(Kind::Dot) {
+                self.parse_arkui_object_expression_with_statements(obj_span, opening_span)
             } else {
-                // Not a leading-dot expression, parse as normal object expression
-                // We've already consumed the opening brace, so we need to parse the rest
-                let (object_expression_properties, comma_span) =
-                    self.context_add(Context::In, |p| {
-                        p.parse_delimited_list(
-                            Kind::RCurly,
-                            Kind::Comma,
-                            opening_span,
-                            Self::parse_object_expression_property,
-                        )
-                    });
+                let (properties, comma_span) = self.context_add(Context::In, |p| {
+                    p.parse_delimited_list(
+                        Kind::RCurly,
+                        Kind::Comma,
+                        opening_span,
+                        Self::parse_object_expression_property,
+                    )
+                });
                 if let Some(comma_span) = comma_span {
                     self.state.trailing_commas.insert(obj_span, self.end_span(comma_span));
                 }
                 self.expect(Kind::RCurly);
-                let obj_expr = Expression::ObjectExpression(self.ast.alloc_object_expression(
-                    self.end_span(obj_span),
-                    object_expression_properties,
-                ));
-                // Check for type assertion after object expression
-                self.parse_type_assertion_if_present(obj_expr)
-            }
+                ObjectExpression::boxed(self.end_span(obj_span), properties, self)
+            };
+
+            self.parse_type_assertion_if_present(Expression::ObjectExpression(object))
         } else {
             self.parse_assignment_expression_or_higher()
         };
-
-        self.ast.alloc_object_property(
+        ObjectProperty::boxed(
             self.end_span(span),
             PropertyKind::Init,
             key,
@@ -321,6 +263,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             /* method */ false,
             /* shorthand */ false,
             /* computed */ computed,
+            self,
         )
     }
 
@@ -377,12 +320,12 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                     if !self.is_ts {
                         self.error(diagnostics::as_in_ts(span));
                     }
-                    self.ast.expression_ts_as(span, expr, type_annotation)
+                    Expression::new_ts_as_expression(span, expr, type_annotation, self)
                 } else {
                     if !self.is_ts {
                         self.error(diagnostics::satisfies_in_ts(span));
                     }
-                    self.ast.expression_ts_satisfies(span, expr, type_annotation)
+                    Expression::new_ts_satisfies_expression(span, expr, type_annotation, self)
                 }
             } else {
                 expr
@@ -400,7 +343,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         span: u32,
         kind: PropertyKind,
         modifiers: &Modifiers,
-    ) -> Box<'a, ObjectProperty<'a>> {
+    ) -> ArenaBox<'a, ObjectProperty<'a>> {
         let (key, computed) = self.parse_property_name();
         let function = self.parse_method(false, false, FunctionKind::ObjectMethod);
         match kind {
@@ -414,7 +357,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             true,
             diagnostics::modifier_cannot_be_used_here,
         );
-        self.ast.alloc_object_property(
+        ObjectProperty::boxed(
             self.end_span(span),
             kind,
             key,
@@ -422,6 +365,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             /* method */ false,
             /* shorthand */ false,
             /* computed */ computed,
+            self,
         )
     }
 }

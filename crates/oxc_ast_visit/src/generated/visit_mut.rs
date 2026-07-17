@@ -12,7 +12,7 @@
 
 use std::cell::Cell;
 
-use oxc_allocator::Vec;
+use oxc_allocator::ArenaVec;
 use oxc_syntax::scope::{ScopeFlags, ScopeId};
 
 use oxc_ast::ast::*;
@@ -153,8 +153,13 @@ pub trait VisitMut<'a>: Sized {
     }
 
     #[inline]
-    fn visit_meta_property(&mut self, it: &mut MetaProperty<'a>) {
-        walk_meta_property(self, it);
+    fn visit_import_meta(&mut self, it: &mut ImportMeta) {
+        walk_import_meta(self, it);
+    }
+
+    #[inline]
+    fn visit_new_target(&mut self, it: &mut NewTarget) {
+        walk_new_target(self, it);
     }
 
     #[inline]
@@ -1247,168 +1252,171 @@ pub trait VisitMut<'a>: Sized {
     }
 
     #[inline]
-    fn visit_directives(&mut self, it: &mut Vec<'a, Directive<'a>>) {
+    fn visit_directives(&mut self, it: &mut ArenaVec<'a, Directive<'a>>) {
         walk_directives(self, it);
     }
 
     #[inline]
-    fn visit_statements(&mut self, it: &mut Vec<'a, Statement<'a>>) {
+    fn visit_statements(&mut self, it: &mut ArenaVec<'a, Statement<'a>>) {
         walk_statements(self, it);
     }
 
     #[inline]
-    fn visit_array_expression_elements(&mut self, it: &mut Vec<'a, ArrayExpressionElement<'a>>) {
+    fn visit_array_expression_elements(
+        &mut self,
+        it: &mut ArenaVec<'a, ArrayExpressionElement<'a>>,
+    ) {
         walk_array_expression_elements(self, it);
     }
 
     #[inline]
-    fn visit_object_property_kinds(&mut self, it: &mut Vec<'a, ObjectPropertyKind<'a>>) {
+    fn visit_object_property_kinds(&mut self, it: &mut ArenaVec<'a, ObjectPropertyKind<'a>>) {
         walk_object_property_kinds(self, it);
     }
 
     #[inline]
-    fn visit_template_elements(&mut self, it: &mut Vec<'a, TemplateElement<'a>>) {
+    fn visit_template_elements(&mut self, it: &mut ArenaVec<'a, TemplateElement<'a>>) {
         walk_template_elements(self, it);
     }
 
     #[inline]
-    fn visit_expressions(&mut self, it: &mut Vec<'a, Expression<'a>>) {
+    fn visit_expressions(&mut self, it: &mut ArenaVec<'a, Expression<'a>>) {
         walk_expressions(self, it);
     }
 
     #[inline]
-    fn visit_arguments(&mut self, it: &mut Vec<'a, Argument<'a>>) {
+    fn visit_arguments(&mut self, it: &mut ArenaVec<'a, Argument<'a>>) {
         walk_arguments(self, it);
     }
 
     #[inline]
     fn visit_assignment_target_properties(
         &mut self,
-        it: &mut Vec<'a, AssignmentTargetProperty<'a>>,
+        it: &mut ArenaVec<'a, AssignmentTargetProperty<'a>>,
     ) {
         walk_assignment_target_properties(self, it);
     }
 
     #[inline]
-    fn visit_variable_declarators(&mut self, it: &mut Vec<'a, VariableDeclarator<'a>>) {
+    fn visit_variable_declarators(&mut self, it: &mut ArenaVec<'a, VariableDeclarator<'a>>) {
         walk_variable_declarators(self, it);
     }
 
     #[inline]
-    fn visit_switch_cases(&mut self, it: &mut Vec<'a, SwitchCase<'a>>) {
+    fn visit_switch_cases(&mut self, it: &mut ArenaVec<'a, SwitchCase<'a>>) {
         walk_switch_cases(self, it);
     }
 
     #[inline]
-    fn visit_binding_properties(&mut self, it: &mut Vec<'a, BindingProperty<'a>>) {
+    fn visit_binding_properties(&mut self, it: &mut ArenaVec<'a, BindingProperty<'a>>) {
         walk_binding_properties(self, it);
     }
 
     #[inline]
-    fn visit_decorators(&mut self, it: &mut Vec<'a, Decorator<'a>>) {
+    fn visit_decorators(&mut self, it: &mut ArenaVec<'a, Decorator<'a>>) {
         walk_decorators(self, it);
     }
 
     #[inline]
-    fn visit_formal_parameter_list(&mut self, it: &mut Vec<'a, FormalParameter<'a>>) {
+    fn visit_formal_parameter_list(&mut self, it: &mut ArenaVec<'a, FormalParameter<'a>>) {
         walk_formal_parameter_list(self, it);
     }
 
     #[inline]
-    fn visit_ts_class_implements_list(&mut self, it: &mut Vec<'a, TSClassImplements<'a>>) {
+    fn visit_ts_class_implements_list(&mut self, it: &mut ArenaVec<'a, TSClassImplements<'a>>) {
         walk_ts_class_implements_list(self, it);
     }
 
     #[inline]
-    fn visit_class_elements(&mut self, it: &mut Vec<'a, ClassElement<'a>>) {
+    fn visit_class_elements(&mut self, it: &mut ArenaVec<'a, ClassElement<'a>>) {
         walk_class_elements(self, it);
     }
 
     #[inline]
     fn visit_import_declaration_specifiers(
         &mut self,
-        it: &mut Vec<'a, ImportDeclarationSpecifier<'a>>,
+        it: &mut ArenaVec<'a, ImportDeclarationSpecifier<'a>>,
     ) {
         walk_import_declaration_specifiers(self, it);
     }
 
     #[inline]
-    fn visit_import_attributes(&mut self, it: &mut Vec<'a, ImportAttribute<'a>>) {
+    fn visit_import_attributes(&mut self, it: &mut ArenaVec<'a, ImportAttribute<'a>>) {
         walk_import_attributes(self, it);
     }
 
     #[inline]
-    fn visit_export_specifiers(&mut self, it: &mut Vec<'a, ExportSpecifier<'a>>) {
+    fn visit_export_specifiers(&mut self, it: &mut ArenaVec<'a, ExportSpecifier<'a>>) {
         walk_export_specifiers(self, it);
     }
 
     #[inline]
-    fn visit_jsx_children(&mut self, it: &mut Vec<'a, JSXChild<'a>>) {
+    fn visit_jsx_children(&mut self, it: &mut ArenaVec<'a, JSXChild<'a>>) {
         walk_jsx_children(self, it);
     }
 
     #[inline]
-    fn visit_jsx_attribute_items(&mut self, it: &mut Vec<'a, JSXAttributeItem<'a>>) {
+    fn visit_jsx_attribute_items(&mut self, it: &mut ArenaVec<'a, JSXAttributeItem<'a>>) {
         walk_jsx_attribute_items(self, it);
     }
 
     #[inline]
-    fn visit_ts_enum_members(&mut self, it: &mut Vec<'a, TSEnumMember<'a>>) {
+    fn visit_ts_enum_members(&mut self, it: &mut ArenaVec<'a, TSEnumMember<'a>>) {
         walk_ts_enum_members(self, it);
     }
 
     #[inline]
-    fn visit_ts_types(&mut self, it: &mut Vec<'a, TSType<'a>>) {
+    fn visit_ts_types(&mut self, it: &mut ArenaVec<'a, TSType<'a>>) {
         walk_ts_types(self, it);
     }
 
     #[inline]
-    fn visit_ts_tuple_elements(&mut self, it: &mut Vec<'a, TSTupleElement<'a>>) {
+    fn visit_ts_tuple_elements(&mut self, it: &mut ArenaVec<'a, TSTupleElement<'a>>) {
         walk_ts_tuple_elements(self, it);
     }
 
     #[inline]
-    fn visit_ts_type_parameters(&mut self, it: &mut Vec<'a, TSTypeParameter<'a>>) {
+    fn visit_ts_type_parameters(&mut self, it: &mut ArenaVec<'a, TSTypeParameter<'a>>) {
         walk_ts_type_parameters(self, it);
     }
 
     #[inline]
-    fn visit_ts_interface_heritages(&mut self, it: &mut Vec<'a, TSInterfaceHeritage<'a>>) {
+    fn visit_ts_interface_heritages(&mut self, it: &mut ArenaVec<'a, TSInterfaceHeritage<'a>>) {
         walk_ts_interface_heritages(self, it);
     }
 
     #[inline]
-    fn visit_ts_signatures(&mut self, it: &mut Vec<'a, TSSignature<'a>>) {
+    fn visit_ts_signatures(&mut self, it: &mut ArenaVec<'a, TSSignature<'a>>) {
         walk_ts_signatures(self, it);
     }
 
     #[inline]
-    fn visit_ts_index_signature_names(&mut self, it: &mut Vec<'a, TSIndexSignatureName<'a>>) {
+    fn visit_ts_index_signature_names(&mut self, it: &mut ArenaVec<'a, TSIndexSignatureName<'a>>) {
         walk_ts_index_signature_names(self, it);
     }
 
     #[inline]
-    fn visit_struct_elements(&mut self, it: &mut Vec<'a, StructElement<'a>>) {
+    fn visit_struct_elements(&mut self, it: &mut ArenaVec<'a, StructElement<'a>>) {
         walk_struct_elements(self, it);
     }
 
     #[inline]
-    fn visit_ark_ui_children(&mut self, it: &mut Vec<'a, ArkUIChild<'a>>) {
+    fn visit_ark_ui_children(&mut self, it: &mut ArenaVec<'a, ArkUIChild<'a>>) {
         walk_ark_ui_children(self, it);
     }
 
     #[inline]
-    fn visit_call_expressions(&mut self, it: &mut Vec<'a, CallExpression<'a>>) {
+    fn visit_call_expressions(&mut self, it: &mut ArenaVec<'a, CallExpression<'a>>) {
         walk_call_expressions(self, it);
     }
 
     #[inline]
-    fn visit_annotation_elements(&mut self, it: &mut Vec<'a, AnnotationElement<'a>>) {
+    fn visit_annotation_elements(&mut self, it: &mut ArenaVec<'a, AnnotationElement<'a>>) {
         walk_annotation_elements(self, it);
     }
 
     #[inline]
-    fn visit_spans(&mut self, it: &mut Vec<'a, Span>) {
+    fn visit_spans(&mut self, it: &mut ArenaVec<'a, Span>) {
         walk_spans(self, it);
     }
 }
@@ -1451,7 +1459,6 @@ pub mod walk_mut {
             Expression::StringLiteral(it) => visitor.visit_string_literal(it),
             Expression::TemplateLiteral(it) => visitor.visit_template_literal(it),
             Expression::Identifier(it) => visitor.visit_identifier_reference(it),
-            Expression::MetaProperty(it) => visitor.visit_meta_property(it),
             Expression::Super(it) => visitor.visit_super(it),
             Expression::ArrayExpression(it) => visitor.visit_array_expression(it),
             Expression::ArrowFunctionExpression(it) => visitor.visit_arrow_function_expression(it),
@@ -1480,6 +1487,8 @@ pub mod walk_mut {
             Expression::UpdateExpression(it) => visitor.visit_update_expression(it),
             Expression::YieldExpression(it) => visitor.visit_yield_expression(it),
             Expression::PrivateInExpression(it) => visitor.visit_private_in_expression(it),
+            Expression::ImportMeta(it) => visitor.visit_import_meta(it),
+            Expression::NewTarget(it) => visitor.visit_new_target(it),
             Expression::JSXElement(it) => visitor.visit_jsx_element(it),
             Expression::JSXFragment(it) => visitor.visit_jsx_fragment(it),
             Expression::TSAsExpression(it) => visitor.visit_ts_as_expression(it),
@@ -1769,12 +1778,18 @@ pub mod walk_mut {
     }
 
     #[inline]
-    pub fn walk_meta_property<'a, V: VisitMut<'a>>(visitor: &mut V, it: &mut MetaProperty<'a>) {
-        let kind = AstType::MetaProperty;
+    pub fn walk_import_meta<'a, V: VisitMut<'a>>(visitor: &mut V, it: &mut ImportMeta) {
+        let kind = AstType::ImportMeta;
         visitor.enter_node(kind);
         visitor.visit_span(&mut it.span);
-        visitor.visit_identifier_name(&mut it.meta);
-        visitor.visit_identifier_name(&mut it.property);
+        visitor.leave_node(kind);
+    }
+
+    #[inline]
+    pub fn walk_new_target<'a, V: VisitMut<'a>>(visitor: &mut V, it: &mut NewTarget) {
+        let kind = AstType::NewTarget;
+        visitor.enter_node(kind);
+        visitor.visit_span(&mut it.span);
         visitor.leave_node(kind);
     }
 
@@ -4692,14 +4707,20 @@ pub mod walk_mut {
     }
 
     #[inline]
-    pub fn walk_directives<'a, V: VisitMut<'a>>(visitor: &mut V, it: &mut Vec<'a, Directive<'a>>) {
+    pub fn walk_directives<'a, V: VisitMut<'a>>(
+        visitor: &mut V,
+        it: &mut ArenaVec<'a, Directive<'a>>,
+    ) {
         for el in it {
             visitor.visit_directive(el);
         }
     }
 
     #[inline]
-    pub fn walk_statements<'a, V: VisitMut<'a>>(visitor: &mut V, it: &mut Vec<'a, Statement<'a>>) {
+    pub fn walk_statements<'a, V: VisitMut<'a>>(
+        visitor: &mut V,
+        it: &mut ArenaVec<'a, Statement<'a>>,
+    ) {
         for el in it {
             visitor.visit_statement(el);
         }
@@ -4708,7 +4729,7 @@ pub mod walk_mut {
     #[inline]
     pub fn walk_array_expression_elements<'a, V: VisitMut<'a>>(
         visitor: &mut V,
-        it: &mut Vec<'a, ArrayExpressionElement<'a>>,
+        it: &mut ArenaVec<'a, ArrayExpressionElement<'a>>,
     ) {
         for el in it {
             visitor.visit_array_expression_element(el);
@@ -4718,7 +4739,7 @@ pub mod walk_mut {
     #[inline]
     pub fn walk_object_property_kinds<'a, V: VisitMut<'a>>(
         visitor: &mut V,
-        it: &mut Vec<'a, ObjectPropertyKind<'a>>,
+        it: &mut ArenaVec<'a, ObjectPropertyKind<'a>>,
     ) {
         for el in it {
             visitor.visit_object_property_kind(el);
@@ -4728,7 +4749,7 @@ pub mod walk_mut {
     #[inline]
     pub fn walk_template_elements<'a, V: VisitMut<'a>>(
         visitor: &mut V,
-        it: &mut Vec<'a, TemplateElement<'a>>,
+        it: &mut ArenaVec<'a, TemplateElement<'a>>,
     ) {
         for el in it {
             visitor.visit_template_element(el);
@@ -4738,7 +4759,7 @@ pub mod walk_mut {
     #[inline]
     pub fn walk_expressions<'a, V: VisitMut<'a>>(
         visitor: &mut V,
-        it: &mut Vec<'a, Expression<'a>>,
+        it: &mut ArenaVec<'a, Expression<'a>>,
     ) {
         for el in it {
             visitor.visit_expression(el);
@@ -4746,7 +4767,10 @@ pub mod walk_mut {
     }
 
     #[inline]
-    pub fn walk_arguments<'a, V: VisitMut<'a>>(visitor: &mut V, it: &mut Vec<'a, Argument<'a>>) {
+    pub fn walk_arguments<'a, V: VisitMut<'a>>(
+        visitor: &mut V,
+        it: &mut ArenaVec<'a, Argument<'a>>,
+    ) {
         for el in it {
             match el {
                 oxc_ast::ast::Argument::SpreadElement(spread) => {
@@ -4762,7 +4786,7 @@ pub mod walk_mut {
     #[inline]
     pub fn walk_assignment_target_properties<'a, V: VisitMut<'a>>(
         visitor: &mut V,
-        it: &mut Vec<'a, AssignmentTargetProperty<'a>>,
+        it: &mut ArenaVec<'a, AssignmentTargetProperty<'a>>,
     ) {
         for el in it {
             visitor.visit_assignment_target_property(el);
@@ -4772,7 +4796,7 @@ pub mod walk_mut {
     #[inline]
     pub fn walk_variable_declarators<'a, V: VisitMut<'a>>(
         visitor: &mut V,
-        it: &mut Vec<'a, VariableDeclarator<'a>>,
+        it: &mut ArenaVec<'a, VariableDeclarator<'a>>,
     ) {
         for el in it {
             visitor.visit_variable_declarator(el);
@@ -4782,7 +4806,7 @@ pub mod walk_mut {
     #[inline]
     pub fn walk_switch_cases<'a, V: VisitMut<'a>>(
         visitor: &mut V,
-        it: &mut Vec<'a, SwitchCase<'a>>,
+        it: &mut ArenaVec<'a, SwitchCase<'a>>,
     ) {
         for el in it {
             visitor.visit_switch_case(el);
@@ -4792,7 +4816,7 @@ pub mod walk_mut {
     #[inline]
     pub fn walk_binding_properties<'a, V: VisitMut<'a>>(
         visitor: &mut V,
-        it: &mut Vec<'a, BindingProperty<'a>>,
+        it: &mut ArenaVec<'a, BindingProperty<'a>>,
     ) {
         for el in it {
             visitor.visit_binding_property(el);
@@ -4800,7 +4824,10 @@ pub mod walk_mut {
     }
 
     #[inline]
-    pub fn walk_decorators<'a, V: VisitMut<'a>>(visitor: &mut V, it: &mut Vec<'a, Decorator<'a>>) {
+    pub fn walk_decorators<'a, V: VisitMut<'a>>(
+        visitor: &mut V,
+        it: &mut ArenaVec<'a, Decorator<'a>>,
+    ) {
         for el in it {
             visitor.visit_decorator(el);
         }
@@ -4809,7 +4836,7 @@ pub mod walk_mut {
     #[inline]
     pub fn walk_formal_parameter_list<'a, V: VisitMut<'a>>(
         visitor: &mut V,
-        it: &mut Vec<'a, FormalParameter<'a>>,
+        it: &mut ArenaVec<'a, FormalParameter<'a>>,
     ) {
         for el in it {
             visitor.visit_formal_parameter(el);
@@ -4819,7 +4846,7 @@ pub mod walk_mut {
     #[inline]
     pub fn walk_ts_class_implements_list<'a, V: VisitMut<'a>>(
         visitor: &mut V,
-        it: &mut Vec<'a, TSClassImplements<'a>>,
+        it: &mut ArenaVec<'a, TSClassImplements<'a>>,
     ) {
         for el in it {
             visitor.visit_ts_class_implements(el);
@@ -4829,7 +4856,7 @@ pub mod walk_mut {
     #[inline]
     pub fn walk_class_elements<'a, V: VisitMut<'a>>(
         visitor: &mut V,
-        it: &mut Vec<'a, ClassElement<'a>>,
+        it: &mut ArenaVec<'a, ClassElement<'a>>,
     ) {
         for el in it {
             visitor.visit_class_element(el);
@@ -4839,7 +4866,7 @@ pub mod walk_mut {
     #[inline]
     pub fn walk_import_declaration_specifiers<'a, V: VisitMut<'a>>(
         visitor: &mut V,
-        it: &mut Vec<'a, ImportDeclarationSpecifier<'a>>,
+        it: &mut ArenaVec<'a, ImportDeclarationSpecifier<'a>>,
     ) {
         for el in it {
             visitor.visit_import_declaration_specifier(el);
@@ -4849,7 +4876,7 @@ pub mod walk_mut {
     #[inline]
     pub fn walk_import_attributes<'a, V: VisitMut<'a>>(
         visitor: &mut V,
-        it: &mut Vec<'a, ImportAttribute<'a>>,
+        it: &mut ArenaVec<'a, ImportAttribute<'a>>,
     ) {
         for el in it {
             visitor.visit_import_attribute(el);
@@ -4859,7 +4886,7 @@ pub mod walk_mut {
     #[inline]
     pub fn walk_export_specifiers<'a, V: VisitMut<'a>>(
         visitor: &mut V,
-        it: &mut Vec<'a, ExportSpecifier<'a>>,
+        it: &mut ArenaVec<'a, ExportSpecifier<'a>>,
     ) {
         for el in it {
             visitor.visit_export_specifier(el);
@@ -4867,7 +4894,10 @@ pub mod walk_mut {
     }
 
     #[inline]
-    pub fn walk_jsx_children<'a, V: VisitMut<'a>>(visitor: &mut V, it: &mut Vec<'a, JSXChild<'a>>) {
+    pub fn walk_jsx_children<'a, V: VisitMut<'a>>(
+        visitor: &mut V,
+        it: &mut ArenaVec<'a, JSXChild<'a>>,
+    ) {
         for el in it {
             visitor.visit_jsx_child(el);
         }
@@ -4876,7 +4906,7 @@ pub mod walk_mut {
     #[inline]
     pub fn walk_jsx_attribute_items<'a, V: VisitMut<'a>>(
         visitor: &mut V,
-        it: &mut Vec<'a, JSXAttributeItem<'a>>,
+        it: &mut ArenaVec<'a, JSXAttributeItem<'a>>,
     ) {
         for el in it {
             visitor.visit_jsx_attribute_item(el);
@@ -4886,7 +4916,7 @@ pub mod walk_mut {
     #[inline]
     pub fn walk_ts_enum_members<'a, V: VisitMut<'a>>(
         visitor: &mut V,
-        it: &mut Vec<'a, TSEnumMember<'a>>,
+        it: &mut ArenaVec<'a, TSEnumMember<'a>>,
     ) {
         for el in it {
             visitor.visit_ts_enum_member(el);
@@ -4894,7 +4924,7 @@ pub mod walk_mut {
     }
 
     #[inline]
-    pub fn walk_ts_types<'a, V: VisitMut<'a>>(visitor: &mut V, it: &mut Vec<'a, TSType<'a>>) {
+    pub fn walk_ts_types<'a, V: VisitMut<'a>>(visitor: &mut V, it: &mut ArenaVec<'a, TSType<'a>>) {
         for el in it {
             visitor.visit_ts_type(el);
         }
@@ -4903,7 +4933,7 @@ pub mod walk_mut {
     #[inline]
     pub fn walk_ts_tuple_elements<'a, V: VisitMut<'a>>(
         visitor: &mut V,
-        it: &mut Vec<'a, TSTupleElement<'a>>,
+        it: &mut ArenaVec<'a, TSTupleElement<'a>>,
     ) {
         for el in it {
             visitor.visit_ts_tuple_element(el);
@@ -4913,7 +4943,7 @@ pub mod walk_mut {
     #[inline]
     pub fn walk_ts_type_parameters<'a, V: VisitMut<'a>>(
         visitor: &mut V,
-        it: &mut Vec<'a, TSTypeParameter<'a>>,
+        it: &mut ArenaVec<'a, TSTypeParameter<'a>>,
     ) {
         for el in it {
             visitor.visit_ts_type_parameter(el);
@@ -4923,7 +4953,7 @@ pub mod walk_mut {
     #[inline]
     pub fn walk_ts_interface_heritages<'a, V: VisitMut<'a>>(
         visitor: &mut V,
-        it: &mut Vec<'a, TSInterfaceHeritage<'a>>,
+        it: &mut ArenaVec<'a, TSInterfaceHeritage<'a>>,
     ) {
         for el in it {
             visitor.visit_ts_interface_heritage(el);
@@ -4933,7 +4963,7 @@ pub mod walk_mut {
     #[inline]
     pub fn walk_ts_signatures<'a, V: VisitMut<'a>>(
         visitor: &mut V,
-        it: &mut Vec<'a, TSSignature<'a>>,
+        it: &mut ArenaVec<'a, TSSignature<'a>>,
     ) {
         for el in it {
             visitor.visit_ts_signature(el);
@@ -4943,7 +4973,7 @@ pub mod walk_mut {
     #[inline]
     pub fn walk_ts_index_signature_names<'a, V: VisitMut<'a>>(
         visitor: &mut V,
-        it: &mut Vec<'a, TSIndexSignatureName<'a>>,
+        it: &mut ArenaVec<'a, TSIndexSignatureName<'a>>,
     ) {
         for el in it {
             visitor.visit_ts_index_signature_name(el);
@@ -4953,7 +4983,7 @@ pub mod walk_mut {
     #[inline]
     pub fn walk_struct_elements<'a, V: VisitMut<'a>>(
         visitor: &mut V,
-        it: &mut Vec<'a, StructElement<'a>>,
+        it: &mut ArenaVec<'a, StructElement<'a>>,
     ) {
         for el in it {
             visitor.visit_struct_element(el);
@@ -4963,7 +4993,7 @@ pub mod walk_mut {
     #[inline]
     pub fn walk_ark_ui_children<'a, V: VisitMut<'a>>(
         visitor: &mut V,
-        it: &mut Vec<'a, ArkUIChild<'a>>,
+        it: &mut ArenaVec<'a, ArkUIChild<'a>>,
     ) {
         for el in it {
             visitor.visit_ark_ui_child(el);
@@ -4973,7 +5003,7 @@ pub mod walk_mut {
     #[inline]
     pub fn walk_call_expressions<'a, V: VisitMut<'a>>(
         visitor: &mut V,
-        it: &mut Vec<'a, CallExpression<'a>>,
+        it: &mut ArenaVec<'a, CallExpression<'a>>,
     ) {
         for el in it {
             visitor.visit_call_expression(el);
@@ -4983,7 +5013,7 @@ pub mod walk_mut {
     #[inline]
     pub fn walk_annotation_elements<'a, V: VisitMut<'a>>(
         visitor: &mut V,
-        it: &mut Vec<'a, AnnotationElement<'a>>,
+        it: &mut ArenaVec<'a, AnnotationElement<'a>>,
     ) {
         for el in it {
             visitor.visit_annotation_element(el);
@@ -4991,7 +5021,7 @@ pub mod walk_mut {
     }
 
     #[inline]
-    pub fn walk_spans<'a, V: VisitMut<'a>>(visitor: &mut V, it: &mut Vec<'a, Span>) {
+    pub fn walk_spans<'a, V: VisitMut<'a>>(visitor: &mut V, it: &mut ArenaVec<'a, Span>) {
         for el in it {
             visitor.visit_span(el);
         }

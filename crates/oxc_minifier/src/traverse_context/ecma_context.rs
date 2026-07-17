@@ -1,10 +1,10 @@
-use oxc_ast::{AstBuilder, ast::*};
+use oxc_allocator::GetAllocator;
+use oxc_ast::ast::*;
 use oxc_compat::ESFeature;
 use oxc_ecmascript::{
     GlobalContext,
     constant_evaluation::{
-        ConstantEvaluation, ConstantEvaluationCtx, ConstantValue, ValueType,
-        binary_operation_evaluate_value,
+        ConstantEvaluationCtx, ConstantValue, ValueType, binary_operation_evaluate_value,
     },
     side_effects::{
         MayHaveSideEffects, MayHaveSideEffectsContext, PropertyReadSideEffects, is_pure_function,
@@ -15,8 +15,10 @@ use oxc_str::format_str;
 use oxc_syntax::{reference::ReferenceId, scope::ScopeFlags};
 
 use crate::{
-    generated::ancestor::Ancestor, options::CompressOptions, state::MinifierState,
-    symbol_value::SymbolValue,
+    generated::ancestor::Ancestor,
+    options::CompressOptions,
+    state::MinifierState,
+    symbol_value::{FreshValueKind, SymbolValue},
 };
 
 use oxc_ast_visit::Visit;
@@ -148,23 +150,7 @@ impl<'a> MayHaveSideEffectsContext<'a> for &mut TraverseCtx<'a, MinifierState<'a
     }
 }
 
-impl<'a> ConstantEvaluationCtx<'a> for TraverseCtx<'a, MinifierState<'a>> {
-    fn ast(&self) -> AstBuilder<'a> {
-        self.ast
-    }
-}
-
-impl<'a> ConstantEvaluationCtx<'a> for &TraverseCtx<'a, MinifierState<'a>> {
-    fn ast(&self) -> AstBuilder<'a> {
-        (*self).ast()
-    }
-}
-
-impl<'a> ConstantEvaluationCtx<'a> for &mut TraverseCtx<'a, MinifierState<'a>> {
-    fn ast(&self) -> AstBuilder<'a> {
-        (**self).ast()
-    }
-}
+impl<'a> ConstantEvaluationCtx<'a> for TraverseCtx<'a, MinifierState<'a>> {}
 
 impl<'a> TraverseCtx<'a, MinifierState<'a>> {
     pub fn options(&self) -> &CompressOptions {
@@ -202,7 +188,18 @@ impl<'a> TraverseCtx<'a, MinifierState<'a>> {
         if e.may_have_side_effects(self) {
             None
         } else {
-            e.evaluate_value(self).map(|v| self.value_to_expr(e.span, v))
+            let v = self.eval_binary_operation(e.operator, &e.left, &e.right)?;
+            // Bail instead of materializing the shadow-safe division form:
+            // replacing `0 / 0` with `0 / 0` would set the changed flag on
+            // every pass and the fixed-point loop would never converge. The
+            // other `eval_binary_operation` callers fold bitwise operators
+            // only, whose results are always finite, so the guard lives here.
+            if let ConstantValue::Number(n) = &v
+                && self.non_finite_global_shadowed(*n)
+            {
+                return None;
+            }
+            Some(self.value_to_expr(e.span, v))
         }
     }
 
@@ -215,23 +212,55 @@ impl<'a> TraverseCtx<'a, MinifierState<'a>> {
         binary_operation_evaluate_value(operator, left, right, self)
     }
 
+    /// Whether materializing `n` prints a global name (`NaN`, `Infinity`)
+    /// that a binding in the current scope chain captures: in
+    /// `function f() { let NaN = 1; return 0 / 0; }`, folding the division
+    /// to a NaN literal makes `f` return `1`.
+    fn non_finite_global_shadowed(&self, n: f64) -> bool {
+        let name = if n.is_nan() {
+            "NaN"
+        } else if n.is_infinite() {
+            "Infinity"
+        } else {
+            return false;
+        };
+        self.scoping().find_binding(self.scoping.current_scope_id(), name.into()).is_some()
+    }
+
+    /// `NaN` → `0 / 0`, `Infinity` → `1 / 0`, `-Infinity` → `-1 / 0`: the
+    /// same value with no capturable name attached. Used when a non-finite
+    /// constant must be materialized where its global name is shadowed.
+    fn non_finite_to_division_expr(&self, span: Span, n: f64) -> Expression<'a> {
+        let numerator = if n.is_nan() { 0.0 } else { 1.0 };
+        let mut left =
+            Expression::new_numeric_literal(span, numerator, None, NumberBase::Decimal, self);
+        if n == f64::NEG_INFINITY {
+            left = Expression::new_unary_expression(span, UnaryOperator::UnaryNegation, left, self);
+        }
+        let right = Expression::new_numeric_literal(span, 0.0, None, NumberBase::Decimal, self);
+        Expression::new_binary_expression(span, left, BinaryOperator::Division, right, self)
+    }
+
     pub fn value_to_expr(&self, span: Span, value: ConstantValue<'a>) -> Expression<'a> {
         match value {
             ConstantValue::Number(n) => {
+                if !n.is_finite() && self.non_finite_global_shadowed(n) {
+                    return self.non_finite_to_division_expr(span, n);
+                }
                 let number_base =
                     if is_exact_int64(n) { NumberBase::Decimal } else { NumberBase::Float };
-                self.ast.expression_numeric_literal(span, n, None, number_base)
+                Expression::new_numeric_literal(span, n, None, number_base, self)
             }
             ConstantValue::BigInt(bigint) => {
-                let value = format_str!(self.ast.allocator, "{bigint}");
-                self.ast.expression_big_int_literal(span, value, None, BigintBase::Decimal)
+                let value = format_str!(self.allocator(), "{bigint}");
+                Expression::new_big_int_literal(span, value, None, BigintBase::Decimal, self)
             }
             ConstantValue::String(s) => {
-                self.ast.expression_string_literal(span, self.ast.str_from_cow(&s), None)
+                Expression::new_string_literal(span, Str::from_cow_in(&s, self), None, self)
             }
-            ConstantValue::Boolean(b) => self.ast.expression_boolean_literal(span, b),
-            ConstantValue::Undefined => self.ast.void_0(span),
-            ConstantValue::Null => self.ast.expression_null_literal(span),
+            ConstantValue::Boolean(b) => Expression::new_boolean_literal(span, b, self),
+            ConstantValue::Undefined => Expression::new_void_0(span, self),
+            ConstantValue::Null => Expression::new_null_literal(span, self),
         }
     }
 
@@ -257,8 +286,9 @@ impl<'a> TraverseCtx<'a, MinifierState<'a>> {
         &mut self,
         symbol_id: SymbolId,
         constant: Option<ConstantValue<'a>>,
-        is_fresh_value: bool,
+        kind: FreshValueKind,
         falsy_init: bool,
+        init_absent: bool,
     ) {
         let mut exported = false;
         if self.scoping.current_scope_id() == self.scoping().root_scope_id() {
@@ -306,13 +336,19 @@ impl<'a> TraverseCtx<'a, MinifierState<'a>> {
             && !scope_flags.contains(ScopeFlags::DirectEval)
             && !(self.source_type().is_script() && scope_id == self.scoping().root_scope_id());
 
+        // See `SymbolValue::implicit_undefined` — only meaningful when the
+        // recorded constant is the hoist-produced `undefined` of `let x;`.
+        let implicit_undefined =
+            init_absent && initialized_constant.as_ref().is_some_and(ConstantValue::is_undefined);
+
         let symbol_value = SymbolValue {
             initialized_constant,
+            implicit_undefined,
             exported,
             read_references_count,
             write_references_count,
             member_write_target_read_count,
-            is_fresh_value,
+            kind,
             boolean_falsy,
         };
         self.state.symbol_values.init_value(symbol_id, symbol_value);
@@ -484,6 +520,16 @@ impl<'a> TraverseCtx<'a, MinifierState<'a>> {
     #[inline]
     pub fn drop_variable_declarator(&mut self, decl: &VariableDeclarator<'a>) {
         self.dirty_diff().visit_variable_declarator(decl);
+        self.state.record_mutation();
+    }
+
+    /// Mark a switch case subtree as about to be dropped. Walks the entire case —
+    /// test expression (if present) and all statements in the consequent. Same contract
+    /// as `drop_expression`. Use this helper when removing a case from a switch statement's
+    /// case vector to properly notify the scope tracking system about dropped references.
+    #[inline]
+    pub fn drop_switch_case(&mut self, switch_case: &SwitchCase<'a>) {
+        self.dirty_diff().visit_switch_case(switch_case);
         self.state.record_mutation();
     }
 }

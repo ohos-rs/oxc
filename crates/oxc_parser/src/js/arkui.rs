@@ -5,9 +5,9 @@
 //! - Annotation declarations (`annotation MyAnnotation { ... }`)
 //! - ArkUI component expressions (`Column() { ... }`)
 
-use oxc_allocator::{Box, Vec};
+use oxc_allocator::{ArenaBox as Box, ArenaVec as Vec};
 use oxc_ast::ast::*;
-use oxc_span::Span;
+use oxc_span::{GetSpan, Span};
 
 use crate::{
     Context, ParserConfig as Config, ParserImpl, StatementContext, diagnostics,
@@ -311,17 +311,21 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         };
 
         let type_parameters = if self.is_ts { self.parse_ts_type_parameters() } else { None };
-        let (extends, implements) = self.parse_heritage_clause();
+        let (extends, implements) = self.parse_heritage_clause(Self::parse_class_extends_clause);
         let mut super_class = None;
         let mut super_type_arguments = None;
         if let Some(mut extends) = extends
             && !extends.is_empty()
         {
-            let first_extends = extends.remove(0);
-            super_class = Some(first_extends.expression);
-            super_type_arguments = first_extends.type_arguments;
-            for extend in extends {
-                self.error(diagnostics::classes_can_only_extend_single_class(extend.span));
+            let (expression, type_arguments) = extends.remove(0);
+            super_class = Some(expression);
+            super_type_arguments = type_arguments;
+            for (expression, type_arguments) in extends {
+                let expression_span = expression.span();
+                let span = type_arguments.map_or(expression_span, |type_arguments| {
+                    expression_span.merge(type_arguments.span)
+                });
+                self.error(diagnostics::classes_can_only_extend_single_class(span));
             }
         }
         let body = self.parse_struct_body();
@@ -338,17 +342,18 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         let r#abstract = modifiers.contains(ModifierKind::Abstract);
         let declare = modifiers.contains(ModifierKind::Declare);
 
-        self.ast.alloc_struct_statement(
+        StructStatement::boxed(
             span,
             decorators,
             id,
             type_parameters,
             super_class,
             super_type_arguments,
-            implements.map_or_else(|| self.ast.vec(), |(_, implements)| implements),
+            implements.map_or_else(|| Vec::new_in(self), |(_, implements)| implements),
             body,
             r#abstract,
             declare,
+            self,
         )
     }
 
@@ -407,7 +412,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
         let id = if self.at(Kind::Await) {
             let name = self.parse_identifier_name();
-            self.ast.binding_identifier(name.span, name.name)
+            BindingIdentifier::new(name.span, name.name, self)
         } else if self.cur_kind().is_binding_identifier() {
             self.parse_binding_identifier()
         } else {
@@ -427,7 +432,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
         let declare = modifiers.contains(ModifierKind::Declare);
 
-        self.ast.alloc_annotation_declaration(span, decorators, id, body, declare)
+        AnnotationDeclaration::boxed(span, decorators, id, body, declare, self)
     }
 
     /// Parse annotation body containing properties
@@ -442,7 +447,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                 }
                 Some(Self::parse_annotation_element(p))
             });
-        self.ast.alloc_annotation_body(self.end_span(span), annotation_elements)
+        AnnotationBody::boxed(self.end_span(span), annotation_elements, self)
     }
 
     /// Parse an annotation element (property)
@@ -479,7 +484,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         let type_annotation = if self.is_ts && self.eat(Kind::Colon) {
             let span = self.start_span();
             let ts_type = self.parse_ts_type();
-            Some(self.ast.alloc_ts_type_annotation(self.end_span(span), ts_type))
+            Some(TSTypeAnnotation::boxed(self.end_span(span), ts_type, self))
         } else {
             None
         };
@@ -493,7 +498,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         let _ = self.eat(Kind::Semicolon);
 
         let r#type = PropertyDefinitionType::PropertyDefinition;
-        let property_def = self.ast.alloc_property_definition(
+        let property_def = PropertyDefinition::boxed(
             self.end_span(span),
             r#type,
             decorators,
@@ -508,6 +513,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             false, // definite - not supported
             modifiers.contains(ModifierKind::Readonly),
             modifiers.accessibility(),
+            self,
         );
 
         AnnotationElement::PropertyDefinition(property_def)
@@ -528,7 +534,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             }
             Some(Self::parse_struct_element(p))
         });
-        self.ast.alloc_struct_body(self.end_span(span), struct_elements)
+        StructBody::boxed(self.end_span(span), struct_elements, self)
     }
 
     /// Parse a struct element (property or method)
@@ -725,7 +731,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                 FunctionKind::ClassMethod,
             )
         };
-        self.ast.alloc_method_definition(
+        MethodDefinition::boxed(
             self.end_span(span),
             r#type,
             decorators,
@@ -737,6 +743,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             modifiers.contains(ModifierKind::Override),
             optional,
             modifiers.accessibility(),
+            self,
         )
     }
 
@@ -757,7 +764,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         let type_annotation = if self.is_ts && self.eat(Kind::Colon) {
             let span = self.start_span();
             let ts_type = self.parse_ts_type();
-            Some(self.ast.alloc_ts_type_annotation(self.end_span(span), ts_type))
+            Some(TSTypeAnnotation::boxed(self.end_span(span), ts_type, self))
         } else {
             None
         };
@@ -771,7 +778,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         let _ = self.eat(Kind::Semicolon);
 
         let r#type = PropertyDefinitionType::PropertyDefinition;
-        let property_def = self.ast.alloc_property_definition(
+        let property_def = PropertyDefinition::boxed(
             self.end_span(span),
             r#type,
             decorators,
@@ -786,6 +793,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             definite,
             modifiers.contains(ModifierKind::Readonly),
             modifiers.accessibility(),
+            self,
         );
 
         StructElement::PropertyDefinition(property_def)
@@ -806,7 +814,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             false,
             FunctionKind::ClassMethod,
         );
-        let method_definition = self.ast.alloc_method_definition(
+        let method_definition = MethodDefinition::boxed(
             self.end_span(span),
             r#type,
             decorators,
@@ -818,6 +826,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             modifiers.contains(ModifierKind::Override),
             false,
             modifiers.accessibility(),
+            self,
         );
         match kind {
             MethodDefinitionKind::Get => self.check_getter(&method_definition.value),
@@ -877,7 +886,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
         let component_span = self.end_span(span);
         let chain_expressions = self.parse_arkui_component_chain_expressions();
-        Expression::ArkUIComponentExpression(self.ast.alloc_ark_ui_component_expression(
+        Expression::ArkUIComponentExpression(ArkUIComponentExpression::boxed(
             component_span,
             callee,
             type_arguments,
@@ -885,11 +894,12 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             children,
             has_children,
             chain_expressions,
+            self,
         ))
     }
 
     fn parse_arkui_component_chain_expressions(&mut self) -> Vec<'a, CallExpression<'a>> {
-        let mut chain_expressions = self.ast.vec();
+        let mut chain_expressions = Vec::new_in(self);
         while self.at(Kind::Dot) {
             let checkpoint = self.checkpoint();
             self.bump_any();
@@ -905,11 +915,12 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                 break;
             }
             let member_span = self.end_span(ident_span);
-            let member_expr = self.ast.member_expression_static(
+            let member_expr = Expression::new_static_member_expression(
                 member_span,
-                self.ast.expression_this(member_span),
+                Expression::new_this_expression(member_span, self),
                 ident,
                 false,
+                self,
             );
             let call_span = self.start_span();
             let opening_span = self.cur_token().span();
@@ -920,17 +931,18 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                 opening_span,
                 Self::parse_assignment_expression_or_higher,
             );
-            let mut call_args = self.ast.vec();
+            let mut call_args = Vec::new_in(self);
             for expr in exprs {
                 call_args.push(Argument::from(expr));
             }
             self.expect(Kind::RParen);
-            chain_expressions.push(self.ast.call_expression(
+            chain_expressions.push(CallExpression::new(
                 self.end_span(call_span),
-                Expression::from(member_expr),
+                member_expr,
                 type_arguments,
                 call_args,
                 false,
+                self,
             ));
         }
         chain_expressions
@@ -938,10 +950,10 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
     fn parse_arkui_component_children(&mut self) -> (Vec<'a, ArkUIChild<'a>>, bool) {
         if !self.eat(Kind::LCurly) {
-            return (self.ast.vec(), false);
+            return (Vec::new_in(self), false);
         }
         let children = self.in_arkui_dsl_context(|p| {
-            let mut children = p.ast.vec();
+            let mut children = Vec::new_in(p);
             while !p.at(Kind::RCurly) && !p.has_fatal_error() {
                 children.push(p.parse_arkui_child());
             }

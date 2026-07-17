@@ -251,6 +251,87 @@ fn r#const() {
     test_options("export let foo = 1; log(foo)", "export let foo = 1; log(1)", &options);
 }
 
+// https://github.com/oxc-project/oxc/issues/20282
+// Dead code guarded by a condition that depends on a read-only `const` is
+// eliminated even when the `const` is referenced more than once. The value is
+// resolved through `SymbolValue` constant tracking during constant evaluation,
+// not single-use inlining, so the old refcount==1 restriction no longer blocks
+// it.
+#[test]
+fn dead_code_depending_on_const() {
+    // Exact reproduction from the issue: `ENABLE_PKG` is always `false`, so the
+    // guarded call and both now-unused declarations are removed.
+    test_smallest(
+        "const MODE = 'production';
+         const ENABLE_PKG = MODE === 'foo' || MODE === 'bar';
+         if (ENABLE_PKG) { longFunction() }",
+        "",
+    );
+
+    // Commenter's variant: `MODE` is read twice (in `ENABLE_PKG`'s initializer
+    // and in the `if` test), yet the dead branch still folds away.
+    test_smallest(
+        "const MODE = 'production';
+         const ENABLE_PKG = MODE === 'foo';
+         if (MODE !== 'production') { longFunction() }",
+        "",
+    );
+
+    // Negative case: a reassigned binding is not a constant, so the guard must
+    // be preserved (no flow-sensitive last-write analysis here).
+    test_smallest(
+        "let MODE = 'production'; MODE = 'dev'; if (MODE !== 'production') { longFunction() }",
+        "let MODE = 'production'; MODE = 'dev', MODE !== 'production' && longFunction();",
+    );
+
+    // Negative case: a non-constant initializer leaves the guard intact (the
+    // value is inlined, but the call is not eliminated).
+    test_smallest(
+        "const MODE = globalThis.mode; if (MODE !== 'production') { longFunction() }",
+        "globalThis.mode !== 'production' && longFunction();",
+    );
+}
+
+// https://github.com/rolldown/rolldown/issues/10174
+// A never-assigned binding with no initializer reads as `undefined`, but the
+// textual inline prints `void 0` — longer than a mangled identifier read plus
+// its share of a declaration, and with no initializer there is nothing whose
+// removal pays for it. Keep the read; constant-driven folds still see the
+// value through `SymbolValue` tracking.
+#[test]
+fn keep_value_context_read_of_uninitialized_binding() {
+    let options = CompressOptions::smallest();
+    // The exact rolldown#10174 shape: a value-context assignment read.
+    test_options(
+        "let undefinedVar; export let value; export function reset() { value = undefinedVar; }",
+        "let undefinedVar; export let value; export function reset() { value = undefinedVar; }",
+        &options,
+    );
+    // Multi-read value context.
+    test_options(
+        "let u; export function f() { g(u), g(u); }",
+        "let u; export function f() { g(u), g(u); }",
+        &options,
+    );
+
+    // Near-misses: folds that consume the value must keep working without the
+    // textual inline — evaluation resolves the read through `SymbolValue`.
+    test_options("let u; export function f() { return u; }", "export function f() {}", &options);
+    test_options("let u; export function f() { if (u) g(); }", "export function f() {}", &options);
+    test_options(
+        "let u; export function f() { return u === void 0; }",
+        "export function f() { return !0; }",
+        &options,
+    );
+    // Near-miss: an explicit `undefined` initializer still inlines — the inline
+    // eliminates the `= void 0` initializer text along with the declaration.
+    test_options(
+        "const foo = undefined; export function f() { g(foo); }",
+        "export function f() { g(void 0); }",
+        &options,
+    );
+}
+
 #[test]
 fn small_value() {
     let options = CompressOptions::smallest();

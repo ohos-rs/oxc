@@ -938,6 +938,13 @@ fn test_string_add() {
     fold("x = foo() + 'a' + 'b' + 'cd' + bar()", "x = foo()+'abcd'+bar()");
     fold("x = foo() + 2 + 'b'", "x = foo()+2+\"b\""); // don't fold!
 
+    // Don't merge string literals across a non-`+` inner operator: the inner string operand
+    // is coerced numerically, so `(x - 'b') + 'c'` is `(x - NaN) + 'c'`, not `x + 'bc'`.
+    fold_same("x = x - 'b' + 'c'");
+    fold_same("x = x * 'b' + 'c'");
+    fold_same("x = x % 'b' + 'c'");
+    fold_same("x = (x & 'b') + 'c'");
+
     fold("x = foo() + 'a' + 2", "x = foo()+\"a2\"");
     fold("x = '' + null", "x = 'null'");
     fold("x = true + '' + false", "x = 'truefalse'");
@@ -1017,10 +1024,10 @@ fn test_fold_multiply() {
     fold_same("x = 2.25 * 3");
     fold_same("z = x * y");
     fold_same("x = y * 5");
-    // test("x = null * undefined", "x = NaN");
-    // test("x = null * 1", "x = 0");
-    // test("x = (null - 1) * 2", "x = -2");
-    // test("x = (null + 1) * 2", "x = 2");
+    fold("x = null * undefined", "x = NaN");
+    fold("x = null * 1", "x = 0");
+    fold("x = (null - 1) * 2", "x = -2");
+    fold("x = (null + 1) * 2", "x = 2");
     // test("x = y + (z * 24 * 60 * 60 * 1000)", "x = y + z * 864E5");
     fold("x = y + (z & 24 & 60 & 60 & 1000)", "x = y + (z & 8)");
     fold("x = -1 * -1", "x = 1");
@@ -1058,7 +1065,41 @@ fn test_fold_exponential() {
     fold_same("x = 3 ** -1");
     fold_same("x = (-1) ** 0.5");
     fold("x = (-0) ** 3", "x = -0");
-    fold_same("x = null ** 0");
+    fold("x = null ** 0", "x = 1");
+}
+
+#[test]
+fn test_fold_arithmetic_undefined_null_operands() {
+    // `undefined` has no literal form (it prints as `void 0`), so it never
+    // satisfied the two-numeric-literals extraction; these folds see through
+    // ToNumber(undefined) = NaN / ToNumber(null) = 0 instead. terser folds
+    // all of these.
+    fold("x = void 0 * 2", "x = NaN");
+    fold("x = void 0 - 1", "x = NaN");
+    fold("x = 2 / void 0", "x = NaN");
+    fold("x = void 0 % 2", "x = NaN");
+    fold("x = (void 0) ** 2", "x = NaN");
+    fold("x = null * 2", "x = 0");
+    fold("x = '2' * '3'", "x = 6");
+    fold("x = true * 5", "x = 5");
+    // A tracked constant resolves through the same evaluator path, so the
+    // implicit undefined of `let a;` folds without being textually inlined.
+    test("let a; NOOP(a * 2)", "let a; NOOP(NaN)");
+    // An operand with side effects must not fold even though ToNumber of
+    // the other side is known.
+    fold_same("x = f() * 0");
+    // Mixing BigInt and Number throws at runtime; ToNumber of a BigInt bails.
+    fold_same("x = 1n * 2");
+}
+
+#[test]
+fn test_fold_non_finite_result_with_shadowed_global() {
+    // A NaN result is materialized as a numeric literal that codegen prints
+    // as the identifier `NaN`; a local `let NaN` binding captures it and
+    // changes what the function returns. Same shape for `Infinity`. The fold
+    // must bail when the corresponding global name is shadowed.
+    test_same("function f() {\n\tlet NaN = 1;\n\treturn 0 / 0;\n}");
+    test_same("function f() {\n\tlet Infinity = 1;\n\treturn 1 / 0;\n}");
 }
 
 #[test]

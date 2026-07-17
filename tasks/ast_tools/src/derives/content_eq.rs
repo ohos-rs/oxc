@@ -116,19 +116,23 @@ fn derive_enum(enum_def: &EnumDef, schema: &Schema) -> TokenStream {
         // We assume fieldless enums implement `PartialEq`
         quote!(self == other)
     } else {
-        let matches = enum_def.all_variants(schema).map(|variant| {
-            let ident = variant.ident();
-            if variant.is_fieldless() {
-                quote!( (Self::#ident, Self::#ident) => true )
-            } else {
-                quote!( (Self::#ident(a), Self::#ident(b)) => a.content_eq(b) )
-            }
-        });
+        let matches = enum_def
+            .all_variants(schema)
+            .map(|variant| {
+                let ident = variant.ident();
+                if variant.is_fieldless() {
+                    quote!( (Self::#ident, Self::#ident) => true )
+                } else {
+                    quote!( (Self::#ident(a), Self::#ident(b)) => a.content_eq(b) )
+                }
+            })
+            .collect::<Vec<_>>();
+        let fallback = (matches.len() > 1).then(|| quote!(_ => false,));
 
         quote! {
             match (self, other) {
                 #(#matches,)*
-                _ => false,
+                #fallback
             }
         }
     };

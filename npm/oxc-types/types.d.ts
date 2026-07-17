@@ -18,7 +18,6 @@ export type Expression =
   | StringLiteral
   | TemplateLiteral
   | IdentifierReference
-  | MetaProperty
   | Super
   | ArrayExpression
   | ArrowFunctionExpression
@@ -42,6 +41,7 @@ export type Expression =
   | UpdateExpression
   | YieldExpression
   | PrivateInExpression
+  | MetaProperty
   | JSXElement
   | JSXFragment
   | TSAsExpression
@@ -77,7 +77,7 @@ export interface BindingIdentifier extends Span {
   decorators?: [];
   name: string;
   optional?: false;
-  typeAnnotation?: null;
+  typeAnnotation?: TSTypeAnnotation | null;
   parent?: Node;
 }
 
@@ -619,7 +619,7 @@ export interface ObjectPattern extends Span {
   decorators?: [];
   properties: Array<BindingProperty | BindingRestElement>;
   optional?: false;
-  typeAnnotation?: null;
+  typeAnnotation?: TSTypeAnnotation | null;
   parent?: Node;
 }
 
@@ -640,7 +640,7 @@ export interface ArrayPattern extends Span {
   decorators?: [];
   elements: Array<BindingPattern | BindingRestElement | null>;
   optional?: false;
-  typeAnnotation?: null;
+  typeAnnotation?: TSTypeAnnotation | null;
   parent?: Node;
 }
 
@@ -649,7 +649,7 @@ export interface BindingRestElement extends Span {
   decorators?: [];
   argument: BindingPattern;
   optional?: false;
-  typeAnnotation?: null;
+  typeAnnotation?: TSTypeAnnotation | null;
   value?: null;
   parent?: Node;
 }

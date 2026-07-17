@@ -43,8 +43,9 @@ fn test_undefined() {
     test("for (undefined in {}) {}", "for(undefined in {});");
     test("undefined++;", "undefined++");
     test("undefined += undefined;", "undefined+=void 0");
-    // shadowed
-    test_same("(function(undefined) { let x = typeof undefined; })()");
+    // shadowed: a parameter named `undefined` must not be substituted with
+    // `void 0`. `foo()` keeps the IIFE from being dropped as dead code.
+    test_same("(function(undefined) { foo(typeof undefined); })()");
     // destructuring throw error side effect
     test_same("var {} = void 0");
     test_same("var [] = void 0");
@@ -788,10 +789,9 @@ fn optional_catch_binding() {
 
     // var inside a function does NOT interact with the catch parameter;
     // var doesn't hoist out of functions, so the catch param can be removed.
-    test(
-        "try { foo } catch(e) { (function() { var e = 2 })() }",
-        "try { foo } catch { (function() { var e = 2;})();}",
-    );
+    // The side-effect-free IIFE itself is then dropped; the empty `catch`
+    // still proves the param was safely removed.
+    test("try { foo } catch(e) { (function() { var e = 2 })() }", "try { foo } catch {}");
     test(
         "try { foo } catch(e) { function f() { var e = 2 } }",
         "try { foo } catch { function f() { var e = 2 } }",
@@ -1021,4 +1021,29 @@ fn test_flatten_array_spread_elements() {
     test("var x=[30,40];var y = [10,...[],20,...x,50];", "var y = [10,20,30,40,50]");
     test_same("var y = [0, ...[1, , , 3]]");
     test("var y = [...[1, , ,], ...[, 2], , 2];", "var y = [...[1, , , ], void 0, 2, , 2];");
+}
+
+#[test]
+fn fold_sequence_expression() {
+    test("(a(), b) + c", "a(), b + c");
+    test("(a(), b, c) + d", "a(), b, c + d");
+
+    test("(a(), b) || c", "a(), b || c");
+    test("(a(), b) && c", "a(), b && c");
+    test("(a(), b, c) || d", "a(), b, c || d");
+
+    test("-(a(), b)", "a(), -b");
+    test("~(a(), b)", "a(), ~b");
+    test("-(a(), b, c)", "a(), b, -c");
+
+    test("function* a() { yield (c(1), 2) }", "function* a() { c(1), yield 2 }");
+    test("function* a() { b(yield (c(1), 2)) }", "function* a() { b((c(1), yield 2)) }");
+    test("function* a() { yield (c(1), d(2), 3) }", "function* a() { c(1), d(2), yield 3 }");
+
+    test("async function a() { await (c(1), 2) }", "async function a() { c(1), await 2 }");
+    test("async function a() { b(await (c(1), 2)) }", "async function a() { b((c(1), await 2)) }");
+    test(
+        "async function a() { await (c(1), d(2), 3) }",
+        "async function a() { c(1), d(2), await 3 }",
+    );
 }

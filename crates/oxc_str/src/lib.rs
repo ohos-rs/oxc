@@ -8,14 +8,14 @@ mod str;
 
 pub use compact_str::{CompactStr, MAX_INLINE_LEN};
 pub use ident::{ArenaIdentHashMap, Ident, IdentHashMap, IdentHashSet};
-pub use str::Str;
+pub use str::{Str, Str as ArenaStr};
 
 #[doc(hidden)]
 pub mod __internal {
     // Used by `format_compact_str!` macro defined in `compact_str.rs`
     pub use compact_str::format_compact;
     // Used by `format_str!` and `format_ident!` macros
-    pub use oxc_allocator::StringBuilder as ArenaStringBuilder;
+    pub use oxc_allocator::ArenaStringBuilder;
     // Used by `static_ident!` macro
     pub use crate::ident::new_const_ident;
 }

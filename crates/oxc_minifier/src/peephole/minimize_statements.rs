@@ -1,15 +1,16 @@
 use std::{iter, ops::ControlFlow};
 
 use crate::generated::ancestor::Ancestor;
-use oxc_allocator::{Box, TakeIn, Vec};
+use oxc_allocator::{ArenaBox, ArenaVec, TakeIn};
 use oxc_ast::ast::*;
-use oxc_ast_visit::Visit;
+use oxc_ast_visit::VisitJs;
 use oxc_ecmascript::{
     constant_evaluation::{DetermineValueType, IsLiteralValue, ValueType},
     side_effects::MayHaveSideEffects,
 };
 use oxc_semantic::ScopeFlags;
 use oxc_span::{ContentEq, GetSpan, GetSpanMut};
+use oxc_syntax::symbol::SymbolId;
 
 use crate::{TraverseCtx, keep_var::KeepVar};
 
@@ -47,13 +48,13 @@ impl<'a> PeepholeOptimizations {
     ///
     /// ## MinimizeExitPoints:
     /// <https://github.com/google/closure-compiler/blob/v20240609/src/com/google/javascript/jscomp/MinimizeExitPoints.java>
-    pub fn minimize_statements(stmts: &mut Vec<'a, Statement<'a>>, ctx: &mut TraverseCtx<'a>) {
-        let mut old_stmts = stmts.take_in(ctx.ast);
+    pub fn minimize_statements(stmts: &mut ArenaVec<'a, Statement<'a>>, ctx: &mut TraverseCtx<'a>) {
+        let mut old_stmts = stmts.take_in(ctx);
         let mut is_control_flow_dead = false;
-        let mut keep_var = KeepVar::new(ctx.ast);
+        let mut keep_var = KeepVar::new();
         let mut identity_drops = 0u32;
         for i in 0..old_stmts.len() {
-            let stmt = old_stmts[i].take_in(ctx.ast);
+            let stmt = old_stmts[i].take_in(&ctx.ast);
             if is_control_flow_dead
                 && !stmt.is_module_declaration()
                 && !matches!(stmt.as_declaration(), Some(Declaration::FunctionDeclaration(_)))
@@ -73,20 +74,20 @@ impl<'a> PeepholeOptimizations {
                 }
                 continue; // drop: `stmt` is intentionally not pushed into `stmts`.
             }
-            if Self::minimize_statement(
-                stmt,
-                i,
-                &mut old_stmts,
-                stmts,
-                &mut is_control_flow_dead,
-                ctx,
-            )
-            .is_break()
-            {
+            if Self::minimize_statement(stmt, i, &mut old_stmts, stmts, ctx).is_break() {
                 break;
             }
+            // A statement that never completes normally — a direct jump, a
+            // kept block ending in a jump, an if/else or try/catch where
+            // every branch jumps — makes the rest of the list unreachable.
+            // https://github.com/rolldown/rolldown/issues/10184
+            if !is_control_flow_dead
+                && stmts.last().is_some_and(Self::statement_never_completes_normally)
+            {
+                is_control_flow_dead = true;
+            }
         }
-        if let Some(stmt) = keep_var.get_variable_declaration_statement() {
+        if let Some(stmt) = keep_var.get_variable_declaration_statement(&ctx.ast) {
             match Self::remove_unused_variable_declaration(stmt, ctx) {
                 // Multiple identity-dropped `var x;`s coalesce into a single
                 // `var x, y;`. The individual drops looked byte-identical, but
@@ -160,7 +161,7 @@ impl<'a> PeepholeOptimizations {
                             let argument = Self::join_sequence(&mut expr_stmt.expression, b, ctx);
                             let right_span = last_return.span;
                             let last_return_stmt =
-                                ctx.ast.statement_return(right_span, Some(argument));
+                                Statement::new_return_statement(right_span, Some(argument), ctx);
                             stmts.push(last_return_stmt);
                         }
                         // Merge the last two statements
@@ -198,18 +199,18 @@ impl<'a> PeepholeOptimizations {
                             let mut left = prev_return
                                 .unbox()
                                 .argument
-                                .unwrap_or_else(|| ctx.ast.void_0(left_span));
+                                .unwrap_or_else(|| Expression::new_void_0(left_span, ctx));
                             // "if (a) return a; return;" => "return a ? b : void 0;"
                             let mut right = last_return
                                 .unbox()
                                 .argument
-                                .unwrap_or_else(|| ctx.ast.void_0(right_span));
+                                .unwrap_or_else(|| Expression::new_void_0(right_span, ctx));
 
                             // "if (!a) return b; return c;" => "return a ? c : b;"
                             if let Expression::UnaryExpression(unary_expr) = &mut prev_if.test
                                 && unary_expr.operator.is_not()
                             {
-                                prev_if.test = unary_expr.argument.take_in(ctx.ast);
+                                prev_if.test = unary_expr.argument.take_in(&ctx.ast);
                                 std::mem::swap(&mut left, &mut right);
                             }
 
@@ -230,14 +231,14 @@ impl<'a> PeepholeOptimizations {
                                 // "if (a) return b; return c;" => "return a ? b : c;"
                                 Self::minimize_conditional(
                                     prev_if.span,
-                                    prev_if.test.take_in(ctx.ast),
+                                    prev_if.test.take_in(&ctx.ast),
                                     left,
                                     right,
                                     ctx,
                                 )
                             };
                             let last_return_stmt =
-                                ctx.ast.statement_return(right_span, Some(argument));
+                                Statement::new_return_statement(right_span, Some(argument), ctx);
                             stmts.push(last_return_stmt);
                         }
                         _ => break 'return_loop,
@@ -265,7 +266,8 @@ impl<'a> PeepholeOptimizations {
                                 ctx,
                             );
                             let right_span = last_throw.span;
-                            let last_throw_stmt = ctx.ast.statement_throw(right_span, argument);
+                            let last_throw_stmt =
+                                Statement::new_throw_statement(right_span, argument, ctx);
                             stmts.push(last_throw_stmt);
                         }
                         // Merge the last two statements
@@ -304,7 +306,7 @@ impl<'a> PeepholeOptimizations {
                             if let Expression::UnaryExpression(unary_expr) = &mut prev_if.test
                                 && unary_expr.operator.is_not()
                             {
-                                prev_if.test = unary_expr.argument.take_in(ctx.ast);
+                                prev_if.test = unary_expr.argument.take_in(&ctx.ast);
                                 std::mem::swap(&mut left, &mut right);
                             }
 
@@ -325,13 +327,14 @@ impl<'a> PeepholeOptimizations {
                                 // "if (a) throw b; throw c;" => "throw a ? b : c;"
                                 Self::minimize_conditional(
                                     prev_if.span,
-                                    prev_if.test.take_in(ctx.ast),
+                                    prev_if.test.take_in(&ctx.ast),
                                     left,
                                     right,
                                     ctx,
                                 )
                             };
-                            let last_throw_stmt = ctx.ast.statement_throw(right_span, argument);
+                            let last_throw_stmt =
+                                Statement::new_throw_statement(right_span, argument, ctx);
                             stmts.push(last_throw_stmt);
                         }
                         _ => break 'throw_loop,
@@ -359,24 +362,12 @@ impl<'a> PeepholeOptimizations {
     fn minimize_statement(
         stmt: Statement<'a>,
         i: usize,
-        stmts: &mut Vec<'a, Statement<'a>>,
-        result: &mut Vec<'a, Statement<'a>>,
-        is_control_flow_dead: &mut bool,
-
+        stmts: &mut ArenaVec<'a, Statement<'a>>,
+        result: &mut ArenaVec<'a, Statement<'a>>,
         ctx: &mut TraverseCtx<'a>,
     ) -> ControlFlow<()> {
         match stmt {
             Statement::EmptyStatement(_) => (),
-            Statement::BreakStatement(s) => {
-                // Local `&mut bool` flag, not an AST slot.
-                *is_control_flow_dead = true;
-                result.push(Statement::BreakStatement(s));
-            }
-            Statement::ContinueStatement(s) => {
-                // Local `&mut bool` flag, not an AST slot.
-                *is_control_flow_dead = true;
-                result.push(Statement::ContinueStatement(s));
-            }
             Statement::VariableDeclaration(var_decl) => {
                 Self::handle_variable_declaration(var_decl, result, ctx);
             }
@@ -392,10 +383,10 @@ impl<'a> PeepholeOptimizations {
                 }
             }
             Statement::ReturnStatement(ret_stmt) => {
-                Self::handle_return_statement(ret_stmt, result, is_control_flow_dead, ctx);
+                Self::handle_return_statement(ret_stmt, result, ctx);
             }
             Statement::ThrowStatement(throw_stmt) => {
-                Self::handle_throw_statement(throw_stmt, result, is_control_flow_dead, ctx);
+                Self::handle_throw_statement(throw_stmt, result, ctx);
             }
             Statement::ForStatement(for_stmt) => {
                 Self::handle_for_statement(for_stmt, result, ctx);
@@ -417,8 +408,8 @@ impl<'a> PeepholeOptimizations {
         b: &mut Expression<'a>,
         ctx: &TraverseCtx<'a>,
     ) -> Expression<'a> {
-        let a = a.take_in(ctx.ast);
-        let b = b.take_in(ctx.ast);
+        let a = a.take_in(&ctx.ast);
+        let b = b.take_in(&ctx.ast);
         if let Expression::SequenceExpression(mut sequence_expr) = a {
             // `(a, b); c`
             sequence_expr.expressions.push(b);
@@ -427,12 +418,12 @@ impl<'a> PeepholeOptimizations {
         let span = a.span();
         let exprs = if let Expression::SequenceExpression(sequence_expr) = b {
             // `a; (b, c)`
-            ctx.ast.vec_from_iter(std::iter::once(a).chain(sequence_expr.unbox().expressions))
+            ArenaVec::from_iter_in(std::iter::once(a).chain(sequence_expr.unbox().expressions), ctx)
         } else {
             // `a; b`
-            ctx.ast.vec_from_array([a, b])
+            ArenaVec::from_array_in([a, b], ctx)
         };
-        ctx.ast.expression_sequence(span, exprs)
+        Expression::new_sequence_expression(span, exprs, ctx)
     }
 
     fn jump_stmts_look_the_same(left: &Statement<'a>, right: &Statement<'a>) -> bool {
@@ -442,13 +433,72 @@ impl<'a> PeepholeOptimizations {
         false
     }
 
+    /// Whether control never falls through to the statement after this one in
+    /// the same statement list (terser's `aborts`).
+    ///
+    /// Any abrupt completion qualifies, whatever its target: a `break` or
+    /// `continue` transfers control past the end of the enclosing statement
+    /// list, never to the next statement in it.
+    ///
+    /// Conservative on purpose:
+    /// - A labeled statement completes normally when its body breaks out of
+    ///   its own label (`a: { break a; }`), so it never counts.
+    /// - Loops and switches count as completing normally; `while (true)`
+    ///   without `break` is handled by loop-specific folds instead.
+    fn statement_never_completes_normally(stmt: &Statement<'a>) -> bool {
+        match stmt {
+            Statement::ReturnStatement(_)
+            | Statement::ThrowStatement(_)
+            | Statement::BreakStatement(_)
+            | Statement::ContinueStatement(_) => true,
+            Statement::BlockStatement(block) => Self::block_never_completes_normally(block),
+            Statement::IfStatement(if_stmt) => {
+                if_stmt.alternate.as_ref().is_some_and(Self::statement_never_completes_normally)
+                    && Self::statement_never_completes_normally(&if_stmt.consequent)
+            }
+            Statement::TryStatement(try_stmt) => {
+                // A finalizer that aborts overrides however the other
+                // blocks complete. Otherwise the try block must abort, and
+                // so must the catch block when present (an exception
+                // thrown before the try block's jump lands there).
+                try_stmt.finalizer.as_ref().is_some_and(|f| Self::block_never_completes_normally(f))
+                    || (Self::block_never_completes_normally(&try_stmt.block)
+                        && try_stmt
+                            .handler
+                            .as_ref()
+                            .is_none_or(|h| Self::block_never_completes_normally(&h.body)))
+            }
+            _ => false,
+        }
+    }
+
+    fn block_never_completes_normally(block: &BlockStatement<'a>) -> bool {
+        // A minimized dead zone keeps only hoisting survivors after the jump:
+        // `function` declarations and the initializer-less `var` stub
+        // re-emitted by `KeepVar`. Their bindings initialize at scope entry
+        // and nothing after an aborting statement ever runs, so skip them
+        // from the back before testing how the block completes.
+        block
+            .body
+            .iter()
+            .rev()
+            .find(|stmt| match stmt {
+                Statement::FunctionDeclaration(_) => false,
+                Statement::VariableDeclaration(decl) => {
+                    !(decl.kind.is_var() && decl.declarations.iter().all(|d| d.init.is_none()))
+                }
+                _ => true,
+            })
+            .is_some_and(Self::statement_never_completes_normally)
+    }
+
     /// For variable declarations:
     /// * merge with the previous variable declarator if their kinds are the same
     /// * remove the variable declarator if it is unused
     /// * keep the initializer if it has side effects
     fn handle_variable_declaration(
-        mut var_decl: Box<'a, VariableDeclaration<'a>>,
-        result: &mut Vec<'a, Statement<'a>>,
+        mut var_decl: ArenaBox<'a, VariableDeclaration<'a>>,
+        result: &mut ArenaVec<'a, Statement<'a>>,
 
         ctx: &mut TraverseCtx<'a>,
     ) {
@@ -487,7 +537,7 @@ impl<'a> PeepholeOptimizations {
                     if Self::remove_unused_expression(&mut init, ctx) {
                         ctx.drop_expression(&init);
                     } else {
-                        result.push(ctx.ast.statement_expression(init.span(), init));
+                        result.push(Statement::new_expression_statement(init.span(), init, ctx));
                     }
                 }
                 // Walk the rest of the dropped declarator (binding pattern +
@@ -501,8 +551,7 @@ impl<'a> PeepholeOptimizations {
                     prev_var_decl.declarations.push(decl);
                     continue;
                 }
-                let decls = ctx.ast.vec1(decl);
-                let new_decl = ctx.ast.alloc_variable_declaration(span, kind, decls, declare);
+                let new_decl = VariableDeclaration::boxed(span, kind, [decl], declare, ctx);
                 result.push(Statement::VariableDeclaration(new_decl));
             }
         }
@@ -521,8 +570,8 @@ impl<'a> PeepholeOptimizations {
     }
 
     fn handle_expression_statement(
-        mut expr_stmt: Box<'a, ExpressionStatement<'a>>,
-        result: &mut Vec<'a, Statement<'a>>,
+        mut expr_stmt: ArenaBox<'a, ExpressionStatement<'a>>,
+        result: &mut ArenaVec<'a, Statement<'a>>,
 
         ctx: &mut TraverseCtx<'a>,
     ) {
@@ -595,7 +644,11 @@ impl<'a> PeepholeOptimizations {
                     Some(val) if val == sequence_len - 1 => {
                         // all elements are merged except for the last expression
                         let last_expr = sequence_expr.expressions.pop().unwrap();
-                        result.push(ctx.ast.statement_expression(last_expr.span(), last_expr));
+                        result.push(Statement::new_expression_statement(
+                            last_expr.span(),
+                            last_expr,
+                            ctx,
+                        ));
                         let dropped = Statement::ExpressionStatement(expr_stmt);
                         ctx.drop_statement(&dropped);
                         return;
@@ -618,7 +671,7 @@ impl<'a> PeepholeOptimizations {
 
     fn merge_assignment_to_declaration(
         assign_expr: &mut AssignmentExpression<'a>,
-        result: &mut Vec<'a, Statement<'a>>,
+        result: &mut ArenaVec<'a, Statement<'a>>,
         ctx: &TraverseCtx<'a>,
     ) -> bool {
         if assign_expr.operator != AssignmentOperator::Assign {
@@ -643,7 +696,7 @@ impl<'a> PeepholeOptimizations {
                         || assign_expr.right.is_literal_value(true, ctx))
                 {
                     // "var a; a = b();" => "var a = b();"
-                    decl.init = Some(assign_expr.right.take_in(ctx.ast));
+                    decl.init = Some(assign_expr.right.take_in(&ctx.ast));
                     return true;
                 }
                 // Note it is not possible to compress like:
@@ -668,9 +721,25 @@ impl<'a> PeepholeOptimizations {
         false
     }
 
+    fn is_switch_case_removable(stmt: &SwitchCase, allow_break: bool) -> bool {
+        let is_empty = if stmt.consequent.len() == 1 {
+            match stmt.consequent.last() {
+                Some(Statement::EmptyStatement(_)) => true,
+                Some(Statement::BreakStatement(break_stmt)) => {
+                    allow_break && break_stmt.label.is_none()
+                }
+                _ => false,
+            }
+        } else {
+            stmt.consequent.is_empty()
+        };
+
+        is_empty && stmt.test.as_ref().is_none_or(Expression::is_literal)
+    }
+
     fn handle_switch_statement(
-        mut switch_stmt: Box<'a, SwitchStatement<'a>>,
-        result: &mut Vec<'a, Statement<'a>>,
+        mut switch_stmt: ArenaBox<'a, SwitchStatement<'a>>,
+        result: &mut ArenaVec<'a, Statement<'a>>,
 
         ctx: &mut TraverseCtx<'a>,
     ) {
@@ -691,34 +760,66 @@ impl<'a> PeepholeOptimizations {
             ctx.drop_statement(&dropped);
         }
 
-        // Prune empty case clauses before a trailing default
-        // e.g., `switch (x) { case 0: foo(); break; case 1: default: bar() }`
-        // => `switch (x) { case 0: foo(); break; default: bar() }`
+        // Remove empty case clauses that don't affect behavior.
+        // Handles fall-through semantics: remove empty cases before default or at end (if no default).
+        // e.g., `switch(x){ case 0: foo(); break; case 1: default: bar() }`
+        // => `switch(x){ case 0: foo(); break; default: bar() }`
         // https://github.com/evanw/esbuild/commit/add452ed51333953dd38a26f28a775bb220ea2e9
-        if let Some(last_case) = switch_stmt.cases.last()
-            && last_case.test.is_none()
-        {
-            let default_idx = switch_stmt.cases.len() - 1;
-            let mut first_empty_idx = default_idx;
-            // Iterate backward through preceding cases
-            while first_empty_idx > 0 {
-                let case = &switch_stmt.cases[first_empty_idx - 1];
-                // Only remove empty cases with primitive literal tests
-                if case.consequent.is_empty()
-                    && case.test.as_ref().is_some_and(Expression::is_literal)
-                {
-                    first_empty_idx -= 1;
+        let case_count = switch_stmt.cases.len();
+        if case_count == 1 {
+            // Remove sole case if empty and has no side-effect test
+            if Self::is_switch_case_removable(&switch_stmt.cases[0], true) {
+                ctx.drop_switch_case(&switch_stmt.cases.pop().unwrap());
+            }
+        } else if case_count > 1 {
+            // Determine the range [0, end] to check for removable cases.
+            // 1. default exists and is empty: check the full switch.
+            // 2. default exists and is non-removable and last: check only cases before that default.
+            // 3. default exists, is non-removable, and is not last: skip this optimization (`end = 0`).
+            // 4. no default case: check the full switch and allow a trailing unlabeled `break`.
+            let default_pos = switch_stmt.cases.iter().rposition(SwitchCase::is_default_case);
+            let (end, allow_break) = if let Some(default_pos) = default_pos {
+                if Self::is_switch_case_removable(&switch_stmt.cases[default_pos], true) {
+                    (case_count, true)
+                } else if default_pos == case_count - 1 {
+                    (default_pos, false)
                 } else {
-                    break;
+                    (0, false)
+                }
+            } else {
+                (case_count, true)
+            };
+
+            if end > 0 {
+                // Last non-removable case index in [0, end]. Returns None if all cases are removable.
+                let last_non_removable_case_before_end = switch_stmt.cases[..end]
+                    .iter()
+                    .rposition(|case| !Self::is_switch_case_removable(case, allow_break));
+
+                // Calculate the start of the removable suffix.
+                // 1. next case after last non-removable: remove from pos + 1
+                // 2. no non-removable case: all cases are removable, start from 0
+                let start = match last_non_removable_case_before_end {
+                    Some(pos) => pos + 1,
+                    None => 0,
+                };
+
+                // Remove the removable suffix if any
+                if start < end && default_pos.is_none_or(|pos| pos >= start) {
+                    for removed_case in switch_stmt.cases.drain(start..end) {
+                        ctx.drop_switch_case(&removed_case);
+                    }
                 }
             }
-            // If we found cases to remove, keep cases [0..first_empty_idx] + [default]
-            if first_empty_idx < default_idx {
-                let default_case = switch_stmt.cases.pop().unwrap();
-                switch_stmt.cases.truncate(first_empty_idx);
-                switch_stmt.cases.push(default_case);
-                ctx.notice_change();
-            }
+        }
+
+        if switch_stmt.cases.is_empty() {
+            result.push(Statement::new_expression_statement(
+                switch_stmt.span,
+                switch_stmt.discriminant.take_in(ctx),
+                ctx,
+            ));
+            return;
         }
 
         result.push(Statement::SwitchStatement(switch_stmt));
@@ -726,9 +827,9 @@ impl<'a> PeepholeOptimizations {
 
     fn handle_if_statement(
         i: usize,
-        stmts: &mut Vec<'a, Statement<'a>>,
-        mut if_stmt: Box<'a, IfStatement<'a>>,
-        result: &mut Vec<'a, Statement<'a>>,
+        stmts: &mut ArenaVec<'a, Statement<'a>>,
+        mut if_stmt: ArenaBox<'a, IfStatement<'a>>,
+        result: &mut ArenaVec<'a, Statement<'a>>,
 
         ctx: &mut TraverseCtx<'a>,
     ) -> ControlFlow<()> {
@@ -757,8 +858,8 @@ impl<'a> PeepholeOptimizations {
                     if_stmt.test = Self::join_with_left_associative_op(
                         if_stmt.test.span(),
                         LogicalOperator::Or,
-                        prev_if_stmt.test.take_in(ctx.ast),
-                        if_stmt.test.take_in(ctx.ast),
+                        prev_if_stmt.test.take_in(&ctx.ast),
+                        if_stmt.test.take_in(&ctx.ast),
                         ctx,
                     );
                     let dropped = result.pop().unwrap();
@@ -816,9 +917,9 @@ impl<'a> PeepholeOptimizations {
                     if can_move_branch_condition_outside_scope {
                         let drained_stmts = stmts.drain(i + 1..);
                         let mut body = if let Some(alternate) = if_stmt.alternate.take() {
-                            ctx.ast.vec_from_iter(iter::once(alternate).chain(drained_stmts))
+                            ArenaVec::from_iter_in(iter::once(alternate).chain(drained_stmts), ctx)
                         } else {
-                            ctx.ast.vec_from_iter(drained_stmts)
+                            ArenaVec::from_iter_in(drained_stmts, ctx)
                         };
 
                         Self::minimize_statements(&mut body, ctx);
@@ -827,18 +928,21 @@ impl<'a> PeepholeOptimizations {
                         } else {
                             body[0].span()
                         };
-                        let test = if_stmt.test.take_in(ctx.ast);
+                        let test = if_stmt.test.take_in(&ctx.ast);
                         let mut test = Self::minimize_not(test.span(), test, ctx);
                         Self::minimize_expression_in_boolean_context(&mut test, ctx);
                         let consequent = if body.len() == 1 {
                             body.remove(0)
                         } else {
                             let scope_id = ctx.create_child_scope_of_current(ScopeFlags::empty());
-                            ctx.ast.statement_block_with_scope_id(span, body, scope_id)
+                            Statement::new_block_statement_with_scope_id(span, body, scope_id, ctx)
                         };
-                        let mut if_stmt = ctx.ast.if_statement(test.span(), test, consequent, None);
-                        let if_stmt = Self::try_minimize_if(&mut if_stmt, ctx)
-                            .unwrap_or_else(|| Statement::IfStatement(ctx.ast.alloc(if_stmt)));
+                        let mut if_stmt =
+                            IfStatement::new(test.span(), test, consequent, None, ctx);
+                        let if_stmt =
+                            Self::try_minimize_if(&mut if_stmt, ctx).unwrap_or_else(|| {
+                                Statement::IfStatement(ArenaBox::new_in(if_stmt, ctx))
+                            });
                         result.push(if_stmt);
                         ctx.notice_change();
                         return ControlFlow::Break(());
@@ -873,9 +977,8 @@ impl<'a> PeepholeOptimizations {
     }
 
     fn handle_return_statement(
-        mut ret_stmt: Box<'a, ReturnStatement<'a>>,
-        result: &mut Vec<'a, Statement<'a>>,
-        is_control_flow_dead: &mut bool,
+        mut ret_stmt: ArenaBox<'a, ReturnStatement<'a>>,
+        result: &mut ArenaVec<'a, Statement<'a>>,
 
         ctx: &mut TraverseCtx<'a>,
     ) {
@@ -895,17 +998,17 @@ impl<'a> PeepholeOptimizations {
                     let a = &mut prev_expr_stmt.expression;
                     prev_expr_stmt.expression = Self::join_sequence(a, argument, ctx);
                 } else {
-                    result.push(
-                        ctx.ast.statement_expression(argument.span(), argument.take_in(ctx.ast)),
-                    );
+                    result.push(Statement::new_expression_statement(
+                        argument.span(),
+                        argument.take_in(ctx),
+                        ctx,
+                    ));
                 }
             }
             if let Some(old) = ret_stmt.argument.take() {
                 ctx.drop_expression(&old);
             }
             result.push(Statement::ReturnStatement(ret_stmt));
-            // Local `&mut bool` flag, not an AST slot.
-            *is_control_flow_dead = true;
             return;
         }
 
@@ -919,14 +1022,11 @@ impl<'a> PeepholeOptimizations {
             result.pop();
         }
         result.push(Statement::ReturnStatement(ret_stmt));
-        // Local `&mut bool` flag, not an AST slot.
-        *is_control_flow_dead = true;
     }
 
     fn handle_throw_statement(
-        mut throw_stmt: Box<'a, ThrowStatement<'a>>,
-        result: &mut Vec<'a, Statement<'a>>,
-        is_control_flow_dead: &mut bool,
+        mut throw_stmt: ArenaBox<'a, ThrowStatement<'a>>,
+        result: &mut ArenaVec<'a, Statement<'a>>,
 
         ctx: &mut TraverseCtx<'a>,
     ) {
@@ -947,13 +1047,11 @@ impl<'a> PeepholeOptimizations {
             ctx.drop_statement(&dropped);
         }
         result.push(Statement::ThrowStatement(throw_stmt));
-        // Local `&mut bool` flag, not an AST slot.
-        *is_control_flow_dead = true;
     }
 
     fn handle_for_statement(
-        mut for_stmt: Box<'a, ForStatement<'a>>,
-        result: &mut Vec<'a, Statement<'a>>,
+        mut for_stmt: ArenaBox<'a, ForStatement<'a>>,
+        result: &mut ArenaVec<'a, Statement<'a>>,
 
         ctx: &mut TraverseCtx<'a>,
     ) {
@@ -988,7 +1086,10 @@ impl<'a> PeepholeOptimizations {
             let old_len = var_decl.declarations.len();
             var_decl.declarations.retain_mut(|decl| {
                 let should_keep = !Self::should_remove_unused_declarator(decl, ctx)
-                    || decl.init.as_ref().is_some_and(|init| init.may_have_side_effects(ctx));
+                    || decl
+                        .init
+                        .as_ref()
+                        .is_some_and(|init| Self::has_side_effects_or_preserved_iife(init, ctx));
                 if !should_keep {
                     // Same leak hazard as `remove_unused_variable_declaration`:
                     // the `retain` silently drops the declarator, so its refs
@@ -1019,7 +1120,7 @@ impl<'a> PeepholeOptimizations {
                         }
                     } else {
                         for_stmt.init = Some(ForStatementInit::from(
-                            prev_expr_stmt.expression.take_in(ctx.ast),
+                            prev_expr_stmt.expression.take_in(&ctx.ast),
                         ));
                         let dropped = result.pop().unwrap();
                         ctx.drop_statement(&dropped);
@@ -1053,8 +1154,8 @@ impl<'a> PeepholeOptimizations {
     }
 
     fn handle_for_in_statement(
-        mut for_in_stmt: Box<'a, ForInStatement<'a>>,
-        result: &mut Vec<'a, Statement<'a>>,
+        mut for_in_stmt: ArenaBox<'a, ForInStatement<'a>>,
+        result: &mut ArenaVec<'a, Statement<'a>>,
 
         ctx: &mut TraverseCtx<'a>,
     ) {
@@ -1144,8 +1245,8 @@ impl<'a> PeepholeOptimizations {
     }
 
     fn handle_for_of_statement(
-        mut for_of_stmt: Box<'a, ForOfStatement<'a>>,
-        result: &mut Vec<'a, Statement<'a>>,
+        mut for_of_stmt: ArenaBox<'a, ForOfStatement<'a>>,
+        result: &mut ArenaVec<'a, Statement<'a>>,
         ctx: &mut TraverseCtx<'a>,
     ) {
         let is_block_scoped_decl = matches!(&for_of_stmt.left, ForStatementLeft::VariableDeclaration(var_decl) if !var_decl.kind.is_var());
@@ -1186,8 +1287,8 @@ impl<'a> PeepholeOptimizations {
 
     /// `appendIfOrLabelBodyPreservingScope`: <https://github.com/evanw/esbuild/blob/v0.24.2/internal/js_ast/js_parser.go#L9852>
     fn handle_block(
-        result: &mut Vec<'a, Statement<'a>>,
-        block_stmt: Box<'a, BlockStatement<'a>>,
+        result: &mut ArenaVec<'a, Statement<'a>>,
+        block_stmt: ArenaBox<'a, BlockStatement<'a>>,
         ctx: &mut TraverseCtx<'a>,
     ) {
         let keep_block = block_stmt.body.iter().any(Self::statement_cares_about_scope);
@@ -1239,7 +1340,7 @@ impl<'a> PeepholeOptimizations {
     /// `substituteSingleUseSymbolInStmt`: <https://github.com/evanw/esbuild/blob/v0.25.9/internal/js_parser/js_parser.go#L9583>
     fn substitute_single_use_symbol_in_statement(
         expr_in_stmt: &mut Expression<'a>,
-        stmts: &mut Vec<'a, Statement<'a>>,
+        stmts: &mut ArenaVec<'a, Statement<'a>>,
         ctx: &mut TraverseCtx<'a>,
         non_scoped_literal_only: bool,
     ) -> bool {
@@ -1284,7 +1385,7 @@ impl<'a> PeepholeOptimizations {
 
     fn substitute_single_use_symbol_within_declaration(
         kind: VariableDeclarationKind,
-        declarations: &mut Vec<'a, VariableDeclarator<'a>>,
+        declarations: &mut ArenaVec<'a, VariableDeclarator<'a>>,
         ctx: &mut TraverseCtx<'a>,
     ) -> bool {
         if Self::keep_top_level_var_in_script_mode(ctx)
@@ -1386,6 +1487,40 @@ impl<'a> PeepholeOptimizations {
         }
     }
 
+    /// Whether reordering this read before a side-effecting replacement could
+    /// observe `symbol_id` in its Temporal Dead Zone.
+    ///
+    /// The hazard is a block-scoped binding (`let`/`const`/`using`/`class`/`enum`)
+    /// closed over from an enclosing function: the function can suspend at an
+    /// `await`/`yield` while outer code initializes the binding, so the earlier
+    /// (reordered) read hits the TDZ where the original would not. A same-function
+    /// binding can't be initialized mid-suspension, so it stays inlinable.
+    ///
+    /// <https://github.com/rolldown/rolldown/issues/9959>
+    fn is_tdz_closed_over_read(symbol_id: SymbolId, ctx: &TraverseCtx<'a>) -> bool {
+        ctx.scoping().symbol_flags(symbol_id).is_block_scoped()
+            && Self::read_crosses_function_boundary(
+                ctx.current_scope_id(),
+                ctx.scoping().symbol_scope_id(symbol_id),
+                ctx,
+            )
+    }
+
+    /// Whether reordering a side-effecting replacement past this member
+    /// assignment-target object is unsafe. The object is evaluated before the
+    /// replacement, so it is unsafe if its reference may change, or if it reads
+    /// a closed-over lexical that could be in its TDZ (e.g. `v.x = await f()`
+    /// reading `v` before the await). See [`Self::is_tdz_closed_over_read`].
+    fn member_object_blocks_reorder(object: &Expression<'a>, ctx: &TraverseCtx<'a>) -> bool {
+        Self::is_expression_that_reference_may_change(object, ctx)
+            || matches!(object, Expression::Identifier(id)
+                if ctx
+                    .scoping()
+                    .get_reference(id.reference_id())
+                    .symbol_id()
+                    .is_some_and(|symbol_id| Self::is_tdz_closed_over_read(symbol_id, ctx)))
+    }
+
     /// Returns Some(true) when the expression is successfully replaced.
     /// Returns Some(false) when the expression is not replaced, and cannot try the subsequent expressions.
     /// Return None when the expression is not replaced, and can try the subsequent expressions.
@@ -1406,7 +1541,7 @@ impl<'a> PeepholeOptimizations {
                     // with the replacement expression.
                     // https://github.com/rolldown/rolldown/issues/8248
                     let target_span = target_expr.span();
-                    let mut new_expr = replacement.take_in(ctx.ast);
+                    let mut new_expr = replacement.take_in(&ctx.ast);
                     // Span fix-up on the still-owned new node before the slot replacement, not the slot replacement itself.
                     *new_expr.span_mut() = target_span;
                     ctx.replace_expression(target_expr, new_expr);
@@ -1414,8 +1549,17 @@ impl<'a> PeepholeOptimizations {
                 }
                 // If the identifier is not a getter and the identifier is read-only,
                 // we know that the value is same even if we reordered the expression.
+                //
+                // But a lexical binding that is closed over from an enclosing
+                // function/module scope may still be in its Temporal Dead Zone
+                // when this function runs (e.g. the function is called before the
+                // binding's declaration executes). Reordering its read earlier —
+                // in particular before a side-effecting replacement such as an
+                // `await` — can surface a `ReferenceError` that the original order
+                // avoids. https://github.com/rolldown/rolldown/issues/9959
                 if let Some(symbol_id) = ctx.scoping().get_reference(id.reference_id()).symbol_id()
                     && !Self::is_symbol_mutated(symbol_id, ctx)
+                    && !Self::is_tdz_closed_over_read(symbol_id, ctx)
                 {
                     return None;
                 }
@@ -1542,13 +1686,13 @@ impl<'a> PeepholeOptimizations {
                     let may_depend_on_side_effect = match &assign_expr.left {
                         AssignmentTarget::AssignmentTargetIdentifier(_) => false,
                         AssignmentTarget::ComputedMemberExpression(member_expr) => {
-                            Self::is_expression_that_reference_may_change(&member_expr.object, ctx)
+                            Self::member_object_blocks_reorder(&member_expr.object, ctx)
                         }
                         AssignmentTarget::PrivateFieldExpression(member_expr) => {
-                            Self::is_expression_that_reference_may_change(&member_expr.object, ctx)
+                            Self::member_object_blocks_reorder(&member_expr.object, ctx)
                         }
                         AssignmentTarget::StaticMemberExpression(member_expr) => {
-                            Self::is_expression_that_reference_may_change(&member_expr.object, ctx)
+                            Self::member_object_blocks_reorder(&member_expr.object, ctx)
                         }
                         // LeadingDotExpression is now a separate Expression type, not an AssignmentTarget
                         AssignmentTarget::ArrayAssignmentTarget(_)
@@ -1853,12 +1997,7 @@ impl<'a> PeepholeOptimizations {
                                 if prop.shorthand && prop.key.is_specific_id("__proto__") {
                                     // { __proto__ } -> { ['__proto__']: value }
                                     prop.computed = true;
-                                    prop.key =
-                                        PropertyKey::from(ctx.ast.expression_string_literal(
-                                            prop.key.span(),
-                                            "__proto__",
-                                            None,
-                                        ));
+                                    prop.key = PropertyKey::new_string_literal(prop.key.span(), "__proto__", None, ctx);
                                 }
                                 prop.shorthand = false;
                                 return Some(changed);
@@ -1916,7 +2055,7 @@ impl<'a> PeepholeOptimizations {
                 }
             }
             Expression::ChainExpression(chain_expr) => {
-                let mut expr = Expression::from(chain_expr.expression.take_in(ctx.ast));
+                let mut expr = Expression::from(chain_expr.expression.take_in(&ctx.ast));
                 let changed = Self::substitute_single_use_symbol_in_expression(
                     &mut expr,
                     search_for,

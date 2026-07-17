@@ -222,6 +222,7 @@ impl Oxc {
             allow_return_outside_function: parser_options.allow_return_outside_function,
             preserve_parens: parser_options.preserve_parens,
             allow_v8_intrinsics: parser_options.allow_v8_intrinsics,
+            ..ParseOptions::default()
         };
         let ParserReturn { program, diagnostics, module_record, .. } =
             Parser::new(allocator, source_text, source_type).with_options(parser_options).parse();
@@ -342,7 +343,7 @@ impl Oxc {
             options.mangle.map(|o| MangleOptions {
                 top_level: Some(o.top_level),
                 keep_names: MangleOptionsKeepNames { function: o.keep_names, class: o.keep_names },
-                debug: false,
+                ..MangleOptions::default()
             })
         } else {
             None

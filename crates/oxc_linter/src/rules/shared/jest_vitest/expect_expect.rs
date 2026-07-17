@@ -6,7 +6,7 @@ use oxc_ast::{
     AstKind,
     ast::{CallExpression, Expression, FormalParameter, Function, Statement},
 };
-use oxc_ast_visit::{Visit, walk};
+use oxc_ast_visit::{VisitJs, walk_js};
 use oxc_diagnostics::OxcDiagnostic;
 use oxc_span::{GetSpan, Span};
 use oxc_str::CompactStr;
@@ -179,7 +179,15 @@ impl ExpectExpectConfig {
         jest_node: &PossibleJestNode<'a, 'c>,
         ctx: &'c LintContext<'a>,
     ) {
-        run(self, jest_node, ctx);
+        run(self, jest_node, ctx, ctx.frameworks().is_vitest());
+    }
+
+    pub fn run_on_vitest_node<'a, 'c>(
+        &self,
+        jest_node: &PossibleJestNode<'a, 'c>,
+        ctx: &'c LintContext<'a>,
+    ) {
+        run(self, jest_node, ctx, true);
     }
 }
 
@@ -187,6 +195,7 @@ fn run<'a>(
     rule: &ExpectExpectConfig,
     possible_jest_node: &PossibleJestNode<'a, '_>,
     ctx: &LintContext<'a>,
+    use_vitest_assertions: bool,
 ) {
     let node = possible_jest_node.node;
     if let AstKind::CallExpression(call_expr) = node.kind() {
@@ -205,12 +214,12 @@ fn run<'a>(
                 if property_name == "todo" {
                     return;
                 }
-                if property_name == "skip" && ctx.frameworks().is_vitest() {
+                if property_name == "skip" && use_vitest_assertions {
                     return;
                 }
             }
 
-            let assert_function_matchers = if ctx.frameworks().is_vitest() {
+            let assert_function_matchers = if use_vitest_assertions {
                 &rule.assert_function_matchers_vitest
             } else {
                 &rule.assert_function_matchers_jest
@@ -306,7 +315,7 @@ impl<'a, 'b> AssertionVisitor<'a, 'b> {
     }
 }
 
-impl<'a> Visit<'a> for AssertionVisitor<'a, '_> {
+impl<'a> VisitJs<'a> for AssertionVisitor<'a, '_> {
     fn visit_call_expression(&mut self, call_expr: &CallExpression<'a>) {
         let name = get_node_name(&call_expr.callee);
         if self.assert_function_matchers.iter().any(|matcher| matcher.is_match(&name)) {
@@ -323,13 +332,13 @@ impl<'a> Visit<'a> for AssertionVisitor<'a, '_> {
             }
         }
 
-        walk::walk_call_expression(self, call_expr);
+        walk_js::walk_call_expression(self, call_expr);
     }
 
     fn visit_expression_statement(&mut self, stmt: &oxc_ast::ast::ExpressionStatement<'a>) {
         self.check_expression(&stmt.expression);
         if !self.found_assertion {
-            walk::walk_expression_statement(self, stmt);
+            walk_js::walk_expression_statement(self, stmt);
         }
     }
 

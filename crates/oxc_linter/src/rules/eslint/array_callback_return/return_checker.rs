@@ -1,6 +1,6 @@
-use oxc_allocator::Vec as AllocatorVec;
+use oxc_allocator::ArenaVec;
 use oxc_ast::ast::{ArrowFunctionExpression, Function, FunctionBody, ReturnStatement, Statement};
-use oxc_ast_visit::Visit;
+use oxc_ast_visit::VisitJs;
 use oxc_cfg::{
     EdgeType, InstructionKind, ReturnInstructionKind,
     graph::{Direction, visit::EdgeRef},
@@ -210,7 +210,7 @@ struct ReturnStatementFinder {
     has_void_expression: bool,
 }
 
-impl Visit<'_> for ReturnStatementFinder {
+impl VisitJs<'_> for ReturnStatementFinder {
     fn visit_return_statement(&mut self, return_statement: &ReturnStatement) {
         let Some(argument) = &return_statement.argument else {
             return;
@@ -231,7 +231,7 @@ impl Visit<'_> for ReturnStatementFinder {
     fn visit_arrow_function_expression(&mut self, _it: &ArrowFunctionExpression<'_>) {}
 }
 
-pub fn is_void_arrow_return(statements: &AllocatorVec<'_, Statement>) -> bool {
+pub fn is_void_arrow_return(statements: &ArenaVec<'_, Statement>) -> bool {
     if statements.is_empty() {
         return false;
     }

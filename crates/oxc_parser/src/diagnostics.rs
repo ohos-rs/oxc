@@ -61,6 +61,16 @@ pub fn unexpected_token(span: Span) -> OxcDiagnostic {
     OxcDiagnostic::error("Unexpected token").with_label(span)
 }
 
+/// 'abstract' modifier can only appear on a class, method, or property declaration. (1242)
+#[cold]
+pub fn illegal_abstract_modifier(span: Span) -> OxcDiagnostic {
+    ts_error(
+        "1242",
+        "'abstract' modifier can only appear on a class, method, or property declaration.",
+    )
+    .with_label(span)
+}
+
 #[cold]
 pub fn whitespace_in_annotation_declaration(span: Span) -> OxcDiagnostic {
     OxcDiagnostic::error("Whitespace is not allowed between `@` and `interface`").with_label(span)
@@ -1205,10 +1215,21 @@ pub fn mixed_coalesce(span: Span) -> OxcDiagnostic {
 }
 
 #[cold]
-pub fn unexpected_exponential(x0: &str, span1: Span) -> OxcDiagnostic {
-    OxcDiagnostic::error("Unexpected exponentiation expression")
-        .with_help(format!("Wrap {x0} expression in parentheses to enforce operator precedence"))
-        .with_label(span1)
+pub fn unary_exponentiation_left_operand(operator: &str, span: Span) -> OxcDiagnostic {
+    OxcDiagnostic::error(format!(
+        "A unary expression with the '{operator}' operator cannot be used as the left operand of an exponentiation expression"
+    ))
+    .with_help("Wrap the unary expression in parentheses to make the precedence explicit")
+    .with_label(span)
+}
+
+#[cold]
+pub fn type_assertion_exponentiation_left_operand(span: Span) -> OxcDiagnostic {
+    OxcDiagnostic::error(
+        "A type assertion cannot be used as the left operand of an exponentiation expression",
+    )
+    .with_help("Wrap the type assertion in parentheses to make the precedence explicit")
+    .with_label(span)
 }
 
 #[cold]
@@ -1250,6 +1271,11 @@ pub fn abstract_property_cannot_have_initializer(name: &str, span: Span) -> OxcD
 pub fn abstract_with_private_identifier(span: Span) -> OxcDiagnostic {
     ts_error("18019", "'abstract' modifier cannot be used with a private identifier.")
         .with_label(span)
+}
+
+#[cold]
+pub fn required_parameter_after_optional_parameter(span: Span) -> OxcDiagnostic {
+    ts_error("1016", "A required parameter cannot follow an optional parameter.").with_label(span)
 }
 
 #[cold]

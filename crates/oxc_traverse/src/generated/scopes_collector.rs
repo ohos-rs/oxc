@@ -88,9 +88,10 @@ impl<'a> Visit<'a> for ChildScopeCollector {
                 // `RegExpLiteral`
                 // `StringLiteral`
                 // `Identifier`
-                // `MetaProperty`
                 // `Super`
                 // `ThisExpression`
+                // `ImportMeta`
+                // `NewTarget`
             }
         }
     }
@@ -204,9 +205,10 @@ impl<'a> Visit<'a> for ChildScopeCollector {
                 // `RegExpLiteral`
                 // `StringLiteral`
                 // `Identifier`
-                // `MetaProperty`
                 // `Super`
                 // `ThisExpression`
+                // `ImportMeta`
+                // `NewTarget`
             }
         }
     }
@@ -280,9 +282,10 @@ impl<'a> Visit<'a> for ChildScopeCollector {
                 // `RegExpLiteral`
                 // `StringLiteral`
                 // `Identifier`
-                // `MetaProperty`
                 // `Super`
                 // `ThisExpression`
+                // `ImportMeta`
+                // `NewTarget`
             }
         }
     }
@@ -350,7 +353,12 @@ impl<'a> Visit<'a> for ChildScopeCollector {
     }
 
     #[inline(always)]
-    fn visit_meta_property(&mut self, it: &MetaProperty<'a>) {
+    fn visit_import_meta(&mut self, it: &ImportMeta) {
+        // Struct does not contain a scope. Halt traversal.
+    }
+
+    #[inline(always)]
+    fn visit_new_target(&mut self, it: &NewTarget) {
         // Struct does not contain a scope. Halt traversal.
     }
 
@@ -409,9 +417,10 @@ impl<'a> Visit<'a> for ChildScopeCollector {
                 // `RegExpLiteral`
                 // `StringLiteral`
                 // `Identifier`
-                // `MetaProperty`
                 // `Super`
                 // `ThisExpression`
+                // `ImportMeta`
+                // `NewTarget`
             }
         }
     }
@@ -808,9 +817,10 @@ impl<'a> Visit<'a> for ChildScopeCollector {
                 // `RegExpLiteral`
                 // `StringLiteral`
                 // `Identifier`
-                // `MetaProperty`
                 // `Super`
                 // `ThisExpression`
+                // `ImportMeta`
+                // `NewTarget`
             }
         }
     }
@@ -1269,9 +1279,10 @@ impl<'a> Visit<'a> for ChildScopeCollector {
                 // `RegExpLiteral`
                 // `StringLiteral`
                 // `Identifier`
-                // `MetaProperty`
                 // `Super`
                 // `ThisExpression`
+                // `ImportMeta`
+                // `NewTarget`
             }
         }
     }
@@ -1433,9 +1444,10 @@ impl<'a> Visit<'a> for ChildScopeCollector {
                 // `RegExpLiteral`
                 // `StringLiteral`
                 // `Identifier`
-                // `MetaProperty`
                 // `Super`
                 // `ThisExpression`
+                // `ImportMeta`
+                // `NewTarget`
             }
         }
     }

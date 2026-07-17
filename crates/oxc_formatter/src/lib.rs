@@ -25,8 +25,7 @@ use oxc_span::SourceType;
 // or the special-purpose AST-in `format_program`.
 pub(crate) use crate::ast_nodes::{AstNode, AstNodes};
 pub use crate::external_formatter::{
-    EmbeddedDocFormatterCallback, EmbeddedDocResult, EmbeddedFormatterCallback, ExternalCallbacks,
-    TailwindCallback,
+    EmbeddedFormatterCallback, ExternalCallbacks, HtmlEmbedMeta, TailwindCallback,
 };
 // `JsFormatContext` is public solely as the type parameter of the `Formatted`
 // returned by `format` / `format_fragment`.
@@ -211,6 +210,9 @@ pub fn parse_for_format<'a>(
         allow_return_outside_function: true, // accept all syntax the formatter may be handed
         allow_v8_intrinsics: true,
         preserve_parens: false, // MUST be false: the formatter panics otherwise
+        // The formatter does not use `Ident` hashes, but `detect_code_removal` runs semantic
+        // analysis on this AST, and semantic requires hashed `Ident`s.
+        enable_ident_hashes: cfg!(feature = "detect_code_removal"),
     };
     Parser::new(allocator, source_text, source_type).with_options(options).parse()
 }

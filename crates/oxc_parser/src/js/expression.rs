@@ -1,6 +1,6 @@
 use cow_utils::CowUtils;
-use oxc_allocator::{Box, CloneIn, TakeIn, Vec};
-use oxc_ast::ast::*;
+use oxc_allocator::{ArenaBox, ArenaVec, CloneIn, GetAllocator, ReplaceWith};
+use oxc_ast::{ast::*, builder::NONE};
 #[cfg(feature = "regular_expression")]
 use oxc_regular_expression::ast::Pattern;
 use oxc_span::{GetSpan, GetSpanMut, Span};
@@ -23,6 +23,24 @@ use crate::{
     lexer::{Kind, parse_big_int, parse_float, parse_int},
     modifiers::Modifiers,
 };
+
+fn is_import_expression_or_member_access_on_import_expression(callee: &Expression<'_>) -> bool {
+    let mut expr = callee;
+    loop {
+        if matches!(expr, Expression::ImportExpression(_)) {
+            return true;
+        }
+        let Some(member_expr) = expr.as_member_expression() else {
+            expr = match expr {
+                Expression::TaggedTemplateExpression(tagged_template) => &tagged_template.tag,
+                Expression::TSNonNullExpression(non_null) => &non_null.expression,
+                _ => return false,
+            };
+            continue;
+        };
+        expr = member_expr.object();
+    }
+}
 
 impl<'a, C: Config> ParserImpl<'a, C> {
     pub(crate) fn parse_paren_expression(&mut self) -> Expression<'a> {
@@ -74,7 +92,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         }
         self.check_identifier(kind, self.ctx);
         let (span, name) = self.parse_identifier_kind(Kind::Ident);
-        self.ast.identifier_reference(span, name)
+        IdentifierReference::new(span, name, self)
     }
 
     /// `BindingIdentifier` : Identifier
@@ -91,7 +109,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         }
         self.check_identifier(cur, self.ctx);
         let (span, name) = self.parse_identifier_kind(Kind::Ident);
-        self.ast.binding_identifier(span, name)
+        BindingIdentifier::new(span, name, self)
     }
 
     pub(crate) fn parse_label_identifier(&mut self) -> LabelIdentifier<'a> {
@@ -101,7 +119,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         }
         self.check_identifier(kind, self.ctx);
         let (span, name) = self.parse_identifier_kind(Kind::Ident);
-        self.ast.label_identifier(span, name)
+        LabelIdentifier::new(span, name, self)
     }
 
     pub(crate) fn parse_identifier_name(&mut self) -> IdentifierName<'a> {
@@ -109,13 +127,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             return self.unexpected();
         }
         let (span, name) = self.parse_identifier_kind(Kind::Ident);
-        self.ast.identifier_name(span, name)
-    }
-
-    /// Parse keyword kind as identifier
-    pub(crate) fn parse_keyword_identifier(&mut self, kind: Kind) -> IdentifierName<'a> {
-        let (span, name) = self.parse_identifier_kind(kind);
-        self.ast.identifier_name(span, name)
+        IdentifierName::new(span, name, self)
     }
 
     #[inline]
@@ -126,7 +138,20 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         // from source text without going through `get_string`'s kind matching.
         let name = if token.escaped() { self.cur_string() } else { self.token_source(&token) };
         self.advance(kind);
-        (span, Ident::from(name))
+        (span, self.ident(name))
+    }
+
+    /// Create an [`Ident`], respecting [`ParseOptions::enable_ident_hashes`].
+    ///
+    /// All parser-created [`Ident`]s must be built through this method (or copied from another
+    /// `Ident` that was), so that [`ParseOptions::enable_ident_hashes`] applies uniformly.
+    /// Building an `Ident` from a `&str`/`Str` via `Into` instead would always hash it, producing
+    /// an AST where some `Ident`s are hashed and some are not.
+    ///
+    /// [`ParseOptions::enable_ident_hashes`]: crate::ParseOptions::enable_ident_hashes
+    #[inline]
+    pub(crate) fn ident(&self, name: &'a str) -> Ident<'a> {
+        if self.options.enable_ident_hashes { Ident::from(name) } else { Ident::new_unhashed(name) }
     }
 
     pub(crate) fn check_identifier(&mut self, kind: Kind, ctx: Context) {
@@ -160,9 +185,9 @@ impl<'a, C: Config> ParserImpl<'a, C> {
     /// # Panics
     pub(crate) fn parse_private_identifier(&mut self) -> PrivateIdentifier<'a> {
         let span = self.cur_token().span();
-        let name = Str::from(self.cur_string());
+        let name = self.ident(self.cur_string());
         self.bump_any();
-        self.ast.private_identifier(span, name)
+        PrivateIdentifier::new(span, name, self)
     }
 
     /// [+In] PrivateIdentifier in ShiftExpression[?Yield, ?Await]
@@ -183,7 +208,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         if let Expression::PrivateInExpression(private_in_expr) = right {
             return self.fatal_error(diagnostics::private_in_private(private_in_expr.span));
         }
-        self.ast.expression_private_in(self.end_span(lhs_span), left, right)
+        Expression::new_private_in_expression(self.end_span(lhs_span), left, right, self)
     }
 
     /// Section [Primary Expression](https://tc39.es/ecma262/#sec-primary-expression)
@@ -224,9 +249,11 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             // ObjectLiteral
             Kind::LCurly => Expression::ObjectExpression(self.parse_object_expression()),
             // ClassExpression
-            Kind::Class => {
-                self.parse_class_expression(self.start_span(), &Modifiers::empty(), self.ast.vec())
-            }
+            Kind::Class => self.parse_class_expression(
+                self.start_span(),
+                &Modifiers::empty(),
+                ArenaVec::new_in(self),
+            ),
             // This
             Kind::This => self.parse_this_expression(),
             // TemplateLiteral
@@ -283,7 +310,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                 opening_span,
                 Self::parse_assignment_expression_or_higher,
             );
-            let mut args = self.ast.vec();
+            let mut args = ArenaVec::new_in(self);
             for expr in exprs {
                 args.push(Argument::from(expr));
             }
@@ -291,13 +318,13 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             args
         } else {
             // No parentheses - this is a property access, not a call
-            self.ast.vec()
+            ArenaVec::new_in(self)
         };
 
         // In ArkUI function bodies, parse the entire chain and store in expression field
         // LeadingDotExpression's arguments field should be empty - arguments are in the expression field
-        let type_arguments_for_chain = type_arguments.clone_in(self.ast.allocator);
-        let empty_arguments = self.ast.vec(); // LeadingDotExpression should have empty arguments
+        let type_arguments_for_chain = type_arguments.clone_in(self.ast.allocator());
+        let empty_arguments = ArenaVec::new_in(self); // LeadingDotExpression should have empty arguments
 
         if self.source_type.is_arkui()
             && self.is_in_arkui_dsl_context()
@@ -312,21 +339,20 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             // Start the expression span from the property (not including the leading dot)
             // Use _property.span.start as the expression start to ensure correct span
             let expression_span_start = _property.span.start;
-            let property_ident = Expression::Identifier(
-                self.alloc(self.ast.identifier_reference(_property.span, _property.name)),
-            );
+            let property_ident = Expression::new_identifier(_property.span, _property.name, self);
 
             // Create the initial CallExpression: fontSize(size)
             // Note: callee is Identifier, not StaticMemberExpression
             // Use _property.span.start and current prev_token_end to create valid span
             let initial_call_end = self.prev_token_end.max(expression_span_start);
             let initial_call_span = Span::new(expression_span_start, initial_call_end);
-            let initial_call = self.ast.expression_call(
+            let initial_call = Expression::new_call_expression(
                 initial_call_span,
                 property_ident,
                 type_arguments,
                 arguments,
                 optional,
+                self,
             );
 
             let mut in_optional_chain = false;
@@ -364,14 +390,14 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             let leading_dot_end =
                 self.prev_token_end.max(expression_span_end).max(leading_dot_start);
             let leading_dot_span = Span::new(leading_dot_start, leading_dot_end);
-            let leading_dot = self.ast.alloc_leading_dot_expression(
+            return Expression::new_leading_dot_expression(
                 leading_dot_span,
                 optional,
                 type_arguments_for_chain,
                 empty_arguments, // LeadingDotExpression should have empty arguments
                 chained_expr_with_correct_span,
+                self,
             );
-            return Expression::LeadingDotExpression(leading_dot);
         }
 
         // No chaining - create a simple LeadingDotExpression with just the initial call
@@ -379,17 +405,16 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         // The expression field should start from fontSize(size) (without the leading dot)
         // Start the expression span from the property (not including the leading dot)
         let expression_start_span = self.start_span();
-        let property_ident = Expression::Identifier(
-            self.alloc(self.ast.identifier_reference(_property.span, _property.name)),
-        );
+        let property_ident = Expression::new_identifier(_property.span, _property.name, self);
 
         // Create CallExpression with Identifier as callee (not StaticMemberExpression)
-        let mut initial_call = self.ast.expression_call(
+        let mut initial_call = Expression::new_call_expression(
             self.end_span(expression_start_span),
             property_ident,
             type_arguments,
             arguments,
             optional,
+            self,
         );
 
         // Update the expression span to exclude the leading dot
@@ -404,12 +429,13 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         let leading_dot_start = span;
         let leading_dot_end = self.prev_token_end.max(expression_span_end).max(leading_dot_start);
         let leading_dot_span = Span::new(leading_dot_start, leading_dot_end);
-        self.ast.expression_leading_dot(
+        Expression::new_leading_dot_expression(
             leading_dot_span,
             optional,
             type_arguments_for_chain,
             empty_arguments, // LeadingDotExpression should have empty arguments
             initial_call,
+            self,
         )
     }
 
@@ -447,11 +473,12 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                 let ident = self.parse_identifier_name();
                 if self.at(Kind::LParen) {
                     // Method call: .methodName(...)
-                    let member_expr = self.ast.member_expression_static(
+                    let member_expr = Expression::new_static_member_expression(
                         self.end_span(ident_span),
                         lhs,
                         ident,
                         false,
+                        self,
                     );
                     // Parse call arguments
                     let call_span = self.start_span();
@@ -463,18 +490,19 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                         opening_span,
                         Self::parse_assignment_expression_or_higher,
                     );
-                    let mut call_args = self.ast.vec();
+                    let mut call_args = ArenaVec::new_in(self);
                     for expr in exprs {
                         call_args.push(Argument::from(expr));
                     }
                     self.expect(Kind::RParen);
                     // Create call expression
-                    lhs = self.ast.expression_call(
+                    lhs = Expression::new_call_expression(
                         self.end_span(call_span),
-                        Expression::from(member_expr),
-                        oxc_ast::NONE,
+                        member_expr,
+                        NONE,
                         call_args,
                         false,
+                        self,
                     );
                     // Continue parsing more chain expressions
                     // Check if next token is a dot (chain continues) or semicolon/comma/brace (chain ends)
@@ -486,12 +514,13 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                     continue;
                 } else {
                     // Property access: .propertyName
-                    lhs = Expression::from(self.ast.member_expression_static(
+                    lhs = Expression::new_static_member_expression(
                         self.end_span(ident_span),
                         lhs,
                         ident,
                         false,
-                    ));
+                        self,
+                    );
                     // Check if there are more chain expressions
                     // Stop if next token is not a dot, or if it's semicolon/comma/brace
                     if !self.at(Kind::Dot)
@@ -547,7 +576,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         let mut expression = if expressions.len() == 1 {
             expressions.remove(0)
         } else {
-            self.ast.expression_sequence(expr_span, expressions)
+            Expression::new_sequence_expression(expr_span, expressions, self)
         };
 
         match &mut expression {
@@ -567,7 +596,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         }
 
         if self.options.preserve_parens {
-            self.ast.expression_parenthesized(self.end_span(span), expression)
+            Expression::new_parenthesized_expression(self.end_span(span), expression, self)
         } else {
             expression
         }
@@ -577,7 +606,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
     fn parse_this_expression(&mut self) -> Expression<'a> {
         let span = self.start_span();
         self.bump_any();
-        self.ast.expression_this(self.end_span(span))
+        Expression::new_this_expression(self.end_span(span), self)
     }
 
     /// [Literal Expression](https://tc39.es/ecma262/#prod-Literal)
@@ -599,7 +628,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         }
     }
 
-    pub(crate) fn parse_literal_boolean(&mut self) -> Box<'a, BooleanLiteral> {
+    pub(crate) fn parse_literal_boolean(&mut self) -> ArenaBox<'a, BooleanLiteral> {
         let span = self.start_span();
         let value = match self.cur_kind() {
             Kind::True => true,
@@ -607,16 +636,16 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             _ => return self.unexpected(),
         };
         self.bump_any();
-        self.ast.alloc_boolean_literal(self.end_span(span), value)
+        BooleanLiteral::boxed(self.end_span(span), value, self)
     }
 
-    pub(crate) fn parse_literal_null(&mut self) -> Box<'a, NullLiteral> {
+    pub(crate) fn parse_literal_null(&mut self) -> ArenaBox<'a, NullLiteral> {
         let span = self.cur_token().span();
         self.bump_any(); // bump `null`
-        self.ast.alloc_null_literal(span)
+        NullLiteral::boxed(span, self)
     }
 
-    pub(crate) fn parse_literal_number(&mut self) -> Box<'a, NumericLiteral<'a>> {
+    pub(crate) fn parse_literal_number(&mut self) -> ArenaBox<'a, NumericLiteral<'a>> {
         let token = self.cur_token();
         let span = token.span();
         let kind = token.kind();
@@ -651,10 +680,10 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             _ => return self.unexpected(),
         };
         self.bump_any();
-        self.ast.alloc_numeric_literal(span, value, Some(Str::from(src)), base)
+        NumericLiteral::boxed(span, value, Some(Str::from(src)), base, self)
     }
 
-    pub(crate) fn parse_literal_bigint(&mut self) -> Box<'a, BigIntLiteral<'a>> {
+    pub(crate) fn parse_literal_bigint(&mut self) -> ArenaBox<'a, BigIntLiteral<'a>> {
         let token = self.cur_token();
         let kind = token.kind();
         let has_separator = token.has_separator();
@@ -668,13 +697,13 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         let span = token.span();
         let raw = self.cur_src();
         let src = raw.strip_suffix('n').unwrap();
-        let value = parse_big_int(src, number_kind, has_separator, self.ast.allocator);
+        let value = parse_big_int(src, number_kind, has_separator, self.allocator());
 
         self.bump_any();
-        self.ast.alloc_big_int_literal(span, value, Some(Str::from(raw)), base)
+        BigIntLiteral::boxed(span, value, Some(Str::from(raw)), base, self)
     }
 
-    pub(crate) fn parse_literal_regexp(&mut self) -> Box<'a, RegExpLiteral<'a>> {
+    pub(crate) fn parse_literal_regexp(&mut self) -> ArenaBox<'a, RegExpLiteral<'a>> {
         let (pattern_end, flags, flags_error) = self.read_regex();
         if !self.lexer.errors.is_empty() {
             return self.unexpected();
@@ -706,7 +735,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             self.error(diagnostics::reg_exp_flag_u_and_v(span));
         }
 
-        self.ast.alloc_reg_exp_literal(span, RegExp { pattern, flags }, Some(Str::from(raw)))
+        RegExpLiteral::boxed(span, RegExp { pattern, flags }, Some(Str::from(raw)), self)
     }
 
     #[cfg(feature = "regular_expression")]
@@ -716,10 +745,10 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         pattern: &'a str,
         flags_span_offset: u32,
         flags: &'a str,
-    ) -> Option<Box<'a, Pattern<'a>>> {
+    ) -> Option<ArenaBox<'a, Pattern<'a>>> {
         use oxc_regular_expression::{LiteralParser, Options};
         match LiteralParser::new(
-            self.ast.allocator,
+            self.allocator(),
             pattern,
             Some(flags),
             Options { pattern_span_offset, flags_span_offset },
@@ -743,7 +772,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         let value = self.cur_string();
         let lone_surrogates = self.cur_token().lone_surrogates();
         self.bump_any();
-        self.ast.string_literal_with_lone_surrogates(span, value, Some(raw), lone_surrogates)
+        StringLiteral::new_with_lone_surrogates(span, value, Some(raw), lone_surrogates, self)
     }
 
     /// Section [Array Expression](https://tc39.es/ecma262/#prod-ArrayLiteral)
@@ -767,7 +796,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             self.state.trailing_commas.insert(span, self.end_span(comma_span));
         }
         self.expect(Kind::RBrack);
-        self.ast.expression_array(self.end_span(span), elements)
+        Expression::new_array_expression(self.end_span(span), elements, self)
     }
 
     fn parse_array_expression_element(&mut self) -> ArrayExpressionElement<'a> {
@@ -782,7 +811,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
     ///     ,
     ///    Elision ,
     pub(crate) fn parse_elision(&self) -> ArrayExpressionElement<'a> {
-        self.ast.array_expression_element_elision(self.cur_token().span())
+        ArrayExpressionElement::new_elision(self.cur_token().span(), self)
     }
 
     /// Section [Template Literal](https://tc39.es/ecma262/#prod-TemplateLiteral)
@@ -794,12 +823,12 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
         let (quasis, expressions) = match self.cur_kind() {
             Kind::NoSubstitutionTemplate => {
-                let quasis = self.ast.vec1(self.parse_template_element(tagged));
-                (quasis, self.ast.vec())
+                let quasis = ArenaVec::from_value_in(self.parse_template_element(tagged), self);
+                (quasis, ArenaVec::new_in(self))
             }
             Kind::TemplateHead => {
-                let mut expressions = self.ast.vec_with_capacity(1);
-                let mut quasis = self.ast.vec_with_capacity(2);
+                let mut expressions = ArenaVec::with_capacity_in(1, self);
+                let mut quasis = ArenaVec::with_capacity_in(2, self);
 
                 quasis.push(self.parse_template_element(tagged));
                 // TemplateHead Expression[+In, ?Yield, ?Await]
@@ -831,7 +860,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             _ => unreachable!("parse_template_literal"),
         };
 
-        self.ast.template_literal(self.end_span(span), quasis, expressions)
+        TemplateLiteral::new(self.end_span(span), quasis, expressions, self)
     }
 
     pub(crate) fn parse_template_literal_expression(&mut self, tagged: bool) -> Expression<'a> {
@@ -844,7 +873,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         span: u32,
         lhs: Expression<'a>,
         in_optional_chain: bool,
-        type_arguments: Option<Box<'a, TSTypeParameterInstantiation<'a>>>,
+        type_arguments: Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>>,
     ) -> Expression<'a> {
         let quasi = self.parse_template_literal(true);
         let span = self.end_span(span);
@@ -856,7 +885,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         if in_optional_chain {
             self.error(diagnostics::optional_chain_tagged_template(quasi.span));
         }
-        self.ast.expression_tagged_template(span, lhs, type_arguments, quasi)
+        Expression::new_tagged_template_expression(span, lhs, type_arguments, quasi, self)
     }
 
     pub(crate) fn parse_template_element(&mut self, tagged: bool) -> TemplateElement<'a> {
@@ -882,7 +911,8 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             // `cooked = None` when template literal has invalid escape sequence
             let cooked = self.cur_template_string().map(Str::from);
             if cooked.is_some() && raw.contains('\r') {
-                raw = self.ast.str(&raw.cow_replace("\r\n", "\n").cow_replace('\r', "\n"));
+                raw =
+                    Str::from_str_in(&raw.cow_replace("\r\n", "\n").cow_replace('\r', "\n"), self);
             }
             (cooked, self.cur_token().lone_surrogates())
         } else {
@@ -901,32 +931,33 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
         let tail = matches!(cur_kind, Kind::TemplateTail | Kind::NoSubstitutionTemplate);
         // Parser provides already-escaped values from source, so no escaping needed here
-        self.ast.template_element_with_lone_surrogates(
+        TemplateElement::new_with_lone_surrogates(
             span,
             TemplateElementValue { raw, cooked },
             tail,
             lone_surrogates,
+            self,
         )
     }
 
     /// Section 13.3 ImportCall or ImportMeta
     fn parse_import_meta_or_call(&mut self) -> Expression<'a> {
         let span = self.start_span();
-        let meta = self.parse_keyword_identifier(Kind::Import);
+        self.bump_any(); // bump `import`
         match self.cur_kind() {
             Kind::Dot => {
                 self.bump_any(); // bump `.`
                 match self.cur_kind() {
                     // `import.meta`
                     Kind::Meta => {
-                        let property = self.parse_keyword_identifier(Kind::Meta);
+                        self.bump_any(); // bump `meta`
                         let span = self.end_span(span);
                         self.module_record_builder.visit_import_meta(span);
                         // `import.meta` is only allowed in module code.
                         if !self.source_type.is_module() {
                             self.error_on_script(diagnostics::import_meta(span));
                         }
-                        self.ast.expression_meta_property(span, meta, property)
+                        Expression::new_import_meta(span, self)
                     }
                     // `import.source(expr)`
                     Kind::Source => {
@@ -967,7 +998,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             )
         });
         self.expect(Kind::RParen);
-        self.ast.expression_v_8_intrinsic(self.end_span(span), name, arguments)
+        Expression::new_v8_intrinsic_expression(self.end_span(span), name, arguments, self)
     }
 
     fn parse_v8_intrinsic_argument(&mut self) -> Argument<'a> {
@@ -1007,8 +1038,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         }
         // Add `ChainExpression` to `a?.c?.b<c>`;
         if let Expression::TSInstantiationExpression(mut expr) = lhs {
-            expr.expression = self
-                .map_to_chain_expression(expr.expression.span(), expr.expression.take_in(self.ast));
+            expr.expression.replace_with(|expr| self.map_to_chain_expression(expr.span(), expr));
             Expression::TSInstantiationExpression(expr)
         } else {
             let span = self.end_span(span);
@@ -1020,13 +1050,13 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         match expr {
             match_member_expression!(Expression) => {
                 let member_expr = expr.into_member_expression();
-                self.ast.expression_chain(span, ChainElement::from(member_expr))
+                Expression::new_chain_expression(span, ChainElement::from(member_expr), self)
             }
             Expression::CallExpression(e) => {
-                self.ast.expression_chain(span, ChainElement::CallExpression(e))
+                Expression::new_chain_expression(span, ChainElement::CallExpression(e), self)
             }
             Expression::TSNonNullExpression(e) => {
-                self.ast.expression_chain(span, ChainElement::TSNonNullExpression(e))
+                Expression::new_chain_expression(span, ChainElement::TSNonNullExpression(e), self)
             }
             expr => expr,
         }
@@ -1048,7 +1078,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             self.error(diagnostics::unexpected_super(span));
         }
 
-        self.ast.expression_super(span)
+        Expression::new_super(span, self)
     }
 
     /// An instantiation expression (`MemberExpression TypeArguments`) directly followed by a
@@ -1132,14 +1162,16 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                 }
                 Kind::Bang if self.is_ts && !self.cur_token().is_on_new_line() => {
                     self.bump_any();
-                    lhs = self.ast.expression_ts_non_null(self.end_span(lhs_span), lhs);
+                    lhs =
+                        Expression::new_ts_non_null_expression(self.end_span(lhs_span), lhs, self);
                 }
                 Kind::LAngle | Kind::ShiftLeft if self.is_ts => {
                     if let Some(arguments) = self.parse_type_arguments_in_expression() {
-                        lhs = self.ast.expression_ts_instantiation(
+                        lhs = Expression::new_ts_instantiation_expression(
                             self.end_span(lhs_span),
                             lhs,
                             arguments,
+                            self,
                         );
                     } else {
                         // `re_lex_as_typescript_l_angle` may have popped the original token
@@ -1188,10 +1220,16 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             if lhs.is_super() {
                 self.error(diagnostics::super_private(span));
             }
-            self.ast.member_expression_private_field_expression(span, lhs, private_ident, optional)
+            MemberExpression::new_private_field_expression(span, lhs, private_ident, optional, self)
         } else {
             let ident = self.parse_identifier_name();
-            self.ast.member_expression_static(self.end_span(lhs_span), lhs, ident, optional)
+            MemberExpression::new_static_member_expression(
+                self.end_span(lhs_span),
+                lhs,
+                ident,
+                optional,
+                self,
+            )
         })
     }
 
@@ -1207,22 +1245,28 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         self.bump_any(); // advance `[`
         let property = self.context_add(Context::In, Self::parse_expr);
         self.expect(Kind::RBrack);
-        self.ast.member_expression_computed(self.end_span(lhs_span), lhs, property, optional).into()
+        Expression::new_computed_member_expression(
+            self.end_span(lhs_span),
+            lhs,
+            property,
+            optional,
+            self,
+        )
     }
 
     /// [NewExpression](https://tc39.es/ecma262/#sec-new-operator)
     fn parse_new_expression(&mut self) -> Expression<'a> {
         let span = self.start_span();
-        let identifier = self.parse_keyword_identifier(Kind::New);
+        self.bump_any(); // bump `new`
 
         if self.eat(Kind::Dot) {
             return if self.at(Kind::Target) {
-                let property = self.parse_keyword_identifier(Kind::Target);
+                self.bump_any(); // bump `target`
                 let span = self.end_span(span);
                 if !self.ctx.has_new_target() {
                     self.error(diagnostics::new_target_outside_function(span));
                 }
-                self.ast.expression_meta_property(span, identifier, property)
+                Expression::new_new_target(span, self)
             } else {
                 self.bump_any();
                 self.fatal_error(diagnostics::new_target(self.end_span(span)))
@@ -1271,10 +1315,10 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             self.expect(Kind::RParen);
             call_arguments
         } else {
-            self.ast.vec()
+            ArenaVec::new_in(self)
         };
 
-        if is_import && matches!(callee, Expression::ImportExpression(_)) {
+        if is_import && is_import_expression_or_member_access_on_import_expression(&callee) {
             self.error(diagnostics::new_dynamic_import(self.end_span(rhs_span)));
         }
 
@@ -1288,7 +1332,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             self.error(diagnostics::new_optional_chain(span));
         }
 
-        self.ast.expression_new(span, callee, type_arguments, arguments)
+        Expression::new_new_expression(span, callee, type_arguments, arguments, self)
     }
 
     /// Section 13.3 Call Expression
@@ -1372,7 +1416,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         lhs_span: u32,
         lhs: Expression<'a>,
         optional: bool,
-        type_parameters: Option<Box<'a, TSTypeParameterInstantiation<'a>>>,
+        type_parameters: Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>>,
     ) -> Expression<'a> {
         // ArgumentList[Yield, Await] :
         //   AssignmentExpression[+In, ?Yield, ?Await]
@@ -1402,13 +1446,11 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         });
         self.expect(Kind::RParen);
 
-        // Check if this is an ArkUI component expression (has children block).
-        // ETS stays on the TS path unless the enclosing AST is known to be ArkUI DSL.
+        // ETS stays on the TypeScript path unless the enclosing AST is known to be ArkUI DSL.
         if self.source_type.is_arkui()
             && self.is_in_arkui_dsl_context()
             && (self.at(Kind::LCurly) || self.is_builtin_arkui_component(&lhs))
         {
-            // This is an ArkUI component expression
             return self.parse_arkui_component_expression_after_args(
                 lhs_span,
                 lhs,
@@ -1417,12 +1459,13 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             );
         }
 
-        self.ast.expression_call(
+        Expression::new_call_expression(
             self.end_span(lhs_span),
             lhs,
             type_parameters,
             call_arguments,
             optional,
+            self,
         )
     }
 
@@ -1443,7 +1486,13 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             self.bump_any();
             let argument = self.parse_unary_expression_or_higher(lhs_span);
             let argument = SimpleAssignmentTarget::cover(argument, self);
-            return self.ast.expression_update(self.end_span(lhs_span), operator, true, argument);
+            return Expression::new_update_expression(
+                self.end_span(lhs_span),
+                operator,
+                true,
+                argument,
+                self,
+            );
         }
 
         if self.source_type.is_jsx() && self.at(Kind::LAngle) {
@@ -1458,7 +1507,13 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             let operator = map_update_operator(post_kind);
             self.bump_any();
             let lhs = SimpleAssignmentTarget::cover(lhs, self);
-            return self.ast.expression_update(self.end_span(span), operator, false, lhs);
+            return Expression::new_update_expression(
+                self.end_span(span),
+                operator,
+                false,
+                lhs,
+                self,
+            );
         }
         lhs
     }
@@ -1524,7 +1579,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         {
             self.lexer.trivia_builder.mark_pure_comment_not_applied(index);
         }
-        self.ast.expression_unary(self.end_span(span), operator, argument)
+        Expression::new_unary_expression(self.end_span(span), operator, argument, self)
     }
 
     pub(crate) fn parse_binary_expression_or_higher(
@@ -1601,12 +1656,12 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                     if !self.is_ts {
                         self.error(diagnostics::as_in_ts(span));
                     }
-                    self.ast.expression_ts_as(span, lhs, type_annotation)
+                    Expression::new_ts_as_expression(span, lhs, type_annotation, self)
                 } else {
                     if !self.is_ts {
                         self.error(diagnostics::satisfies_in_ts(span));
                     }
-                    self.ast.expression_ts_satisfies(span, lhs, type_annotation)
+                    Expression::new_ts_satisfies_expression(span, lhs, type_annotation, self)
                 };
                 // When we have `a ## b as T` or `a ## b satisfies T`, where `##` is some binary
                 // operator, stop parsing on any following operator with higher precedence than `##`
@@ -1647,21 +1702,31 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                         self.error(diagnostics::mixed_coalesce(span));
                     }
                 }
-                self.ast.expression_logical(span, lhs, op, rhs)
+                Expression::new_logical_expression(span, lhs, op, rhs, self)
             } else if kind.is_binary_operator() {
                 let span = self.end_span(lhs_span);
                 let op = map_binary_operator(kind);
-                if op == BinaryOperator::Exponential
-                    && !lhs_parenthesized
-                    && let Some(key) = match lhs {
-                        Expression::AwaitExpression(_) => Some("await"),
-                        Expression::UnaryExpression(_) => Some("unary"),
+                if op == BinaryOperator::Exponential && !lhs_parenthesized {
+                    let diagnostic = match &lhs {
+                        Expression::AwaitExpression(_) => Some(
+                            diagnostics::unary_exponentiation_left_operand("await", lhs.span()),
+                        ),
+                        Expression::UnaryExpression(unary) => {
+                            Some(diagnostics::unary_exponentiation_left_operand(
+                                unary.operator.as_str(),
+                                lhs.span(),
+                            ))
+                        }
+                        Expression::TSTypeAssertion(_) => Some(
+                            diagnostics::type_assertion_exponentiation_left_operand(lhs.span()),
+                        ),
                         _ => None,
+                    };
+                    if let Some(diagnostic) = diagnostic {
+                        self.error(diagnostic);
                     }
-                {
-                    self.error(diagnostics::unexpected_exponential(key, lhs.span()));
                 }
-                self.ast.expression_binary(span, lhs, op, rhs)
+                Expression::new_binary_expression(span, lhs, op, rhs, self)
             } else {
                 break;
             };
@@ -1693,7 +1758,13 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         self.expect_conditional_alternative(question_span);
         let alternate =
             self.parse_assignment_expression_or_higher_impl(allow_return_type_in_arrow_function);
-        self.ast.expression_conditional(self.end_span(lhs_span), lhs, consequent, alternate)
+        Expression::new_conditional_expression(
+            self.end_span(lhs_span),
+            lhs,
+            consequent,
+            alternate,
+            self,
+        )
     }
 
     /// `AssignmentExpression`[In, Yield, Await] :
@@ -1870,7 +1941,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         self.bump_any();
         let right =
             self.parse_assignment_expression_or_higher_impl(allow_return_type_in_arrow_function);
-        self.ast.expression_assignment(self.end_span(span), operator, left, right)
+        Expression::new_assignment_expression(self.end_span(span), operator, left, right, self)
     }
 
     /// Section 13.16 Sequence Expression
@@ -1879,13 +1950,13 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         span: u32,
         first_expression: Expression<'a>,
     ) -> Expression<'a> {
-        let mut expressions = self.ast.vec_with_capacity(2);
+        let mut expressions = ArenaVec::with_capacity_in(2, self);
         expressions.push(first_expression);
         while self.eat(Kind::Comma) {
             let expression = self.parse_assignment_expression_or_higher();
             expressions.push(expression);
         }
-        self.ast.expression_sequence(self.end_span(span), expressions)
+        Expression::new_sequence_expression(self.end_span(span), expressions, self)
     }
 
     /// Check if the current `await` token is unambiguously an await expression.
@@ -1935,7 +2006,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             let span = self.start_span();
             self.bump_any(); // consume `await`
             let argument = self.parse_unary_expression_or_higher(self.start_span());
-            return self.ast.expression_await(self.end_span(span), argument);
+            return Expression::new_await_expression(self.end_span(span), argument, self);
         }
 
         // Case 2: Not in await context, but unambiguously an await expression
@@ -1966,7 +2037,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             self.ctx = self.ctx.and_await(true);
             let argument = self.parse_unary_expression_or_higher(self.start_span());
             self.ctx = self.ctx.and_await(false);
-            return self.ast.expression_await(self.end_span(span), argument);
+            return Expression::new_await_expression(self.end_span(span), argument, self);
         }
 
         // Case 3: Ambiguous - parse `await` as identifier
@@ -1986,15 +2057,15 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         }
     }
 
-    pub(crate) fn parse_decorators(&mut self) -> Vec<'a, Decorator<'a>> {
+    pub(crate) fn parse_decorators(&mut self) -> ArenaVec<'a, Decorator<'a>> {
         if self.at(Kind::At) {
-            let mut decorators = self.ast.vec_with_capacity(1);
+            let mut decorators = ArenaVec::with_capacity_in(1, self);
             while self.at(Kind::At) && !self.at_arkts_annotation_declaration() {
                 decorators.push(self.parse_decorator());
             }
             decorators
         } else {
-            self.ast.vec()
+            ArenaVec::new_in(self)
         }
     }
 
@@ -2006,7 +2077,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         let span = self.start_span();
         self.bump_any(); // bump @
         let expr = self.context_add(Context::Decorator, Self::parse_lhs_expression_or_higher);
-        self.ast.decorator(self.end_span(span), expr)
+        Decorator::new(self.end_span(span), expr, self)
     }
 
     fn is_yield_expression(&mut self) -> bool {

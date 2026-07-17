@@ -8,26 +8,48 @@ use std::{
 
 use crate::{Allocator, Box, HashMap, Vec};
 
+/// Option to pass to [`CloneIn::clone_in_impl`] to determine how to clone semantic IDs.
+///
+/// * [`CloneInSemanticIds::With`] to clone by copying current value.
+/// * [`CloneInSemanticIds::Without`] to clone by substituting a dummy value -
+///   `NonMaxU32(0)` for a plain ID, `None` for an optional ID.
+///
+/// This is designed so that cloning semantic IDs is branchless and cheap.
+/// See `SemanticId` trait in `oxc_syntax` crate.
+#[derive(Clone, Copy, PartialEq, Eq)]
+#[repr(u32)]
+pub enum CloneInSemanticIds {
+    With = 0,
+    Without = u32::MAX,
+}
+
 /// A trait to explicitly clone an object into an arena allocator.
 ///
 /// As a convention `Cloned` associated type should always be the same as `Self`,
 /// It'd only differ in the lifetime, Here's an example:
 ///
 /// ```
-/// # use oxc_allocator::{Allocator, CloneIn, Vec};
+/// # use oxc_allocator::{Allocator, CloneIn, CloneInSemanticIds, Vec};
 /// # struct Struct<'a> {a: Vec<'a, u8>, b: u8}
 ///
 /// impl<'old_alloc, 'new_alloc> CloneIn<'new_alloc> for Struct<'old_alloc> {
 ///     type Cloned = Struct<'new_alloc>;
-///     fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
-///         Struct { a: self.a.clone_in(allocator), b: self.b.clone_in(allocator) }
+///
+///     fn clone_in_impl(
+///         &self,
+///         with_semantic_ids: CloneInSemanticIds,
+///         allocator: &'new_alloc Allocator,
+///     ) -> Self::Cloned {
+///         Struct {
+///             a: self.a.clone_in_impl(with_semantic_ids, allocator),
+///             b: self.b.clone_in_impl(with_semantic_ids, allocator),
+///         }
 ///     }
 /// }
 /// ```
 ///
-/// Implementations of this trait on non-allocated items usually short-circuit to `Clone::clone`;
+/// Implementations of this trait on non-allocated items usually delegate to `Clone::clone`.
 /// However, it **isn't** guaranteed.
-///
 pub trait CloneIn<'new_alloc>: Sized {
     /// The type of the cloned object.
     ///
@@ -36,14 +58,43 @@ pub trait CloneIn<'new_alloc>: Sized {
 
     /// Clone `self` into the given `allocator`. `allocator` may be the same one
     /// that `self` is already in.
-    fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned;
+    // `#[inline(always)]` because it just delegates to `clone_in_impl`.
+    #[expect(clippy::inline_always)]
+    #[inline(always)]
+    fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
+        self.clone_in_impl(CloneInSemanticIds::Without, allocator)
+    }
 
     /// Almost identical as `clone_in`, but for some special type, it will also clone the semantic ids.
     /// Please use this method only if you make sure semantic info is synced with the ast node.
-    #[inline]
+    // `#[inline(always)]` because it just delegates to `clone_in_impl`.
+    #[expect(clippy::inline_always)]
+    #[inline(always)]
     fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
-        self.clone_in(allocator)
+        self.clone_in_impl(CloneInSemanticIds::With, allocator)
     }
+
+    /// Clone `self` into `allocator`, threading whether semantic ids should be preserved as a
+    /// runtime `with_semantic_ids` flag rather than as two separate methods.
+    ///
+    /// This is the method that implementors provide.
+    /// `clone_in` and `clone_in_with_semantic_ids` are thin wrappers around it.
+    ///
+    /// It exists so the `CloneIn` derive can emit a *single* recursive traversal that serves both:
+    /// * `clone_in`: `with_semantic_ids == CloneInSemanticIds::Without`
+    /// * `clone_in_with_semantic_ids`: `with_semantic_ids == CloneInSemanticIds::With`
+    ///
+    /// This is instead of monomorphizing two near-identical traversals over the whole AST.
+    /// ID fields copy existing values when `with_semantic_ids == CloneInSemanticIds::With`,
+    /// and reset to their default when `CloneInSemanticIds::Without`.
+    ///
+    /// Prefer calling `clone_in` or `clone_in_with_semantic_ids` at call sites —
+    /// they name the intent and delegate here.
+    fn clone_in_impl(
+        &self,
+        with_semantic_ids: CloneInSemanticIds,
+        allocator: &'new_alloc Allocator,
+    ) -> Self::Cloned;
 }
 
 impl<'alloc, T, C> CloneIn<'alloc> for Option<T>
@@ -52,12 +103,13 @@ where
 {
     type Cloned = Option<C>;
 
-    fn clone_in(&self, allocator: &'alloc Allocator) -> Self::Cloned {
-        self.as_ref().map(|it| it.clone_in(allocator))
-    }
-
-    fn clone_in_with_semantic_ids(&self, allocator: &'alloc Allocator) -> Self::Cloned {
-        self.as_ref().map(|it| it.clone_in_with_semantic_ids(allocator))
+    #[inline]
+    fn clone_in_impl(
+        &self,
+        with_semantic_ids: CloneInSemanticIds,
+        allocator: &'alloc Allocator,
+    ) -> Self::Cloned {
+        self.as_ref().map(|it| it.clone_in_impl(with_semantic_ids, allocator))
     }
 }
 
@@ -67,12 +119,13 @@ where
 {
     type Cloned = Box<'new_alloc, C>;
 
-    fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
-        Box::new_in(self.as_ref().clone_in(allocator), allocator)
-    }
-
-    fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
-        Box::new_in(self.as_ref().clone_in_with_semantic_ids(allocator), allocator)
+    #[inline]
+    fn clone_in_impl(
+        &self,
+        with_semantic_ids: CloneInSemanticIds,
+        allocator: &'new_alloc Allocator,
+    ) -> Self::Cloned {
+        Box::new_in(self.as_ref().clone_in_impl(with_semantic_ids, allocator), &allocator)
     }
 }
 
@@ -82,7 +135,11 @@ where
 {
     type Cloned = Box<'new_alloc, [C]>;
 
-    fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
+    fn clone_in_impl(
+        &self,
+        with_semantic_ids: CloneInSemanticIds,
+        allocator: &'new_alloc Allocator,
+    ) -> Self::Cloned {
         let slice = self.as_ref();
 
         // Compile-time check that `T` and `C` have identical size and alignment - which they always will
@@ -106,43 +163,7 @@ where
         unsafe {
             let mut ptr = dst_ptr;
             for item in slice {
-                ptr.write(item.clone_in(allocator));
-                ptr = ptr.add(1);
-            }
-        }
-
-        // SAFETY: We just initialized `slice.len()` x `C`s, starting at `dst_ptr`
-        let new_slice = unsafe { slice::from_raw_parts_mut(dst_ptr.as_ptr(), slice.len()) };
-        // SAFETY: `NonNull::from(new_slice)` produces a valid pointer. The data is in the arena.
-        // Lifetime of returned `Box` matches the `Allocator` the data was allocated in.
-        unsafe { Box::from_non_null(NonNull::from(new_slice)) }
-    }
-
-    fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
-        let slice = self.as_ref();
-
-        // Compile-time check that `T` and `C` have identical size and alignment - which they always will
-        // with intended usage that `T` and `C` are same types, just with different lifetimes.
-        // This guarantees that layout of clone is same as layout of `slice`,
-        // so we can create `Layout` with `for_value`, which has no runtime checks.
-        const {
-            assert!(
-                size_of::<C>() == size_of::<T>() && align_of::<C>() == align_of::<T>(),
-                "Size and alignment of `T` and `<T as CloneIn>::Cloned` must be the same"
-            );
-        }
-        let layout = Layout::for_value(slice);
-
-        let dst_ptr = allocator.alloc_layout(layout).cast::<C>();
-
-        // SAFETY: We allocated space for `slice.len()` items of type `C`, starting at `dst_ptr`.
-        // Therefore, writing `slice.len()` elements to that memory region is safe.
-        // `C` isn't `Drop`, and allocation is in the arena, so we don't need to worry about a panic
-        // in the loop - can't lead to a memory leak.
-        unsafe {
-            let mut ptr = dst_ptr;
-            for item in slice {
-                ptr.write(item.clone_in_with_semantic_ids(allocator));
+                ptr.write(item.clone_in_impl(with_semantic_ids, allocator));
                 ptr = ptr.add(1);
             }
         }
@@ -164,16 +185,20 @@ where
 {
     type Cloned = Vec<'new_alloc, C>;
 
-    fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
+    fn clone_in_impl(
+        &self,
+        with_semantic_ids: CloneInSemanticIds,
+        allocator: &'new_alloc Allocator,
+    ) -> Self::Cloned {
         // The implementation below is equivalent to:
-        // `Vec::from_iter_in(self.iter().map(|it| it.clone_in(allocator)), allocator)`
+        // `Vec::from_iter_in(self.iter().map(|it| it.clone_in_impl(with_semantic_ids, allocator)), allocator)`
         // But `Vec::from_iter_in` is inefficient because it performs a bounds check for each item.
         // This is unnecessary in this case as we know the length of the slice with certainty.
         // This implementation takes advantage of that invariant, and skips those checks.
 
         let slice = self.as_slice();
 
-        let mut vec = Vec::<C>::with_capacity_in(slice.len(), allocator);
+        let mut vec = Vec::<C>::with_capacity_in(slice.len(), &allocator);
 
         // SAFETY: We allocated capacity for `slice.len()` elements in `vec`.
         // Therefore, writing `slice.len()` elements to that memory region is safe.
@@ -182,28 +207,7 @@ where
         unsafe {
             let mut ptr = vec.as_mut_ptr();
             for item in slice {
-                ptr.write(item.clone_in(allocator));
-                ptr = ptr.add(1);
-            }
-            vec.set_len(slice.len());
-        }
-
-        vec
-    }
-
-    fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
-        let slice = self.as_slice();
-
-        let mut vec = Vec::<C>::with_capacity_in(slice.len(), allocator);
-
-        // SAFETY: We allocated capacity for `slice.len()` elements in `vec`.
-        // Therefore, writing `slice.len()` elements to that memory region is safe.
-        // `C` and `Vec` aren't `Drop`, and allocation is in the arena, so we don't need to worry about
-        // a panic in this loop - can't lead to a memory leak. We just set length at the end.
-        unsafe {
-            let mut ptr = vec.as_mut_ptr();
-            for item in slice {
-                ptr.write(item.clone_in_with_semantic_ids(allocator));
+                ptr.write(item.clone_in_impl(with_semantic_ids, allocator));
                 ptr = ptr.add(1);
             }
             vec.set_len(slice.len());
@@ -222,7 +226,11 @@ where
 {
     type Cloned = HashMap<'new_alloc, CK, CV, S>;
 
-    fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
+    fn clone_in_impl(
+        &self,
+        with_semantic_ids: CloneInSemanticIds,
+        allocator: &'new_alloc Allocator,
+    ) -> Self::Cloned {
         // Keys in original hash map are guaranteed to be unique.
         // Unfortunately, we have no static guarantee that `CloneIn` maintains that uniqueness
         // - original keys (`K`) are guaranteed unique, but cloned keys (`CK`) might not be.
@@ -232,35 +240,39 @@ where
         // So sadly this is a lot slower than it could be, especially for `Copy` types.
         let mut cloned = HashMap::with_capacity_in(self.len(), allocator);
         for (key, value) in self {
-            cloned.insert(key.clone_in(allocator), value.clone_in(allocator));
-        }
-        cloned
-    }
-
-    fn clone_in_with_semantic_ids(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
-        let mut cloned = HashMap::with_capacity_in(self.len(), allocator);
-        for (key, value) in self {
             cloned.insert(
-                key.clone_in_with_semantic_ids(allocator),
-                value.clone_in_with_semantic_ids(allocator),
+                key.clone_in_impl(with_semantic_ids, allocator),
+                value.clone_in_impl(with_semantic_ids, allocator),
             );
         }
         cloned
     }
 }
 
-impl<'alloc, T: Copy> CloneIn<'alloc> for Cell<T> {
-    type Cloned = Cell<T>;
+impl<'alloc, T, C> CloneIn<'alloc> for Cell<T>
+where
+    T: Copy + CloneIn<'alloc, Cloned = C>,
+{
+    type Cloned = Cell<C>;
 
-    fn clone_in(&self, _: &'alloc Allocator) -> Self::Cloned {
-        Cell::new(self.get())
+    #[inline]
+    fn clone_in_impl(
+        &self,
+        with_semantic_ids: CloneInSemanticIds,
+        allocator: &'alloc Allocator,
+    ) -> Self::Cloned {
+        Cell::new(self.get().clone_in_impl(with_semantic_ids, allocator))
     }
 }
 
 impl<'new_alloc> CloneIn<'new_alloc> for &str {
     type Cloned = &'new_alloc str;
 
-    fn clone_in(&self, allocator: &'new_alloc Allocator) -> Self::Cloned {
+    fn clone_in_impl(
+        &self,
+        _with_semantic_ids: CloneInSemanticIds,
+        allocator: &'new_alloc Allocator,
+    ) -> Self::Cloned {
         allocator.alloc_str(self)
     }
 }
@@ -271,7 +283,7 @@ macro_rules! impl_clone_in {
             impl<'alloc> CloneIn<'alloc> for $t {
                 type Cloned = Self;
                 #[inline(always)]
-                fn clone_in(&self, _: &'alloc Allocator) -> Self {
+                fn clone_in_impl(&self, _with_semantic_ids: CloneInSemanticIds, _: &'alloc Allocator) -> Self {
                     *self
                 }
             }
@@ -293,11 +305,12 @@ mod test {
     #[test]
     fn clone_in_boxed_slice() {
         let allocator = Allocator::default();
+        let allocator = &allocator;
 
         let mut original = Vec::from_iter_in([1, 2, 3], &allocator).into_boxed_slice();
 
-        let cloned = original.clone_in(&allocator);
-        let cloned2 = original.clone_in_with_semantic_ids(&allocator);
+        let cloned = original.clone_in(allocator);
+        let cloned2 = original.clone_in_with_semantic_ids(allocator);
         original[1] = 4;
 
         assert_eq!(original.as_ref(), &[1, 4, 3]);
@@ -308,12 +321,13 @@ mod test {
     #[test]
     fn clone_in_vec() {
         let allocator = Allocator::default();
+        let allocator = &allocator;
 
         let mut original = Vec::with_capacity_in(8, &allocator);
         original.extend_from_slice(&[1, 2, 3]);
 
-        let cloned = original.clone_in(&allocator);
-        let cloned2 = original.clone_in_with_semantic_ids(&allocator);
+        let cloned = original.clone_in(allocator);
+        let cloned2 = original.clone_in_with_semantic_ids(allocator);
         original[1] = 4;
 
         assert_eq!(original.as_slice(), &[1, 4, 3]);

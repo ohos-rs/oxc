@@ -8,549 +8,1522 @@ use crate::ast::StructDetails;
 pub static STRUCTS: phf::Map<&'static str, StructDetails> = ::phf::Map {
     key: 16287231350648472473,
     disps: &[
-        (0, 25),
+        (0, 72),
+        (1, 2),
+        (0, 9),
+        (0, 2),
         (0, 0),
-        (0, 0),
-        (0, 26),
-        (0, 0),
-        (0, 18),
-        (0, 28),
-        (0, 33),
-        (0, 3),
-        (0, 0),
-        (0, 18),
-        (0, 46),
-        (0, 8),
-        (0, 4),
         (0, 10),
-        (0, 6),
-        (0, 37),
+        (0, 5),
+        (0, 28),
+        (0, 1),
+        (0, 1),
+        (0, 0),
+        (0, 16),
+        (0, 16),
+        (0, 1),
+        (0, 29),
+        (0, 21),
+        (0, 1),
         (0, 3),
+        (0, 0),
+        (0, 16),
+        (0, 54),
+        (0, 59),
+        (0, 0),
+        (0, 12),
+        (0, 17),
+        (0, 1),
+        (0, 31),
+        (0, 0),
+        (0, 41),
+        (0, 3),
+        (0, 65),
+        (0, 16),
+        (0, 5),
+        (0, 22),
+        (0, 11),
+        (0, 24),
+        (0, 18),
+        (0, 27),
+        (0, 11),
+        (0, 11),
+        (0, 44),
+        (1, 3),
+        (0, 20),
+        (0, 1),
+        (0, 0),
+        (0, 54),
         (0, 0),
         (0, 13),
-        (0, 28),
-        (0, 10),
-        (0, 2),
-        (0, 5),
-        (0, 0),
-        (1, 2),
-        (0, 0),
-        (0, 1),
-        (0, 45),
-        (0, 2),
-        (0, 32),
         (0, 21),
-        (0, 2),
-        (0, 3),
-        (0, 127),
-        (0, 25),
-        (0, 161),
-        (0, 10),
-        (0, 16),
-        (0, 41),
-        (0, 28),
-        (0, 0),
-        (0, 0),
-        (0, 4),
-        (0, 1),
-        (0, 76),
-        (0, 0),
-        (0, 12),
-        (0, 1),
-        (0, 8),
-        (0, 46),
-        (0, 0),
-        (0, 0),
-        (0, 7),
-        (0, 4),
-        (0, 0),
-        (0, 2),
-        (0, 0),
-        (0, 35),
-        (0, 22),
-        (0, 0),
-        (0, 95),
-        (0, 6),
-        (0, 0),
-        (0, 17),
-        (0, 131),
-        (0, 1),
-        (0, 73),
-        (0, 136),
+        (0, 96),
+        (0, 40),
         (0, 14),
-        (0, 44),
-        (0, 93),
-        (0, 55),
-        (0, 88),
+        (0, 5),
+        (0, 13),
+        (0, 2),
+        (0, 1),
+        (0, 5),
+        (0, 32),
+        (0, 20),
+        (0, 45),
+        (0, 51),
+        (0, 49),
+        (0, 14),
         (0, 0),
+        (0, 5),
+        (0, 73),
         (0, 3),
-        (0, 89),
-        (0, 63),
-        (0, 12),
-        (0, 48),
-        (0, 204),
+        (0, 213),
+        (0, 7),
+        (0, 71),
+        (0, 23),
+        (0, 101),
+        (0, 20),
+        (0, 90),
+        (0, 0),
+        (0, 160),
+        (0, 71),
+        (1, 123),
+        (0, 218),
+        (0, 8),
+        (0, 4),
     ],
     entries: &[
-        ("WithStatement", StructDetails { field_order: Some(&[1, 0, 3, 4, 2]), is_node: true }),
-        ("TSParenthesizedType", StructDetails { field_order: Some(&[1, 0, 2]), is_node: true }),
         (
-            "TSInstantiationExpression",
-            StructDetails { field_order: Some(&[1, 0, 2, 3]), is_node: true },
-        ),
-        ("JSXSpreadAttribute", StructDetails { field_order: Some(&[1, 0, 2]), is_node: true }),
-        (
-            "AssignmentExpression",
-            StructDetails { field_order: Some(&[1, 0, 2, 3, 4]), is_node: true },
-        ),
-        ("TSEnumBody", StructDetails { field_order: Some(&[1, 0, 3, 2]), is_node: true }),
-        (
-            "BindingProperty",
-            StructDetails { field_order: Some(&[1, 0, 4, 5, 2, 3]), is_node: true },
+            "JSDocUnknownType",
+            StructDetails { field_order: Some(&[1, 0]), is_node: true, is_transparent: false },
         ),
         (
-            "ArkUIComponentExpression",
-            StructDetails { field_order: Some(&[1, 0, 3, 4, 5, 6, 2, 7]), is_node: true },
+            "TSNamedTupleMember",
+            StructDetails {
+                field_order: Some(&[1, 0, 3, 4, 2]),
+                is_node: true,
+                is_transparent: false,
+            },
         ),
         (
-            "LazyImportDeclaration",
-            StructDetails { field_order: Some(&[1, 0, 2, 3, 4]), is_node: true },
+            "Program",
+            StructDetails {
+                field_order: Some(&[1, 0, 8, 3, 4, 5, 6, 7, 2]),
+                is_node: true,
+                is_transparent: false,
+            },
         ),
-        ("TSThisType", StructDetails { field_order: Some(&[1, 0]), is_node: true }),
-        ("JSXNamespacedName", StructDetails { field_order: Some(&[1, 0, 2, 3]), is_node: true }),
-        ("WithClause", StructDetails { field_order: Some(&[1, 0, 2, 3]), is_node: true }),
+        (
+            "TSEnumDeclaration",
+            StructDetails {
+                field_order: Some(&[1, 0, 4, 5, 2, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "TSNonNullExpression",
+            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true, is_transparent: false },
+        ),
+        (
+            "NumericLiteral",
+            StructDetails {
+                field_order: Some(&[1, 0, 4, 3, 2]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "SwitchStatement",
+            StructDetails {
+                field_order: Some(&[1, 0, 3, 4, 2]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "EcmaScriptModule",
+            StructDetails {
+                field_order: Some(&[4, 0, 1, 2, 3]),
+                is_node: false,
+                is_transparent: false,
+            },
+        ),
+        (
+            "ExportDefaultDeclaration",
+            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true, is_transparent: false },
+        ),
+        (
+            "SpreadElement",
+            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true, is_transparent: false },
+        ),
+        (
+            "ImportDefaultSpecifier",
+            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true, is_transparent: false },
+        ),
+        (
+            "TSNeverKeyword",
+            StructDetails { field_order: Some(&[1, 0]), is_node: true, is_transparent: false },
+        ),
+        (
+            "TSUnknownKeyword",
+            StructDetails { field_order: Some(&[1, 0]), is_node: true, is_transparent: false },
+        ),
+        (
+            "ThisExpression",
+            StructDetails { field_order: Some(&[1, 0]), is_node: true, is_transparent: false },
+        ),
+        (
+            "TSNullKeyword",
+            StructDetails { field_order: Some(&[1, 0]), is_node: true, is_transparent: false },
+        ),
+        (
+            "TSLiteralType",
+            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true, is_transparent: false },
+        ),
+        (
+            "TSIndexedAccessType",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "AssignmentTargetPropertyProperty",
+            StructDetails {
+                field_order: Some(&[1, 0, 3, 4, 2]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "V8IntrinsicExpression",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "UpdateExpression",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3, 4]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        ("Modifier", StructDetails { field_order: None, is_node: false, is_transparent: true }),
+        (
+            "StringLiteral",
+            StructDetails {
+                field_order: Some(&[1, 0, 3, 4, 2]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "JSXExpressionContainer",
+            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true, is_transparent: false },
+        ),
+        (
+            "TSOptionalType",
+            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true, is_transparent: false },
+        ),
+        (
+            "ImportDeclaration",
+            StructDetails {
+                field_order: Some(&[1, 0, 4, 5, 2, 6, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "BindingIdentifier",
+            StructDetails {
+                field_order: Some(&[1, 0, 3, 2]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "TSModuleDeclaration",
+            StructDetails {
+                field_order: Some(&[1, 0, 3, 4, 5, 6, 2]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "TSThisType",
+            StructDetails { field_order: Some(&[1, 0]), is_node: true, is_transparent: false },
+        ),
+        ("NonMaxU32", StructDetails { field_order: None, is_node: false, is_transparent: true }),
+        (
+            "TSRestType",
+            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true, is_transparent: false },
+        ),
+        (
+            "AnnotationBody",
+            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true, is_transparent: false },
+        ),
+        (
+            "TSAnyKeyword",
+            StructDetails { field_order: Some(&[1, 0]), is_node: true, is_transparent: false },
+        ),
+        (
+            "ErrorLabel",
+            StructDetails { field_order: Some(&[1, 0]), is_node: false, is_transparent: false },
+        ),
+        (
+            "ChainExpression",
+            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true, is_transparent: false },
+        ),
+        (
+            "Class",
+            StructDetails {
+                field_order: Some(&[1, 0, 10, 3, 4, 5, 6, 7, 8, 9, 11, 12, 2]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "JSXOpeningElement",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3, 4]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "TSBigIntKeyword",
+            StructDetails { field_order: Some(&[1, 0]), is_node: true, is_transparent: false },
+        ),
+        (
+            "TSTypeLiteral",
+            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true, is_transparent: false },
+        ),
+        (
+            "CharacterClassEscape",
+            StructDetails { field_order: None, is_node: false, is_transparent: false },
+        ),
+        (
+            "ArrowFunctionExpression",
+            StructDetails {
+                field_order: Some(&[1, 0, 7, 8, 3, 4, 5, 6, 2, 9, 10]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "JSXOpeningFragment",
+            StructDetails { field_order: Some(&[1, 0]), is_node: true, is_transparent: false },
+        ),
+        (
+            "CommentNewlines",
+            StructDetails { field_order: None, is_node: false, is_transparent: true },
+        ),
+        (
+            "StaticBlock",
+            StructDetails {
+                field_order: Some(&[1, 0, 3, 2]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "LogicalExpression",
+            StructDetails {
+                field_order: Some(&[1, 0, 3, 2, 4]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
         (
             "TSMethodSignature",
-            StructDetails { field_order: Some(&[1, 0, 3, 8, 9, 10, 4, 5, 6, 7, 2]), is_node: true },
+            StructDetails {
+                field_order: Some(&[1, 0, 3, 8, 9, 10, 4, 5, 6, 7, 2]),
+                is_node: true,
+                is_transparent: false,
+            },
         ),
-        ("TSImportType", StructDetails { field_order: Some(&[1, 0, 2, 3, 4, 5]), is_node: true }),
-        ("ContinueStatement", StructDetails { field_order: Some(&[1, 0, 2]), is_node: true }),
-        ("RegExp", StructDetails { field_order: None, is_node: false }),
         (
-            "RawTransferMetadata",
-            StructDetails { field_order: Some(&[0, 3, 4, 5, 1, 2]), is_node: false },
+            "Super",
+            StructDetails { field_order: Some(&[1, 0]), is_node: true, is_transparent: false },
         ),
-        ("ReferenceId", StructDetails { field_order: None, is_node: false }),
-        ("IfStatement", StructDetails { field_order: Some(&[1, 0, 2, 3, 4]), is_node: true }),
-        ("MetaProperty", StructDetails { field_order: Some(&[1, 0, 2, 3]), is_node: true }),
-        ("Comment", StructDetails { field_order: None, is_node: false }),
-        ("CatchParameter", StructDetails { field_order: Some(&[1, 0, 2, 3]), is_node: true }),
         (
-            "ObjectAssignmentTarget",
-            StructDetails { field_order: Some(&[1, 0, 2, 3]), is_node: true },
+            "TSUndefinedKeyword",
+            StructDetails { field_order: Some(&[1, 0]), is_node: true, is_transparent: false },
         ),
-        ("JSXClosingFragment", StructDetails { field_order: Some(&[1, 0]), is_node: true }),
-        ("JSXMemberExpression", StructDetails { field_order: Some(&[1, 0, 2, 3]), is_node: true }),
         (
-            "ImportNamespaceSpecifier",
-            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true },
+            "TSIntrinsicKeyword",
+            StructDetails { field_order: Some(&[1, 0]), is_node: true, is_transparent: false },
         ),
-        ("StaticExport", StructDetails { field_order: None, is_node: false }),
-        ("ClassStringDisjunction", StructDetails { field_order: Some(&[0, 2, 1]), is_node: false }),
-        ("TSLiteralType", StructDetails { field_order: Some(&[1, 0, 2]), is_node: true }),
         (
-            "VariableDeclarator",
-            StructDetails { field_order: Some(&[1, 0, 2, 4, 5, 6, 3]), is_node: true },
+            "JSXText",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
         ),
-        ("TryStatement", StructDetails { field_order: Some(&[1, 0, 2, 3, 4]), is_node: true }),
-        ("ParenthesizedExpression", StructDetails { field_order: Some(&[1, 0, 2]), is_node: true }),
-        ("JSXText", StructDetails { field_order: Some(&[1, 0, 2, 3]), is_node: true }),
-        ("TSEnumMember", StructDetails { field_order: Some(&[1, 0, 2, 3]), is_node: true }),
-        ("TSTypeAnnotation", StructDetails { field_order: Some(&[1, 0, 2]), is_node: true }),
-        ("NameSpan", StructDetails { field_order: Some(&[1, 0]), is_node: false }),
-        ("TSUndefinedKeyword", StructDetails { field_order: Some(&[1, 0]), is_node: true }),
-        ("ClassString", StructDetails { field_order: Some(&[0, 2, 1]), is_node: false }),
-        ("TSNullKeyword", StructDetails { field_order: Some(&[1, 0]), is_node: true }),
-        ("TSInterfaceHeritage", StructDetails { field_order: Some(&[1, 0, 2, 3]), is_node: true }),
-        ("TSTypeLiteral", StructDetails { field_order: Some(&[1, 0, 2]), is_node: true }),
-        ("ThisExpression", StructDetails { field_order: Some(&[1, 0]), is_node: true }),
-        ("DoWhileStatement", StructDetails { field_order: Some(&[1, 0, 2, 3]), is_node: true }),
-        ("PrivateIdentifier", StructDetails { field_order: Some(&[1, 0, 2]), is_node: true }),
-        ("ObjectExpression", StructDetails { field_order: Some(&[1, 0, 2]), is_node: true }),
-        ("BlockStatement", StructDetails { field_order: Some(&[1, 0, 3, 2]), is_node: true }),
-        ("TSAsExpression", StructDetails { field_order: Some(&[1, 0, 2, 3]), is_node: true }),
         (
-            "TSMappedType",
-            StructDetails { field_order: Some(&[1, 0, 3, 4, 5, 6, 7, 8, 2]), is_node: true },
+            "LeadingDotExpression",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3, 4, 5]),
+                is_node: true,
+                is_transparent: false,
+            },
         ),
-        ("TSClassImplements", StructDetails { field_order: Some(&[1, 0, 2, 3]), is_node: true }),
-        ("CatchClause", StructDetails { field_order: Some(&[1, 0, 3, 4, 2]), is_node: true }),
-        ("TemplateLiteral", StructDetails { field_order: Some(&[1, 0, 2, 3]), is_node: true }),
+        (
+            "TSGlobalDeclaration",
+            StructDetails {
+                field_order: Some(&[1, 0, 3, 4, 5, 2]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        ("IgnoreGroup", StructDetails { field_order: None, is_node: false, is_transparent: false }),
+        (
+            "Span",
+            StructDetails { field_order: Some(&[1, 2, 0]), is_node: false, is_transparent: false },
+        ),
+        (
+            "TSParenthesizedType",
+            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true, is_transparent: false },
+        ),
+        (
+            "TSImportEqualsDeclaration",
+            StructDetails {
+                field_order: Some(&[1, 0, 3, 4, 2]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "ImportExpression",
+            StructDetails {
+                field_order: Some(&[1, 0, 3, 4, 2]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "TSTypeParameter",
+            StructDetails {
+                field_order: Some(&[1, 0, 5, 6, 7, 2, 3, 4]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "AssignmentExpression",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3, 4]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "PrivateInExpression",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "ClassBody",
+            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true, is_transparent: false },
+        ),
+        (
+            "AssignmentTargetWithDefault",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "TSCallSignatureDeclaration",
+            StructDetails {
+                field_order: Some(&[1, 0, 3, 4, 5, 6, 2]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "TSConstructorType",
+            StructDetails {
+                field_order: Some(&[1, 0, 6, 3, 4, 5, 2]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "TSInterfaceDeclaration",
+            StructDetails {
+                field_order: Some(&[1, 0, 3, 4, 5, 6, 7, 2]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "TSFunctionType",
+            StructDetails {
+                field_order: Some(&[1, 0, 3, 4, 5, 6, 2]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "TSTypeOperator",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "ObjectExpression",
+            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true, is_transparent: false },
+        ),
+        ("Modifiers", StructDetails { field_order: None, is_node: false, is_transparent: false }),
+        ("ScopeId", StructDetails { field_order: None, is_node: false, is_transparent: true }),
+        (
+            "TSEnumBody",
+            StructDetails {
+                field_order: Some(&[1, 0, 3, 2]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "AnnotationDeclaration",
+            StructDetails {
+                field_order: Some(&[1, 0, 3, 4, 5, 6, 2]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "AssignmentTargetRest",
+            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true, is_transparent: false },
+        ),
+        (
+            "LookAroundAssertion",
+            StructDetails { field_order: Some(&[0, 2, 1]), is_node: false, is_transparent: false },
+        ),
+        (
+            "TSExportAssignment",
+            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true, is_transparent: false },
+        ),
+        (
+            "RegExpPattern",
+            StructDetails { field_order: None, is_node: false, is_transparent: false },
+        ),
+        (
+            "AssignmentPattern",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "TSIndexSignatureName",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "TaggedTemplateExpression",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3, 4]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "TSNumberKeyword",
+            StructDetails { field_order: Some(&[1, 0]), is_node: true, is_transparent: false },
+        ),
+        (
+            "TemplateElementValue",
+            StructDetails { field_order: None, is_node: false, is_transparent: false },
+        ),
+        (
+            "TSConstructSignatureDeclaration",
+            StructDetails {
+                field_order: Some(&[1, 0, 3, 4, 5, 2]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "JSXIdentifier",
+            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true, is_transparent: false },
+        ),
+        (
+            "JSXEmptyExpression",
+            StructDetails { field_order: Some(&[1, 0]), is_node: true, is_transparent: false },
+        ),
+        ("Pattern", StructDetails { field_order: None, is_node: false, is_transparent: false }),
+        (
+            "DynamicImport",
+            StructDetails { field_order: None, is_node: false, is_transparent: false },
+        ),
+        (
+            "JSXAttribute",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "JSXNamespacedName",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
         (
             "TSIndexSignature",
-            StructDetails { field_order: Some(&[1, 0, 4, 5, 2, 3]), is_node: true },
+            StructDetails {
+                field_order: Some(&[1, 0, 4, 5, 2, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
         ),
-        ("FormalParameters", StructDetails { field_order: Some(&[1, 0, 2, 3, 4]), is_node: true }),
-        ("BooleanLiteral", StructDetails { field_order: Some(&[1, 0, 2]), is_node: true }),
-        ("SymbolId", StructDetails { field_order: None, is_node: false }),
-        ("CommentNewlines", StructDetails { field_order: None, is_node: false }),
+        (
+            "AwaitExpression",
+            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true, is_transparent: false },
+        ),
+        (
+            "ExportNamedDeclaration",
+            StructDetails {
+                field_order: Some(&[1, 0, 3, 4, 5, 6, 2, 7]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "Quantifier",
+            StructDetails {
+                field_order: Some(&[0, 1, 2, 4, 3]),
+                is_node: false,
+                is_transparent: false,
+            },
+        ),
+        (
+            "RegExpLiteral",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "TSTypeReference",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "TSStringKeyword",
+            StructDetails { field_order: Some(&[1, 0]), is_node: true, is_transparent: false },
+        ),
+        (
+            "BindingProperty",
+            StructDetails {
+                field_order: Some(&[1, 0, 4, 5, 2, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "JSXFragment",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3, 4]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "FormalParameters",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3, 4]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "TSTypeAnnotation",
+            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true, is_transparent: false },
+        ),
+        (
+            "LabeledStatement",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "FunctionBody",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "UnaryExpression",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "TSTypeAssertion",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "VariableDeclaration",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 4, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "TSThisParameter",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "ReturnStatement",
+            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true, is_transparent: false },
+        ),
+        (
+            "UnicodePropertyEscape",
+            StructDetails {
+                field_order: Some(&[0, 3, 4, 1, 2]),
+                is_node: false,
+                is_transparent: false,
+            },
+        ),
+        (
+            "Directive",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "TSArrayType",
+            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true, is_transparent: false },
+        ),
+        (
+            "TSSatisfiesExpression",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "BreakStatement",
+            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true, is_transparent: false },
+        ),
+        (
+            "TSVoidKeyword",
+            StructDetails { field_order: Some(&[1, 0]), is_node: true, is_transparent: false },
+        ),
+        (
+            "EmptyStatement",
+            StructDetails { field_order: Some(&[1, 0]), is_node: true, is_transparent: false },
+        ),
+        (
+            "TSClassImplements",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "ExportEntry",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3, 4, 5, 6]),
+                is_node: false,
+                is_transparent: false,
+            },
+        ),
+        (
+            "ArrayAssignmentTarget",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "ExportAllDeclaration",
+            StructDetails {
+                field_order: Some(&[1, 0, 3, 4, 5, 2]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "TSTypeQuery",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "NameSpan",
+            StructDetails { field_order: Some(&[1, 0]), is_node: false, is_transparent: false },
+        ),
+        (
+            "JSDocNullableType",
+            StructDetails {
+                field_order: Some(&[1, 0, 3, 2]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        ("RegExpFlags", StructDetails { field_order: None, is_node: false, is_transparent: true }),
+        (
+            "TSImportTypeQualifiedName",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "AssignmentTargetPropertyIdentifier",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "TSInstantiationExpression",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "TSInferType",
+            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true, is_transparent: false },
+        ),
+        (
+            "TSInterfaceHeritage",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
         (
             "PropertyDefinition",
             StructDetails {
                 field_order: Some(&[1, 0, 2, 6, 7, 8, 9, 3, 4, 5, 10, 11, 12, 13, 14]),
                 is_node: true,
+                is_transparent: false,
             },
         ),
-        ("TSUnknownKeyword", StructDetails { field_order: Some(&[1, 0]), is_node: true }),
-        ("ClassBody", StructDetails { field_order: Some(&[1, 0, 2]), is_node: true }),
-        ("Span", StructDetails { field_order: Some(&[1, 2, 0]), is_node: false }),
-        ("DebuggerStatement", StructDetails { field_order: Some(&[1, 0]), is_node: true }),
-        ("LabeledStatement", StructDetails { field_order: Some(&[1, 0, 2, 3]), is_node: true }),
-        ("TSNonNullExpression", StructDetails { field_order: Some(&[1, 0, 2]), is_node: true }),
-        ("LabelIdentifier", StructDetails { field_order: Some(&[1, 0, 2]), is_node: true }),
+        (
+            "TSTypeParameterDeclaration",
+            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true, is_transparent: false },
+        ),
+        (
+            "ClassStringDisjunction",
+            StructDetails { field_order: Some(&[0, 2, 1]), is_node: false, is_transparent: false },
+        ),
+        (
+            "YieldExpression",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "TSExternalModuleReference",
+            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true, is_transparent: false },
+        ),
+        (
+            "TemplateLiteral",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "JSXElement",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3, 4]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        ("Alternative", StructDetails { field_order: None, is_node: false, is_transparent: false }),
+        (
+            "ArrayPattern",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "NamedReference",
+            StructDetails { field_order: None, is_node: false, is_transparent: false },
+        ),
+        (
+            "ImportSpecifier",
+            StructDetails {
+                field_order: Some(&[1, 0, 3, 4, 2]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "ObjectPattern",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "JSXSpreadAttribute",
+            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true, is_transparent: false },
+        ),
+        (
+            "TSPropertySignature",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3, 4, 5, 6]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "NullLiteral",
+            StructDetails { field_order: Some(&[1, 0]), is_node: true, is_transparent: false },
+        ),
+        (
+            "ParenthesizedExpression",
+            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true, is_transparent: false },
+        ),
+        (
+            "DoWhileStatement",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "ForOfStatement",
+            StructDetails {
+                field_order: Some(&[1, 0, 6, 3, 4, 5, 2]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "Function",
+            StructDetails {
+                field_order: Some(&[1, 0, 10, 3, 4, 11, 12, 13, 5, 6, 7, 8, 9, 2, 14, 15]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "Error",
+            StructDetails {
+                field_order: Some(&[4, 0, 1, 2, 3]),
+                is_node: false,
+                is_transparent: false,
+            },
+        ),
+        (
+            "TSConditionalType",
+            StructDetails {
+                field_order: Some(&[1, 0, 3, 4, 5, 6, 2]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "ObjectProperty",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 6, 7, 3, 4, 5]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "TSQualifiedName",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "PrivateIdentifier",
+            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true, is_transparent: false },
+        ),
+        (
+            "ThrowStatement",
+            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true, is_transparent: false },
+        ),
+        ("SourceType", StructDetails { field_order: None, is_node: false, is_transparent: false }),
+        (
+            "BinaryExpression",
+            StructDetails {
+                field_order: Some(&[1, 0, 3, 2, 4]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "TSModuleBlock",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "TemplateElement",
+            StructDetails {
+                field_order: Some(&[1, 0, 4, 2, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "PrivateFieldExpression",
+            StructDetails {
+                field_order: Some(&[1, 0, 3, 4, 2]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "RawTransferMetadata2",
+            StructDetails {
+                field_order: Some(&[0, 3, 4, 5, 1, 2]),
+                is_node: false,
+                is_transparent: false,
+            },
+        ),
+        (
+            "CallExpression",
+            StructDetails {
+                field_order: Some(&[1, 0, 4, 5, 6, 2, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "ConditionalExpression",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3, 4]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "CharacterClass",
+            StructDetails {
+                field_order: Some(&[0, 2, 3, 4, 1]),
+                is_node: false,
+                is_transparent: false,
+            },
+        ),
+        (
+            "TSObjectKeyword",
+            StructDetails { field_order: Some(&[1, 0]), is_node: true, is_transparent: false },
+        ),
+        (
+            "StaticMemberExpression",
+            StructDetails {
+                field_order: Some(&[1, 0, 3, 4, 2]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "Elision",
+            StructDetails { field_order: Some(&[1, 0]), is_node: true, is_transparent: false },
+        ),
+        (
+            "TSNamespaceExportDeclaration",
+            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true, is_transparent: false },
+        ),
+        (
+            "JSXClosingFragment",
+            StructDetails { field_order: Some(&[1, 0]), is_node: true, is_transparent: false },
+        ),
+        (
+            "RawTransferData",
+            StructDetails { field_order: None, is_node: false, is_transparent: false },
+        ),
+        (
+            "ExpressionStatement",
+            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true, is_transparent: false },
+        ),
+        (
+            "TSTypeParameterInstantiation",
+            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true, is_transparent: false },
+        ),
+        (
+            "BigIntLiteral",
+            StructDetails {
+                field_order: Some(&[1, 0, 3, 4, 2]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "FormalParameter",
+            StructDetails {
+                field_order: Some(&[1, 0, 6, 7, 8, 9, 2, 3, 4, 5]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "IdentifierName",
+            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true, is_transparent: false },
+        ),
+        ("Disjunction", StructDetails { field_order: None, is_node: false, is_transparent: false }),
+        ("Comment", StructDetails { field_order: None, is_node: false, is_transparent: false }),
+        (
+            "Decorator",
+            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true, is_transparent: false },
+        ),
+        (
+            "BoundaryAssertion",
+            StructDetails { field_order: None, is_node: false, is_transparent: false },
+        ),
+        (
+            "JSXClosingElement",
+            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true, is_transparent: false },
+        ),
+        (
+            "VariableDeclarator",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 4, 5, 6, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "Character",
+            StructDetails { field_order: Some(&[0, 2, 1]), is_node: false, is_transparent: false },
+        ),
+        (
+            "ObjectAssignmentTarget",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "TSTypePredicate",
+            StructDetails {
+                field_order: Some(&[1, 0, 3, 2, 4]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "WithStatement",
+            StructDetails {
+                field_order: Some(&[1, 0, 3, 4, 2]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        ("RegExp", StructDetails { field_order: None, is_node: false, is_transparent: false }),
+        (
+            "IndexedReference",
+            StructDetails { field_order: None, is_node: false, is_transparent: false },
+        ),
+        (
+            "StaticExport",
+            StructDetails { field_order: None, is_node: false, is_transparent: false },
+        ),
+        (
+            "TSIntersectionType",
+            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true, is_transparent: false },
+        ),
+        (
+            "JSXMemberExpression",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "TSInterfaceBody",
+            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true, is_transparent: false },
+        ),
+        (
+            "NewExpression",
+            StructDetails {
+                field_order: Some(&[1, 0, 3, 4, 5, 2]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "TSAsExpression",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "RawTransferMetadata",
+            StructDetails {
+                field_order: Some(&[0, 3, 4, 5, 1, 2]),
+                is_node: false,
+                is_transparent: false,
+            },
+        ),
+        (
+            "LabelIdentifier",
+            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true, is_transparent: false },
+        ),
+        (
+            "SwitchCase",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "IfStatement",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3, 4]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "ClassString",
+            StructDetails { field_order: Some(&[0, 2, 1]), is_node: false, is_transparent: false },
+        ),
+        (
+            "BlockStatement",
+            StructDetails {
+                field_order: Some(&[1, 0, 3, 2]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "TSSymbolKeyword",
+            StructDetails { field_order: Some(&[1, 0]), is_node: true, is_transparent: false },
+        ),
+        (
+            "WhileStatement",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "ForStatement",
+            StructDetails {
+                field_order: Some(&[1, 0, 3, 4, 5, 6, 2]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
         (
             "AccessorProperty",
             StructDetails {
                 field_order: Some(&[1, 0, 2, 6, 7, 8, 9, 3, 4, 5, 10, 11]),
                 is_node: true,
+                is_transparent: false,
             },
-        ),
-        (
-            "LeadingDotExpression",
-            StructDetails { field_order: Some(&[1, 0, 2, 3, 4, 5]), is_node: true },
-        ),
-        ("BindingRestElement", StructDetails { field_order: Some(&[1, 0, 2]), is_node: true }),
-        ("Alternative", StructDetails { field_order: None, is_node: false }),
-        ("CharacterClassRange", StructDetails { field_order: None, is_node: false }),
-        ("ImportExpression", StructDetails { field_order: Some(&[1, 0, 3, 4, 2]), is_node: true }),
-        ("ThrowStatement", StructDetails { field_order: Some(&[1, 0, 2]), is_node: true }),
-        ("NewExpression", StructDetails { field_order: Some(&[1, 0, 3, 4, 5, 2]), is_node: true }),
-        (
-            "TSFunctionType",
-            StructDetails { field_order: Some(&[1, 0, 3, 4, 5, 6, 2]), is_node: true },
         ),
         (
             "StructStatement",
             StructDetails {
                 field_order: Some(&[1, 0, 3, 4, 5, 6, 7, 8, 9, 10, 11, 2]),
                 is_node: true,
+                is_transparent: false,
             },
         ),
-        ("JSDocNonNullableType", StructDetails { field_order: Some(&[1, 0, 3, 2]), is_node: true }),
-        ("ArrayExpression", StructDetails { field_order: Some(&[1, 0, 2]), is_node: true }),
-        ("TSInferType", StructDetails { field_order: Some(&[1, 0, 2]), is_node: true }),
         (
-            "AssignmentTargetPropertyIdentifier",
-            StructDetails { field_order: Some(&[1, 0, 2, 3]), is_node: true },
+            "CharacterClassRange",
+            StructDetails { field_order: None, is_node: false, is_transparent: false },
         ),
         (
-            "FormalParameterRest",
-            StructDetails { field_order: Some(&[1, 0, 2, 3, 4]), is_node: true },
-        ),
-        ("IdentifierName", StructDetails { field_order: Some(&[1, 0, 2]), is_node: true }),
-        ("CharacterClass", StructDetails { field_order: Some(&[0, 2, 3, 4, 1]), is_node: false }),
-        ("JSXEmptyExpression", StructDetails { field_order: Some(&[1, 0]), is_node: true }),
-        (
-            "TSNamespaceExportDeclaration",
-            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true },
-        ),
-        ("WhileStatement", StructDetails { field_order: Some(&[1, 0, 2, 3]), is_node: true }),
-        (
-            "TSEnumDeclaration",
-            StructDetails { field_order: Some(&[1, 0, 4, 5, 2, 3]), is_node: true },
-        ),
-        ("I32Dummy", StructDetails { field_order: None, is_node: false }),
-        ("JSXSpreadChild", StructDetails { field_order: Some(&[1, 0, 2]), is_node: true }),
-        ("Modifier", StructDetails { field_order: None, is_node: false }),
-        ("SequenceExpression", StructDetails { field_order: Some(&[1, 0, 2]), is_node: true }),
-        ("BreakStatement", StructDetails { field_order: Some(&[1, 0, 2]), is_node: true }),
-        ("ImportSpecifier", StructDetails { field_order: Some(&[1, 0, 3, 4, 2]), is_node: true }),
-        ("TSOptionalType", StructDetails { field_order: Some(&[1, 0, 2]), is_node: true }),
-        ("StaticImport", StructDetails { field_order: None, is_node: false }),
-        ("TSTupleType", StructDetails { field_order: Some(&[1, 0, 2]), is_node: true }),
-        ("SpreadElement", StructDetails { field_order: Some(&[1, 0, 2]), is_node: true }),
-        ("BigIntLiteral", StructDetails { field_order: Some(&[1, 0, 3, 4, 2]), is_node: true }),
-        ("PrivateInExpression", StructDetails { field_order: Some(&[1, 0, 2, 3]), is_node: true }),
-        ("TSNumberKeyword", StructDetails { field_order: Some(&[1, 0]), is_node: true }),
-        (
-            "AssignmentTargetPropertyProperty",
-            StructDetails { field_order: Some(&[1, 0, 3, 4, 2]), is_node: true },
-        ),
-        (
-            "VariableDeclaration",
-            StructDetails { field_order: Some(&[1, 0, 2, 4, 3]), is_node: true },
-        ),
-        (
-            "TaggedTemplateExpression",
-            StructDetails { field_order: Some(&[1, 0, 2, 3, 4]), is_node: true },
-        ),
-        (
-            "AssignmentTargetWithDefault",
-            StructDetails { field_order: Some(&[1, 0, 2, 3]), is_node: true },
-        ),
-        ("EcmaScriptModule", StructDetails { field_order: Some(&[4, 0, 1, 2, 3]), is_node: false }),
-        ("JSXFragment", StructDetails { field_order: Some(&[1, 0, 2, 3, 4]), is_node: true }),
-        (
-            "ObjectProperty",
-            StructDetails { field_order: Some(&[1, 0, 2, 6, 7, 3, 4, 5]), is_node: true },
-        ),
-        ("Decorator", StructDetails { field_order: Some(&[1, 0, 2]), is_node: true }),
-        (
-            "V8IntrinsicExpression",
-            StructDetails { field_order: Some(&[1, 0, 2, 3]), is_node: true },
-        ),
-        ("BindingIdentifier", StructDetails { field_order: Some(&[1, 0, 3, 2]), is_node: true }),
-        ("Super", StructDetails { field_order: Some(&[1, 0]), is_node: true }),
-        (
-            "PrivateFieldExpression",
-            StructDetails { field_order: Some(&[1, 0, 3, 4, 2]), is_node: true },
-        ),
-        ("Pattern", StructDetails { field_order: None, is_node: false }),
-        ("JSXExpressionContainer", StructDetails { field_order: Some(&[1, 0, 2]), is_node: true }),
-        ("IgnoreGroup", StructDetails { field_order: None, is_node: false }),
-        ("YieldExpression", StructDetails { field_order: Some(&[1, 0, 2, 3]), is_node: true }),
-        ("TSIntersectionType", StructDetails { field_order: Some(&[1, 0, 2]), is_node: true }),
-        ("ObjectPattern", StructDetails { field_order: Some(&[1, 0, 2, 3]), is_node: true }),
-        ("ScopeId", StructDetails { field_order: None, is_node: false }),
-        ("ImportAttribute", StructDetails { field_order: Some(&[1, 0, 2, 3]), is_node: true }),
-        ("ExpressionStatement", StructDetails { field_order: Some(&[1, 0, 2]), is_node: true }),
-        (
-            "TSGlobalDeclaration",
-            StructDetails { field_order: Some(&[1, 0, 3, 4, 5, 2]), is_node: true },
-        ),
-        (
-            "ImportDeclaration",
-            StructDetails { field_order: Some(&[1, 0, 4, 5, 2, 6, 3]), is_node: true },
-        ),
-        ("SwitchStatement", StructDetails { field_order: Some(&[1, 0, 3, 4, 2]), is_node: true }),
-        ("TSSymbolKeyword", StructDetails { field_order: Some(&[1, 0]), is_node: true }),
-        ("TSIntrinsicKeyword", StructDetails { field_order: Some(&[1, 0]), is_node: true }),
-        (
-            "AnnotationDeclaration",
-            StructDetails { field_order: Some(&[1, 0, 3, 4, 5, 6, 2]), is_node: true },
-        ),
-        ("TemplateElement", StructDetails { field_order: Some(&[1, 0, 4, 2, 3]), is_node: true }),
-        ("LookAroundAssertion", StructDetails { field_order: Some(&[0, 2, 1]), is_node: false }),
-        ("ImportDefaultSpecifier", StructDetails { field_order: Some(&[1, 0, 2]), is_node: true }),
-        (
-            "TSConstructSignatureDeclaration",
-            StructDetails { field_order: Some(&[1, 0, 3, 4, 5, 2]), is_node: true },
-        ),
-        ("Modifiers", StructDetails { field_order: None, is_node: false }),
-        ("TSBooleanKeyword", StructDetails { field_order: Some(&[1, 0]), is_node: true }),
-        ("AssignmentTargetRest", StructDetails { field_order: Some(&[1, 0, 2]), is_node: true }),
-        (
-            "StaticMemberExpression",
-            StructDetails { field_order: Some(&[1, 0, 3, 4, 2]), is_node: true },
-        ),
-        (
-            "TSNamedTupleMember",
-            StructDetails { field_order: Some(&[1, 0, 3, 4, 2]), is_node: true },
-        ),
-        ("JSDocNullableType", StructDetails { field_order: Some(&[1, 0, 3, 2]), is_node: true }),
-        (
-            "ExportEntry",
-            StructDetails { field_order: Some(&[1, 0, 2, 3, 4, 5, 6]), is_node: false },
-        ),
-        ("NodeId", StructDetails { field_order: None, is_node: false }),
-        ("CapturingGroup", StructDetails { field_order: None, is_node: false }),
-        ("TSThisParameter", StructDetails { field_order: Some(&[1, 0, 2, 3]), is_node: true }),
-        ("EmptyStatement", StructDetails { field_order: Some(&[1, 0]), is_node: true }),
-        (
-            "TSPropertySignature",
-            StructDetails { field_order: Some(&[1, 0, 2, 3, 4, 5, 6]), is_node: true },
-        ),
-        ("TSBigIntKeyword", StructDetails { field_order: Some(&[1, 0]), is_node: true }),
-        (
-            "TSConstructorType",
-            StructDetails { field_order: Some(&[1, 0, 6, 3, 4, 5, 2]), is_node: true },
-        ),
-        ("Dot", StructDetails { field_order: None, is_node: false }),
-        ("NumericLiteral", StructDetails { field_order: Some(&[1, 0, 4, 3, 2]), is_node: true }),
-        ("IdentifierReference", StructDetails { field_order: Some(&[1, 0, 3, 2]), is_node: true }),
-        ("IndexedReference", StructDetails { field_order: None, is_node: false }),
-        ("Disjunction", StructDetails { field_order: None, is_node: false }),
-        ("AnnotationBody", StructDetails { field_order: Some(&[1, 0, 2]), is_node: true }),
-        ("TemplateElementValue", StructDetails { field_order: None, is_node: false }),
-        (
-            "TSConditionalType",
-            StructDetails { field_order: Some(&[1, 0, 3, 4, 5, 6, 2]), is_node: true },
-        ),
-        (
-            "ExportDefaultDeclaration",
-            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true },
-        ),
-        ("Quantifier", StructDetails { field_order: Some(&[0, 1, 2, 4, 3]), is_node: false }),
-        (
-            "TSCallSignatureDeclaration",
-            StructDetails { field_order: Some(&[1, 0, 3, 4, 5, 6, 2]), is_node: true },
-        ),
-        ("ChainExpression", StructDetails { field_order: Some(&[1, 0, 2]), is_node: true }),
-        (
-            "Class",
+            "LazyImportDeclaration",
             StructDetails {
-                field_order: Some(&[1, 0, 10, 3, 4, 5, 6, 7, 8, 9, 11, 12, 2]),
+                field_order: Some(&[1, 0, 2, 3, 4]),
                 is_node: true,
+                is_transparent: false,
             },
         ),
-        ("StructBody", StructDetails { field_order: Some(&[1, 0, 2]), is_node: true }),
         (
-            "CallExpression",
-            StructDetails { field_order: Some(&[1, 0, 4, 5, 6, 2, 3]), is_node: true },
-        ),
-        ("TSVoidKeyword", StructDetails { field_order: Some(&[1, 0]), is_node: true }),
-        ("BinaryExpression", StructDetails { field_order: Some(&[1, 0, 3, 2, 4]), is_node: true }),
-        (
-            "TSSatisfiesExpression",
-            StructDetails { field_order: Some(&[1, 0, 2, 3]), is_node: true },
-        ),
-        (
-            "TSExternalModuleReference",
-            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true },
-        ),
-        ("SwitchCase", StructDetails { field_order: Some(&[1, 0, 2, 3]), is_node: true }),
-        ("NonMaxU32", StructDetails { field_order: None, is_node: false }),
-        (
-            "TSImportEqualsDeclaration",
-            StructDetails { field_order: Some(&[1, 0, 3, 4, 2]), is_node: true },
-        ),
-        ("TSTypeQuery", StructDetails { field_order: Some(&[1, 0, 2, 3]), is_node: true }),
-        ("RegExpPattern", StructDetails { field_order: None, is_node: false }),
-        ("Hashbang", StructDetails { field_order: Some(&[1, 0, 2]), is_node: true }),
-        ("ExportSpecifier", StructDetails { field_order: Some(&[1, 0, 3, 4, 2]), is_node: true }),
-        ("StringLiteral", StructDetails { field_order: Some(&[1, 0, 3, 4, 2]), is_node: true }),
-        ("TSAnyKeyword", StructDetails { field_order: Some(&[1, 0]), is_node: true }),
-        ("NamedReference", StructDetails { field_order: None, is_node: false }),
-        ("ImportEntry", StructDetails { field_order: None, is_node: false }),
-        (
-            "TSInterfaceDeclaration",
-            StructDetails { field_order: Some(&[1, 0, 3, 4, 5, 6, 7, 2]), is_node: true },
-        ),
-        (
-            "TSTypeParameterInstantiation",
-            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true },
-        ),
-        (
-            "ForStatement",
-            StructDetails { field_order: Some(&[1, 0, 3, 4, 5, 6, 2]), is_node: true },
-        ),
-        (
-            "ComputedMemberExpression",
-            StructDetails { field_order: Some(&[1, 0, 3, 4, 2]), is_node: true },
-        ),
-        ("TSIndexedAccessType", StructDetails { field_order: Some(&[1, 0, 2, 3]), is_node: true }),
-        ("TSStringKeyword", StructDetails { field_order: Some(&[1, 0]), is_node: true }),
-        ("TSUnionType", StructDetails { field_order: Some(&[1, 0, 2]), is_node: true }),
-        ("TSTypeOperator", StructDetails { field_order: Some(&[1, 0, 2, 3]), is_node: true }),
-        (
-            "TSTypeParameterDeclaration",
-            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true },
-        ),
-        ("NullLiteral", StructDetails { field_order: Some(&[1, 0]), is_node: true }),
-        ("Error", StructDetails { field_order: Some(&[4, 0, 1, 2, 3]), is_node: false }),
-        ("UpdateExpression", StructDetails { field_order: Some(&[1, 0, 2, 3, 4]), is_node: true }),
-        ("TSNeverKeyword", StructDetails { field_order: Some(&[1, 0]), is_node: true }),
-        ("ErrorLabel", StructDetails { field_order: Some(&[1, 0]), is_node: false }),
-        (
-            "ArrayAssignmentTarget",
-            StructDetails { field_order: Some(&[1, 0, 2, 3]), is_node: true },
-        ),
-        ("Directive", StructDetails { field_order: Some(&[1, 0, 2, 3]), is_node: true }),
-        ("Character", StructDetails { field_order: Some(&[0, 2, 1]), is_node: false }),
-        ("DynamicImport", StructDetails { field_order: None, is_node: false }),
-        ("TSExportAssignment", StructDetails { field_order: Some(&[1, 0, 2]), is_node: true }),
-        ("StaticBlock", StructDetails { field_order: Some(&[1, 0, 3, 2]), is_node: true }),
-        ("CharacterClassEscape", StructDetails { field_order: None, is_node: false }),
-        ("RegExpLiteral", StructDetails { field_order: Some(&[1, 0, 2, 3]), is_node: true }),
-        ("JSXAttribute", StructDetails { field_order: Some(&[1, 0, 2, 3]), is_node: true }),
-        (
-            "Function",
+            "TryStatement",
             StructDetails {
-                field_order: Some(&[1, 0, 10, 3, 4, 11, 12, 13, 5, 6, 7, 8, 9, 2, 14, 15]),
+                field_order: Some(&[1, 0, 2, 3, 4]),
                 is_node: true,
+                is_transparent: false,
             },
         ),
-        ("ForInStatement", StructDetails { field_order: Some(&[1, 0, 3, 4, 5, 2]), is_node: true }),
-        ("TSTypeAssertion", StructDetails { field_order: Some(&[1, 0, 2, 3]), is_node: true }),
-        ("TSTypeReference", StructDetails { field_order: Some(&[1, 0, 2, 3]), is_node: true }),
         (
-            "ForOfStatement",
-            StructDetails { field_order: Some(&[1, 0, 6, 3, 4, 5, 2]), is_node: true },
+            "CatchParameter",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
         ),
-        ("JSDocUnknownType", StructDetails { field_order: Some(&[1, 0]), is_node: true }),
         (
-            "FormalParameter",
-            StructDetails { field_order: Some(&[1, 0, 6, 7, 8, 9, 2, 3, 4, 5]), is_node: true },
+            "SequenceExpression",
+            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true, is_transparent: false },
         ),
-        ("LogicalExpression", StructDetails { field_order: Some(&[1, 0, 3, 2, 4]), is_node: true }),
         (
-            "ConditionalExpression",
-            StructDetails { field_order: Some(&[1, 0, 2, 3, 4]), is_node: true },
+            "ImportNamespaceSpecifier",
+            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true, is_transparent: false },
         ),
-        ("TSRestType", StructDetails { field_order: Some(&[1, 0, 2]), is_node: true }),
-        ("AwaitExpression", StructDetails { field_order: Some(&[1, 0, 2]), is_node: true }),
         (
-            "TSImportTypeQualifiedName",
-            StructDetails { field_order: Some(&[1, 0, 2, 3]), is_node: true },
+            "TSTupleType",
+            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true, is_transparent: false },
         ),
-        ("JSXOpeningFragment", StructDetails { field_order: Some(&[1, 0]), is_node: true }),
-        ("TSArrayType", StructDetails { field_order: Some(&[1, 0, 2]), is_node: true }),
-        ("SourceType", StructDetails { field_order: None, is_node: false }),
+        (
+            "ForInStatement",
+            StructDetails {
+                field_order: Some(&[1, 0, 3, 4, 5, 2]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        ("Dot", StructDetails { field_order: None, is_node: false, is_transparent: true }),
         (
             "MethodDefinition",
             StructDetails {
                 field_order: Some(&[1, 0, 2, 6, 7, 8, 3, 4, 5, 9, 10, 11]),
                 is_node: true,
+                is_transparent: false,
             },
         ),
-        ("TSQualifiedName", StructDetails { field_order: Some(&[1, 0, 2, 3]), is_node: true }),
+        (
+            "TSMappedType",
+            StructDetails {
+                field_order: Some(&[1, 0, 3, 4, 5, 6, 7, 8, 2]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "DebuggerStatement",
+            StructDetails { field_order: Some(&[1, 0]), is_node: true, is_transparent: false },
+        ),
+        (
+            "ArrayExpression",
+            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true, is_transparent: false },
+        ),
+        (
+            "TSImportType",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3, 4, 5]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "ImportAttribute",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "ContinueStatement",
+            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true, is_transparent: false },
+        ),
+        ("SymbolId", StructDetails { field_order: None, is_node: false, is_transparent: true }),
+        (
+            "StructBody",
+            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true, is_transparent: false },
+        ),
+        (
+            "StaticImport",
+            StructDetails { field_order: None, is_node: false, is_transparent: false },
+        ),
+        (
+            "TSEnumMember",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "TSBooleanKeyword",
+            StructDetails { field_order: Some(&[1, 0]), is_node: true, is_transparent: false },
+        ),
+        ("ReferenceId", StructDetails { field_order: None, is_node: false, is_transparent: true }),
+        ("ImportEntry", StructDetails { field_order: None, is_node: false, is_transparent: false }),
+        (
+            "JSDocNonNullableType",
+            StructDetails {
+                field_order: Some(&[1, 0, 3, 2]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "BooleanLiteral",
+            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true, is_transparent: false },
+        ),
         (
             "TSTemplateLiteralType",
-            StructDetails { field_order: Some(&[1, 0, 2, 3]), is_node: true },
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
         ),
         (
-            "TSTypeParameter",
-            StructDetails { field_order: Some(&[1, 0, 5, 6, 7, 2, 3, 4]), is_node: true },
+            "Hashbang",
+            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true, is_transparent: false },
         ),
-        ("RawTransferData", StructDetails { field_order: None, is_node: false }),
         (
-            "Program",
-            StructDetails { field_order: Some(&[1, 0, 8, 3, 4, 5, 6, 7, 2]), is_node: true },
+            "IdentifierReference",
+            StructDetails {
+                field_order: Some(&[1, 0, 3, 2]),
+                is_node: true,
+                is_transparent: false,
+            },
         ),
-        ("TSModuleBlock", StructDetails { field_order: Some(&[1, 0, 2, 3]), is_node: true }),
-        ("ArrayPattern", StructDetails { field_order: Some(&[1, 0, 2, 3]), is_node: true }),
         (
-            "UnicodePropertyEscape",
-            StructDetails { field_order: Some(&[0, 3, 4, 1, 2]), is_node: false },
+            "ExportSpecifier",
+            StructDetails {
+                field_order: Some(&[1, 0, 3, 4, 2]),
+                is_node: true,
+                is_transparent: false,
+            },
         ),
-        ("JSXClosingElement", StructDetails { field_order: Some(&[1, 0, 2]), is_node: true }),
-        ("TSTypePredicate", StructDetails { field_order: Some(&[1, 0, 3, 2, 4]), is_node: true }),
         (
-            "ArrowFunctionExpression",
-            StructDetails { field_order: Some(&[1, 0, 7, 8, 3, 4, 5, 6, 2, 9, 10]), is_node: true },
+            "FormalParameterRest",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3, 4]),
+                is_node: true,
+                is_transparent: false,
+            },
         ),
-        ("JSXIdentifier", StructDetails { field_order: Some(&[1, 0, 2]), is_node: true }),
-        ("JSXOpeningElement", StructDetails { field_order: Some(&[1, 0, 2, 3, 4]), is_node: true }),
-        ("FunctionBody", StructDetails { field_order: Some(&[1, 0, 2, 3]), is_node: true }),
-        ("ReturnStatement", StructDetails { field_order: Some(&[1, 0, 2]), is_node: true }),
-        ("TSInterfaceBody", StructDetails { field_order: Some(&[1, 0, 2]), is_node: true }),
-        ("RegExpFlags", StructDetails { field_order: None, is_node: false }),
-        ("TSIndexSignatureName", StructDetails { field_order: Some(&[1, 0, 2, 3]), is_node: true }),
-        ("UnaryExpression", StructDetails { field_order: Some(&[1, 0, 2, 3]), is_node: true }),
+        ("NodeId", StructDetails { field_order: None, is_node: false, is_transparent: true }),
         (
-            "ExportNamedDeclaration",
-            StructDetails { field_order: Some(&[1, 0, 3, 4, 5, 6, 2, 7]), is_node: true },
+            "CatchClause",
+            StructDetails {
+                field_order: Some(&[1, 0, 3, 4, 2]),
+                is_node: true,
+                is_transparent: false,
+            },
         ),
-        ("Elision", StructDetails { field_order: Some(&[1, 0]), is_node: true }),
         (
-            "RawTransferMetadata2",
-            StructDetails { field_order: Some(&[0, 3, 4, 5, 1, 2]), is_node: false },
+            "WithClause",
+            StructDetails {
+                field_order: Some(&[1, 0, 2, 3]),
+                is_node: true,
+                is_transparent: false,
+            },
         ),
         (
             "TSTypeAliasDeclaration",
-            StructDetails { field_order: Some(&[1, 0, 3, 4, 5, 6, 2]), is_node: true },
+            StructDetails {
+                field_order: Some(&[1, 0, 3, 4, 5, 6, 2]),
+                is_node: true,
+                is_transparent: false,
+            },
         ),
-        ("JSXElement", StructDetails { field_order: Some(&[1, 0, 2, 3, 4]), is_node: true }),
-        ("BoundaryAssertion", StructDetails { field_order: None, is_node: false }),
-        ("FixedSizeAllocatorMetadata", StructDetails { field_order: None, is_node: false }),
         (
-            "TSModuleDeclaration",
-            StructDetails { field_order: Some(&[1, 0, 3, 4, 5, 6, 2]), is_node: true },
+            "BindingRestElement",
+            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true, is_transparent: false },
         ),
-        ("AssignmentPattern", StructDetails { field_order: Some(&[1, 0, 2, 3]), is_node: true }),
-        ("TSObjectKeyword", StructDetails { field_order: Some(&[1, 0]), is_node: true }),
         (
-            "ExportAllDeclaration",
-            StructDetails { field_order: Some(&[1, 0, 3, 4, 5, 2]), is_node: true },
+            "ComputedMemberExpression",
+            StructDetails {
+                field_order: Some(&[1, 0, 3, 4, 2]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        ("I32Dummy", StructDetails { field_order: None, is_node: false, is_transparent: true }),
+        (
+            "NewTarget",
+            StructDetails { field_order: Some(&[1, 0]), is_node: true, is_transparent: false },
+        ),
+        (
+            "TSUnionType",
+            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true, is_transparent: false },
+        ),
+        (
+            "ArkUIComponentExpression",
+            StructDetails {
+                field_order: Some(&[1, 0, 3, 4, 5, 6, 2, 7]),
+                is_node: true,
+                is_transparent: false,
+            },
+        ),
+        (
+            "JSXSpreadChild",
+            StructDetails { field_order: Some(&[1, 0, 2]), is_node: true, is_transparent: false },
+        ),
+        (
+            "FixedSizeAllocatorMetadata",
+            StructDetails { field_order: None, is_node: false, is_transparent: false },
+        ),
+        (
+            "CapturingGroup",
+            StructDetails { field_order: None, is_node: false, is_transparent: false },
+        ),
+        (
+            "ImportMeta",
+            StructDetails { field_order: Some(&[1, 0]), is_node: true, is_transparent: false },
         ),
     ],
 };

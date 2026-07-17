@@ -88,72 +88,74 @@ function constructExpression(pos, ast) {
     case 7:
       return constructBoxIdentifierReference(pos + 8, ast);
     case 8:
-      return constructBoxMetaProperty(pos + 8, ast);
-    case 9:
       return constructBoxSuper(pos + 8, ast);
-    case 10:
+    case 9:
       return constructBoxArrayExpression(pos + 8, ast);
-    case 11:
+    case 10:
       return constructBoxArrowFunctionExpression(pos + 8, ast);
-    case 12:
+    case 11:
       return constructBoxAssignmentExpression(pos + 8, ast);
-    case 13:
+    case 12:
       return constructBoxAwaitExpression(pos + 8, ast);
-    case 14:
+    case 13:
       return constructBoxBinaryExpression(pos + 8, ast);
-    case 15:
+    case 14:
       return constructBoxCallExpression(pos + 8, ast);
-    case 16:
+    case 15:
       return constructBoxChainExpression(pos + 8, ast);
-    case 17:
+    case 16:
       return constructBoxClass(pos + 8, ast);
-    case 18:
+    case 17:
       return constructBoxConditionalExpression(pos + 8, ast);
-    case 19:
+    case 18:
       return constructBoxFunction(pos + 8, ast);
-    case 20:
+    case 19:
       return constructBoxImportExpression(pos + 8, ast);
-    case 21:
+    case 20:
       return constructBoxLogicalExpression(pos + 8, ast);
-    case 22:
+    case 21:
       return constructBoxNewExpression(pos + 8, ast);
-    case 23:
+    case 22:
       return constructBoxObjectExpression(pos + 8, ast);
-    case 24:
+    case 23:
       return constructBoxParenthesizedExpression(pos + 8, ast);
-    case 25:
+    case 24:
       return constructBoxSequenceExpression(pos + 8, ast);
-    case 26:
+    case 25:
       return constructBoxTaggedTemplateExpression(pos + 8, ast);
-    case 27:
+    case 26:
       return constructBoxThisExpression(pos + 8, ast);
-    case 28:
+    case 27:
       return constructBoxUnaryExpression(pos + 8, ast);
-    case 29:
+    case 28:
       return constructBoxUpdateExpression(pos + 8, ast);
-    case 30:
+    case 29:
       return constructBoxYieldExpression(pos + 8, ast);
-    case 31:
+    case 30:
       return constructBoxPrivateInExpression(pos + 8, ast);
+    case 31:
+      return constructBoxImportMeta(pos + 8, ast);
     case 32:
-      return constructBoxJSXElement(pos + 8, ast);
+      return constructBoxNewTarget(pos + 8, ast);
     case 33:
-      return constructBoxJSXFragment(pos + 8, ast);
+      return constructBoxJSXElement(pos + 8, ast);
     case 34:
-      return constructBoxTSAsExpression(pos + 8, ast);
+      return constructBoxJSXFragment(pos + 8, ast);
     case 35:
-      return constructBoxTSSatisfiesExpression(pos + 8, ast);
+      return constructBoxTSAsExpression(pos + 8, ast);
     case 36:
-      return constructBoxTSTypeAssertion(pos + 8, ast);
+      return constructBoxTSSatisfiesExpression(pos + 8, ast);
     case 37:
-      return constructBoxTSNonNullExpression(pos + 8, ast);
+      return constructBoxTSTypeAssertion(pos + 8, ast);
     case 38:
-      return constructBoxTSInstantiationExpression(pos + 8, ast);
+      return constructBoxTSNonNullExpression(pos + 8, ast);
     case 39:
-      return constructBoxV8IntrinsicExpression(pos + 8, ast);
+      return constructBoxTSInstantiationExpression(pos + 8, ast);
     case 40:
-      return constructBoxArkUIComponentExpression(pos + 8, ast);
+      return constructBoxV8IntrinsicExpression(pos + 8, ast);
     case 41:
+      return constructBoxArkUIComponentExpression(pos + 8, ast);
+    case 42:
       return constructBoxLeadingDotExpression(pos + 8, ast);
     case 48:
       return constructBoxComputedMemberExpression(pos + 8, ast);
@@ -468,72 +470,74 @@ function constructArrayExpressionElement(pos, ast) {
     case 7:
       return constructBoxIdentifierReference(pos + 8, ast);
     case 8:
-      return constructBoxMetaProperty(pos + 8, ast);
-    case 9:
       return constructBoxSuper(pos + 8, ast);
-    case 10:
+    case 9:
       return constructBoxArrayExpression(pos + 8, ast);
-    case 11:
+    case 10:
       return constructBoxArrowFunctionExpression(pos + 8, ast);
-    case 12:
+    case 11:
       return constructBoxAssignmentExpression(pos + 8, ast);
-    case 13:
+    case 12:
       return constructBoxAwaitExpression(pos + 8, ast);
-    case 14:
+    case 13:
       return constructBoxBinaryExpression(pos + 8, ast);
-    case 15:
+    case 14:
       return constructBoxCallExpression(pos + 8, ast);
-    case 16:
+    case 15:
       return constructBoxChainExpression(pos + 8, ast);
-    case 17:
+    case 16:
       return constructBoxClass(pos + 8, ast);
-    case 18:
+    case 17:
       return constructBoxConditionalExpression(pos + 8, ast);
-    case 19:
+    case 18:
       return constructBoxFunction(pos + 8, ast);
-    case 20:
+    case 19:
       return constructBoxImportExpression(pos + 8, ast);
-    case 21:
+    case 20:
       return constructBoxLogicalExpression(pos + 8, ast);
-    case 22:
+    case 21:
       return constructBoxNewExpression(pos + 8, ast);
-    case 23:
+    case 22:
       return constructBoxObjectExpression(pos + 8, ast);
-    case 24:
+    case 23:
       return constructBoxParenthesizedExpression(pos + 8, ast);
-    case 25:
+    case 24:
       return constructBoxSequenceExpression(pos + 8, ast);
-    case 26:
+    case 25:
       return constructBoxTaggedTemplateExpression(pos + 8, ast);
-    case 27:
+    case 26:
       return constructBoxThisExpression(pos + 8, ast);
-    case 28:
+    case 27:
       return constructBoxUnaryExpression(pos + 8, ast);
-    case 29:
+    case 28:
       return constructBoxUpdateExpression(pos + 8, ast);
-    case 30:
+    case 29:
       return constructBoxYieldExpression(pos + 8, ast);
-    case 31:
+    case 30:
       return constructBoxPrivateInExpression(pos + 8, ast);
+    case 31:
+      return constructBoxImportMeta(pos + 8, ast);
     case 32:
-      return constructBoxJSXElement(pos + 8, ast);
+      return constructBoxNewTarget(pos + 8, ast);
     case 33:
-      return constructBoxJSXFragment(pos + 8, ast);
+      return constructBoxJSXElement(pos + 8, ast);
     case 34:
-      return constructBoxTSAsExpression(pos + 8, ast);
+      return constructBoxJSXFragment(pos + 8, ast);
     case 35:
-      return constructBoxTSSatisfiesExpression(pos + 8, ast);
+      return constructBoxTSAsExpression(pos + 8, ast);
     case 36:
-      return constructBoxTSTypeAssertion(pos + 8, ast);
+      return constructBoxTSSatisfiesExpression(pos + 8, ast);
     case 37:
-      return constructBoxTSNonNullExpression(pos + 8, ast);
+      return constructBoxTSTypeAssertion(pos + 8, ast);
     case 38:
-      return constructBoxTSInstantiationExpression(pos + 8, ast);
+      return constructBoxTSNonNullExpression(pos + 8, ast);
     case 39:
-      return constructBoxV8IntrinsicExpression(pos + 8, ast);
+      return constructBoxTSInstantiationExpression(pos + 8, ast);
     case 40:
-      return constructBoxArkUIComponentExpression(pos + 8, ast);
+      return constructBoxV8IntrinsicExpression(pos + 8, ast);
     case 41:
+      return constructBoxArkUIComponentExpression(pos + 8, ast);
+    case 42:
       return constructBoxLeadingDotExpression(pos + 8, ast);
     case 48:
       return constructBoxComputedMemberExpression(pos + 8, ast);
@@ -744,72 +748,74 @@ function constructPropertyKey(pos, ast) {
     case 7:
       return constructBoxIdentifierReference(pos + 8, ast);
     case 8:
-      return constructBoxMetaProperty(pos + 8, ast);
-    case 9:
       return constructBoxSuper(pos + 8, ast);
-    case 10:
+    case 9:
       return constructBoxArrayExpression(pos + 8, ast);
-    case 11:
+    case 10:
       return constructBoxArrowFunctionExpression(pos + 8, ast);
-    case 12:
+    case 11:
       return constructBoxAssignmentExpression(pos + 8, ast);
-    case 13:
+    case 12:
       return constructBoxAwaitExpression(pos + 8, ast);
-    case 14:
+    case 13:
       return constructBoxBinaryExpression(pos + 8, ast);
-    case 15:
+    case 14:
       return constructBoxCallExpression(pos + 8, ast);
-    case 16:
+    case 15:
       return constructBoxChainExpression(pos + 8, ast);
-    case 17:
+    case 16:
       return constructBoxClass(pos + 8, ast);
-    case 18:
+    case 17:
       return constructBoxConditionalExpression(pos + 8, ast);
-    case 19:
+    case 18:
       return constructBoxFunction(pos + 8, ast);
-    case 20:
+    case 19:
       return constructBoxImportExpression(pos + 8, ast);
-    case 21:
+    case 20:
       return constructBoxLogicalExpression(pos + 8, ast);
-    case 22:
+    case 21:
       return constructBoxNewExpression(pos + 8, ast);
-    case 23:
+    case 22:
       return constructBoxObjectExpression(pos + 8, ast);
-    case 24:
+    case 23:
       return constructBoxParenthesizedExpression(pos + 8, ast);
-    case 25:
+    case 24:
       return constructBoxSequenceExpression(pos + 8, ast);
-    case 26:
+    case 25:
       return constructBoxTaggedTemplateExpression(pos + 8, ast);
-    case 27:
+    case 26:
       return constructBoxThisExpression(pos + 8, ast);
-    case 28:
+    case 27:
       return constructBoxUnaryExpression(pos + 8, ast);
-    case 29:
+    case 28:
       return constructBoxUpdateExpression(pos + 8, ast);
-    case 30:
+    case 29:
       return constructBoxYieldExpression(pos + 8, ast);
-    case 31:
+    case 30:
       return constructBoxPrivateInExpression(pos + 8, ast);
+    case 31:
+      return constructBoxImportMeta(pos + 8, ast);
     case 32:
-      return constructBoxJSXElement(pos + 8, ast);
+      return constructBoxNewTarget(pos + 8, ast);
     case 33:
-      return constructBoxJSXFragment(pos + 8, ast);
+      return constructBoxJSXElement(pos + 8, ast);
     case 34:
-      return constructBoxTSAsExpression(pos + 8, ast);
+      return constructBoxJSXFragment(pos + 8, ast);
     case 35:
-      return constructBoxTSSatisfiesExpression(pos + 8, ast);
+      return constructBoxTSAsExpression(pos + 8, ast);
     case 36:
-      return constructBoxTSTypeAssertion(pos + 8, ast);
+      return constructBoxTSSatisfiesExpression(pos + 8, ast);
     case 37:
-      return constructBoxTSNonNullExpression(pos + 8, ast);
+      return constructBoxTSTypeAssertion(pos + 8, ast);
     case 38:
-      return constructBoxTSInstantiationExpression(pos + 8, ast);
+      return constructBoxTSNonNullExpression(pos + 8, ast);
     case 39:
-      return constructBoxV8IntrinsicExpression(pos + 8, ast);
+      return constructBoxTSInstantiationExpression(pos + 8, ast);
     case 40:
-      return constructBoxArkUIComponentExpression(pos + 8, ast);
+      return constructBoxV8IntrinsicExpression(pos + 8, ast);
     case 41:
+      return constructBoxArkUIComponentExpression(pos + 8, ast);
+    case 42:
       return constructBoxLeadingDotExpression(pos + 8, ast);
     case 48:
       return constructBoxComputedMemberExpression(pos + 8, ast);
@@ -1426,8 +1432,8 @@ export class NewExpression {
 
 const DebugNewExpression = class NewExpression {};
 
-export class MetaProperty {
-  type = "MetaProperty";
+export class ImportMeta {
+  type = "ImportMeta";
   #internal;
 
   constructor(pos, ast) {
@@ -1451,32 +1457,60 @@ export class MetaProperty {
     return constructI32(internal.pos + 4, internal.ast);
   }
 
-  get meta() {
-    const internal = this.#internal;
-    return new IdentifierName(internal.pos + 16, internal.ast);
-  }
-
-  get property() {
-    const internal = this.#internal;
-    return new IdentifierName(internal.pos + 48, internal.ast);
-  }
-
   toJSON() {
     return {
-      type: "MetaProperty",
+      type: "ImportMeta",
       start: this.start,
       end: this.end,
-      meta: this.meta,
-      property: this.property,
     };
   }
 
   [inspectSymbol]() {
-    return Object.setPrototypeOf(this.toJSON(), DebugMetaProperty.prototype);
+    return Object.setPrototypeOf(this.toJSON(), DebugImportMeta.prototype);
   }
 }
 
-const DebugMetaProperty = class MetaProperty {};
+const DebugImportMeta = class ImportMeta {};
+
+export class NewTarget {
+  type = "NewTarget";
+  #internal;
+
+  constructor(pos, ast) {
+    if (ast?.token !== TOKEN) constructorError();
+
+    const { nodes } = ast;
+    const cached = nodes.get(pos);
+    if (cached !== void 0) return cached;
+
+    this.#internal = { pos, ast };
+    nodes.set(pos, this);
+  }
+
+  get start() {
+    const internal = this.#internal;
+    return constructI32(internal.pos, internal.ast);
+  }
+
+  get end() {
+    const internal = this.#internal;
+    return constructI32(internal.pos + 4, internal.ast);
+  }
+
+  toJSON() {
+    return {
+      type: "NewTarget",
+      start: this.start,
+      end: this.end,
+    };
+  }
+
+  [inspectSymbol]() {
+    return Object.setPrototypeOf(this.toJSON(), DebugNewTarget.prototype);
+  }
+}
+
+const DebugNewTarget = class NewTarget {};
 
 export class SpreadElement {
   type = "SpreadElement";
@@ -1543,72 +1577,74 @@ function constructArgument(pos, ast) {
     case 7:
       return constructBoxIdentifierReference(pos + 8, ast);
     case 8:
-      return constructBoxMetaProperty(pos + 8, ast);
-    case 9:
       return constructBoxSuper(pos + 8, ast);
-    case 10:
+    case 9:
       return constructBoxArrayExpression(pos + 8, ast);
-    case 11:
+    case 10:
       return constructBoxArrowFunctionExpression(pos + 8, ast);
-    case 12:
+    case 11:
       return constructBoxAssignmentExpression(pos + 8, ast);
-    case 13:
+    case 12:
       return constructBoxAwaitExpression(pos + 8, ast);
-    case 14:
+    case 13:
       return constructBoxBinaryExpression(pos + 8, ast);
-    case 15:
+    case 14:
       return constructBoxCallExpression(pos + 8, ast);
-    case 16:
+    case 15:
       return constructBoxChainExpression(pos + 8, ast);
-    case 17:
+    case 16:
       return constructBoxClass(pos + 8, ast);
-    case 18:
+    case 17:
       return constructBoxConditionalExpression(pos + 8, ast);
-    case 19:
+    case 18:
       return constructBoxFunction(pos + 8, ast);
-    case 20:
+    case 19:
       return constructBoxImportExpression(pos + 8, ast);
-    case 21:
+    case 20:
       return constructBoxLogicalExpression(pos + 8, ast);
-    case 22:
+    case 21:
       return constructBoxNewExpression(pos + 8, ast);
-    case 23:
+    case 22:
       return constructBoxObjectExpression(pos + 8, ast);
-    case 24:
+    case 23:
       return constructBoxParenthesizedExpression(pos + 8, ast);
-    case 25:
+    case 24:
       return constructBoxSequenceExpression(pos + 8, ast);
-    case 26:
+    case 25:
       return constructBoxTaggedTemplateExpression(pos + 8, ast);
-    case 27:
+    case 26:
       return constructBoxThisExpression(pos + 8, ast);
-    case 28:
+    case 27:
       return constructBoxUnaryExpression(pos + 8, ast);
-    case 29:
+    case 28:
       return constructBoxUpdateExpression(pos + 8, ast);
-    case 30:
+    case 29:
       return constructBoxYieldExpression(pos + 8, ast);
-    case 31:
+    case 30:
       return constructBoxPrivateInExpression(pos + 8, ast);
+    case 31:
+      return constructBoxImportMeta(pos + 8, ast);
     case 32:
-      return constructBoxJSXElement(pos + 8, ast);
+      return constructBoxNewTarget(pos + 8, ast);
     case 33:
-      return constructBoxJSXFragment(pos + 8, ast);
+      return constructBoxJSXElement(pos + 8, ast);
     case 34:
-      return constructBoxTSAsExpression(pos + 8, ast);
+      return constructBoxJSXFragment(pos + 8, ast);
     case 35:
-      return constructBoxTSSatisfiesExpression(pos + 8, ast);
+      return constructBoxTSAsExpression(pos + 8, ast);
     case 36:
-      return constructBoxTSTypeAssertion(pos + 8, ast);
+      return constructBoxTSSatisfiesExpression(pos + 8, ast);
     case 37:
-      return constructBoxTSNonNullExpression(pos + 8, ast);
+      return constructBoxTSTypeAssertion(pos + 8, ast);
     case 38:
-      return constructBoxTSInstantiationExpression(pos + 8, ast);
+      return constructBoxTSNonNullExpression(pos + 8, ast);
     case 39:
-      return constructBoxV8IntrinsicExpression(pos + 8, ast);
+      return constructBoxTSInstantiationExpression(pos + 8, ast);
     case 40:
-      return constructBoxArkUIComponentExpression(pos + 8, ast);
+      return constructBoxV8IntrinsicExpression(pos + 8, ast);
     case 41:
+      return constructBoxArkUIComponentExpression(pos + 8, ast);
+    case 42:
       return constructBoxLeadingDotExpression(pos + 8, ast);
     case 48:
       return constructBoxComputedMemberExpression(pos + 8, ast);
@@ -2707,9 +2743,9 @@ function constructStatement(pos, ast) {
       return constructBoxThrowStatement(pos + 8, ast);
     case 15:
       return constructBoxTryStatement(pos + 8, ast);
-    case 17:
+    case 16:
       return constructBoxWhileStatement(pos + 8, ast);
-    case 18:
+    case 17:
       return constructBoxWithStatement(pos + 8, ast);
     case 19:
       return constructBoxStructStatement(pos + 8, ast);
@@ -3400,72 +3436,74 @@ function constructForStatementInit(pos, ast) {
     case 7:
       return constructBoxIdentifierReference(pos + 8, ast);
     case 8:
-      return constructBoxMetaProperty(pos + 8, ast);
-    case 9:
       return constructBoxSuper(pos + 8, ast);
-    case 10:
+    case 9:
       return constructBoxArrayExpression(pos + 8, ast);
-    case 11:
+    case 10:
       return constructBoxArrowFunctionExpression(pos + 8, ast);
-    case 12:
+    case 11:
       return constructBoxAssignmentExpression(pos + 8, ast);
-    case 13:
+    case 12:
       return constructBoxAwaitExpression(pos + 8, ast);
-    case 14:
+    case 13:
       return constructBoxBinaryExpression(pos + 8, ast);
-    case 15:
+    case 14:
       return constructBoxCallExpression(pos + 8, ast);
-    case 16:
+    case 15:
       return constructBoxChainExpression(pos + 8, ast);
-    case 17:
+    case 16:
       return constructBoxClass(pos + 8, ast);
-    case 18:
+    case 17:
       return constructBoxConditionalExpression(pos + 8, ast);
-    case 19:
+    case 18:
       return constructBoxFunction(pos + 8, ast);
-    case 20:
+    case 19:
       return constructBoxImportExpression(pos + 8, ast);
-    case 21:
+    case 20:
       return constructBoxLogicalExpression(pos + 8, ast);
-    case 22:
+    case 21:
       return constructBoxNewExpression(pos + 8, ast);
-    case 23:
+    case 22:
       return constructBoxObjectExpression(pos + 8, ast);
-    case 24:
+    case 23:
       return constructBoxParenthesizedExpression(pos + 8, ast);
-    case 25:
+    case 24:
       return constructBoxSequenceExpression(pos + 8, ast);
-    case 26:
+    case 25:
       return constructBoxTaggedTemplateExpression(pos + 8, ast);
-    case 27:
+    case 26:
       return constructBoxThisExpression(pos + 8, ast);
-    case 28:
+    case 27:
       return constructBoxUnaryExpression(pos + 8, ast);
-    case 29:
+    case 28:
       return constructBoxUpdateExpression(pos + 8, ast);
-    case 30:
+    case 29:
       return constructBoxYieldExpression(pos + 8, ast);
-    case 31:
+    case 30:
       return constructBoxPrivateInExpression(pos + 8, ast);
+    case 31:
+      return constructBoxImportMeta(pos + 8, ast);
     case 32:
-      return constructBoxJSXElement(pos + 8, ast);
+      return constructBoxNewTarget(pos + 8, ast);
     case 33:
-      return constructBoxJSXFragment(pos + 8, ast);
+      return constructBoxJSXElement(pos + 8, ast);
     case 34:
-      return constructBoxTSAsExpression(pos + 8, ast);
+      return constructBoxJSXFragment(pos + 8, ast);
     case 35:
-      return constructBoxTSSatisfiesExpression(pos + 8, ast);
+      return constructBoxTSAsExpression(pos + 8, ast);
     case 36:
-      return constructBoxTSTypeAssertion(pos + 8, ast);
+      return constructBoxTSSatisfiesExpression(pos + 8, ast);
     case 37:
-      return constructBoxTSNonNullExpression(pos + 8, ast);
+      return constructBoxTSTypeAssertion(pos + 8, ast);
     case 38:
-      return constructBoxTSInstantiationExpression(pos + 8, ast);
+      return constructBoxTSNonNullExpression(pos + 8, ast);
     case 39:
-      return constructBoxV8IntrinsicExpression(pos + 8, ast);
+      return constructBoxTSInstantiationExpression(pos + 8, ast);
     case 40:
-      return constructBoxArkUIComponentExpression(pos + 8, ast);
+      return constructBoxV8IntrinsicExpression(pos + 8, ast);
     case 41:
+      return constructBoxArkUIComponentExpression(pos + 8, ast);
+    case 42:
       return constructBoxLeadingDotExpression(pos + 8, ast);
     case 48:
       return constructBoxComputedMemberExpression(pos + 8, ast);
@@ -6319,72 +6357,74 @@ function constructExportDefaultDeclarationKind(pos, ast) {
     case 7:
       return constructBoxIdentifierReference(pos + 8, ast);
     case 8:
-      return constructBoxMetaProperty(pos + 8, ast);
-    case 9:
       return constructBoxSuper(pos + 8, ast);
-    case 10:
+    case 9:
       return constructBoxArrayExpression(pos + 8, ast);
-    case 11:
+    case 10:
       return constructBoxArrowFunctionExpression(pos + 8, ast);
-    case 12:
+    case 11:
       return constructBoxAssignmentExpression(pos + 8, ast);
-    case 13:
+    case 12:
       return constructBoxAwaitExpression(pos + 8, ast);
-    case 14:
+    case 13:
       return constructBoxBinaryExpression(pos + 8, ast);
-    case 15:
+    case 14:
       return constructBoxCallExpression(pos + 8, ast);
-    case 16:
+    case 15:
       return constructBoxChainExpression(pos + 8, ast);
-    case 17:
+    case 16:
       return constructBoxClass(pos + 8, ast);
-    case 18:
+    case 17:
       return constructBoxConditionalExpression(pos + 8, ast);
-    case 19:
+    case 18:
       return constructBoxFunction(pos + 8, ast);
-    case 20:
+    case 19:
       return constructBoxImportExpression(pos + 8, ast);
-    case 21:
+    case 20:
       return constructBoxLogicalExpression(pos + 8, ast);
-    case 22:
+    case 21:
       return constructBoxNewExpression(pos + 8, ast);
-    case 23:
+    case 22:
       return constructBoxObjectExpression(pos + 8, ast);
-    case 24:
+    case 23:
       return constructBoxParenthesizedExpression(pos + 8, ast);
-    case 25:
+    case 24:
       return constructBoxSequenceExpression(pos + 8, ast);
-    case 26:
+    case 25:
       return constructBoxTaggedTemplateExpression(pos + 8, ast);
-    case 27:
+    case 26:
       return constructBoxThisExpression(pos + 8, ast);
-    case 28:
+    case 27:
       return constructBoxUnaryExpression(pos + 8, ast);
-    case 29:
+    case 28:
       return constructBoxUpdateExpression(pos + 8, ast);
-    case 30:
+    case 29:
       return constructBoxYieldExpression(pos + 8, ast);
-    case 31:
+    case 30:
       return constructBoxPrivateInExpression(pos + 8, ast);
+    case 31:
+      return constructBoxImportMeta(pos + 8, ast);
     case 32:
-      return constructBoxJSXElement(pos + 8, ast);
+      return constructBoxNewTarget(pos + 8, ast);
     case 33:
-      return constructBoxJSXFragment(pos + 8, ast);
+      return constructBoxJSXElement(pos + 8, ast);
     case 34:
-      return constructBoxTSAsExpression(pos + 8, ast);
+      return constructBoxJSXFragment(pos + 8, ast);
     case 35:
-      return constructBoxTSSatisfiesExpression(pos + 8, ast);
+      return constructBoxTSAsExpression(pos + 8, ast);
     case 36:
-      return constructBoxTSTypeAssertion(pos + 8, ast);
+      return constructBoxTSSatisfiesExpression(pos + 8, ast);
     case 37:
-      return constructBoxTSNonNullExpression(pos + 8, ast);
+      return constructBoxTSTypeAssertion(pos + 8, ast);
     case 38:
-      return constructBoxTSInstantiationExpression(pos + 8, ast);
+      return constructBoxTSNonNullExpression(pos + 8, ast);
     case 39:
-      return constructBoxV8IntrinsicExpression(pos + 8, ast);
+      return constructBoxTSInstantiationExpression(pos + 8, ast);
     case 40:
-      return constructBoxArkUIComponentExpression(pos + 8, ast);
+      return constructBoxV8IntrinsicExpression(pos + 8, ast);
     case 41:
+      return constructBoxArkUIComponentExpression(pos + 8, ast);
+    case 42:
       return constructBoxLeadingDotExpression(pos + 8, ast);
     case 48:
       return constructBoxComputedMemberExpression(pos + 8, ast);
@@ -7383,72 +7423,74 @@ function constructJSXExpression(pos, ast) {
     case 7:
       return constructBoxIdentifierReference(pos + 8, ast);
     case 8:
-      return constructBoxMetaProperty(pos + 8, ast);
-    case 9:
       return constructBoxSuper(pos + 8, ast);
-    case 10:
+    case 9:
       return constructBoxArrayExpression(pos + 8, ast);
-    case 11:
+    case 10:
       return constructBoxArrowFunctionExpression(pos + 8, ast);
-    case 12:
+    case 11:
       return constructBoxAssignmentExpression(pos + 8, ast);
-    case 13:
+    case 12:
       return constructBoxAwaitExpression(pos + 8, ast);
-    case 14:
+    case 13:
       return constructBoxBinaryExpression(pos + 8, ast);
-    case 15:
+    case 14:
       return constructBoxCallExpression(pos + 8, ast);
-    case 16:
+    case 15:
       return constructBoxChainExpression(pos + 8, ast);
-    case 17:
+    case 16:
       return constructBoxClass(pos + 8, ast);
-    case 18:
+    case 17:
       return constructBoxConditionalExpression(pos + 8, ast);
-    case 19:
+    case 18:
       return constructBoxFunction(pos + 8, ast);
-    case 20:
+    case 19:
       return constructBoxImportExpression(pos + 8, ast);
-    case 21:
+    case 20:
       return constructBoxLogicalExpression(pos + 8, ast);
-    case 22:
+    case 21:
       return constructBoxNewExpression(pos + 8, ast);
-    case 23:
+    case 22:
       return constructBoxObjectExpression(pos + 8, ast);
-    case 24:
+    case 23:
       return constructBoxParenthesizedExpression(pos + 8, ast);
-    case 25:
+    case 24:
       return constructBoxSequenceExpression(pos + 8, ast);
-    case 26:
+    case 25:
       return constructBoxTaggedTemplateExpression(pos + 8, ast);
-    case 27:
+    case 26:
       return constructBoxThisExpression(pos + 8, ast);
-    case 28:
+    case 27:
       return constructBoxUnaryExpression(pos + 8, ast);
-    case 29:
+    case 28:
       return constructBoxUpdateExpression(pos + 8, ast);
-    case 30:
+    case 29:
       return constructBoxYieldExpression(pos + 8, ast);
-    case 31:
+    case 30:
       return constructBoxPrivateInExpression(pos + 8, ast);
+    case 31:
+      return constructBoxImportMeta(pos + 8, ast);
     case 32:
-      return constructBoxJSXElement(pos + 8, ast);
+      return constructBoxNewTarget(pos + 8, ast);
     case 33:
-      return constructBoxJSXFragment(pos + 8, ast);
+      return constructBoxJSXElement(pos + 8, ast);
     case 34:
-      return constructBoxTSAsExpression(pos + 8, ast);
+      return constructBoxJSXFragment(pos + 8, ast);
     case 35:
-      return constructBoxTSSatisfiesExpression(pos + 8, ast);
+      return constructBoxTSAsExpression(pos + 8, ast);
     case 36:
-      return constructBoxTSTypeAssertion(pos + 8, ast);
+      return constructBoxTSSatisfiesExpression(pos + 8, ast);
     case 37:
-      return constructBoxTSNonNullExpression(pos + 8, ast);
+      return constructBoxTSTypeAssertion(pos + 8, ast);
     case 38:
-      return constructBoxTSInstantiationExpression(pos + 8, ast);
+      return constructBoxTSNonNullExpression(pos + 8, ast);
     case 39:
-      return constructBoxV8IntrinsicExpression(pos + 8, ast);
+      return constructBoxTSInstantiationExpression(pos + 8, ast);
     case 40:
-      return constructBoxArkUIComponentExpression(pos + 8, ast);
+      return constructBoxV8IntrinsicExpression(pos + 8, ast);
     case 41:
+      return constructBoxArkUIComponentExpression(pos + 8, ast);
+    case 42:
       return constructBoxLeadingDotExpression(pos + 8, ast);
     case 48:
       return constructBoxComputedMemberExpression(pos + 8, ast);
@@ -13292,10 +13334,6 @@ function constructBoxIdentifierReference(pos, ast) {
   return new IdentifierReference(ast.buffer.int32[pos >> 2], ast);
 }
 
-function constructBoxMetaProperty(pos, ast) {
-  return new MetaProperty(ast.buffer.int32[pos >> 2], ast);
-}
-
 function constructBoxSuper(pos, ast) {
   return new Super(ast.buffer.int32[pos >> 2], ast);
 }
@@ -13386,6 +13424,14 @@ function constructBoxYieldExpression(pos, ast) {
 
 function constructBoxPrivateInExpression(pos, ast) {
   return new PrivateInExpression(ast.buffer.int32[pos >> 2], ast);
+}
+
+function constructBoxImportMeta(pos, ast) {
+  return new ImportMeta(ast.buffer.int32[pos >> 2], ast);
+}
+
+function constructBoxNewTarget(pos, ast) {
+  return new NewTarget(ast.buffer.int32[pos >> 2], ast);
 }
 
 function constructBoxJSXElement(pos, ast) {
@@ -13521,7 +13567,7 @@ function constructBoxObjectAssignmentTarget(pos, ast) {
 }
 
 function constructOptionAssignmentTargetMaybeDefault(pos, ast) {
-  if (ast.buffer[pos] === 51) return null;
+  if (ast.buffer[pos] === 255) return null;
   return constructAssignmentTargetMaybeDefault(pos, ast);
 }
 
@@ -13565,7 +13611,7 @@ function constructBoxAssignmentTargetPropertyProperty(pos, ast) {
 }
 
 function constructOptionExpression(pos, ast) {
-  if (ast.buffer[pos] === 51) return null;
+  if (ast.buffer[pos] === 255) return null;
   return constructExpression(pos, ast);
 }
 
@@ -13697,12 +13743,12 @@ function constructOptionBoxTSTypeAnnotation(pos, ast) {
 }
 
 function constructOptionStatement(pos, ast) {
-  if (ast.buffer[pos] === 71) return null;
+  if (ast.buffer[pos] === 255) return null;
   return constructStatement(pos, ast);
 }
 
 function constructOptionForStatementInit(pos, ast) {
-  if (ast.buffer[pos] === 65) return null;
+  if (ast.buffer[pos] === 255) return null;
   return constructForStatementInit(pos, ast);
 }
 
@@ -13736,7 +13782,7 @@ function constructOptionBoxBlockStatement(pos, ast) {
 }
 
 function constructOptionCatchParameter(pos, ast) {
-  if (ast.buffer[pos + 16] === 4) return null;
+  if (ast.buffer[pos + 16] === 255) return null;
   return new CatchParameter(pos, ast);
 }
 
@@ -13776,7 +13822,7 @@ function constructOptionBoxBindingRestElement(pos, ast) {
 }
 
 function constructOptionBindingPattern(pos, ast) {
-  if (ast.buffer[pos] === 4) return null;
+  if (ast.buffer[pos] === 255) return null;
   return constructBindingPattern(pos, ast);
 }
 
@@ -13852,7 +13898,7 @@ function constructOptionBoxExpression(pos, ast) {
 }
 
 function constructOptionTSAccessibility(pos, ast) {
-  if (ast.buffer[pos] === 3) return null;
+  if (ast.buffer[pos] === 255) return null;
   return constructTSAccessibility(pos, ast);
 }
 
@@ -13998,7 +14044,7 @@ function constructOptionStringLiteral(pos, ast) {
 }
 
 function constructOptionModuleExportName(pos, ast) {
-  if (ast.buffer[pos] === 3) return null;
+  if (ast.buffer[pos] === 255) return null;
   return constructModuleExportName(pos, ast);
 }
 
@@ -14060,7 +14106,7 @@ function constructBoxJSXSpreadAttribute(pos, ast) {
 }
 
 function constructOptionJSXAttributeValue(pos, ast) {
-  if (ast.buffer[pos] === 4) return null;
+  if (ast.buffer[pos] === 255) return null;
   return constructJSXAttributeValue(pos, ast);
 }
 
@@ -14259,7 +14305,7 @@ function constructBoxTSQualifiedName(pos, ast) {
 }
 
 function constructOptionTSType(pos, ast) {
-  if (ast.buffer[pos] === 38) return null;
+  if (ast.buffer[pos] === 255) return null;
   return constructTSType(pos, ast);
 }
 
@@ -14347,7 +14393,7 @@ function constructBoxTSImportTypeQualifiedName(pos, ast) {
 }
 
 function constructOptionTSMappedTypeModifierOperator(pos, ast) {
-  if (ast.buffer[pos] === 3) return null;
+  if (ast.buffer[pos] === 255) return null;
   return constructTSMappedTypeModifierOperator(pos, ast);
 }
 
