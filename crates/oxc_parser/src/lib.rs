@@ -1874,7 +1874,9 @@ mod test {
         let StructElement::MethodDefinition(m) = &s.body.body[0] else { panic!("method") };
         let body = m.value.body.as_ref().expect("body");
         let Statement::ExpressionStatement(stmt) = &body.statements[0] else { panic!("expr stmt") };
-        let Expression::ArkUIComponentExpression(c) = &stmt.expression else { panic!("arkui expr") };
+        let Expression::ArkUIComponentExpression(c) = &stmt.expression else {
+            panic!("arkui expr")
+        };
         assert!(
             c.span.source_text(source).ends_with(".width(100)"),
             "span must cover the chain, got: {:?}",
