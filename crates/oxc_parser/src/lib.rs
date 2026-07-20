@@ -1862,6 +1862,29 @@ mod test {
     }
 
     #[test]
+    fn arkui_component_span_covers_chain() {
+        // Regression: the span must include the trailing chain, otherwise the formatter
+        // hides chain-interleaved comments and formatting is not idempotent.
+        let allocator = Allocator::default();
+        let source_type = SourceType::ets();
+        let source = "struct S {\n  build() {\n    Column() {}.width(100)\n  }\n}";
+        let ret = Parser::new(&allocator, source, source_type).parse();
+        assert!(ret.diagnostics.is_empty(), "Errors: {:?}", ret.diagnostics);
+        let Statement::StructStatement(s) = &ret.program.body[0] else { panic!("struct") };
+        let StructElement::MethodDefinition(m) = &s.body.body[0] else { panic!("method") };
+        let body = m.value.body.as_ref().expect("body");
+        let Statement::ExpressionStatement(stmt) = &body.statements[0] else { panic!("expr stmt") };
+        let Expression::ArkUIComponentExpression(c) = &stmt.expression else {
+            panic!("arkui expr")
+        };
+        assert!(
+            c.span.source_text(source).ends_with(".width(100)"),
+            "span must cover the chain, got: {:?}",
+            c.span.source_text(source)
+        );
+    }
+
+    #[test]
     fn arkui_export_function_with_decorator() {
         // Test that ArkUI allows decorators on exported functions (e.g., @Builder)
         let allocator = Allocator::default();

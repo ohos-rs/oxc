@@ -884,8 +884,9 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         // Parse children block
         let (children, has_children) = self.parse_arkui_component_children();
 
-        let component_span = self.end_span(span);
+        // Parse the chain first so the span covers the chain expressions the node owns.
         let chain_expressions = self.parse_arkui_component_chain_expressions();
+        let component_span = self.end_span(span);
         Expression::ArkUIComponentExpression(ArkUIComponentExpression::boxed(
             component_span,
             callee,
