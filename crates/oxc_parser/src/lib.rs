@@ -1669,6 +1669,27 @@ mod test {
     }
 
     #[test]
+    fn arkui_attribute_ui_callback_follows_component_call_chain() {
+        let allocator = Allocator::default();
+        let source_type = SourceType::ets();
+        let options = ArkTsOptions {
+            components: vec!["Text".into(), "Row".into()],
+            ..ArkTsOptions::default()
+        };
+        let source = r"struct Test {
+  build() {
+    Repeat(items)
+      .key(item => item.id)
+      .each(item => { Text(item.value) })
+      .templateId(item => item.kind)
+      .template('card', item => { Row() { Text(item.value) } })
+  }
+}";
+        let ret = Parser::new(&allocator, source, source_type).with_arkts_options(options).parse();
+        assert!(ret.diagnostics.is_empty(), "Errors: {:?}", ret.diagnostics);
+    }
+
+    #[test]
     fn arkui_dsl_decorators_require_openharmony_shapes() {
         for decorator in ["@Builder()", "@Namespace.Builder", "@Extend"] {
             let allocator = Allocator::default();

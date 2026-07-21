@@ -235,18 +235,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             return ArkUIArgumentContext::None;
         };
         let attribute = member.property.name.as_str();
-        let component = match &member.object {
-            Expression::Identifier(identifier) => Some(identifier.name.as_str()),
-            Expression::CallExpression(call) => match &call.callee {
-                Expression::Identifier(identifier) => Some(identifier.name.as_str()),
-                _ => None,
-            },
-            Expression::ArkUIComponentExpression(component) => match &component.callee {
-                Expression::Identifier(identifier) => Some(identifier.name.as_str()),
-                _ => None,
-            },
-            _ => None,
-        };
+        let component = Self::arkui_call_root_identifier(&member.object);
         let Some(component) = component else { return ArkUIArgumentContext::None };
         let is_attribute_callback = self.arkts_options.as_ref().map_or_else(
             || component == "Repeat" && matches!(attribute, "each" | "template"),
@@ -258,6 +247,18 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             },
         );
         if is_attribute_callback { ArkUIArgumentContext::All } else { ArkUIArgumentContext::None }
+    }
+
+    fn arkui_call_root_identifier<'b>(mut expression: &'b Expression<'a>) -> Option<&'b str> {
+        loop {
+            match expression {
+                Expression::Identifier(identifier) => return Some(identifier.name.as_str()),
+                Expression::CallExpression(call) => expression = &call.callee,
+                Expression::StaticMemberExpression(member) => expression = &member.object,
+                Expression::ArkUIComponentExpression(component) => expression = &component.callee,
+                _ => return None,
+            }
+        }
     }
 
     /// Parse a struct statement
