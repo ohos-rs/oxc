@@ -1185,6 +1185,16 @@ impl Gen for ExportNamedDeclaration<'_> {
                 p.print_decorators(&func.decorators, ctx);
             }
         }
+        let has_arkui_class_decorators = p.is_arkui
+            && matches!(
+                &self.declaration,
+                Some(Declaration::ClassDeclaration(class)) if !class.decorators.is_empty()
+            );
+        if has_arkui_class_decorators {
+            if let Some(Declaration::ClassDeclaration(class)) = &self.declaration {
+                p.print_decorators(&class.decorators, ctx);
+            }
+        }
         let has_struct_decorators_before_export =
             if let Some(Declaration::StructStatement(struct_stmt)) = &self.declaration {
                 !struct_stmt.decorators.is_empty()
@@ -1208,12 +1218,16 @@ impl Gen for ExportNamedDeclaration<'_> {
             }
             // Set flags to skip decorators since we already printed them above
             let old_skip_function_decorators = p.skip_function_decorators;
+            let old_skip_class_decorators = p.skip_class_decorators;
             let old_skip_struct_decorators = p.skip_struct_decorators;
             if has_function_decorators {
                 p.skip_function_decorators = true;
             }
             if has_struct_decorators_before_export {
                 p.skip_struct_decorators = true;
+            }
+            if has_arkui_class_decorators {
+                p.skip_class_decorators = true;
             }
             match decl {
                 Declaration::VariableDeclaration(decl) => decl.print(p, ctx),
@@ -1230,6 +1244,7 @@ impl Gen for ExportNamedDeclaration<'_> {
             }
             // Restore the flags
             p.skip_function_decorators = old_skip_function_decorators;
+            p.skip_class_decorators = old_skip_class_decorators;
             p.skip_struct_decorators = old_skip_struct_decorators;
             if matches!(
                 decl,
@@ -1383,6 +1398,17 @@ impl Gen for ExportDefaultDeclaration<'_> {
             p.print_annotation_comment(self.span.start, AnnotationKind::NoSideEffects, true);
         }
         p.print_indent();
+        let has_arkui_class_decorators = p.is_arkui
+            && matches!(
+                &self.declaration,
+                ExportDefaultDeclarationKind::ClassDeclaration(class)
+                    if !class.decorators.is_empty()
+            );
+        if has_arkui_class_decorators {
+            if let ExportDefaultDeclarationKind::ClassDeclaration(class) = &self.declaration {
+                p.print_decorators(&class.decorators, ctx);
+            }
+        }
         let has_struct_decorators_before_export =
             if let ExportDefaultDeclarationKind::StructStatement(struct_stmt) = &self.declaration {
                 !struct_stmt.decorators.is_empty()
@@ -1398,11 +1424,16 @@ impl Gen for ExportDefaultDeclaration<'_> {
         p.add_source_mapping(self.span);
         p.print_str("export default");
         p.print_soft_space();
+        let old_skip_class_decorators = p.skip_class_decorators;
         let old_skip_struct_decorators = p.skip_struct_decorators;
+        if has_arkui_class_decorators {
+            p.skip_class_decorators = true;
+        }
         if has_struct_decorators_before_export {
             p.skip_struct_decorators = true;
         }
         self.declaration.print(p, ctx);
+        p.skip_class_decorators = old_skip_class_decorators;
         p.skip_struct_decorators = old_skip_struct_decorators;
     }
 }
@@ -2701,7 +2732,9 @@ impl Gen for Class<'_> {
         let ctx = ctx.and_forbid_call(false);
         p.wrap(wrap, |p| {
             p.enter_class();
-            p.print_decorators(&self.decorators, ctx);
+            if !p.skip_class_decorators {
+                p.print_decorators(&self.decorators, ctx);
+            }
             p.print_space_before_identifier();
             p.add_source_mapping(self.span);
             if self.declare {

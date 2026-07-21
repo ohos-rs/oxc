@@ -127,6 +127,9 @@ pub struct Codegen<'a> {
     /// Skip printing function decorators (they're handled by the parent export)
     skip_function_decorators: bool,
 
+    /// Skip printing class decorators (they're handled by the parent ArkUI export)
+    skip_class_decorators: bool,
+
     /// Skip printing struct decorators (they're handled by the parent export)
     skip_struct_decorators: bool,
 
@@ -202,6 +205,7 @@ impl<'a> Codegen<'a> {
             start_of_arrow_expr: 0,
             start_of_default_export: 0,
             skip_function_decorators: false,
+            skip_class_decorators: false,
             skip_struct_decorators: false,
             is_jsx: false,
             is_arkui: false,

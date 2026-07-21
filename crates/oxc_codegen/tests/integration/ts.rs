@@ -75,6 +75,18 @@ fn arkui() {
         default_options(),
     );
     test_options_with_source_type(expected, expected, source_type, default_options());
+    test_options_with_source_type(
+        "@ObservedV2\nexport class Model {\n\t@Trace value: number = 0;\n}\n",
+        "@ObservedV2 export class Model {\n\t@Trace value: number = 0;\n}\n",
+        source_type,
+        default_options(),
+    );
+    test_options_with_source_type(
+        "@ObservedV2\nexport default class Model {}\n",
+        "@ObservedV2 export default class Model {}\n",
+        source_type,
+        default_options(),
+    );
 }
 
 #[test]
