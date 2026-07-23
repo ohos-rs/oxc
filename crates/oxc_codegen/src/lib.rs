@@ -900,10 +900,19 @@ impl<'a> Codegen<'a> {
     fn print_decorators(&mut self, decorators: &[Decorator<'_>], ctx: Context) {
         for decorator in decorators {
             decorator.print(self, ctx);
-            // Only separate from the following token when the decorator ends in an
-            // identifier char (`@dec class`); `@dec() class` can be `@dec()class`.
-            self.print_soft_space();
-            self.print_space_before_identifier();
+            if self.is_arkui {
+                // The ArkTS compiler recognizes ArkUI declaration and member
+                // decorators by their line-oriented syntax. Match the
+                // ohos-typescript printer even in minified output so `@Observed`
+                // and `@Track` are not emitted as runtime ECMAScript decorators.
+                self.print_hard_newline();
+                self.print_indent();
+            } else {
+                // Only separate from the following token when the decorator ends in an
+                // identifier char (`@dec class`); `@dec() class` can be `@dec()class`.
+                self.print_soft_space();
+                self.print_space_before_identifier();
+            }
         }
     }
 

@@ -65,8 +65,7 @@ fn decorators() {
 #[test]
 fn arkui() {
     let source_type = SourceType::default().with_typescript(true).with_arkui(true);
-    let expected =
-        "@Component export declare struct Foo {\n\t@State count: number;\n\tbuild(): void;\n}\n";
+    let expected = "@Component\nexport declare struct Foo {\n\t@State\n\tcount: number;\n\tbuild(): void;\n}\n";
 
     test_options_with_source_type(
         "@Component\nexport declare struct Foo {\n\t@State count: number;\n\tbuild(): void;\n}\n",
@@ -76,16 +75,26 @@ fn arkui() {
     );
     test_options_with_source_type(expected, expected, source_type, default_options());
     test_options_with_source_type(
-        "@ObservedV2\nexport class Model {\n\t@Trace value: number = 0;\n}\n",
-        "@ObservedV2 export class Model {\n\t@Trace value: number = 0;\n}\n",
+        "@Inject(Model)\n@ObservedV2\nexport class Model {\n\t@Track\n\t@Trace value: number = 0;\n}\n",
+        "@Inject(Model)\n@ObservedV2\nexport class Model {\n\t@Track\n\t@Trace\n\tvalue: number = 0;\n}\n",
         source_type,
         default_options(),
     );
     test_options_with_source_type(
         "@ObservedV2\nexport default class Model {}\n",
-        "@ObservedV2 export default class Model {}\n",
+        "@ObservedV2\nexport default class Model {}\n",
         source_type,
         default_options(),
+    );
+}
+
+#[test]
+fn minify_arkui_decorator_newlines() {
+    test_options_with_source_type(
+        "@Observed\nexport class Model { @Track value = 0 }",
+        "@Observed\nexport class Model{@Track\nvalue=0}",
+        SourceType::default().with_typescript(true).with_arkui(true),
+        CodegenOptions::minify(),
     );
 }
 
