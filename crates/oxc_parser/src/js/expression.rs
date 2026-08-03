@@ -109,6 +109,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         }
         self.check_identifier(cur, self.ctx);
         let (span, name) = self.parse_identifier_kind(Kind::Ident);
+        self.check_ets_binding_name(&name, span);
         BindingIdentifier::new(span, name, self)
     }
 
@@ -229,7 +230,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
     fn parse_primary_expression(&mut self) -> Expression<'a> {
         // Handle ArkUI expressions starting with dots (e.g., in object literals or function bodies)
         // Example: { focused: { .backgroundColor('#ffffeef0') } }
-        if self.source_type.is_arkui() && self.is_in_arkui_dsl_context() && self.at(Kind::Dot) {
+        if self.supports_arkui_dsl() && self.is_in_arkui_dsl_context() && self.at(Kind::Dot) {
             return self.parse_leading_dot_expression();
         }
 
@@ -237,6 +238,12 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         // AsyncFunctionExpression, AsyncGeneratorExpression
         if self.at_function_with_async() {
             let span = self.start_span();
+            if self.source_type.is_ets_static() {
+                self.error(diagnostics::ets_unsupported_syntax(
+                    "Function expressions",
+                    self.cur_token().span(),
+                ));
+            }
             let r#async = self.eat(Kind::Async);
             return self.parse_function_expression(span, r#async);
         }
@@ -249,11 +256,19 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             // ObjectLiteral
             Kind::LCurly => Expression::ObjectExpression(self.parse_object_expression()),
             // ClassExpression
-            Kind::Class => self.parse_class_expression(
-                self.start_span(),
-                &Modifiers::empty(),
-                ArenaVec::new_in(self),
-            ),
+            Kind::Class => {
+                if self.source_type.is_ets_static() {
+                    self.error(diagnostics::ets_unsupported_syntax(
+                        "Class expressions",
+                        self.cur_token().span(),
+                    ));
+                }
+                self.parse_class_expression(
+                    self.start_span(),
+                    &Modifiers::empty(),
+                    ArenaVec::new_in(self),
+                )
+            }
             // This
             Kind::This => self.parse_this_expression(),
             // TemplateLiteral
@@ -294,7 +309,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         }
 
         // Parse the property name (we'll use it to build the initial call expression)
-        let _property = self.parse_identifier_name();
+        let property = self.parse_identifier_name();
 
         // Parse type arguments if present (TypeScript)
         let type_arguments =
@@ -326,7 +341,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         let type_arguments_for_chain = type_arguments.clone_in(self.ast.allocator());
         let empty_arguments = ArenaVec::new_in(self); // LeadingDotExpression should have empty arguments
 
-        if self.source_type.is_arkui()
+        if self.supports_arkui_dsl()
             && self.is_in_arkui_dsl_context()
             && (self.at(Kind::Dot)
                 || self.at(Kind::QuestionDot)
@@ -337,9 +352,9 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             // The expression field should start from fontSize(size) (without the leading dot)
             // So we create a CallExpression with Identifier as callee
             // Start the expression span from the property (not including the leading dot)
-            // Use _property.span.start as the expression start to ensure correct span
-            let expression_span_start = _property.span.start;
-            let property_ident = Expression::new_identifier(_property.span, _property.name, self);
+            // Use property.span.start as the expression start to ensure correct span
+            let expression_span_start = property.span.start;
+            let property_ident = Expression::new_identifier(property.span, property.name, self);
 
             // Create the initial CallExpression: fontSize(size)
             // Note: callee is Identifier, not StaticMemberExpression
@@ -405,7 +420,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         // The expression field should start from fontSize(size) (without the leading dot)
         // Start the expression span from the property (not including the leading dot)
         let expression_start_span = self.start_span();
-        let property_ident = Expression::new_identifier(_property.span, _property.name, self);
+        let property_ident = Expression::new_identifier(property.span, property.name, self);
 
         // Create CallExpression with Identifier as callee (not StaticMemberExpression)
         let mut initial_call = Expression::new_call_expression(
@@ -420,8 +435,8 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         // Update the expression span to exclude the leading dot
         // Ensure end >= start to avoid assertion failures
         let initial_call_end = initial_call.span().end;
-        let expression_span_end = initial_call_end.max(_property.span.start);
-        *initial_call.span_mut() = Span::new(_property.span.start, expression_span_end);
+        let expression_span_end = initial_call_end.max(property.span.start);
+        *initial_call.span_mut() = Span::new(property.span.start, expression_span_end);
 
         // LeadingDotExpression span includes the leading dot, but expression span doesn't
         // Ensure end >= start to avoid assertion failures
@@ -441,7 +456,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
     /// Parse member expression rest starting from a given LHS for primary expressions
     /// Used for ArkUI expressions starting with dots in object literals and other contexts
-    #[allow(dead_code)]
+    #[expect(dead_code)]
     pub(crate) fn parse_member_expression_rest_from_lhs_for_primary(
         &mut self,
         _lhs_span: u32,
@@ -512,24 +527,24 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                         break;
                     }
                     continue;
-                } else {
-                    // Property access: .propertyName
-                    lhs = Expression::new_static_member_expression(
-                        self.end_span(ident_span),
-                        lhs,
-                        ident,
-                        false,
-                        self,
-                    );
-                    // Check if there are more chain expressions
-                    // Stop if next token is not a dot, or if it's semicolon/comma/brace
-                    if !self.at(Kind::Dot)
-                        || matches!(self.cur_kind(), Kind::Semicolon | Kind::Comma | Kind::RCurly)
-                    {
-                        break;
-                    }
-                    continue;
                 }
+
+                // Property access: .propertyName
+                lhs = Expression::new_static_member_expression(
+                    self.end_span(ident_span),
+                    lhs,
+                    ident,
+                    false,
+                    self,
+                );
+                // Check if there are more chain expressions
+                // Stop if next token is not a dot, or if it's semicolon/comma/brace
+                if !self.at(Kind::Dot)
+                    || matches!(self.cur_kind(), Kind::Semicolon | Kind::Comma | Kind::RCurly)
+                {
+                    break;
+                }
+                continue;
             }
 
             break;
@@ -576,6 +591,12 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         let mut expression = if expressions.len() == 1 {
             expressions.remove(0)
         } else {
+            if self.source_type.is_ets_static() && !self.ctx.ets_allows_sequence() {
+                self.error(diagnostics::ets_unsupported_syntax(
+                    "The comma operator outside a `for` statement",
+                    expr_span,
+                ));
+            }
             Expression::new_sequence_expression(expr_span, expressions, self)
         };
 
@@ -618,6 +639,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                 let lit = self.parse_literal_string();
                 Expression::StringLiteral(self.alloc(lit))
             }
+            Kind::CharLiteral => Expression::CharLiteral(self.parse_ets_char_literal()),
             Kind::True | Kind::False => Expression::BooleanLiteral(self.parse_literal_boolean()),
             Kind::Null => Expression::NullLiteral(self.parse_literal_null()),
             Kind::DecimalBigInt | Kind::BinaryBigInt | Kind::OctalBigInt | Kind::HexBigInt => {
@@ -639,6 +661,24 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         BooleanLiteral::boxed(self.end_span(span), value, self)
     }
 
+    fn parse_ets_char_literal(&mut self) -> ArenaBox<'a, CharLiteral<'a>> {
+        let token = self.cur_token();
+        let span = token.span();
+        let raw = self.cur_src();
+        let value = self.cur_string();
+        let mut utf16 = value.encode_utf16();
+        let first = utf16.next();
+        let second = utf16.next();
+        let value = if let (Some(value), None) = (first, second) {
+            u32::from(value)
+        } else {
+            self.error(diagnostics::ets_char_literal_length(span));
+            0
+        };
+        self.bump_any();
+        CharLiteral::boxed(span, value, Some(Str::from(raw)), self)
+    }
+
     pub(crate) fn parse_literal_null(&mut self) -> ArenaBox<'a, NullLiteral> {
         let span = self.cur_token().span();
         self.bump_any(); // bump `null`
@@ -649,7 +689,12 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         let token = self.cur_token();
         let span = token.span();
         let kind = token.kind();
-        let src = self.cur_src();
+        let raw = self.cur_src();
+        let src = if self.source_type.is_ets_static() {
+            raw.strip_suffix('f').unwrap_or(raw)
+        } else {
+            raw
+        };
         let has_separator = token.has_separator();
         let value = match kind {
             Kind::Decimal | Kind::Binary | Kind::Octal | Kind::Hex => {
@@ -680,7 +725,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             _ => return self.unexpected(),
         };
         self.bump_any();
-        NumericLiteral::boxed(span, value, Some(Str::from(src)), base, self)
+        NumericLiteral::boxed(span, value, Some(Str::from(raw)), base, self)
     }
 
     pub(crate) fn parse_literal_bigint(&mut self) -> ArenaBox<'a, BigIntLiteral<'a>> {
@@ -801,7 +846,15 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
     fn parse_array_expression_element(&mut self) -> ArrayExpressionElement<'a> {
         match self.cur_kind() {
-            Kind::Comma => self.parse_elision(),
+            Kind::Comma => {
+                if self.source_type.is_ets_static() {
+                    self.error(diagnostics::ets_unsupported_syntax(
+                        "Omitted array elements",
+                        self.cur_token().span(),
+                    ));
+                }
+                self.parse_elision()
+            }
             Kind::Dot3 => ArrayExpressionElement::SpreadElement(self.parse_spread_element()),
             _ => ArrayExpressionElement::from(self.parse_assignment_expression_or_higher()),
         }
@@ -1223,6 +1276,12 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             MemberExpression::new_private_field_expression(span, lhs, private_ident, optional, self)
         } else {
             let ident = self.parse_identifier_name();
+            if self.source_type.is_ets_static() && ident.name == "prototype" {
+                self.error(diagnostics::ets_unsupported_syntax(
+                    "Runtime prototype access",
+                    ident.span,
+                ));
+            }
             MemberExpression::new_static_member_expression(
                 self.end_span(lhs_span),
                 lhs,
@@ -1242,6 +1301,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         lhs: Expression<'a>,
         optional: bool,
     ) -> Expression<'a> {
+        self.check_ets_type_value(&lhs);
         self.bump_any(); // advance `[`
         let property = self.context_add(Context::In, Self::parse_expr);
         self.expect(Kind::RBrack);
@@ -1271,6 +1331,10 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                 self.bump_any();
                 self.fatal_error(diagnostics::new_target(self.end_span(span)))
             };
+        }
+
+        if self.source_type.is_ets_static() {
+            return self.parse_ets_new_expression(span);
         }
 
         let rhs_span = self.start_span();
@@ -1335,8 +1399,80 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         Expression::new_new_expression(span, callee, type_arguments, arguments, self)
     }
 
+    fn parse_ets_new_expression(&mut self, span: u32) -> Expression<'a> {
+        let type_annotation = self.parse_non_array_type();
+
+        if self.at(Kind::LBrack) {
+            let mut dimensions = ArenaVec::with_capacity_in(1, self);
+            while self.eat(Kind::LBrack) {
+                if self.at(Kind::RBrack) {
+                    let error_span = self.cur_token().span();
+                    self.error(diagnostics::ets_array_dimension_required(error_span));
+                    dimensions.push(Expression::new_numeric_literal(
+                        error_span,
+                        0.0,
+                        None,
+                        NumberBase::Decimal,
+                        self,
+                    ));
+                } else {
+                    dimensions.push(
+                        self.context_add(Context::In, Self::parse_assignment_expression_or_higher),
+                    );
+                }
+                self.expect(Kind::RBrack);
+            }
+
+            if dimensions.len() == 1 {
+                return Expression::ETSNewArrayInstanceExpression(
+                    ETSNewArrayInstanceExpression::boxed(
+                        self.end_span(span),
+                        type_annotation,
+                        dimensions.remove(0),
+                        self,
+                    ),
+                );
+            }
+
+            return Expression::ETSNewMultiDimArrayInstanceExpression(
+                ETSNewMultiDimArrayInstanceExpression::boxed(
+                    self.end_span(span),
+                    type_annotation,
+                    dimensions,
+                    self,
+                ),
+            );
+        }
+
+        let has_arguments = self.at(Kind::LParen);
+        let arguments = if has_arguments {
+            let opening_span = self.cur_token().span();
+            self.expect(Kind::LParen);
+            let (arguments, _) = self.context_add(Context::In, |p| {
+                p.parse_delimited_list(
+                    Kind::RParen,
+                    Kind::Comma,
+                    opening_span,
+                    Self::parse_call_argument,
+                )
+            });
+            self.expect(Kind::RParen);
+            arguments
+        } else {
+            ArenaVec::new_in(self)
+        };
+
+        Expression::ETSNewClassInstanceExpression(ETSNewClassInstanceExpression::boxed(
+            self.end_span(span),
+            type_annotation,
+            arguments,
+            has_arguments,
+            self,
+        ))
+    }
+
     /// Section 13.3 Call Expression
-    fn parse_call_expression_rest(
+    pub(super) fn parse_call_expression_rest(
         &mut self,
         lhs_span: u32,
         lhs: Expression<'a>,
@@ -1420,16 +1556,16 @@ impl<'a, C: Config> ParserImpl<'a, C> {
     ) -> Expression<'a> {
         // ArgumentList[Yield, Await] :
         //   AssignmentExpression[+In, ?Yield, ?Await]
-        let arkui_argument_context =
-            if self.source_type.is_arkui() && self.is_in_arkui_dsl_context() {
-                self.arkui_argument_context(&lhs)
-            } else {
-                ArkUIArgumentContext::None
-            };
+        let arkui_argument_context = if self.supports_arkui_dsl() && self.is_in_arkui_dsl_context()
+        {
+            self.arkui_argument_context(&lhs)
+        } else {
+            ArkUIArgumentContext::None
+        };
         let opening_span = self.cur_token().span();
         self.expect(Kind::LParen);
         let mut argument_index = 0usize;
-        let (call_arguments, _) = self.context(Context::In, Context::Decorator, |p| {
+        let (call_arguments, trailing_comma) = self.context(Context::In, Context::Decorator, |p| {
             p.parse_delimited_list(Kind::RParen, Kind::Comma, opening_span, |p| {
                 let is_ui_callback = match arkui_argument_context {
                     ArkUIArgumentContext::None => false,
@@ -1446,8 +1582,9 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         });
         self.expect(Kind::RParen);
 
-        // ETS stays on the TypeScript path unless the enclosing AST is known to be ArkUI DSL.
-        if self.source_type.is_arkui()
+        // ETS stays on the TypeScript path unless the enclosing AST is known to be an ArkUI DSL.
+        // Static ArkTS reaches this branch only from its own annotated component/Builder contexts.
+        if self.supports_arkui_dsl()
             && self.is_in_arkui_dsl_context()
             && (self.at(Kind::LCurly) || self.is_builtin_arkui_component(&lhs))
         {
@@ -1459,14 +1596,31 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             );
         }
 
-        Expression::new_call_expression(
+        let call = Expression::new_call_expression(
             self.end_span(lhs_span),
             lhs,
             type_parameters,
             call_arguments,
             optional,
             self,
-        )
+        );
+
+        if self.source_type.is_ets_static() && self.at(Kind::LCurly) {
+            let is_block_on_new_line = self.cur_token().is_on_new_line();
+            let block = self.parse_block();
+            let Expression::CallExpression(call) = call else { unreachable!() };
+            return Expression::new_ets_trailing_block_expression(
+                self.end_span(lhs_span),
+                call,
+                block,
+                false,
+                is_block_on_new_line,
+                trailing_comma.is_some(),
+                self,
+            );
+        }
+
+        call
     }
 
     fn parse_call_argument(&mut self) -> Argument<'a> {
@@ -1485,6 +1639,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             let operator = map_update_operator(kind);
             self.bump_any();
             let argument = self.parse_unary_expression_or_higher(lhs_span);
+            self.check_ets_type_value(&argument);
             let argument = SimpleAssignmentTarget::cover(argument, self);
             return Expression::new_update_expression(
                 self.end_span(lhs_span),
@@ -1506,6 +1661,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         if post_kind.is_update_operator() && !self.cur_token().is_on_new_line() {
             let operator = map_update_operator(post_kind);
             self.bump_any();
+            self.check_ets_type_value(&lhs);
             let lhs = SimpleAssignmentTarget::cover(lhs, self);
             return Expression::new_update_expression(
                 self.end_span(span),
@@ -1650,6 +1806,19 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                     break;
                 }
                 self.bump_any();
+                if self.source_type.is_ets_static()
+                    && (kind == Kind::Satisfies || self.at(Kind::Const))
+                {
+                    let feature = if kind == Kind::Satisfies {
+                        "The `satisfies` operator"
+                    } else {
+                        "`as const` assertions"
+                    };
+                    self.error(diagnostics::ets_unsupported_syntax(
+                        feature,
+                        self.cur_token().span(),
+                    ));
+                }
                 let type_annotation = self.parse_ts_type();
                 let span = self.end_span(lhs_span);
                 lhs = if kind == Kind::As {
@@ -1678,12 +1847,30 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             }
 
             self.bump_any(); // bump operator
+
+            if self.source_type.is_ets_static() && kind == Kind::Instanceof {
+                self.check_ets_type_value(&lhs);
+                let right = self.parse_ts_type();
+                lhs = Expression::ETSInstanceOfExpression(ETSInstanceOfExpression::boxed(
+                    self.end_span(lhs_span),
+                    lhs,
+                    right,
+                    self,
+                ));
+                last_operand_precedence = Some(left_precedence);
+                continue;
+            }
+
             let rhs_parenthesized = self.at(Kind::LParen);
             let rhs = self.parse_binary_expression_or_higher(left_precedence);
 
             lhs = if kind.is_logical_operator() {
                 let span = self.end_span(lhs_span);
                 let op = map_logical_operator(kind);
+                if self.source_type.is_ets_static() {
+                    self.check_ets_type_value(&lhs);
+                    self.check_ets_type_value(&rhs);
+                }
                 // check mixed coalesce
                 if op == LogicalOperator::Coalesce {
                     let mut maybe_mixed_coalesce_expr = None;
@@ -1706,6 +1893,20 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             } else if kind.is_binary_operator() {
                 let span = self.end_span(lhs_span);
                 let op = map_binary_operator(kind);
+                if self.source_type.is_ets_static() {
+                    self.check_ets_type_value(&lhs);
+                    self.check_ets_type_value(&rhs);
+                }
+                if self.source_type.is_ets_static()
+                    && matches!(op, BinaryOperator::Division | BinaryOperator::Remainder)
+                    && rhs.is_number_0()
+                    && Self::ets_expression_is_integer(&lhs, self.source_text)
+                {
+                    self.error(diagnostics::ets_unsupported_syntax(
+                        "Division by zero in integer arithmetic",
+                        rhs.span(),
+                    ));
+                }
                 if op == BinaryOperator::Exponential && !lhs_parenthesized {
                     let diagnostic = match &lhs {
                         Expression::AwaitExpression(_) => Some(
@@ -1734,6 +1935,26 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         }
 
         lhs
+    }
+
+    fn ets_expression_is_integer(expression: &Expression<'a>, source_text: &str) -> bool {
+        match expression {
+            Expression::NumericLiteral(literal) => {
+                let text = &source_text[literal.span.start as usize..literal.span.end as usize];
+                !text.bytes().any(|byte| matches!(byte, b'.' | b'e' | b'E' | b'f'))
+            }
+            Expression::UnaryExpression(unary) => {
+                Self::ets_expression_is_integer(&unary.argument, source_text)
+            }
+            Expression::BinaryExpression(binary) => {
+                Self::ets_expression_is_integer(&binary.left, source_text)
+                    && Self::ets_expression_is_integer(&binary.right, source_text)
+            }
+            Expression::ParenthesizedExpression(parenthesized) => {
+                Self::ets_expression_is_integer(&parenthesized.expression, source_text)
+            }
+            _ => false,
+        }
     }
 
     /// Section 13.14 Conditional Expression
@@ -1794,7 +2015,8 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             {
                 func.pure = true;
             }
-            return arrow_expr;
+            return self
+                .parse_type_assertions_after_arrow_function(arrow_expr.span().start, arrow_expr);
         }
         // `async x => {}`
         if let Some(mut arrow_expr) = self
@@ -1805,7 +2027,8 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             {
                 func.pure = true;
             }
-            return arrow_expr;
+            return self
+                .parse_type_assertions_after_arrow_function(arrow_expr.span().start, arrow_expr);
         }
 
         let span = self.start_span();
@@ -1829,7 +2052,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             {
                 func.pure = true;
             }
-            return arrow_expr;
+            return self.parse_type_assertions_after_arrow_function(span, arrow_expr);
         }
 
         if kind.is_assignment_operator() {
@@ -1855,6 +2078,49 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         }
 
         expr
+    }
+
+    /// Arrow functions are parsed through an early-return path so their block body is not confused
+    /// with an object literal. Consume TypeScript assertions here as well; static ArkTS commonly
+    /// uses this form for `CustomBuilder` and callback types:
+    ///
+    /// ```ts
+    /// header: () => { this.header() } as CustomBuilder
+    /// ```
+    fn parse_type_assertions_after_arrow_function(
+        &mut self,
+        lhs_span: u32,
+        mut expression: Expression<'a>,
+    ) -> Expression<'a> {
+        while matches!(self.cur_kind(), Kind::As | Kind::Satisfies)
+            && !self.cur_token().is_on_new_line()
+        {
+            let kind = self.cur_kind();
+            self.bump_any();
+            if self.source_type.is_ets_static() && (kind == Kind::Satisfies || self.at(Kind::Const))
+            {
+                let feature = if kind == Kind::Satisfies {
+                    "The `satisfies` operator"
+                } else {
+                    "`as const` assertions"
+                };
+                self.error(diagnostics::ets_unsupported_syntax(feature, self.cur_token().span()));
+            }
+            let type_annotation = self.parse_ts_type();
+            let span = self.end_span(lhs_span);
+            expression = if kind == Kind::As {
+                if !self.is_ts {
+                    self.error(diagnostics::as_in_ts(span));
+                }
+                Expression::new_ts_as_expression(span, expression, type_annotation, self)
+            } else {
+                if !self.is_ts {
+                    self.error(diagnostics::satisfies_in_ts(span));
+                }
+                Expression::new_ts_satisfies_expression(span, expression, type_annotation, self)
+            };
+        }
+        expression
     }
 
     fn set_pure_on_call_or_new_expr(expr: &mut Expression<'a>) -> bool {
@@ -1919,6 +2185,15 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         allow_return_type_in_arrow_function: bool,
     ) -> Expression<'a> {
         let operator = map_assignment_operator(self.cur_kind());
+        if self.source_type.is_ets_static() {
+            self.check_ets_type_value(&lhs);
+        }
+        if self.source_type.is_ets_static() && operator.is_logical() {
+            self.error(diagnostics::ets_unsupported_syntax(
+                "Logical assignment operators",
+                self.cur_token().span(),
+            ));
+        }
         // 13.15.5 Destructuring Assignment
         // LeftHandSideExpression = AssignmentExpression
         // is converted to
@@ -1941,6 +2216,9 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         self.bump_any();
         let right =
             self.parse_assignment_expression_or_higher_impl(allow_return_type_in_arrow_function);
+        if self.source_type.is_ets_static() {
+            self.check_ets_type_value(&right);
+        }
         Expression::new_assignment_expression(self.end_span(span), operator, left, right, self)
     }
 
@@ -1950,6 +2228,12 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         span: u32,
         first_expression: Expression<'a>,
     ) -> Expression<'a> {
+        if self.source_type.is_ets_static() && !self.ctx.ets_allows_sequence() {
+            self.error(diagnostics::ets_unsupported_syntax(
+                "The comma operator outside a `for` statement",
+                self.cur_token().span(),
+            ));
+        }
         let mut expressions = ArenaVec::with_capacity_in(2, self);
         expressions.push(first_expression);
         while self.eat(Kind::Comma) {
@@ -2000,6 +2284,18 @@ impl<'a, C: Config> ParserImpl<'a, C> {
     /// ``AwaitExpression`[Yield]` :
     ///     await `UnaryExpression`[?Yield, +Await]
     fn parse_await_expression(&mut self, lhs_span: u32) -> Expression<'a> {
+        // es2panda parses `await` independently of whether the enclosing
+        // function is marked `async`; contextual validity is checked after
+        // parsing. Keep the JavaScript/TypeScript diagnostics unchanged.
+        if self.source_type.is_ets_static() {
+            let span = self.start_span();
+            self.bump_any(); // consume `await`
+            let argument = self.context_add(Context::Await, |p| {
+                p.parse_unary_expression_or_higher(p.start_span())
+            });
+            return Expression::new_await_expression(self.end_span(span), argument, self);
+        }
+
         // Case 1: In await context (async function, module top-level, unambiguous mode top-level)
         // Always parse as await expression
         if self.ctx.has_await() {
@@ -2077,6 +2373,9 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         let span = self.start_span();
         self.bump_any(); // bump @
         let expr = self.context_add(Context::Decorator, Self::parse_lhs_expression_or_higher);
+        if self.source_type.is_ets_static() {
+            self.check_ets_annotation_usage(&expr);
+        }
         Decorator::new(self.end_span(span), expr, self)
     }
 

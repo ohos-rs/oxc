@@ -2,6 +2,7 @@ use rustc_hash::{FxHashMap, FxHashSet};
 
 use oxc_ast::ast::AssignmentExpression;
 use oxc_span::Span;
+use oxc_str::IdentHashSet;
 
 use crate::cursor::ParserCheckpoint;
 
@@ -43,6 +44,40 @@ pub struct ParserState<'a> {
     /// The next function or arrow function parsed is a configured ArkUI UI callback.
     /// The flag is consumed by the function body parser and restored by the argument parser.
     pub arkui_dsl_next_function: bool,
+
+    /// Static ArkTS only enters a `build` render body after an ArkUI component annotation has
+    /// established a component scope. Legacy ArkUI keeps its existing implicit struct behavior.
+    pub ets_static_arkui_component_scope_depth: u32,
+
+    /// Component bindings imported from the static ArkUI component module, plus locally declared
+    /// static ArkUI components. This lets the static parser recognize current component APIs
+    /// without reusing the legacy hard-coded component list.
+    pub ets_static_arkui_component_names: IdentHashSet<'a>,
+
+    /// Nesting depth of `parse_statement_list_item`. Static ETS uses this to
+    /// distinguish a declaration directly in a source/namespace body from one
+    /// nested in a block or control-flow statement.
+    pub ets_statement_depth: u32,
+
+    /// Statement depth at which the current source or namespace declaration
+    /// list begins.
+    pub ets_declaration_list_depth: Option<u32>,
+
+    /// Whether the statement currently being parsed is a direct member of that
+    /// declaration list.
+    pub ets_in_declaration_scope: bool,
+
+    /// The class/struct member currently being parsed is non-static and may
+    /// therefore use `this` as its return type.
+    pub ets_allow_this_return_type: bool,
+
+    /// Active loop/switch nesting for static ETS break/continue validation.
+    pub ets_loop_depth: u32,
+    pub ets_switch_depth: u32,
+
+    /// Type declarations seen so far. Static ETS does not allow a type object
+    /// to be used as an ordinary runtime value.
+    pub ets_type_names: IdentHashSet<'a>,
 }
 
 impl ParserState<'_> {
@@ -55,6 +90,15 @@ impl ParserState<'_> {
             encountered_await_identifier: false,
             arkui_dsl_depth: 0,
             arkui_dsl_next_function: false,
+            ets_static_arkui_component_scope_depth: 0,
+            ets_static_arkui_component_names: IdentHashSet::default(),
+            ets_statement_depth: 0,
+            ets_declaration_list_depth: None,
+            ets_in_declaration_scope: false,
+            ets_allow_this_return_type: false,
+            ets_loop_depth: 0,
+            ets_switch_depth: 0,
+            ets_type_names: IdentHashSet::default(),
         }
     }
 }

@@ -109,6 +109,7 @@ impl NoUnusedExpressions {
             | Expression::NullLiteral(_)
             | Expression::NumericLiteral(_)
             | Expression::BigIntLiteral(_)
+            | Expression::CharLiteral(_)
             | Expression::RegExpLiteral(_)
             | Expression::StringLiteral(_)
             | Expression::SequenceExpression(_)
@@ -125,6 +126,7 @@ impl NoUnusedExpressions {
             | Expression::ArrowFunctionExpression(_)
             | Expression::ClassExpression(_)
             | Expression::BinaryExpression(_)
+            | Expression::ETSInstanceOfExpression(_)
             | Expression::PrivateInExpression(_)
             | Expression::ThisExpression(_)
             | Expression::Identifier(_) => true,
@@ -141,13 +143,18 @@ impl NoUnusedExpressions {
             Expression::AssignmentExpression(_)
             | Expression::AwaitExpression(_)
             | Expression::NewExpression(_)
+            | Expression::ETSNewClassInstanceExpression(_)
+            | Expression::ETSNewArrayInstanceExpression(_)
+            | Expression::ETSNewMultiDimArrayInstanceExpression(_)
+            | Expression::ETSTrailingBlockExpression(_)
             | Expression::ImportExpression(_)
             | Expression::Super(_)
             | Expression::CallExpression(_)
             | Expression::V8IntrinsicExpression(_)
             | Expression::UpdateExpression(_)
             | Expression::TSSatisfiesExpression(_)
-            | Expression::YieldExpression(_) => false,
+            | Expression::YieldExpression(_)
+            | Expression::ArkUIComponentExpression(_) => false,
             Expression::ConditionalExpression(conditional_expression) => {
                 if self.0.allow_ternary {
                     return self.is_disallowed(&conditional_expression.alternate)
@@ -181,7 +188,6 @@ impl NoUnusedExpressions {
             Expression::TSInstantiationExpression(ts_instantiation_expression) => {
                 self.is_disallowed(&ts_instantiation_expression.expression)
             }
-            Expression::ArkUIComponentExpression(_) => false,
         }
     }
 }

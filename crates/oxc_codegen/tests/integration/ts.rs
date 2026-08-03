@@ -89,6 +89,90 @@ fn arkui() {
 }
 
 #[test]
+fn ets_static_codegen_round_trip() {
+    let allocator = Allocator::default();
+    let source_type = SourceType::ets_static();
+    let source = r#"package example.codegen;
+@interface Mark { value: string = "ok" }
+@Mark("ok")
+enum Color: int { Red, Green }
+@Mark({ value = "ok" })
+class Value {
+  constructor named(value: int) {}
+  overload constructor { named }
+}
+let character: char = c'a'
+let instance: Value = new Value()
+let values: int[] = new int[2]
+let matrix: int[][] = new int[2][3]
+let matches: boolean = instance instanceof Value
+function resolve(promise: Promise<int>): int { return await promise }
+function consume(): void {}
+consume() { let nested: int = 1 }
+"#;
+    let ret = Parser::new(&allocator, source, source_type).parse();
+    assert!(ret.diagnostics.is_empty(), "Parse errors: {:?}", ret.diagnostics);
+
+    let code = Codegen::new().with_options(default_options()).build(&ret.program).code;
+    assert!(code.contains("package example.codegen;"), "package was lost:\n{code}");
+    assert!(code.contains("c'a'"), "char literal was lost:\n{code}");
+    assert!(code.contains("new int[2]"), "array construction was lost:\n{code}");
+    assert!(code.contains("new int[2][3]"), "multi-array construction was lost:\n{code}");
+    assert!(code.contains("return await promise"), "await expression was lost:\n{code}");
+    assert!(code.contains("instance instanceof Value"), "ETS instanceof was lost:\n{code}");
+    assert!(code.contains("value = \"ok\""), "annotation initializer was lost:\n{code}");
+    assert!(code.contains("consume() {"), "trailing block was lost:\n{code}");
+
+    let allocator = Allocator::default();
+    let reparsed = Parser::new(&allocator, &code, source_type).parse();
+    assert!(reparsed.diagnostics.is_empty(), "Reparse errors: {:?}\n{code}", reparsed.diagnostics);
+}
+
+#[test]
+fn ets_static_arkui_1_2_codegen_round_trip() {
+    let allocator = Allocator::default();
+    let source_type = SourceType::ets_static();
+    let source = r"
+import { Builder, Column, Component, CustomBuilder, Entry, ForEach, List, Text }
+  from '@ohos.arkui.component'
+
+@Entry
+@Component
+struct Sample {
+  @Builder
+  item(label: string) {
+    Text(label)
+  }
+
+  build() {
+    Column() {
+      List({
+        header: () => {
+          this.item('Header')
+        } as CustomBuilder,
+      }) {
+        ForEach(this.values, (value: string) => {
+          Text(value)
+        })
+      }
+    }
+  }
+}
+";
+    let ret = Parser::new(&allocator, source, source_type).parse();
+    assert!(ret.diagnostics.is_empty(), "Parse errors: {:?}", ret.diagnostics);
+
+    let code = Codegen::new().with_options(default_options()).build(&ret.program).code;
+    assert!(code.contains("Column() {"), "component body was lost:\n{code}");
+    assert!(code.contains("as CustomBuilder"), "arrow assertion was lost:\n{code}");
+    assert!(code.contains("ForEach(this.values"), "UI callback was lost:\n{code}");
+
+    let allocator = Allocator::default();
+    let reparsed = Parser::new(&allocator, &code, source_type).parse();
+    assert!(reparsed.diagnostics.is_empty(), "Reparse errors: {:?}\n{code}", reparsed.diagnostics);
+}
+
+#[test]
 fn minify_arkui_decorator_newlines() {
     test_options_with_source_type(
         "@Observed\nexport class Model { @Track value = 0 }",
@@ -138,7 +222,7 @@ fn arkui_chain_codegen_omits_internal_receiver() {
 fn arkui_regression_codegen_preserves_empty_children_and_generic_chain() {
     let allocator = Allocator::default();
     let source_type = SourceType::ets();
-    let source = r#"@Component
+    let source = r"@Component
 struct Regression {
   build() {
     Column() {}
@@ -147,7 +231,7 @@ struct Regression {
       this.b('two', true)
     }.attribute<number>(1)
   }
-}"#;
+}";
     let ret = Parser::new(&allocator, source, source_type).parse();
     assert!(ret.diagnostics.is_empty(), "Parse errors: {:?}", ret.diagnostics);
 
@@ -162,14 +246,14 @@ struct Regression {
 fn arkui_struct_and_annotation_codegen() {
     let allocator = Allocator::default();
     let source_type = SourceType::ets();
-    let source = r#"export abstract struct Derived<T> extends Base implements First, Second {
+    let source = r"export abstract struct Derived<T> extends Base implements First, Second {
   static { initialize() }
   readonly [key: string]: unknown
   accessor current: T
   constructor(value: T) { this.current = value }
   abstract render(): void
 }
-export declare @interface Metadata {}"#;
+export declare @interface Metadata {}";
     let ret = Parser::new(&allocator, source, source_type).parse();
     assert!(ret.diagnostics.is_empty(), "Parse errors: {:?}", ret.diagnostics);
 

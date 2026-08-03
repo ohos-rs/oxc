@@ -1,5 +1,6 @@
 use oxc_allocator::{ArenaBox, ArenaVec};
 use oxc_ast::ast::*;
+use oxc_span::GetSpan;
 use oxc_str::Ident;
 use oxc_syntax::operator::AssignmentOperator;
 
@@ -24,7 +25,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
         // Check if this is an ArkUI object literal with expression statements (e.g., { .backgroundColor(...) })
         // In ArkUI, object literals can contain expression statements starting with dots
-        if self.source_type.is_arkui() && self.is_in_arkui_dsl_context() && self.at(Kind::Dot) {
+        if self.supports_arkui_dsl() && self.is_in_arkui_dsl_context() && self.at(Kind::Dot) {
             // Parse as ArkUI object literal with expression statements
             return self.parse_arkui_object_expression_with_statements(span, opening_span);
         }
@@ -123,10 +124,22 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         );
 
         if self.parse_contextual_modifier(Kind::Get) {
+            if self.source_type.is_ets_static() {
+                self.error(diagnostics::ets_unsupported_syntax(
+                    "Methods in object literals",
+                    self.cur_token().span(),
+                ));
+            }
             return self.parse_method_getter_setter(span, PropertyKind::Get, &modifiers);
         }
 
         if self.parse_contextual_modifier(Kind::Set) {
+            if self.source_type.is_ets_static() {
+                self.error(diagnostics::ets_unsupported_syntax(
+                    "Methods in object literals",
+                    self.cur_token().span(),
+                ));
+            }
             return self.parse_method_getter_setter(span, PropertyKind::Set, &modifiers);
         }
 
@@ -165,6 +178,27 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             true,
             diagnostics::modifier_cannot_be_used_here,
         );
+
+        if self.source_type.is_ets_static() && computed {
+            self.error(diagnostics::ets_unsupported_syntax(
+                "Computed properties in object literals",
+                key.span(),
+            ));
+        }
+
+        if self.source_type.is_ets_static() && token_is_identifier && self.eat(Kind::Eq) {
+            let value = self.parse_assignment_expression_or_higher();
+            return ObjectProperty::boxed(
+                self.end_span(span),
+                PropertyKind::EtsEquals,
+                key,
+                value,
+                /* method */ false,
+                /* shorthand */ false,
+                computed,
+                self,
+            );
+        }
 
         let is_shorthand_property_assignment = token_is_identifier && !self.at(Kind::Colon);
 
@@ -225,36 +259,35 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         computed: bool,
     ) -> ArenaBox<'a, ObjectProperty<'a>> {
         self.expect(Kind::Colon);
-        let value = if self.source_type.is_arkui()
-            && self.is_in_arkui_dsl_context()
-            && self.at(Kind::LCurly)
-        {
-            let obj_span = self.start_span();
-            let opening_span = self.cur_token().span();
-            self.expect(Kind::LCurly);
+        let value =
+            if self.supports_arkui_dsl() && self.is_in_arkui_dsl_context() && self.at(Kind::LCurly)
+            {
+                let obj_span = self.start_span();
+                let opening_span = self.cur_token().span();
+                self.expect(Kind::LCurly);
 
-            let object = if self.at(Kind::Dot) {
-                self.parse_arkui_object_expression_with_statements(obj_span, opening_span)
+                let object = if self.at(Kind::Dot) {
+                    self.parse_arkui_object_expression_with_statements(obj_span, opening_span)
+                } else {
+                    let (properties, comma_span) = self.context_add(Context::In, |p| {
+                        p.parse_delimited_list(
+                            Kind::RCurly,
+                            Kind::Comma,
+                            opening_span,
+                            Self::parse_object_expression_property,
+                        )
+                    });
+                    if let Some(comma_span) = comma_span {
+                        self.state.trailing_commas.insert(obj_span, self.end_span(comma_span));
+                    }
+                    self.expect(Kind::RCurly);
+                    ObjectExpression::boxed(self.end_span(obj_span), properties, self)
+                };
+
+                self.parse_type_assertion_if_present(Expression::ObjectExpression(object))
             } else {
-                let (properties, comma_span) = self.context_add(Context::In, |p| {
-                    p.parse_delimited_list(
-                        Kind::RCurly,
-                        Kind::Comma,
-                        opening_span,
-                        Self::parse_object_expression_property,
-                    )
-                });
-                if let Some(comma_span) = comma_span {
-                    self.state.trailing_commas.insert(obj_span, self.end_span(comma_span));
-                }
-                self.expect(Kind::RCurly);
-                ObjectExpression::boxed(self.end_span(obj_span), properties, self)
+                self.parse_assignment_expression_or_higher()
             };
-
-            self.parse_type_assertion_if_present(Expression::ObjectExpression(object))
-        } else {
-            self.parse_assignment_expression_or_higher()
-        };
         ObjectProperty::boxed(
             self.end_span(span),
             PropertyKind::Init,
@@ -311,7 +344,9 @@ impl<'a, C: Config> ParserImpl<'a, C> {
     fn parse_type_assertion_if_present(&mut self, expr: Expression<'a>) -> Expression<'a> {
         let kind = self.cur_kind();
         if matches!(kind, Kind::As | Kind::Satisfies) {
-            if !self.cur_token().is_on_new_line() {
+            if self.cur_token().is_on_new_line() {
+                expr
+            } else {
                 let lhs_span = self.start_span();
                 self.bump_any();
                 let type_annotation = self.parse_ts_type();
@@ -327,8 +362,6 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                     }
                     Expression::new_ts_satisfies_expression(span, expr, type_annotation, self)
                 }
-            } else {
-                expr
             }
         } else {
             expr
@@ -349,7 +382,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         match kind {
             PropertyKind::Get => self.check_getter(&function),
             PropertyKind::Set => self.check_setter(&function),
-            PropertyKind::Init => {}
+            PropertyKind::Init | PropertyKind::EtsEquals => {}
         }
         self.verify_modifiers(
             modifiers,
