@@ -387,7 +387,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         };
         let body = if self.at(Kind::LCurly) || func_kind == FunctionKind::Expression {
             let is_arkui_dsl_function = self.take_next_arkui_dsl_function()
-                || self.source_type.is_arkui()
+                || self.supports_arkui_dsl()
                     && self.decorators_enable_arkui_dsl(decorators.as_slice());
             Some(if is_arkui_dsl_function {
                 self.in_arkui_dsl_context(Self::parse_function_body)

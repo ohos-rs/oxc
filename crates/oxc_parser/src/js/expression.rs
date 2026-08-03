@@ -230,7 +230,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
     fn parse_primary_expression(&mut self) -> Expression<'a> {
         // Handle ArkUI expressions starting with dots (e.g., in object literals or function bodies)
         // Example: { focused: { .backgroundColor('#ffffeef0') } }
-        if self.source_type.is_arkui() && self.is_in_arkui_dsl_context() && self.at(Kind::Dot) {
+        if self.supports_arkui_dsl() && self.is_in_arkui_dsl_context() && self.at(Kind::Dot) {
             return self.parse_leading_dot_expression();
         }
 
@@ -341,7 +341,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         let type_arguments_for_chain = type_arguments.clone_in(self.ast.allocator());
         let empty_arguments = ArenaVec::new_in(self); // LeadingDotExpression should have empty arguments
 
-        if self.source_type.is_arkui()
+        if self.supports_arkui_dsl()
             && self.is_in_arkui_dsl_context()
             && (self.at(Kind::Dot)
                 || self.at(Kind::QuestionDot)
@@ -1556,12 +1556,12 @@ impl<'a, C: Config> ParserImpl<'a, C> {
     ) -> Expression<'a> {
         // ArgumentList[Yield, Await] :
         //   AssignmentExpression[+In, ?Yield, ?Await]
-        let arkui_argument_context =
-            if self.source_type.is_arkui() && self.is_in_arkui_dsl_context() {
-                self.arkui_argument_context(&lhs)
-            } else {
-                ArkUIArgumentContext::None
-            };
+        let arkui_argument_context = if self.supports_arkui_dsl() && self.is_in_arkui_dsl_context()
+        {
+            self.arkui_argument_context(&lhs)
+        } else {
+            ArkUIArgumentContext::None
+        };
         let opening_span = self.cur_token().span();
         self.expect(Kind::LParen);
         let mut argument_index = 0usize;
@@ -1582,8 +1582,9 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         });
         self.expect(Kind::RParen);
 
-        // ETS stays on the TypeScript path unless the enclosing AST is known to be ArkUI DSL.
-        if self.source_type.is_arkui()
+        // ETS stays on the TypeScript path unless the enclosing AST is known to be an ArkUI DSL.
+        // Static ArkTS reaches this branch only from its own annotated component/Builder contexts.
+        if self.supports_arkui_dsl()
             && self.is_in_arkui_dsl_context()
             && (self.at(Kind::LCurly) || self.is_builtin_arkui_component(&lhs))
         {
@@ -2014,7 +2015,8 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             {
                 func.pure = true;
             }
-            return arrow_expr;
+            return self
+                .parse_type_assertions_after_arrow_function(arrow_expr.span().start, arrow_expr);
         }
         // `async x => {}`
         if let Some(mut arrow_expr) = self
@@ -2025,7 +2027,8 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             {
                 func.pure = true;
             }
-            return arrow_expr;
+            return self
+                .parse_type_assertions_after_arrow_function(arrow_expr.span().start, arrow_expr);
         }
 
         let span = self.start_span();
@@ -2049,7 +2052,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             {
                 func.pure = true;
             }
-            return arrow_expr;
+            return self.parse_type_assertions_after_arrow_function(span, arrow_expr);
         }
 
         if kind.is_assignment_operator() {
@@ -2075,6 +2078,49 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         }
 
         expr
+    }
+
+    /// Arrow functions are parsed through an early-return path so their block body is not confused
+    /// with an object literal. Consume TypeScript assertions here as well; static ArkTS commonly
+    /// uses this form for `CustomBuilder` and callback types:
+    ///
+    /// ```ts
+    /// header: () => { this.header() } as CustomBuilder
+    /// ```
+    fn parse_type_assertions_after_arrow_function(
+        &mut self,
+        lhs_span: u32,
+        mut expression: Expression<'a>,
+    ) -> Expression<'a> {
+        while matches!(self.cur_kind(), Kind::As | Kind::Satisfies)
+            && !self.cur_token().is_on_new_line()
+        {
+            let kind = self.cur_kind();
+            self.bump_any();
+            if self.source_type.is_ets_static() && (kind == Kind::Satisfies || self.at(Kind::Const))
+            {
+                let feature = if kind == Kind::Satisfies {
+                    "The `satisfies` operator"
+                } else {
+                    "`as const` assertions"
+                };
+                self.error(diagnostics::ets_unsupported_syntax(feature, self.cur_token().span()));
+            }
+            let type_annotation = self.parse_ts_type();
+            let span = self.end_span(lhs_span);
+            expression = if kind == Kind::As {
+                if !self.is_ts {
+                    self.error(diagnostics::as_in_ts(span));
+                }
+                Expression::new_ts_as_expression(span, expression, type_annotation, self)
+            } else {
+                if !self.is_ts {
+                    self.error(diagnostics::satisfies_in_ts(span));
+                }
+                Expression::new_ts_satisfies_expression(span, expression, type_annotation, self)
+            };
+        }
+        expression
     }
 
     fn set_pure_on_call_or_new_expr(expr: &mut Expression<'a>) -> bool {

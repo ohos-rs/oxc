@@ -250,7 +250,7 @@ pub struct ParseOptions {
     pub enable_ident_hashes: bool,
 }
 
-/// Configurable ArkTS grammar hooks corresponding to OpenHarmony's `EtsOptions`.
+/// Configurable legacy ArkTS/ArkUI grammar hooks corresponding to OpenHarmony's `EtsOptions`.
 #[derive(Debug, Clone)]
 pub struct ArkTsOptions {
     /// Identifiers that are parsed as ArkUI component calls in render bodies.
@@ -296,6 +296,61 @@ impl Default for ArkTsOptions {
     }
 }
 
+/// Configurable static ArkTS/ArkUI 1.2 UI grammar hooks.
+///
+/// This type deliberately does not reuse [`ArkTsOptions`]. The two frontends have independent
+/// grammar evolution and configuration, even where their current UI DSL knobs happen to match.
+#[derive(Debug, Clone)]
+pub struct EtsStaticArkUiOptions {
+    /// Identifiers that are parsed as ArkUI component calls in static component bodies.
+    pub components: Vec<String>,
+    /// Struct method names whose bodies use ArkUI component syntax.
+    pub render_methods: Vec<String>,
+    /// Bare decorator identifiers that enable ArkUI syntax in functions/methods.
+    pub render_decorators: Vec<String>,
+    /// Call-expression decorator identifiers such as `@Extend(Text)`.
+    pub extend_decorators: Vec<String>,
+    /// Bare decorator identifier used for style functions/methods.
+    pub styles_decorator: Option<String>,
+    /// Calls whose arguments after the first data-source argument are UI callbacks.
+    pub parameter_ui_callbacks: Vec<String>,
+    /// Component attributes whose arguments are UI callbacks.
+    pub attribute_ui_callbacks: Vec<EtsStaticArkUiAttributeCallback>,
+    /// Enable the ArkTS `@interface` annotation declaration grammar.
+    pub annotations: bool,
+}
+
+/// A static ArkUI component and the attributes that accept UI callback arguments.
+#[derive(Debug, Clone)]
+pub struct EtsStaticArkUiAttributeCallback {
+    pub component: String,
+    pub attributes: Vec<String>,
+}
+
+impl Default for EtsStaticArkUiOptions {
+    fn default() -> Self {
+        Self {
+            components: Vec::new(),
+            render_methods: vec!["build".into(), "pageTransition".into()],
+            render_decorators: vec!["Builder".into(), "LocalBuilder".into()],
+            extend_decorators: vec!["Extend".into(), "AnimatableExtend".into()],
+            styles_decorator: Some("Styles".into()),
+            parameter_ui_callbacks: vec!["ForEach".into(), "LazyForEach".into()],
+            attribute_ui_callbacks: vec![EtsStaticArkUiAttributeCallback {
+                component: "Repeat".into(),
+                attributes: vec!["each".into(), "template".into()],
+            }],
+            annotations: true,
+        }
+    }
+}
+
+#[derive(Debug, Default)]
+struct ArkUiParserOptions {
+    legacy: Option<ArkTsOptions>,
+    ets_static: Option<EtsStaticArkUiOptions>,
+}
+
 impl Default for ParseOptions {
     fn default() -> Self {
         Self {
@@ -318,7 +373,7 @@ pub struct Parser<'a, C: ParserConfig = NoTokensParserConfig> {
     source_type: SourceType,
     source_path: Option<PathBuf>,
     options: ParseOptions,
-    arkts_options: Option<ArkTsOptions>,
+    arkui_options: ArkUiParserOptions,
     config: C,
 }
 
@@ -337,7 +392,7 @@ impl<'a> Parser<'a> {
             source_type,
             source_path: None,
             options,
-            arkts_options: None,
+            arkui_options: ArkUiParserOptions::default(),
             config: NoTokensParserConfig,
         }
     }
@@ -361,10 +416,17 @@ impl<'a, C: ParserConfig> Parser<'a, C> {
         self
     }
 
-    /// Set ArkTS/ArkUI grammar configuration corresponding to OpenHarmony's `EtsOptions`.
+    /// Set legacy ArkTS/ArkUI grammar configuration corresponding to OpenHarmony's `EtsOptions`.
     #[must_use]
     pub fn with_arkts_options(mut self, options: ArkTsOptions) -> Self {
-        self.arkts_options = Some(options);
+        self.arkui_options.legacy = Some(options);
+        self
+    }
+
+    /// Set static ArkTS/ArkUI 1.2 UI grammar configuration.
+    #[must_use]
+    pub fn with_ets_static_arkui_options(mut self, options: EtsStaticArkUiOptions) -> Self {
+        self.arkui_options.ets_static = Some(options);
         self
     }
 
@@ -379,7 +441,7 @@ impl<'a, C: ParserConfig> Parser<'a, C> {
             source_type: self.source_type,
             source_path: self.source_path,
             options: self.options,
-            arkts_options: self.arkts_options,
+            arkui_options: self.arkui_options,
             config,
         }
     }
@@ -445,7 +507,7 @@ mod parser_parse {
                     self.source_type,
                     self.source_path,
                     self.options,
-                    self.arkts_options,
+                    self.arkui_options,
                 )
             } else if config.is::<TokensParserConfig>() {
                 parse_with_tokens_config(
@@ -454,7 +516,7 @@ mod parser_parse {
                     self.source_type,
                     self.source_path,
                     self.options,
-                    self.arkts_options,
+                    self.arkui_options,
                 )
             } else if let Some(&config) = config.downcast_ref::<RuntimeParserConfig>() {
                 parse_with_runtime_config(
@@ -463,7 +525,7 @@ mod parser_parse {
                     self.source_type,
                     self.source_path,
                     self.options,
-                    self.arkts_options,
+                    self.arkui_options,
                     config,
                 )
             } else {
@@ -475,7 +537,7 @@ mod parser_parse {
                     self.source_type,
                     self.source_path,
                     self.options,
-                    self.arkts_options,
+                    self.arkui_options,
                     self.config,
                     UniquePromise::new(),
                 )
@@ -514,7 +576,7 @@ mod parser_parse {
                     self.source_type,
                     self.source_path,
                     self.options,
-                    self.arkts_options,
+                    self.arkui_options,
                 )
             } else if config.is::<TokensParserConfig>() {
                 parse_expression_with_tokens_config(
@@ -523,7 +585,7 @@ mod parser_parse {
                     self.source_type,
                     self.source_path,
                     self.options,
-                    self.arkts_options,
+                    self.arkui_options,
                 )
             } else if let Some(&config) = config.downcast_ref::<RuntimeParserConfig>() {
                 parse_expression_with_runtime_config(
@@ -532,7 +594,7 @@ mod parser_parse {
                     self.source_type,
                     self.source_path,
                     self.options,
-                    self.arkts_options,
+                    self.arkui_options,
                     config,
                 )
             } else {
@@ -542,7 +604,7 @@ mod parser_parse {
                     self.source_type,
                     self.source_path,
                     self.options,
-                    self.arkts_options,
+                    self.arkui_options,
                     self.config,
                     UniquePromise::new(),
                 )
@@ -585,7 +647,7 @@ mod parser_parse {
         source_type: SourceType,
         source_path: Option<PathBuf>,
         options: ParseOptions,
-        arkts_options: Option<ArkTsOptions>,
+        arkui_options: ArkUiParserOptions,
     ) -> ParserReturn<'a> {
         ParserImpl::<NoTokensParserConfig>::new(
             allocator,
@@ -593,7 +655,7 @@ mod parser_parse {
             source_type,
             source_path,
             options,
-            arkts_options,
+            arkui_options,
             NoTokensParserConfig,
             UniquePromise::new(),
         )
@@ -607,7 +669,7 @@ mod parser_parse {
         source_type: SourceType,
         source_path: Option<PathBuf>,
         options: ParseOptions,
-        arkts_options: Option<ArkTsOptions>,
+        arkui_options: ArkUiParserOptions,
     ) -> ParserReturn<'a> {
         ParserImpl::<TokensParserConfig>::new(
             allocator,
@@ -615,7 +677,7 @@ mod parser_parse {
             source_type,
             source_path,
             options,
-            arkts_options,
+            arkui_options,
             TokensParserConfig,
             UniquePromise::new(),
         )
@@ -629,7 +691,7 @@ mod parser_parse {
         source_type: SourceType,
         source_path: Option<PathBuf>,
         options: ParseOptions,
-        arkts_options: Option<ArkTsOptions>,
+        arkui_options: ArkUiParserOptions,
         config: RuntimeParserConfig,
     ) -> ParserReturn<'a> {
         ParserImpl::<RuntimeParserConfig>::new(
@@ -638,7 +700,7 @@ mod parser_parse {
             source_type,
             source_path,
             options,
-            arkts_options,
+            arkui_options,
             config,
             UniquePromise::new(),
         )
@@ -652,7 +714,7 @@ mod parser_parse {
         source_type: SourceType,
         source_path: Option<PathBuf>,
         options: ParseOptions,
-        arkts_options: Option<ArkTsOptions>,
+        arkui_options: ArkUiParserOptions,
     ) -> Result<Expression<'a>, Diagnostics> {
         ParserImpl::<NoTokensParserConfig>::new(
             allocator,
@@ -660,7 +722,7 @@ mod parser_parse {
             source_type,
             source_path,
             options,
-            arkts_options,
+            arkui_options,
             NoTokensParserConfig,
             UniquePromise::new(),
         )
@@ -674,7 +736,7 @@ mod parser_parse {
         source_type: SourceType,
         source_path: Option<PathBuf>,
         options: ParseOptions,
-        arkts_options: Option<ArkTsOptions>,
+        arkui_options: ArkUiParserOptions,
     ) -> Result<Expression<'a>, Diagnostics> {
         ParserImpl::<TokensParserConfig>::new(
             allocator,
@@ -682,7 +744,7 @@ mod parser_parse {
             source_type,
             source_path,
             options,
-            arkts_options,
+            arkui_options,
             TokensParserConfig,
             UniquePromise::new(),
         )
@@ -696,7 +758,7 @@ mod parser_parse {
         source_type: SourceType,
         source_path: Option<PathBuf>,
         options: ParseOptions,
-        arkts_options: Option<ArkTsOptions>,
+        arkui_options: ArkUiParserOptions,
         config: RuntimeParserConfig,
     ) -> Result<Expression<'a>, Diagnostics> {
         ParserImpl::<RuntimeParserConfig>::new(
@@ -705,7 +767,7 @@ mod parser_parse {
             source_type,
             source_path,
             options,
-            arkts_options,
+            arkui_options,
             config,
             UniquePromise::new(),
         )
@@ -720,8 +782,8 @@ struct ParserImpl<'a, C: ParserConfig> {
     /// Options
     options: ParseOptions,
 
-    /// Optional ArkTS/ArkUI grammar configuration.
-    arkts_options: Option<ArkTsOptions>,
+    /// Isolated legacy and static ArkUI grammar configuration.
+    arkui_options: ArkUiParserOptions,
 
     pub(crate) lexer: Lexer<'a, C::LexerConfig>,
 
@@ -779,14 +841,14 @@ impl<'a, C: ParserConfig> ParserImpl<'a, C> {
         source_type: SourceType,
         source_path: Option<PathBuf>,
         options: ParseOptions,
-        arkts_options: Option<ArkTsOptions>,
+        arkui_options: ArkUiParserOptions,
         config: C,
         unique: UniquePromise,
     ) -> Self {
         let ctx = Self::default_context(source_type, options);
         Self {
             options,
-            arkts_options,
+            arkui_options,
             lexer: Lexer::new(allocator, source_text, source_type, config.lexer_config(), unique),
             source_type,
             source_text,
@@ -1047,7 +1109,10 @@ mod test {
     use oxc_ast::ast::AnnotationElement;
     use std::path::Path;
 
-    use oxc_ast::ast::{ClassElement, CommentKind, Expression, Statement, StructElement};
+    use oxc_ast::ast::{
+        ArkUIChild, ClassElement, CommentKind, Expression, ObjectPropertyKind, Statement,
+        StructElement,
+    };
     use oxc_span::GetSpan;
 
     use super::*;
@@ -1223,6 +1288,193 @@ mod test {
             panic!("Expected a trailing-block expression statement");
         };
         assert!(matches!(trailing_block.expression, Expression::ETSTrailingBlockExpression(_)));
+    }
+
+    #[test]
+    fn ets_static_arkui_1_2_uses_component_ast_without_leaking_into_plain_ets() {
+        // `ets-static` is an explicit Parser API mode and the misc fixture runner infers source
+        // type from a file extension, so this regression belongs at the API boundary.
+        let allocator = Allocator::default();
+        let source = r"
+            import { Builder, Column, Component, CustomBuilder, Entry, ForEach, List, Text }
+              from '@ohos.arkui.component'
+
+            @Entry
+            @Component
+            struct Sample {
+              @Builder
+              item(label: string) {
+                Text(label)
+              }
+
+              build() {
+                Column() {
+                  List({
+                    header: () => {
+                      this.item('Header')
+                    } as CustomBuilder,
+                  }) {
+                    ForEach(this.values, (value: string) => {
+                      Text(value)
+                    })
+                  }
+                }
+              }
+            }
+        ";
+        let ret = Parser::new(&allocator, source, SourceType::ets_static()).parse();
+        assert!(ret.diagnostics.is_empty(), "Errors: {:?}", ret.diagnostics);
+
+        let Statement::StructStatement(component) = &ret.program.body[1] else {
+            panic!("Expected static ArkUI component struct");
+        };
+        let StructElement::MethodDefinition(build) = &component.body.body[1] else {
+            panic!("Expected build method");
+        };
+        let Statement::ExpressionStatement(column) =
+            &build.value.body.as_ref().unwrap().statements[0]
+        else {
+            panic!("Expected Column expression");
+        };
+        let Expression::ArkUIComponentExpression(column) = &column.expression else {
+            panic!("Expected ArkUI component expression");
+        };
+        let ArkUIChild::Component(list) = &column.children[0] else {
+            panic!("Expected List component child");
+        };
+        let Expression::ObjectExpression(options) = list.arguments[0].as_expression().unwrap()
+        else {
+            panic!("Expected List options object");
+        };
+        let ObjectPropertyKind::ObjectProperty(header) = &options.properties[0] else {
+            panic!("Expected header property");
+        };
+        assert!(matches!(header.value, Expression::TSAsExpression(_)));
+
+        let ArkUIChild::Expression(for_each) = &list.children[0] else {
+            panic!("Expected ForEach expression child");
+        };
+        let Expression::CallExpression(for_each) = &**for_each else {
+            panic!("Expected ForEach call expression");
+        };
+        let Expression::ArrowFunctionExpression(callback) =
+            for_each.arguments[1].as_expression().unwrap()
+        else {
+            panic!("Expected ForEach callback");
+        };
+        let Statement::ExpressionStatement(text) = &callback.body.statements[0] else {
+            panic!("Expected Text expression");
+        };
+        assert!(matches!(text.expression, Expression::ArkUIComponentExpression(_)));
+
+        let plain = Parser::new(
+            &allocator,
+            "function plain() { invoke() { work() } }",
+            SourceType::ets_static(),
+        )
+        .parse();
+        assert!(plain.diagnostics.is_empty(), "Errors: {:?}", plain.diagnostics);
+        let Statement::FunctionDeclaration(plain) = &plain.program.body[0] else {
+            panic!("Expected plain function");
+        };
+        let Statement::ExpressionStatement(invoke) = &plain.body.as_ref().unwrap().statements[0]
+        else {
+            panic!("Expected invoke expression");
+        };
+        assert!(matches!(invoke.expression, Expression::ETSTrailingBlockExpression(_)));
+    }
+
+    #[test]
+    fn ets_static_arkui_builder_and_extend_contexts_enable_the_dsl() {
+        let allocator = Allocator::default();
+        let source = r"
+            @Builder
+            function title(label: string) {
+              Text(label)
+            }
+
+            @Extend(Text)
+            function emphasized() {
+              .fontSize(16)
+            }
+        ";
+        let ret = Parser::new(&allocator, source, SourceType::ets_static()).parse();
+        assert!(ret.diagnostics.is_empty(), "Errors: {:?}", ret.diagnostics);
+
+        let Statement::FunctionDeclaration(builder) = &ret.program.body[0] else {
+            panic!("Expected Builder function");
+        };
+        let Statement::ExpressionStatement(text) = &builder.body.as_ref().unwrap().statements[0]
+        else {
+            panic!("Expected Text expression");
+        };
+        assert!(matches!(text.expression, Expression::ArkUIComponentExpression(_)));
+
+        let Statement::FunctionDeclaration(extend) = &ret.program.body[1] else {
+            panic!("Expected Extend function");
+        };
+        let Statement::ExpressionStatement(font_size) =
+            &extend.body.as_ref().unwrap().statements[0]
+        else {
+            panic!("Expected leading-dot expression");
+        };
+        assert!(matches!(font_size.expression, Expression::LeadingDotExpression(_)));
+    }
+
+    #[test]
+    fn ets_static_arkui_options_do_not_reuse_legacy_arkts_options() {
+        let allocator = Allocator::default();
+        let source = r"
+            @Component
+            struct Configured {
+              render() {
+                CustomRoot() {}
+              }
+            }
+        ";
+        let options = ArkTsOptions {
+            components: vec!["CustomRoot".into()],
+            render_methods: vec!["render".into()],
+            ..ArkTsOptions::default()
+        };
+
+        let legacy_options = Parser::new(&allocator, source, SourceType::ets_static())
+            .with_arkts_options(options)
+            .parse();
+        assert!(legacy_options.diagnostics.is_empty(), "Errors: {:?}", legacy_options.diagnostics);
+        let Statement::StructStatement(component) = &legacy_options.program.body[0] else {
+            panic!("Expected struct");
+        };
+        let StructElement::MethodDefinition(render) = &component.body.body[0] else {
+            panic!("Expected render method");
+        };
+        let Statement::ExpressionStatement(custom_root) =
+            &render.value.body.as_ref().unwrap().statements[0]
+        else {
+            panic!("Expected CustomRoot expression");
+        };
+        assert!(matches!(custom_root.expression, Expression::ETSTrailingBlockExpression(_)));
+
+        let static_options = Parser::new(&allocator, source, SourceType::ets_static())
+            .with_ets_static_arkui_options(EtsStaticArkUiOptions {
+                components: vec!["CustomRoot".into()],
+                render_methods: vec!["render".into()],
+                ..EtsStaticArkUiOptions::default()
+            })
+            .parse();
+        assert!(static_options.diagnostics.is_empty(), "Errors: {:?}", static_options.diagnostics);
+        let Statement::StructStatement(component) = &static_options.program.body[0] else {
+            panic!("Expected struct");
+        };
+        let StructElement::MethodDefinition(render) = &component.body.body[0] else {
+            panic!("Expected render method");
+        };
+        let Statement::ExpressionStatement(custom_root) =
+            &render.value.body.as_ref().unwrap().statements[0]
+        else {
+            panic!("Expected CustomRoot expression");
+        };
+        assert!(matches!(custom_root.expression, Expression::ArkUIComponentExpression(_)));
     }
 
     #[test]

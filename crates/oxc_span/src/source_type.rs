@@ -92,7 +92,8 @@ pub enum LanguageVariant {
     Jsx = 1,
     /// For sources using ArkUI (ETS files)
     Arkui = 2,
-    /// For sources using the static ETS language implemented by `ets2panda`.
+    /// For sources using the static ETS language implemented by `ets2panda`, including its
+    /// ArkTS/ArkUI 1.2 UI DSL.
     ///
     /// Static ETS shares the `.ets` extension with ArkUI/ArkTS 1.1, so this
     /// variant is only selected explicitly and is never inferred from a path.
@@ -107,7 +108,7 @@ pub enum LanguageVariant {
 /// silently change existing users' parser behavior.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ExplicitLanguage {
-    /// Static ETS as implemented by `es2panda`.
+    /// Static ETS / ArkTS 1.2 as implemented by `es2panda`.
     EtsStatic,
 }
 
@@ -459,7 +460,7 @@ impl SourceType {
 
     /// Creates a [`SourceType`] representing an explicitly selected static ETS file.
     ///
-    /// Static ETS and ArkUI both use the `.ets` extension. Consequently,
+    /// Static ETS / ArkTS 1.2 and legacy ArkUI both use the `.ets` extension. Consequently,
     /// [`SourceType::from_path`] continues to return [`SourceType::ets`] for
     /// `.ets` paths; callers must opt in to this mode explicitly.
     ///

@@ -750,7 +750,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         decorators: ArenaVec<'a, Decorator<'a>>,
     ) -> ClassElement<'a> {
         let is_arkui_dsl_method =
-            self.source_type.is_arkui() && self.decorators_enable_arkui_dsl(decorators.as_slice());
+            self.supports_arkui_dsl() && self.decorators_enable_arkui_dsl(decorators.as_slice());
         let mut value =
             self.with_ets_this_return_type(!modifiers.contains(ModifierKind::Static), |p| {
                 if is_arkui_dsl_method {

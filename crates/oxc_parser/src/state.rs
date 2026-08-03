@@ -45,6 +45,15 @@ pub struct ParserState<'a> {
     /// The flag is consumed by the function body parser and restored by the argument parser.
     pub arkui_dsl_next_function: bool,
 
+    /// Static ArkTS only enters a `build` render body after an ArkUI component annotation has
+    /// established a component scope. Legacy ArkUI keeps its existing implicit struct behavior.
+    pub ets_static_arkui_component_scope_depth: u32,
+
+    /// Component bindings imported from the static ArkUI component module, plus locally declared
+    /// static ArkUI components. This lets the static parser recognize current component APIs
+    /// without reusing the legacy hard-coded component list.
+    pub ets_static_arkui_component_names: IdentHashSet<'a>,
+
     /// Nesting depth of `parse_statement_list_item`. Static ETS uses this to
     /// distinguish a declaration directly in a source/namespace body from one
     /// nested in a block or control-flow statement.
@@ -81,6 +90,8 @@ impl ParserState<'_> {
             encountered_await_identifier: false,
             arkui_dsl_depth: 0,
             arkui_dsl_next_function: false,
+            ets_static_arkui_component_scope_depth: 0,
+            ets_static_arkui_component_names: IdentHashSet::default(),
             ets_statement_depth: 0,
             ets_declaration_list_depth: None,
             ets_in_declaration_scope: false,

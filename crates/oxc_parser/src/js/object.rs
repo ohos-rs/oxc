@@ -25,7 +25,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
         // Check if this is an ArkUI object literal with expression statements (e.g., { .backgroundColor(...) })
         // In ArkUI, object literals can contain expression statements starting with dots
-        if self.source_type.is_arkui() && self.is_in_arkui_dsl_context() && self.at(Kind::Dot) {
+        if self.supports_arkui_dsl() && self.is_in_arkui_dsl_context() && self.at(Kind::Dot) {
             // Parse as ArkUI object literal with expression statements
             return self.parse_arkui_object_expression_with_statements(span, opening_span);
         }
@@ -259,36 +259,35 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         computed: bool,
     ) -> ArenaBox<'a, ObjectProperty<'a>> {
         self.expect(Kind::Colon);
-        let value = if self.source_type.is_arkui()
-            && self.is_in_arkui_dsl_context()
-            && self.at(Kind::LCurly)
-        {
-            let obj_span = self.start_span();
-            let opening_span = self.cur_token().span();
-            self.expect(Kind::LCurly);
+        let value =
+            if self.supports_arkui_dsl() && self.is_in_arkui_dsl_context() && self.at(Kind::LCurly)
+            {
+                let obj_span = self.start_span();
+                let opening_span = self.cur_token().span();
+                self.expect(Kind::LCurly);
 
-            let object = if self.at(Kind::Dot) {
-                self.parse_arkui_object_expression_with_statements(obj_span, opening_span)
+                let object = if self.at(Kind::Dot) {
+                    self.parse_arkui_object_expression_with_statements(obj_span, opening_span)
+                } else {
+                    let (properties, comma_span) = self.context_add(Context::In, |p| {
+                        p.parse_delimited_list(
+                            Kind::RCurly,
+                            Kind::Comma,
+                            opening_span,
+                            Self::parse_object_expression_property,
+                        )
+                    });
+                    if let Some(comma_span) = comma_span {
+                        self.state.trailing_commas.insert(obj_span, self.end_span(comma_span));
+                    }
+                    self.expect(Kind::RCurly);
+                    ObjectExpression::boxed(self.end_span(obj_span), properties, self)
+                };
+
+                self.parse_type_assertion_if_present(Expression::ObjectExpression(object))
             } else {
-                let (properties, comma_span) = self.context_add(Context::In, |p| {
-                    p.parse_delimited_list(
-                        Kind::RCurly,
-                        Kind::Comma,
-                        opening_span,
-                        Self::parse_object_expression_property,
-                    )
-                });
-                if let Some(comma_span) = comma_span {
-                    self.state.trailing_commas.insert(obj_span, self.end_span(comma_span));
-                }
-                self.expect(Kind::RCurly);
-                ObjectExpression::boxed(self.end_span(obj_span), properties, self)
+                self.parse_assignment_expression_or_higher()
             };
-
-            self.parse_type_assertion_if_present(Expression::ObjectExpression(object))
-        } else {
-            self.parse_assignment_expression_or_higher()
-        };
         ObjectProperty::boxed(
             self.end_span(span),
             PropertyKind::Init,

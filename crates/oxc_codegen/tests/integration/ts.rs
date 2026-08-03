@@ -129,6 +129,50 @@ consume() { let nested: int = 1 }
 }
 
 #[test]
+fn ets_static_arkui_1_2_codegen_round_trip() {
+    let allocator = Allocator::default();
+    let source_type = SourceType::ets_static();
+    let source = r"
+import { Builder, Column, Component, CustomBuilder, Entry, ForEach, List, Text }
+  from '@ohos.arkui.component'
+
+@Entry
+@Component
+struct Sample {
+  @Builder
+  item(label: string) {
+    Text(label)
+  }
+
+  build() {
+    Column() {
+      List({
+        header: () => {
+          this.item('Header')
+        } as CustomBuilder,
+      }) {
+        ForEach(this.values, (value: string) => {
+          Text(value)
+        })
+      }
+    }
+  }
+}
+";
+    let ret = Parser::new(&allocator, source, source_type).parse();
+    assert!(ret.diagnostics.is_empty(), "Parse errors: {:?}", ret.diagnostics);
+
+    let code = Codegen::new().with_options(default_options()).build(&ret.program).code;
+    assert!(code.contains("Column() {"), "component body was lost:\n{code}");
+    assert!(code.contains("as CustomBuilder"), "arrow assertion was lost:\n{code}");
+    assert!(code.contains("ForEach(this.values"), "UI callback was lost:\n{code}");
+
+    let allocator = Allocator::default();
+    let reparsed = Parser::new(&allocator, &code, source_type).parse();
+    assert!(reparsed.diagnostics.is_empty(), "Reparse errors: {:?}\n{code}", reparsed.diagnostics);
+}
+
+#[test]
 fn minify_arkui_decorator_newlines() {
     test_options_with_source_type(
         "@Observed\nexport class Model { @Track value = 0 }",

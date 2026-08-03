@@ -278,6 +278,8 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             self,
         );
 
+        self.register_ets_static_arkui_component_imports(&import_decl);
+
         if should_record_module_record {
             self.module_record_builder.visit_import_declaration(&import_decl);
         }
@@ -627,7 +629,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             // Handle `export declare struct` (and other modifiers) in ArkUI mode.
             // We need a lookahead because the current token is the modifier (`declare`),
             // not `struct`.
-            kind if self.source_type.is_arkui()
+            kind if self.source_type.is_ets()
                 && matches!(kind, Kind::Declare | Kind::Async | Kind::Abstract | Kind::Public)
                 && self.lookahead(|p| {
                     p.eat_modifiers_before_declaration();

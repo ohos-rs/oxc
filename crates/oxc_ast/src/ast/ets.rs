@@ -1,9 +1,10 @@
 //! Static ETS AST node definitions.
 //!
-//! These nodes model syntax that belongs to the `ets-static` frontend and has no
-//! JavaScript or TypeScript ESTree equivalent. They are deliberately separate
-//! from ArkUI nodes: a plain `.ets` source continues to use the ArkUI grammar,
-//! while these nodes can only be produced by an explicit static ETS source type.
+//! These nodes model static-ETS-only syntax that has no JavaScript or TypeScript ESTree
+//! equivalent. They remain separate from the legacy ArkUI grammar: a plain `.ets` source
+//! continues to use the ArkUI/ArkTS 1.1 parser path, while these nodes can only be produced by
+//! an explicit static ETS source type. The static ArkTS/ArkUI 1.2 parser may additionally reuse
+//! shared ArkUI component AST nodes for its UI DSL contexts.
 
 use std::cell::Cell;
 
