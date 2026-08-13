@@ -292,7 +292,9 @@ impl<'a> VisitJs<'a> for ContextIdentifierVisitor<'a> {
 
     fn visit_ts_enum_declaration(&mut self, _it: &TSEnumDeclaration<'a>) {}
 
-    fn visit_ts_module_declaration(&mut self, _it: &TSModuleDeclaration<'a>) {}
+    fn visit_ts_external_module_declaration(&mut self, _it: &TSExternalModuleDeclaration<'a>) {}
+
+    fn visit_ts_namespace_declaration(&mut self, _it: &TSNamespaceDeclaration<'a>) {}
 }
 
 impl<'a> ContextIdentifierVisitor<'a> {
@@ -431,15 +433,7 @@ pub fn find_context_identifiers(
         }
         FunctionNode::Arrow(arrow) => {
             visitor.visit_formal_parameters(&arrow.params);
-            if arrow.expression {
-                if let Some(Statement::ExpressionStatement(es)) = arrow.body.statements.first() {
-                    visitor.visit_expression(&es.expression);
-                } else {
-                    visitor.visit_function_body(&arrow.body);
-                }
-            } else {
-                visitor.visit_function_body(&arrow.body);
-            }
+            visitor.visit_arrow_function_body(&arrow.body);
         }
     }
 

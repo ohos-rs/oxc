@@ -198,11 +198,15 @@ impl<'a> TakeIn<'a> for FormalParameterRest<'a> {}
 
 impl<'a> TakeIn<'a> for FunctionBody<'a> {}
 
+impl<'a> TakeIn<'a> for ArrowFunctionBody<'a> {}
+
 impl<'a> TakeIn<'a> for ArrowFunctionExpression<'a> {}
 
 impl<'a> TakeIn<'a> for YieldExpression<'a> {}
 
 impl<'a> TakeIn<'a> for Class<'a> {}
+
+impl<'a> TakeIn<'a> for ClassHeritage<'a> {}
 
 impl<'a> TakeIn<'a> for ClassBody<'a> {}
 
@@ -240,7 +244,11 @@ impl<'a> TakeIn<'a> for ImportAttribute<'a> {}
 
 impl<'a> TakeIn<'a> for ImportAttributeKey<'a> {}
 
+impl<'a> TakeIn<'a> for ExportDeclaration<'a> {}
+
 impl<'a> TakeIn<'a> for ExportNamedDeclaration<'a> {}
+
+impl<'a> TakeIn<'a> for ExportFromDeclaration<'a> {}
 
 impl<'a> TakeIn<'a> for ExportDefaultDeclaration<'a> {}
 
@@ -426,11 +434,11 @@ impl<'a> TakeIn<'a> for TSTypePredicate<'a> {}
 
 impl<'a> TakeIn<'a> for TSTypePredicateName<'a> {}
 
-impl<'a> TakeIn<'a> for TSModuleDeclaration<'a> {}
+impl<'a> TakeIn<'a> for TSExternalModuleDeclaration<'a> {}
 
-impl<'a> TakeIn<'a> for TSModuleDeclarationName<'a> {}
+impl<'a> TakeIn<'a> for TSNamespaceDeclaration<'a> {}
 
-impl<'a> TakeIn<'a> for TSModuleDeclarationBody<'a> {}
+impl<'a> TakeIn<'a> for TSNamespaceDeclarationBody<'a> {}
 
 impl<'a> TakeIn<'a> for TSGlobalDeclaration<'a> {}
 

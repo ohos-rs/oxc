@@ -5,7 +5,7 @@
 //! - Annotation declarations (`annotation MyAnnotation { ... }`)
 //! - ArkUI component expressions (`Column() { ... }`)
 
-use oxc_allocator::{ArenaBox as Box, ArenaVec as Vec};
+use oxc_allocator::{ArenaBox, ArenaVec};
 use oxc_ast::ast::*;
 use oxc_span::{GetSpan, Span};
 use oxc_str::Ident;
@@ -462,7 +462,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         start_span: u32,
         stmt_ctx: StatementContext,
         modifiers: &Modifiers,
-        decorators: Vec<'a, Decorator<'a>>,
+        decorators: ArenaVec<'a, Decorator<'a>>,
     ) -> Statement<'a> {
         if self.source_type.is_ets_static() && !self.state.ets_in_declaration_scope {
             self.error(diagnostics::ets_nested_declaration("Struct", Span::empty(start_span)));
@@ -482,8 +482,8 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         &mut self,
         start_span: u32,
         modifiers: &Modifiers,
-        decorators: Vec<'a, Decorator<'a>>,
-    ) -> Box<'a, StructStatement<'a>> {
+        decorators: ArenaVec<'a, Decorator<'a>>,
+    ) -> ArenaBox<'a, StructStatement<'a>> {
         self.bump_any(); // advance `struct`
 
         // Move span start to decorator position if decorators exist
@@ -547,7 +547,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             type_parameters,
             super_class,
             super_type_arguments,
-            implements.map_or_else(|| Vec::new_in(self), |(_, implements)| implements),
+            implements.map_or_else(|| ArenaVec::new_in(self), |(_, implements)| implements),
             body,
             r#abstract,
             declare,
@@ -575,7 +575,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         start_span: u32,
         stmt_ctx: StatementContext,
         modifiers: &Modifiers,
-        decorators: Vec<'a, Decorator<'a>>,
+        decorators: ArenaVec<'a, Decorator<'a>>,
     ) -> Statement<'a> {
         let decl = self.parse_annotation_declaration(start_span, modifiers, decorators);
         if stmt_ctx.is_single_statement() {
@@ -594,8 +594,8 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         &mut self,
         start_span: u32,
         modifiers: &Modifiers,
-        decorators: Vec<'a, Decorator<'a>>,
-    ) -> Box<'a, AnnotationDeclaration<'a>> {
+        decorators: ArenaVec<'a, Decorator<'a>>,
+    ) -> ArenaBox<'a, AnnotationDeclaration<'a>> {
         let at_span = self.cur_token().span();
         self.expect(Kind::At);
         let interface_span = self.cur_token().span();
@@ -653,8 +653,8 @@ impl<'a, C: Config> ParserImpl<'a, C> {
     }
 
     /// Parse annotation body containing properties
-    fn parse_annotation_body(&mut self) -> Box<'a, AnnotationBody<'a>> {
-        let span = self.start_span();
+    fn parse_annotation_body(&mut self) -> ArenaBox<'a, AnnotationBody<'a>> {
+        let span = self.cur_start();
         let annotation_elements =
             self.parse_normal_list_breakable(Kind::LCurly, Kind::RCurly, |p| {
                 if p.at(Kind::Semicolon) {
@@ -669,7 +669,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
     /// Parse an annotation element (property)
     fn parse_annotation_element(&mut self) -> AnnotationElement<'a> {
-        let span = self.start_span();
+        let span = self.cur_start();
 
         let decorators = self.parse_decorators();
         let modifiers = self.parse_modifiers(
@@ -699,7 +699,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
         // Parse optional type annotation
         let type_annotation = if self.is_ts && self.eat(Kind::Colon) {
-            let span = self.start_span();
+            let span = self.cur_start();
             let ts_type = self.parse_ts_type();
             Some(TSTypeAnnotation::boxed(self.end_span(span), ts_type, self))
         } else {
@@ -742,8 +742,8 @@ impl<'a, C: Config> ParserImpl<'a, C> {
     }
 
     /// Parse struct body containing properties and methods
-    fn parse_struct_body(&mut self) -> Box<'a, StructBody<'a>> {
-        let span = self.start_span();
+    fn parse_struct_body(&mut self) -> ArenaBox<'a, StructBody<'a>> {
+        let span = self.cur_start();
         let struct_elements = self.parse_normal_list_breakable(Kind::LCurly, Kind::RCurly, |p| {
             // Skip empty struct element `;`
             if p.eat(Kind::Semicolon) {
@@ -761,7 +761,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
     /// Parse a struct element (property or method)
     fn parse_struct_element(&mut self) -> StructElement<'a> {
-        let span = self.start_span();
+        let span = self.cur_start();
 
         let decorators = self.parse_decorators();
         let modifiers = self.parse_modifiers(
@@ -875,9 +875,9 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         span: u32,
         r#type: MethodDefinitionType,
         modifiers: &Modifiers,
-        decorators: Vec<'a, Decorator<'a>>,
+        decorators: ArenaVec<'a, Decorator<'a>>,
     ) -> StructElement<'a> {
-        let generator = self.eat(Kind::Star);
+        let generator = self.eat(Kind::Star).then_some(self.prev_token_end - 1);
         let (name, computed) = self.parse_property_name();
 
         // Handle optional ? token (aligned with class parsing)
@@ -890,14 +890,14 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         let optional = optional_span.is_some();
 
         // Check if this is a method (generator or has parentheses or type parameters)
-        if generator || matches!(self.cur_kind(), Kind::LParen | Kind::LAngle) {
+        if generator.is_some() || matches!(self.cur_kind(), Kind::LParen | Kind::LAngle) {
             return StructElement::MethodDefinition(self.parse_method_declaration_for_struct(
                 span, r#type, generator, name, computed, optional, modifiers, decorators,
             ));
         }
 
         // Otherwise parse as property
-        let definite_token_start = self.at(Kind::Bang).then(|| self.start_span());
+        let definite_token_start = self.at(Kind::Bang).then(|| self.cur_start());
         let definite = self.eat(Kind::Bang);
 
         if definite && let Some(optional_span) = optional_span {
@@ -934,13 +934,13 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         &mut self,
         span: u32,
         r#type: MethodDefinitionType,
-        generator: bool,
+        generator: Option<u32>,
         name: PropertyKey<'a>,
         computed: bool,
         optional: bool,
         modifiers: &Modifiers,
-        decorators: Vec<'a, Decorator<'a>>,
-    ) -> Box<'a, MethodDefinition<'a>> {
+        decorators: ArenaVec<'a, Decorator<'a>>,
+    ) -> ArenaBox<'a, MethodDefinition<'a>> {
         let is_arkui_dsl_method = self.supports_arkui_dsl()
             && ((!computed
                 && name.static_name().is_some_and(|name| {
@@ -999,13 +999,13 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         optional_span: Option<Span>,
         definite: bool,
         modifiers: &Modifiers,
-        decorators: Vec<'a, Decorator<'a>>,
+        decorators: ArenaVec<'a, Decorator<'a>>,
     ) -> StructElement<'a> {
         let optional = optional_span.is_some();
 
         // Parse optional type annotation
         let type_annotation = if self.is_ts && self.eat(Kind::Colon) {
-            let span = self.start_span();
+            let span = self.cur_start();
             let ts_type = self.parse_ts_type();
             Some(TSTypeAnnotation::boxed(self.end_span(span), ts_type, self))
         } else {
@@ -1049,14 +1049,14 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         r#type: MethodDefinitionType,
         kind: MethodDefinitionKind,
         modifiers: &Modifiers,
-        decorators: Vec<'a, Decorator<'a>>,
-    ) -> Box<'a, MethodDefinition<'a>> {
+        decorators: ArenaVec<'a, Decorator<'a>>,
+    ) -> ArenaBox<'a, MethodDefinition<'a>> {
         let (name, computed) = self.parse_property_name();
         let mut value =
             self.with_ets_this_return_type(!modifiers.contains(ModifierKind::Static), |p| {
                 p.parse_method(
                     modifiers.contains(ModifierKind::Async),
-                    false,
+                    None,
                     FunctionKind::ClassMethod,
                 )
             });
@@ -1101,7 +1101,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         &mut self,
         span: u32,
         modifiers: &Modifiers,
-        decorators: Vec<'a, Decorator<'a>>,
+        decorators: ArenaVec<'a, Decorator<'a>>,
     ) -> StructElement<'a> {
         // Parse property key
         let (name, computed) = self.parse_property_name();
@@ -1132,8 +1132,8 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         &mut self,
         span: u32,
         callee: Expression<'a>,
-        type_arguments: Option<Box<'a, TSTypeParameterInstantiation<'a>>>,
-        arguments: Vec<'a, Argument<'a>>,
+        type_arguments: Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>>,
+        arguments: ArenaVec<'a, Argument<'a>>,
     ) -> Expression<'a> {
         // Parse children block
         let (children, has_children) = self.parse_arkui_component_children();
@@ -1153,8 +1153,8 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         ))
     }
 
-    fn parse_arkui_component_chain_expressions(&mut self) -> Vec<'a, CallExpression<'a>> {
-        let mut chain_expressions = Vec::new_in(self);
+    fn parse_arkui_component_chain_expressions(&mut self) -> ArenaVec<'a, CallExpression<'a>> {
+        let mut chain_expressions = ArenaVec::new_in(self);
         while self.at(Kind::Dot) {
             let checkpoint = self.checkpoint();
             self.bump_any();
@@ -1162,7 +1162,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                 self.rewind(checkpoint);
                 break;
             }
-            let ident_span = self.start_span();
+            let ident_span = self.cur_start();
             let ident = self.parse_identifier_name();
             let type_arguments = if self.is_ts { self.try_parse_type_arguments() } else { None };
             if !self.at(Kind::LParen) {
@@ -1177,7 +1177,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                 false,
                 self,
             );
-            let call_span = self.start_span();
+            let call_span = self.cur_start();
             let opening_span = self.cur_token().span();
             self.expect(Kind::LParen);
             let (exprs, _) = self.parse_delimited_list(
@@ -1186,7 +1186,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                 opening_span,
                 Self::parse_assignment_expression_or_higher,
             );
-            let mut call_args = Vec::new_in(self);
+            let mut call_args = ArenaVec::new_in(self);
             for expr in exprs {
                 call_args.push(Argument::from(expr));
             }
@@ -1203,12 +1203,12 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         chain_expressions
     }
 
-    fn parse_arkui_component_children(&mut self) -> (Vec<'a, ArkUIChild<'a>>, bool) {
+    fn parse_arkui_component_children(&mut self) -> (ArenaVec<'a, ArkUIChild<'a>>, bool) {
         if !self.eat(Kind::LCurly) {
-            return (Vec::new_in(self), false);
+            return (ArenaVec::new_in(self), false);
         }
         let children = self.in_arkui_dsl_context(|p| {
-            let mut children = Vec::new_in(p);
+            let mut children = ArenaVec::new_in(p);
             while !p.at(Kind::RCurly) && !p.has_fatal_error() {
                 children.push(p.parse_arkui_child());
             }

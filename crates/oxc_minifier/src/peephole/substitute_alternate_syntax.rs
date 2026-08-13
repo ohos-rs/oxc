@@ -2,13 +2,12 @@ use std::iter::repeat_with;
 
 use crate::generated::ancestor::Ancestor;
 use oxc_allocator::{ArenaVec, CloneIn, GetAllocator, TakeIn};
-use oxc_ast::{ast::*, builder::NONE};
+use oxc_ast::ast::*;
 use oxc_compat::ESFeature;
-use oxc_ecmascript::side_effects::MayHaveSideEffectsContext;
 use oxc_ecmascript::{
     BoundNames, ToJsString, ToNumber,
     constant_evaluation::{ConstantEvaluation, ConstantValue, DetermineValueType},
-    side_effects::MayHaveSideEffects,
+    side_effects::{MayHaveSideEffects, MayHaveSideEffectsContext, is_typed_array_constructor},
 };
 use oxc_semantic::ReferenceFlags;
 use oxc_span::GetSpan;
@@ -171,7 +170,7 @@ impl<'a> PeepholeOptimizations {
         ctx: &mut TraverseCtx<'a>,
     ) {
         for declarator in &mut decl.declarations {
-            Self::compress_variable_declarator(declarator, ctx);
+            Self::compress_variable_declarator(declarator, decl.kind, ctx);
         }
     }
 
@@ -202,22 +201,16 @@ impl<'a> PeepholeOptimizations {
     /// `() => { return foo })` -> `() => foo`
     pub fn substitute_arrow_expression(
         arrow_expr: &mut ArrowFunctionExpression<'a>,
-        ctx: &mut TraverseCtx<'a>,
+        ctx: &TraverseCtx<'a>,
     ) {
-        if !arrow_expr.expression
-            && arrow_expr.body.directives.is_empty()
-            && arrow_expr.body.statements.len() == 1
-            && let Some(body) = arrow_expr.body.statements.first_mut()
-            && let Statement::ReturnStatement(ret_stmt) = body
+        if let Some(body) = arrow_expr.get_function_body_mut()
+            && body.directives.is_empty()
+            && body.statements.len() == 1
+            && let Statement::ReturnStatement(return_statement) = &mut body.statements[0]
+            && let Some(expr) =
+                return_statement.argument.as_mut().map(|argument| argument.take_in(ctx))
         {
-            let return_stmt_arg = ret_stmt.argument.as_mut().map(|arg| arg.take_in(&ctx.ast));
-            if let Some(arg) = return_stmt_arg {
-                ctx.replace_statement(
-                    body,
-                    Statement::new_expression_statement(arg.span(), arg, ctx),
-                );
-                arrow_expr.expression = true;
-            }
+            arrow_expr.body = ArrowFunctionBody::from(expr);
         }
     }
 
@@ -574,8 +567,9 @@ impl<'a> PeepholeOptimizations {
             ctx.scoping().get_reference(is_null_id_ref.reference_id()).symbol_id();
 
         // Plain `clone_in` resets every `reference_id` to `None`, making id
-        // aliasing structurally impossible; the loop below installs the one
-        // fresh reference the clone needs.
+        // aliasing structurally impossible. The fresh references below are
+        // stamped with the current scope, so the next post-flush graph
+        // analysis observes them directly from scoping.
         let mut new_left_expr = typeof_binary_expr.clone_in(ctx.allocator());
         if let Expression::BinaryExpression(new_left_expr_binary) = &mut new_left_expr {
             new_left_expr_binary.operator =
@@ -992,7 +986,7 @@ impl<'a> PeepholeOptimizations {
                 Expression::new_call_expression(
                     SPAN,
                     callee,
-                    NONE,
+                    None,
                     [Argument::new_numeric_literal(SPAN, offset, None, NumberBase::Decimal, ctx)],
                     false,
                     ctx,
@@ -1001,11 +995,10 @@ impl<'a> PeepholeOptimizations {
                 base_arr
             };
 
-            let new_decl =
-                VariableDeclarator::new(SPAN, var_init.kind, r_id_pat, NONE, Some(arr), false, ctx);
+            let new_decl = VariableDeclarator::new(SPAN, r_id_pat, None, Some(arr), false, ctx);
             // The old declarators (`e`, `a`, and `r`'s original init) are
             // replaced wholesale — walk them so refs inside (e.g. `e` in
-            // `Array(e > 1 ? e - 1 : 0)`) reach `PassDirty`. The moved-out
+            // `Array(e > 1 ? e - 1 : 0)`) reach `PassChanges`. The moved-out
             // `r` binding and `arguments` ident left id-less dummies behind.
             for decl in &var_init.declarations {
                 ctx.drop_variable_declarator(decl);
@@ -1015,7 +1008,7 @@ impl<'a> PeepholeOptimizations {
             // `for (var; 0;)` with an empty `VariableDeclaration` is invalid JS when printed and
             // makes `try_fold_for` hoist a bogus `var;`. Use `for (; 0;)` instead so dead-code
             // folding becomes an empty statement. Walk the dropped
-            // declarators so their refs reach `PassDirty`.
+            // declarators so their refs reach `PassChanges`.
             for decl in &var_init.declarations {
                 ctx.drop_variable_declarator(decl);
             }
@@ -1061,10 +1054,14 @@ impl<'a> PeepholeOptimizations {
         }
     }
 
-    fn compress_variable_declarator(decl: &mut VariableDeclarator<'a>, ctx: &mut TraverseCtx<'a>) {
+    fn compress_variable_declarator(
+        decl: &mut VariableDeclarator<'a>,
+        kind: VariableDeclarationKind,
+        ctx: &mut TraverseCtx<'a>,
+    ) {
         // Destructuring Pattern has error throwing side effect.
         if matches!(
-            decl.kind,
+            kind,
             VariableDeclarationKind::Const
                 | VariableDeclarationKind::Using
                 | VariableDeclarationKind::AwaitUsing
@@ -1072,7 +1069,7 @@ impl<'a> PeepholeOptimizations {
         {
             return;
         }
-        if !decl.kind.is_var()
+        if !kind.is_var()
             && decl.init.as_ref().is_some_and(|init| ctx.is_expression_undefined(init))
             && let Some(old) = decl.init.take()
         {
@@ -1136,10 +1133,12 @@ impl<'a> PeepholeOptimizations {
                 span,
                 match arg {
                     None => 0.0,
-                    Some(arg) => match arg.to_number(ctx) {
-                        Some(n) => n,
-                        None => return,
-                    },
+                    Some(arg) => {
+                        match arg.to_number(ctx).filter(|_| !arg.may_have_side_effects(ctx)) {
+                            Some(n) => n,
+                            None => return,
+                        }
+                    }
                 },
                 None,
                 NumberBase::Decimal,
@@ -1251,7 +1250,7 @@ impl<'a> PeepholeOptimizations {
                             let callee = callee.take_in(ctx);
                             let args = args.take_in(ctx);
                             let new_value = Expression::new_call_expression(
-                                *span, callee, NONE, args, false, ctx,
+                                *span, callee, None, args, false, ctx,
                             );
                             ctx.replace_expression(expr, new_value);
                         }
@@ -1270,7 +1269,7 @@ impl<'a> PeepholeOptimizations {
                         let callee = callee.take_in(ctx);
                         let args = args.take_in(ctx);
                         let new_value =
-                            Expression::new_call_expression(*span, callee, NONE, args, false, ctx);
+                            Expression::new_call_expression(*span, callee, None, args, false, ctx);
                         ctx.replace_expression(expr, new_value);
                     }
                 } else {
@@ -1343,9 +1342,9 @@ impl<'a> PeepholeOptimizations {
         } {
             let new_value = Expression::new_call_expression_with_pure(
                 e.span,
-                e.callee.take_in(&ctx.ast),
-                NONE,
-                e.arguments.take_in(&ctx.ast),
+                e.callee.take_in(ctx),
+                None,
+                e.arguments.take_in(ctx),
                 false,
                 e.pure,
                 ctx,
@@ -1396,7 +1395,9 @@ impl<'a> PeepholeOptimizations {
 
     pub fn substitute_template_literal(expr: &mut Expression<'a>, ctx: &mut TraverseCtx<'a>) {
         let Expression::TemplateLiteral(t) = expr else { return };
-        let Some(val) = t.to_js_string(ctx) else { return };
+        let Some(val) = t.to_js_string(ctx).filter(|_| !t.may_have_side_effects(ctx)) else {
+            return;
+        };
         let new_value =
             Expression::new_string_literal(t.span(), Str::from_cow_in(&val, ctx), None, ctx);
         ctx.replace_expression(expr, new_value);
@@ -1628,7 +1629,7 @@ impl<'a> PeepholeOptimizations {
     pub fn substitute_typed_array_constructor(e: &mut NewExpression<'a>, ctx: &TraverseCtx<'a>) {
         let Expression::Identifier(ident) = &e.callee else { return };
         let name = ident.name.as_str();
-        if !Self::is_typed_array_name(name) || !ctx.is_global_reference(ident) {
+        if !is_typed_array_constructor(name) || !ctx.is_global_reference(ident) {
             return;
         }
         if e.arguments.len() == 1
@@ -1769,7 +1770,7 @@ impl<'a> PeepholeOptimizations {
                 false,
                 ctx,
             ),
-            NONE,
+            None,
             [Argument::new_string_literal(
                 expr.span(),
                 Str::from_str_in(delimiter, ctx),
@@ -1870,29 +1871,9 @@ impl<'a> PeepholeOptimizations {
         })
     }
 
-    /// Whether the name matches any TypedArray name.
-    ///
-    /// See <https://tc39.es/ecma262/multipage/indexed-collections.html#sec-typedarray-objects> for the list of TypedArrays.
-    fn is_typed_array_name(name: &str) -> bool {
-        matches!(
-            name,
-            "Int8Array"
-                | "Uint8Array"
-                | "Uint8ClampedArray"
-                | "Int16Array"
-                | "Uint16Array"
-                | "Int32Array"
-                | "Uint32Array"
-                | "Float32Array"
-                | "Float64Array"
-                | "BigInt64Array"
-                | "BigUint64Array"
-        )
-    }
-
     /// Whether the expression's result will be discarded — bare expression
-    /// statement, or the init of a `var`/`let`/`const` whose binding has no
-    /// references and isn't exported. Used by the IIFE inliner to short-circuit
+    /// statement, or the init of a `var`/`let`/`const` whose binding is unused
+    /// by count. Used by the IIFE inliner to short-circuit
     /// pure-annotated IIFEs to `void 0` so they drop regardless of body shape,
     /// and to allow `(async () => {})()` / `(function* () {})()` (whose return
     /// value isn't a meaningful result) to collapse in those positions too.
@@ -1905,36 +1886,19 @@ impl<'a> PeepholeOptimizations {
                     return false;
                 }
                 // `using` runs `[Symbol.dispose]` at scope exit.
-                if decl.kind().is_using() {
+                let Ancestor::VariableDeclarationDeclarations(declaration) = ctx.ancestor(1) else {
+                    unreachable!();
+                };
+                if declaration.kind().is_using() {
                     return false;
                 }
                 let BindingPattern::BindingIdentifier(ident) = decl.id() else {
                     return false;
                 };
-                if !ctx.scoping().symbol_is_unused(ident.symbol_id()) {
-                    return false;
-                }
-                !Self::var_declaration_is_exported(ctx)
+                Self::symbol_is_unused_by_count(ident.symbol_id(), ctx)
             }
             _ => false,
         }
-    }
-
-    /// `true` if the `VariableDeclaration` that contains the current expression
-    /// (entered via `VariableDeclaratorInit`) sits directly under an `export`
-    /// wrapper. Exports are cross-module reachable, and the inner
-    /// `VariableDeclaration` never routes through `handle_variable_declaration`
-    /// — dropping its init would silently break the export's runtime value.
-    ///
-    /// Checks the exact ancestor slot above `VariableDeclaration` only;
-    /// walking the full chain would over-broaden the guard to function-local
-    /// vars inside exported functions.
-    fn var_declaration_is_exported(ctx: &TraverseCtx<'a>) -> bool {
-        // Only `ExportNamedDeclaration`'s `declaration` field can hold a
-        // `VariableDeclaration`. `export default` wraps a function / class /
-        // expression — never a `VariableDeclaration` — so no arm is needed
-        // for it.
-        matches!(ctx.ancestors().nth(2), Some(Ancestor::ExportNamedDeclarationDeclaration(_)))
     }
 
     /// Optimizes the usage of Immediately Invoked Function Expressions (IIFEs)
@@ -1989,7 +1953,6 @@ impl<'a> PeepholeOptimizations {
         if let Expression::ArrowFunctionExpression(f) = &mut call_expr.callee
             && !f.r#async
             && !f.params.has_parameter()
-            && f.body.statements.len() == 1
         {
             if let Some(expr) = f.get_expression_mut() {
                 // Replace "(() => foo())()" with "foo()"
@@ -2003,7 +1966,11 @@ impl<'a> PeepholeOptimizations {
                 ctx.replace_expression(e, new_value);
                 return;
             }
-            match &mut f.body.statements[0] {
+            let Some(body) = f.get_function_body_mut() else { return };
+            if body.statements.len() != 1 {
+                return;
+            }
+            match &mut body.statements[0] {
                 Statement::ExpressionStatement(expr_stmt) => {
                     // Replace "(() => { foo() })()" with "(foo(), undefined)"
                     let new_value = if is_pure && Self::is_expression_result_unused(ctx) {
@@ -2094,7 +2061,7 @@ impl<'a> PeepholeOptimizations {
     }
 
     /// Take the IIFE body out for inlining and propagate `pure` onto a
-    /// call/new body. Bails in DCE-only mode — see the
+    /// call/new body. Bails in tree-shake-only mode — see the
     /// `preserve_iife_in_dce_mode` test.
     /// Returns `None` to signal the caller should leave the IIFE intact.
     fn try_take_iife_body(
@@ -2102,7 +2069,7 @@ impl<'a> PeepholeOptimizations {
         is_pure: bool,
         ctx: &TraverseCtx<'a>,
     ) -> Option<Expression<'a>> {
-        if ctx.state.dce {
+        if ctx.is_tree_shake_only() {
             return None;
         }
         let mut taken = body.take_in(&ctx.ast);

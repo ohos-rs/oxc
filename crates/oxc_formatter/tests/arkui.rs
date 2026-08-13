@@ -4,7 +4,7 @@ use oxc_span::SourceType;
 
 fn format_ets(source_text: &str) -> String {
     let allocator = Allocator::default();
-    format(&allocator, source_text, SourceType::ets(), JsFormatOptions::default(), None)
+    format(&allocator, source_text, SourceType::ets(), JsFormatOptions::default())
         .unwrap()
         .print()
         .unwrap()
@@ -13,7 +13,7 @@ fn format_ets(source_text: &str) -> String {
 
 fn format_ets_static(source_text: &str) -> String {
     let allocator = Allocator::default();
-    format(&allocator, source_text, SourceType::ets_static(), JsFormatOptions::default(), None)
+    format(&allocator, source_text, SourceType::ets_static(), JsFormatOptions::default())
         .unwrap()
         .print()
         .unwrap()

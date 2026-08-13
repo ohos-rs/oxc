@@ -7,7 +7,7 @@ use oxc_syntax::precedence::GetPrecedence;
 use crate::{
     ast_nodes::{AstNode, AstNodes},
     formatter::{JsFormatter, JsFormatterExt as _},
-    print::{BinaryLikeExpression, should_flatten},
+    print::{BinaryLikeExpression, should_flatten, unary_argument_takes_comment_parens},
     utils::expression::ExpressionLeftSide,
 };
 
@@ -92,10 +92,7 @@ impl NeedsParentheses<'_> for AstNode<'_, IdentifierReference<'_>> {
             }
 
             // Needs at least one `satisfies`/`as` wrapper, with a statement right outside it
-            !ptr::eq(self.parent(), parent)
-                && matches!(
-                    parent, AstNodes::ExpressionStatement(stmt) if !stmt.is_arrow_function_body()
-                )
+            !ptr::eq(self.parent(), parent) && matches!(parent, AstNodes::ExpressionStatement(_))
         };
 
         match self.name.as_str() {
@@ -123,9 +120,10 @@ impl NeedsParentheses<'_> for AstNode<'_, IdentifierReference<'_>> {
                 let mut child_span = self.span;
                 for parent in self.ancestors() {
                     let dominated = match parent {
-                        AstNodes::ExpressionStatement(s) => {
-                            return is_computed_member_object && !s.is_arrow_function_body();
+                        AstNodes::ExpressionStatement(_) => {
+                            return is_computed_member_object;
                         }
+                        AstNodes::ArrowFunctionExpression(_) => return false,
                         AstNodes::ForStatement(s) => {
                             return is_computed_member_object
                                 && matches!(&s.init, Some(init) if init.span() == child_span);
@@ -272,11 +270,10 @@ impl NeedsParentheses<'_> for AstNode<'_, StringLiteral<'_>> {
         // https://github.com/prettier/prettier/blob/00146ea15c30e16ad6526893c735e35683192efc/src/language-js/parentheses/needs-parentheses.js#L594-L609
         if let AstNodes::ExpressionStatement(stmt) = self.parent() {
             // `() => "foo"`
-            !stmt.is_arrow_function_body()
-                && matches!(
-                    stmt.parent(),
-                    AstNodes::Program(_) | AstNodes::FunctionBody(_) | AstNodes::BlockStatement(_)
-                )
+            matches!(
+                stmt.parent(),
+                AstNodes::Program(_) | AstNodes::FunctionBody(_) | AstNodes::BlockStatement(_)
+            )
         } else {
             false
         }
@@ -563,7 +560,7 @@ impl NeedsParentheses<'_> for AstNode<'_, BinaryExpression<'_>> {
             return true;
         }
 
-        binary_like_needs_parens(BinaryLikeExpression::BinaryExpression(self))
+        binary_like_needs_parens(BinaryLikeExpression::BinaryExpression(self), f)
     }
 }
 
@@ -574,18 +571,11 @@ impl NeedsParentheses<'_> for AstNode<'_, BinaryExpression<'_>> {
 ///
 /// <https://github.com/prettier/prettier/issues/907#issuecomment-284304321>
 fn is_in_for_initializer(expr: &AstNode<'_, BinaryExpression<'_>>) -> bool {
-    let mut ancestors = expr.ancestors();
+    let ancestors = expr.ancestors();
 
-    while let Some(parent) = ancestors.next() {
+    for parent in ancestors {
         match parent {
             AstNodes::ExpressionStatement(stmt) => {
-                if stmt.is_arrow_function_body() {
-                    // Expression body: `() => expr`
-                    // Skip `FunctionBody` and `ArrowFunctionExpression`
-                    let skipped = ancestors.by_ref().nth(1);
-                    debug_assert!(matches!(skipped, Some(AstNodes::ArrowFunctionExpression(_))));
-                    continue;
-                }
                 // Block body: `() => { expr; }` or `function() { expr; }` - continue checking
                 // because for regular ForStatement, parens are still needed
                 if matches!(stmt.parent(), AstNodes::FunctionBody(_)) {
@@ -663,7 +653,7 @@ impl NeedsParentheses<'_> for AstNode<'_, LogicalExpression<'_>> {
         {
             true
         } else {
-            binary_like_needs_parens(BinaryLikeExpression::LogicalExpression(self))
+            binary_like_needs_parens(BinaryLikeExpression::LogicalExpression(self), f)
         }
     }
 }
@@ -735,13 +725,7 @@ impl NeedsParentheses<'_> for AstNode<'_, AssignmentExpression<'_>> {
             // Expression statements, only object destructuring needs parens:
             // - `a = b` = no parens
             // - `{ x } = obj` -> `({ x } = obj)` = needed to prevent parsing as block statement
-            // - `() => { x } = obj` -> `() => ({ x } = obj)` = needed in arrow function body
-            // - `() => a = b` -> `() => (a = b)` = also parens needed
-            AstNodes::ExpressionStatement(stmt) => {
-                if stmt.is_arrow_function_body() {
-                    return true;
-                }
-
+            AstNodes::ExpressionStatement(_) => {
                 matches!(self.left, AssignmentTarget::ObjectAssignmentTarget(_))
                     && is_first_in_statement(
                         self.span,
@@ -749,6 +733,13 @@ impl NeedsParentheses<'_> for AstNode<'_, AssignmentExpression<'_>> {
                         FirstInStatementMode::ExpressionStatementOrArrow,
                     )
             }
+            // Concise arrow bodies always need parens,
+            // otherwise the `{` of an object pattern would parse as a block body
+            // and a bare `=` reads as the arrow's own body:
+            // - `() => { x } = obj` -> `() => ({ x } = obj)`
+            // - `() => a = b` -> `() => (a = b)`
+            #[expect(clippy::match_same_arms)]
+            AstNodes::ArrowFunctionExpression(_) => true,
             // Sequence expressions, need to traverse up to find if we're in a for statement context:
             // - `a = 1, b = 2` in for loops don't need parens
             // - `(a = 1, b = 2)` elsewhere usually need parens
@@ -813,9 +804,9 @@ impl NeedsParentheses<'_> for AstNode<'_, SequenceExpression<'_>> {
         match self.parent() {
             AstNodes::ReturnStatement(_)
             | AstNodes::ThrowStatement(_)
+            | AstNodes::ArrowFunctionExpression(_)
             // There's a precedence for writing `x++, y++`
             | AstNodes::ForStatement(_) => false,
-            AstNodes::ExpressionStatement(stmt) => !stmt.is_arrow_function_body(),
             _ => true,
         }
     }
@@ -1097,12 +1088,21 @@ impl NeedsParentheses<'_> for AstNode<'_, TSInstantiationExpression<'_>> {
     }
 }
 
-fn binary_like_needs_parens(binary_like: BinaryLikeExpression<'_, '_>) -> bool {
+fn binary_like_needs_parens(
+    binary_like: BinaryLikeExpression<'_, '_>,
+    f: &JsFormatter<'_, '_>,
+) -> bool {
     let parent = match binary_like.parent() {
+        // NOTE: The unary adds the parentheses itself when comments are involved.
+        // Deliberately binary-like-only: Prettier keeps the inner parentheses for every other argument type (`!((x, y) /* c */)`)
+        // (Seems a leftover of prettier#18397's narrow scope, not a principle.)
+        // If upstream extends the fix, add the same exemption to those types' `needs_parentheses`.
+        AstNodes::UnaryExpression(unary) => {
+            return !unary_argument_takes_comment_parens(unary, f);
+        }
         AstNodes::TSAsExpression(_)
         | AstNodes::TSSatisfiesExpression(_)
         | AstNodes::TSTypeAssertion(_)
-        | AstNodes::UnaryExpression(_)
         | AstNodes::AwaitExpression(_)
         | AstNodes::TSNonNullExpression(_)
         | AstNodes::SpreadElement(_)
@@ -1114,7 +1114,8 @@ fn binary_like_needs_parens(binary_like: BinaryLikeExpression<'_, '_>) -> bool {
             return computed.object.span() == binary_like.span();
         }
         AstNodes::Class(class) => {
-            return class.super_class.as_ref().is_some_and(|super_class| {
+            return class.heritage().is_some_and(|heritage| {
+                let super_class = heritage.expression();
                 super_class.span().contains_inclusive(binary_like.span())
             });
         }
@@ -1242,26 +1243,25 @@ fn is_first_in_statement(
         let is_not_first_iteration = index > 0;
 
         match ancestor {
-            AstNodes::ExpressionStatement(stmt) => {
-                if stmt.is_arrow_function_body() {
-                    if mode == FirstInStatementMode::ExpressionStatementOrArrow {
-                        if is_not_first_iteration
-                            && matches!(
-                                stmt.expression,
+            AstNodes::ExpressionStatement(_) => return true,
+            AstNodes::ArrowFunctionExpression(arrow) => {
+                if mode == FirstInStatementMode::ExpressionStatementOrArrow {
+                    if is_not_first_iteration
+                        && matches!(
+                            arrow.get_expression(),
+                            Some(
                                 Expression::SequenceExpression(_)
                                     | Expression::AssignmentExpression(_)
                             )
-                        {
-                            // The original node doesn't need parens,
-                            // because an ancestor requires parens.
-                            break;
-                        }
-                    } else {
-                        return false;
+                        )
+                    {
+                        // The original node doesn't need parens,
+                        // because an ancestor requires parens.
+                        break;
                     }
+                    return true;
                 }
-
-                return true;
+                return false;
             }
             AstNodes::StaticMemberExpression(_)
             | AstNodes::TaggedTemplateExpression(_)
@@ -1369,7 +1369,7 @@ fn ts_as_or_satisfies_needs_parens(
 
 fn is_class_extends(span: Span, parent: &AstNodes<'_>) -> bool {
     if let AstNodes::Class(c) = parent {
-        return c.super_class.as_ref().is_some_and(|c| c.span() == span);
+        return c.heritage().is_some_and(|heritage| heritage.expression().span() == span);
     }
     false
 }

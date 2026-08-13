@@ -45,14 +45,14 @@ use cow_utils::CowUtils;
 
 use oxc_allocator::ArenaVec;
 use oxc_ast::ast::*;
-use oxc_formatter_core::arena_cow_str;
+use oxc_formatter_core::{Format, arena_cow_str};
 use oxc_span::{GetSpan, Span};
 
 use crate::{
     ast_nodes::{AstNode, AstNodes},
     best_fitting, format_args,
     formatter::{
-        Format, JsFormatter,
+        JsFormatter,
         prelude::*,
         separated::FormatSeparatedIter,
         token::number::{format_number_token, format_trimmed_number, is_simple_number},
@@ -442,16 +442,33 @@ impl<'a> FormatWrite<'a> for AstNode<'a, UpdateExpression<'a>> {
     }
 }
 
+/// Whether a `UnaryExpression` wraps its argument in its own parentheses
+/// to keep the comments around the argument inside them.
+/// Two comment positions qualify:
+/// - before the argument: `!(/* c */ a && b)`
+/// - after it, before the closing source paren: `!(a && b /* c */)`
+///
+/// When this holds, these parentheses are the only pair:
+/// the argument must skip its own `needs_parentheses` and any paren-driven indent layout.
+/// Evaluated at several stages of the same node's formatting, hence the printed-state-independent comment queries.
+pub fn unary_argument_takes_comment_parens(
+    unary: &AstNode<'_, UnaryExpression<'_>>,
+    f: &JsFormatter<'_, '_>,
+) -> bool {
+    let unary_span = unary.span();
+    let argument_span = unary.argument.span();
+    let comments = f.comments();
+    comments.has_any_comment_in_range(unary_span.start, argument_span.start)
+        || comments.has_any_comment_in_range(argument_span.end, unary_span.end)
+}
+
 impl<'a> FormatWrite<'a> for AstNode<'a, UnaryExpression<'a>> {
     fn write(&self, f: &mut JsFormatter<'_, 'a>) {
         write!(f, self.operator().as_str());
         if self.operator().is_keyword() {
             write!(f, space());
         }
-        let Span { start, end, .. } = self.argument.span();
-        if f.comments().has_comment_before(start)
-            || f.comments().has_comment_in_range(end, self.span().end)
-        {
+        if unary_argument_takes_comment_parens(self, f) {
             write!(
                 f,
                 [group(&format_args!(token("("), soft_block_indent(self.argument()), token(")")))]
@@ -582,7 +599,8 @@ impl<'a> FormatWrite<'a> for AstNode<'a, AwaitExpression<'a>> {
             let mut await_expression = None;
             for ancestor in self.ancestors().skip(1) {
                 match ancestor {
-                    AstNodes::BlockStatement(_)
+                    AstNodes::ArrowFunctionExpression(_)
+                    | AstNodes::BlockStatement(_)
                     | AstNodes::FunctionBody(_)
                     | AstNodes::SwitchCase(_)
                     | AstNodes::Program(_)
@@ -1845,7 +1863,7 @@ impl<'a> FormatWrite<'a> for AstNode<'a, TSInterfaceDeclaration<'a>> {
         // 3. If there are comments between the `id` and the `extends`, we use group mode.
         let group_mode = extends.len() > 1
             || extends.as_ref().first().is_some_and(|first| {
-                (first.expression.is_member_expression() && first.type_arguments.is_none()) || {
+                (first.type_name.is_qualified_name() && first.type_arguments.is_none()) || {
                     let prev_span = type_parameters.as_ref().map_or(id.span(), GetSpan::span);
                     f.comments().has_comment_in_range(prev_span.end, first.span().start)
                 }
@@ -2097,7 +2115,7 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, ArenaVec<'a, TSInterfac
 
 impl<'a> FormatWrite<'a> for AstNode<'a, TSInterfaceHeritage<'a>> {
     fn write(&self, f: &mut JsFormatter<'_, 'a>) {
-        write!(f, [self.expression(), self.type_arguments()]);
+        write!(f, [self.type_name(), self.type_arguments()]);
     }
 }
 
@@ -2113,7 +2131,23 @@ impl<'a> FormatWrite<'a> for AstNode<'a, TSTypePredicate<'a>> {
     }
 }
 
-impl<'a> FormatWrite<'a> for AstNode<'a, TSModuleDeclaration<'a>> {
+impl<'a> FormatWrite<'a> for AstNode<'a, TSExternalModuleDeclaration<'a>> {
+    fn write(&self, f: &mut JsFormatter<'_, 'a>) {
+        if self.declare() {
+            write!(f, ["declare", space()]);
+        }
+
+        write!(f, ["module", space(), self.id()]);
+
+        if let Some(body) = self.body() {
+            write!(f, [space(), body]);
+        } else {
+            write!(f, OptionalSemicolon);
+        }
+    }
+}
+
+impl<'a> FormatWrite<'a> for AstNode<'a, TSNamespaceDeclaration<'a>> {
     fn write(&self, f: &mut JsFormatter<'_, 'a>) {
         if self.declare() {
             write!(f, ["declare", space()]);
@@ -2123,29 +2157,21 @@ impl<'a> FormatWrite<'a> for AstNode<'a, TSModuleDeclaration<'a>> {
 
         write!(f, [space(), self.id()]);
 
-        if let Some(body) = self.body() {
-            let mut body = body;
-            loop {
-                match body.as_ast_nodes() {
-                    AstNodes::TSModuleDeclaration(b) => {
-                        write!(f, [".", b.id()]);
-                        if let Some(b) = &b.body() {
-                            body = b;
-                        } else {
-                            break;
-                        }
-                    }
-                    AstNodes::TSModuleBlock(body) => {
-                        write!(f, [space(), body]);
-                        break;
-                    }
-                    _ => {
-                        unreachable!()
-                    }
+        let mut body = self.body();
+        loop {
+            match body.as_ast_nodes() {
+                AstNodes::TSNamespaceDeclaration(namespace) => {
+                    write!(f, [".", namespace.id()]);
+                    body = namespace.body();
+                }
+                AstNodes::TSModuleBlock(body) => {
+                    write!(f, [space(), body]);
+                    break;
+                }
+                _ => {
+                    unreachable!()
                 }
             }
-        } else {
-            write!(f, OptionalSemicolon);
         }
     }
 }
@@ -2330,7 +2356,7 @@ impl<'a> FormatWrite<'a> for AstNode<'a, StructStatement<'a>> {
         // to ensure proper placement relative to the export keyword
         if !matches!(
             self.parent(),
-            AstNodes::ExportNamedDeclaration(_) | AstNodes::ExportDefaultDeclaration(_)
+            AstNodes::ExportDeclaration(_) | AstNodes::ExportDefaultDeclaration(_)
         ) {
             // For non-exported structs, format decorators normally
             write!(f, decorators);
@@ -2389,7 +2415,7 @@ impl<'a> FormatWrite<'a> for AstNode<'a, AnnotationDeclaration<'a>> {
         // to ensure proper placement relative to the export keyword
         if !matches!(
             self.parent(),
-            AstNodes::ExportNamedDeclaration(_) | AstNodes::ExportDefaultDeclaration(_)
+            AstNodes::ExportDeclaration(_) | AstNodes::ExportDefaultDeclaration(_)
         ) {
             // For non-exported annotations, format decorators normally
             write!(f, decorators);

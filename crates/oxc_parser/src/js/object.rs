@@ -19,18 +19,16 @@ impl<'a, C: Config> ParserImpl<'a, C> {
     ///     { `PropertyDefinitionList`[?Yield, ?Await] }
     ///     { `PropertyDefinitionList`[?Yield, ?Await] , }
     pub(crate) fn parse_object_expression(&mut self) -> ArenaBox<'a, ObjectExpression<'a>> {
-        let span = self.start_span();
+        let start = self.cur_start();
         let opening_span = self.cur_token().span();
         self.expect(Kind::LCurly);
-
         // Check if this is an ArkUI object literal with expression statements (e.g., { .backgroundColor(...) })
         // In ArkUI, object literals can contain expression statements starting with dots
         if self.supports_arkui_dsl() && self.is_in_arkui_dsl_context() && self.at(Kind::Dot) {
-            // Parse as ArkUI object literal with expression statements
-            return self.parse_arkui_object_expression_with_statements(span, opening_span);
+            return self.parse_arkui_object_expression_with_statements(start, opening_span);
         }
 
-        let (object_expression_properties, comma_span) = self.context_add(Context::In, |p| {
+        let (object_expression_properties, comma_start) = self.context_add(Context::In, |p| {
             p.parse_delimited_list(
                 Kind::RCurly,
                 Kind::Comma,
@@ -38,11 +36,16 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                 Self::parse_object_expression_property,
             )
         });
-        if let Some(comma_span) = comma_span {
-            self.state.trailing_commas.insert(span, self.end_span(comma_span));
+        if let Some(comma_start) = comma_start
+            && matches!(
+                object_expression_properties.last(),
+                Some(ObjectPropertyKind::SpreadProperty(_))
+            )
+        {
+            self.state.trailing_commas.insert(start, self.end_span(comma_start));
         }
         self.expect(Kind::RCurly);
-        ObjectExpression::boxed(self.end_span(span), object_expression_properties, self)
+        ObjectExpression::boxed(self.end_span(start), object_expression_properties, self)
     }
 
     /// Parse ArkUI object literal with expression statements
@@ -60,7 +63,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         while !self.at(Kind::RCurly) && !self.has_fatal_error() {
             if self.at(Kind::Dot) {
                 // Parse expression statement starting with dot as LeadingDotExpression
-                let expr_span = self.start_span();
+                let expr_span = self.cur_start();
                 let expr = self.parse_leading_dot_expression();
                 let expr_end_span = self.end_span(expr_span);
 
@@ -116,7 +119,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
     /// `PropertyDefinition`[Yield, Await]
     fn parse_object_literal_element(&mut self) -> ArenaBox<'a, ObjectProperty<'a>> {
-        let span = self.start_span();
+        let start = self.cur_start();
 
         let modifiers = self.parse_modifiers(
             /* permit_const_as_modifier */ false,
@@ -130,7 +133,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                     self.cur_token().span(),
                 ));
             }
-            return self.parse_method_getter_setter(span, PropertyKind::Get, &modifiers);
+            return self.parse_method_getter_setter(start, PropertyKind::Get, &modifiers);
         }
 
         if self.parse_contextual_modifier(Kind::Set) {
@@ -140,15 +143,15 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                     self.cur_token().span(),
                 ));
             }
-            return self.parse_method_getter_setter(span, PropertyKind::Set, &modifiers);
+            return self.parse_method_getter_setter(start, PropertyKind::Set, &modifiers);
         }
 
-        let asterisk_token = self.eat(Kind::Star);
+        let asterisk_token = self.eat(Kind::Star).then_some(self.prev_token_end - 1);
         let token_is_identifier =
             self.cur_kind().is_identifier_reference(self.ctx.has_yield(), self.ctx.has_await());
         let (key, computed) = self.parse_property_name();
 
-        if asterisk_token || matches!(self.cur_kind(), Kind::LParen | Kind::LAngle) {
+        if asterisk_token.is_some() || matches!(self.cur_kind(), Kind::LParen | Kind::LAngle) {
             self.verify_modifiers(
                 &modifiers,
                 ModifierKinds::new([ModifierKind::Async]),
@@ -161,7 +164,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                 FunctionKind::ObjectMethod,
             );
             return ObjectProperty::boxed(
-                self.end_span(span),
+                self.end_span(start),
                 PropertyKind::Init,
                 key,
                 Expression::FunctionExpression(method),
@@ -189,7 +192,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         if self.source_type.is_ets_static() && token_is_identifier && self.eat(Kind::Eq) {
             let value = self.parse_assignment_expression_or_higher();
             return ObjectProperty::boxed(
-                self.end_span(span),
+                self.end_span(start),
                 PropertyKind::EtsEquals,
                 key,
                 value,
@@ -213,18 +216,18 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                         self,
                     );
                     let expr = AssignmentExpression::new(
-                        self.end_span(span),
+                        self.end_span(start),
                         AssignmentOperator::Assign,
                         left,
                         right,
                         self,
                     );
-                    self.state.cover_initialized_name.insert(span, expr);
+                    self.state.cover_initialized_name.insert(start, expr);
                 }
                 let value =
                     Expression::new_identifier(identifier_name.span, identifier_name.name, self);
                 ObjectProperty::boxed(
-                    self.end_span(span),
+                    self.end_span(start),
                     PropertyKind::Init,
                     PropertyKey::StaticIdentifier(identifier_name),
                     value,
@@ -237,24 +240,24 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                 self.unexpected()
             }
         } else {
-            self.parse_property_definition_assignment(span, key, computed)
+            self.parse_property_definition_assignment(start, key, computed)
         }
     }
 
     /// `PropertyDefinition`[Yield, Await] :
     ///   ... `AssignmentExpression`[+In, ?Yield, ?Await]
     pub(crate) fn parse_spread_element(&mut self) -> ArenaBox<'a, SpreadElement<'a>> {
-        let span = self.start_span();
+        let start = self.cur_start();
         self.bump_any(); // advance `...`
         let argument = self.parse_assignment_expression_or_higher();
-        SpreadElement::boxed(self.end_span(span), argument, self)
+        SpreadElement::boxed(self.end_span(start), argument, self)
     }
 
     /// `PropertyDefinition`[Yield, Await] :
     ///   `PropertyName`[?Yield, ?Await] : `AssignmentExpression`[+In, ?Yield, ?Await]
     fn parse_property_definition_assignment(
         &mut self,
-        span: u32,
+        start: u32,
         key: PropertyKey<'a>,
         computed: bool,
     ) -> ArenaBox<'a, ObjectProperty<'a>> {
@@ -262,7 +265,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         let value =
             if self.supports_arkui_dsl() && self.is_in_arkui_dsl_context() && self.at(Kind::LCurly)
             {
-                let obj_span = self.start_span();
+                let obj_span = self.cur_start();
                 let opening_span = self.cur_token().span();
                 self.expect(Kind::LCurly);
 
@@ -289,7 +292,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                 self.parse_assignment_expression_or_higher()
             };
         ObjectProperty::boxed(
-            self.end_span(span),
+            self.end_span(start),
             PropertyKind::Init,
             key,
             value,
@@ -316,7 +319,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             Kind::PrivateIdentifier => {
                 let private_ident = self.parse_private_identifier();
                 self.error(diagnostics::private_identifier_in_property_name(
-                    &private_ident.name,
+                    private_ident.name.as_str(),
                     private_ident.span,
                 ));
                 PropertyKey::PrivateIdentifier(self.alloc(private_ident))
@@ -347,7 +350,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             if self.cur_token().is_on_new_line() {
                 expr
             } else {
-                let lhs_span = self.start_span();
+                let lhs_span = self.cur_start();
                 self.bump_any();
                 let type_annotation = self.parse_ts_type();
                 let span = self.end_span(lhs_span);
@@ -373,12 +376,12 @@ impl<'a, C: Config> ParserImpl<'a, C> {
     ///   set `ClassElementName`[?Yield, ?Await] ( `PropertySetParameterList` ) { `FunctionBody`[~Yield, ~Await] }
     fn parse_method_getter_setter(
         &mut self,
-        span: u32,
+        start: u32,
         kind: PropertyKind,
         modifiers: &Modifiers,
     ) -> ArenaBox<'a, ObjectProperty<'a>> {
         let (key, computed) = self.parse_property_name();
-        let function = self.parse_method(false, false, FunctionKind::ObjectMethod);
+        let function = self.parse_method(false, None, FunctionKind::ObjectMethod);
         match kind {
             PropertyKind::Get => self.check_getter(&function),
             PropertyKind::Set => self.check_setter(&function),
@@ -391,7 +394,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             diagnostics::modifier_cannot_be_used_here,
         );
         ObjectProperty::boxed(
-            self.end_span(span),
+            self.end_span(start),
             kind,
             key,
             Expression::FunctionExpression(function),

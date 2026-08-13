@@ -923,14 +923,11 @@ export type ImportAttributeKey = IdentifierName | StringLiteral;
 
 export interface ExportNamedDeclaration extends Span {
   type: "ExportNamedDeclaration";
-  decorators?: Array<Decorator>;
   declaration: Declaration | null;
   specifiers: Array<ExportSpecifier>;
   source: StringLiteral | null;
   exportKind?: ImportOrExportKind;
   attributes: Array<ImportAttribute>;
-  etsSingle?: boolean;
-  etsDefault?: boolean;
   parent: Node;
 }
 
@@ -1547,6 +1544,8 @@ export interface TSTypePredicate extends Span {
 
 export type TSTypePredicateName = IdentifierName | TSThisType;
 
+export type TSModuleDeclarationKind = "module" | "namespace";
+
 export interface TSModuleDeclaration extends Span {
   type: "TSModuleDeclaration";
   id: BindingIdentifier | StringLiteral | TSQualifiedName;
@@ -1556,8 +1555,6 @@ export interface TSModuleDeclaration extends Span {
   global: false;
   parent: Node;
 }
-
-export type TSModuleDeclarationKind = "module" | "namespace";
 
 export interface TSGlobalDeclaration extends Span {
   type: "TSModuleDeclaration";

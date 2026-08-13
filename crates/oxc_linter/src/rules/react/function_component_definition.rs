@@ -102,7 +102,7 @@ declare_oxc_lint!(
     style,
     conditional_suggestion,
     config = FunctionComponentDefinition,
-    version = "next",
+    version = "1.75.0",
     short_description = "Enforce a specific function type for function components.",
 );
 
@@ -562,8 +562,8 @@ mod fix {
                     .return_type
                     .as_ref()
                     .map_or_else(String::new, |item| ctx.source_range(item.span).to_string()),
-                body: ctx.source_range(arrow.body.span).to_string(),
-                expression_body: arrow.expression,
+                body: ctx.source_range(arrow.body.span()).to_string(),
+                expression_body: arrow.is_expression(),
             }
         }
     }

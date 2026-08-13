@@ -1,5 +1,5 @@
 use oxc_allocator::{Allocator, ArenaBox, ArenaVec, CloneIn, GetAllocator};
-use oxc_ast::{ast::*, builder::NONE};
+use oxc_ast::ast::*;
 use oxc_span::{ContentEq, GetSpan, SPAN};
 
 use crate::{
@@ -67,14 +67,20 @@ impl<'a> IsolatedDeclarations<'a> {
             self,
         );
         let class_body = ClassBody::boxed(decl.body.span, class_elements, self);
+        let heritage = decl.super_class.as_ref().map(|super_class| {
+            ClassHeritage::new(
+                super_class.clone_in(self.allocator()),
+                decl.super_type_arguments.clone_in(self.allocator()),
+                self,
+            )
+        });
         let mut class = Class::new(
             decl.span,
             ClassType::ClassDeclaration,
             decl.decorators.clone_in(self.allocator()),
             Some(decl.id.clone_in(self.allocator())),
             decl.type_parameters.clone_in(self.allocator()),
-            decl.super_class.clone_in(self.allocator()),
-            decl.super_type_arguments.clone_in(self.allocator()),
+            heritage,
             decl.implements.clone_in(self.allocator()),
             class_body,
             decl.r#abstract,
@@ -111,14 +117,21 @@ impl<'a> IsolatedDeclarations<'a> {
             }),
             self,
         );
+        let (super_class, super_type_arguments) = match &transformed_class.heritage {
+            Some(heritage) => (
+                Some(heritage.expression.clone_in(self.allocator())),
+                heritage.type_arguments.clone_in(self.allocator()),
+            ),
+            None => (None, None),
+        };
         let body = StructBody::boxed(decl.body.span, struct_elements, self);
         let mut transformed = StructStatement::boxed(
             decl.span,
             decl.decorators.clone_in(self.allocator()),
             decl.id.clone_in(self.allocator()),
             decl.type_parameters.clone_in(self.allocator()),
-            decl.super_class.clone_in(self.allocator()),
-            decl.super_type_arguments.clone_in(self.allocator()),
+            super_class,
+            super_type_arguments,
             decl.implements.clone_in(self.allocator()),
             body,
             decl.r#abstract,
@@ -131,37 +144,43 @@ impl<'a> IsolatedDeclarations<'a> {
         transformed
     }
 
+    /// Check whether two accessor keys refer to the same property.
+    ///
+    /// Accessor pairing follows JavaScript property-key semantics, so an identifier,
+    /// string literal, numeric literal, or no-substitution template literal with the
+    /// same static name identifies the same property. Keep structural equality as a
+    /// fallback for supported non-static keys such as `Symbol.iterator`.
+    fn accessor_keys_match(left: &PropertyKey<'a>, right: &PropertyKey<'a>) -> bool {
+        left.static_name().zip(right.static_name()).is_some_and(|(left, right)| left == right)
+            || left.content_eq(right)
+    }
+
     pub(crate) fn is_literal_key(key: &PropertyKey<'a>) -> bool {
         match key {
             PropertyKey::StringLiteral(_) | PropertyKey::NumericLiteral(_) => true,
             PropertyKey::TemplateLiteral(l) => l.expressions.is_empty(),
             PropertyKey::UnaryExpression(expr) => {
-                expr.operator.is_arithmetic()
-                    && matches!(
-                        expr.argument,
-                        Expression::NumericLiteral(_) | Expression::BigIntLiteral(_)
-                    )
+                expr.operator.is_arithmetic() && expr.argument.is_number_literal()
             }
             _ => false,
         }
     }
 
-    /// Check the property key whether it is a `Symbol.iterator` or `global.Symbol.iterator`
+    /// Check whether the property key is `Symbol.iterator` or `globalThis.Symbol.iterator`.
     pub(crate) fn is_global_symbol(key: &PropertyKey<'a>) -> bool {
         let PropertyKey::StaticMemberExpression(member) = key else {
             return false;
         };
 
-        // TODO: Unsupported checking if it is a global Symbol yet
         match &member.object {
             // `Symbol.iterator`
             Expression::Identifier(ident) => ident.name == "Symbol",
-            // `global.Symbol.iterator`
+            // `globalThis.Symbol.iterator`
             Expression::StaticMemberExpression(expr) => {
                 expr.property.name == "Symbol"
                     && matches!(
                         &expr.object, Expression::Identifier(ident)
-                        if matches!(ident.name.as_str(), "window" | "globalThis")
+                        if ident.name == "globalThis"
                     )
             }
             _ => false,
@@ -303,7 +322,7 @@ impl<'a> IsolatedDeclarations<'a> {
             function.this_param.clone_in(self.allocator()),
             params,
             return_type,
-            NONE,
+            None,
             self,
         );
 
@@ -345,7 +364,7 @@ impl<'a> IsolatedDeclarations<'a> {
             r#type,
             [],
             key,
-            NONE,
+            None,
             None,
             false,
             r#static,
@@ -410,7 +429,7 @@ impl<'a> IsolatedDeclarations<'a> {
             }
             MethodDefinitionKind::Get | MethodDefinitionKind::Constructor => {
                 let params =
-                    FormalParameters::boxed(SPAN, FormalParameterKind::Signature, [], NONE, self);
+                    FormalParameters::boxed(SPAN, FormalParameterKind::Signature, [], None, self);
                 self.transform_class_method_definition(method, params, None)
             }
             MethodDefinitionKind::Set => {
@@ -476,8 +495,9 @@ impl<'a> IsolatedDeclarations<'a> {
     fn collect_accessor_annotations(
         &self,
         decl: &Class<'a>,
-    ) -> Vec<(PropertyKey<'a>, AccessorAnnotation<'a>)> {
-        let mut method_annotations: Vec<(PropertyKey<'_>, AccessorAnnotation<'_>)> = Vec::new();
+    ) -> Vec<(PropertyKey<'a>, bool, AccessorAnnotation<'a>)> {
+        let mut method_annotations: Vec<(PropertyKey<'_>, bool, AccessorAnnotation<'_>)> =
+            Vec::new();
         for element in &decl.body.body {
             if let ClassElement::MethodDefinition(method) = element {
                 // Note: do not skip `private`-modifier accessors. Their types are still
@@ -497,14 +517,17 @@ impl<'a> IsolatedDeclarations<'a> {
                         if let Some(annotation) =
                             first_param.type_annotation.clone_in(self.allocator())
                         {
-                            if let Some(entry) = method_annotations
-                                .iter_mut()
-                                .find(|(key, _)| method.key.content_eq(key))
+                            if let Some(entry) =
+                                method_annotations.iter_mut().find(|(key, is_static, _)| {
+                                    method.r#static == *is_static
+                                        && Self::accessor_keys_match(&method.key, key)
+                                })
                             {
-                                entry.1.setter = Some(annotation);
+                                entry.2.setter = Some(annotation);
                             } else {
                                 method_annotations.push((
                                     method.key.clone_in(self.allocator()),
+                                    method.r#static,
                                     AccessorAnnotation { setter: Some(annotation), getter: None },
                                 ));
                             }
@@ -523,14 +546,17 @@ impl<'a> IsolatedDeclarations<'a> {
                                 self.infer_function_return_type(function)
                             };
                         if let Some(annotation) = annotation {
-                            if let Some(entry) = method_annotations
-                                .iter_mut()
-                                .find(|(key, _)| method.key.content_eq(key))
+                            if let Some(entry) =
+                                method_annotations.iter_mut().find(|(key, is_static, _)| {
+                                    method.r#static == *is_static
+                                        && Self::accessor_keys_match(&method.key, key)
+                                })
                             {
-                                entry.1.getter = Some(annotation);
+                                entry.2.getter = Some(annotation);
                             } else {
                                 method_annotations.push((
                                     method.key.clone_in(self.allocator()),
+                                    method.r#static,
                                     AccessorAnnotation { setter: None, getter: Some(annotation) },
                                 ));
                             }
@@ -544,12 +570,26 @@ impl<'a> IsolatedDeclarations<'a> {
         method_annotations
     }
 
+    fn has_matching_getter(decl: &Class<'a>, setter: &MethodDefinition<'a>) -> bool {
+        decl.body.body.iter().any(|element| {
+            let ClassElement::MethodDefinition(getter) = element else {
+                return false;
+            };
+            getter.kind == MethodDefinitionKind::Get
+                && getter.r#static == setter.r#static
+                && !getter.key.is_private_identifier()
+                && (Self::is_valid_property_key(&getter.key) || !getter.computed)
+                && Self::accessor_keys_match(&getter.key, &setter.key)
+                && !getter.accessibility.is_some_and(TSAccessibility::is_private)
+        })
+    }
+
     pub(crate) fn transform_class(
         &self,
         decl: &Class<'a>,
         declare: Option<bool>,
     ) -> ArenaBox<'a, Class<'a>> {
-        if let Some(super_class) = &decl.super_class {
+        if let Some(super_class) = decl.heritage_expression() {
             let is_not_allowed = match super_class {
                 Expression::Identifier(_) => false,
                 Expression::StaticMemberExpression(expr) => {
@@ -608,20 +648,27 @@ impl<'a> IsolatedDeclarations<'a> {
                                 )
                             } else {
                                 let mut params = params.clone_in(self.allocator());
-                                if let Some(param) = params.items.first_mut()
-                                    && let Some(annotation) =
-                                        accessor_annotations.iter().find_map(|(key, annotation)| {
-                                            if method.key.content_eq(key) {
-                                                Some(
-                                                    annotation
-                                                        .get_setter_annotation(self.allocator()),
-                                                )
-                                            } else {
-                                                None
-                                            }
-                                        })
-                                {
-                                    param.type_annotation = annotation;
+                                let annotation = accessor_annotations.iter().find_map(
+                                    |(key, is_static, annotation)| {
+                                        if method.r#static == *is_static
+                                            && Self::accessor_keys_match(&method.key, key)
+                                        {
+                                            Some(annotation.get_setter_annotation(self.allocator()))
+                                        } else {
+                                            None
+                                        }
+                                    },
+                                );
+                                if let Some(param) = params.items.first_mut() {
+                                    if let Some(annotation) = annotation {
+                                        param.type_annotation = annotation;
+                                    } else if param.type_annotation.is_none()
+                                        && !Self::has_matching_getter(decl, method)
+                                    {
+                                        self.error(accessor_must_have_explicit_return_type(
+                                            method.key.span(),
+                                        ));
+                                    }
                                 }
                                 params
                             }
@@ -671,19 +718,23 @@ impl<'a> IsolatedDeclarations<'a> {
                             rt
                         }
                         MethodDefinitionKind::Get => {
-                            let rt = accessor_annotations.iter().find_map(|(key, annotation)| {
-                                if method.key.content_eq(key) {
-                                    // No explicit return type for getter, should infer it from the first parameter of setter, if not exists,
-                                    // use the inferred return type of getter.
-                                    if method.value.return_type.is_none() {
-                                        annotation.get_setter_annotation(self.allocator())
+                            let rt = accessor_annotations.iter().find_map(
+                                |(key, is_static, annotation)| {
+                                    if method.r#static == *is_static
+                                        && Self::accessor_keys_match(&method.key, key)
+                                    {
+                                        // No explicit return type for getter, should infer it from the first parameter of setter, if not exists,
+                                        // use the inferred return type of getter.
+                                        if method.value.return_type.is_none() {
+                                            annotation.get_setter_annotation(self.allocator())
+                                        } else {
+                                            annotation.get_getter_annotation(self.allocator())
+                                        }
                                     } else {
-                                        annotation.get_getter_annotation(self.allocator())
+                                        None
                                     }
-                                } else {
-                                    None
-                                }
-                            });
+                                },
+                            );
                             if rt.is_none() {
                                 self.error(accessor_must_have_explicit_return_type(
                                     method.key.span(),
@@ -778,7 +829,7 @@ impl<'a> IsolatedDeclarations<'a> {
                 r#type,
                 [],
                 ident,
-                NONE,
+                None,
                 None,
                 false,
                 false,
@@ -794,7 +845,7 @@ impl<'a> IsolatedDeclarations<'a> {
             elements.insert(0, element);
         }
 
-        let body = ClassBody::new(decl.body.span, elements, self);
+        let body = ClassBody::boxed(decl.body.span, elements, self);
 
         let mut transformed = Class::boxed(
             decl.span,
@@ -802,8 +853,7 @@ impl<'a> IsolatedDeclarations<'a> {
             [],
             decl.id.clone_in(self.allocator()),
             decl.type_parameters.clone_in(self.allocator()),
-            decl.super_class.clone_in(self.allocator()),
-            decl.super_type_arguments.clone_in(self.allocator()),
+            decl.heritage.clone_in(self.allocator()),
             decl.implements.clone_in(self.allocator()),
             body,
             decl.r#abstract,
@@ -824,7 +874,7 @@ impl<'a> IsolatedDeclarations<'a> {
         kind: BindingPattern<'a>,
     ) -> ArenaBox<'a, FormalParameters<'a>> {
         let parameter =
-            FormalParameter::new(SPAN, [], kind, NONE, NONE, false, None, false, false, self);
-        FormalParameters::boxed(SPAN, FormalParameterKind::Signature, [parameter], NONE, self)
+            FormalParameter::new(SPAN, [], kind, None, None, false, None, false, false, self);
+        FormalParameters::boxed(SPAN, FormalParameterKind::Signature, [parameter], None, self)
     }
 }

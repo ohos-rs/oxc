@@ -6,7 +6,7 @@ use oxc_ast::{
         SimpleAssignmentTarget, Statement,
     },
 };
-use oxc_ast_visit::{Visit, VisitJs, walk_js};
+use oxc_ast_visit::{VisitJs, walk_js};
 use oxc_diagnostics::OxcDiagnostic;
 use oxc_span::{GetSpan, Span};
 use oxc_str::CompactStr;
@@ -259,7 +259,7 @@ struct IdentifierFinder<'b> {
     found: bool,
 }
 
-impl<'a> Visit<'a> for IdentifierFinder<'_> {
+impl<'a> VisitJs<'a> for IdentifierFinder<'_> {
     fn visit_identifier_reference(&mut self, ident: &oxc_ast::ast::IdentifierReference<'a>) {
         if ident.name == self.name {
             self.found = true;
@@ -291,10 +291,10 @@ fn is_top_level_promise_chain(expr: &Expression) -> bool {
 fn get_checkable_callback_body<'a>(callback: &'a Argument<'a>) -> Option<&'a FunctionBody<'a>> {
     match callback {
         Argument::ArrowFunctionExpression(arrow) => {
-            if arrow.expression || !arrow.params.items.is_empty() {
+            if arrow.is_expression() || !arrow.params.items.is_empty() {
                 return None;
             }
-            Some(&arrow.body)
+            arrow.get_function_body()
         }
         Argument::FunctionExpression(func) => {
             if !func.params.items.is_empty() {

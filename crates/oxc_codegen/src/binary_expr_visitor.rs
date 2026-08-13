@@ -201,15 +201,24 @@ impl<'a> BinaryExpressionVisitor<'a> {
             }
             BinaryishOperator::Binary(BinaryOperator::Exponential) => {
                 // The base of `**` must be an `UpdateExpression`, so a unary/await base
-                // must be parenthesized. Negative numbers print as a unary operator.
+                // must be parenthesized. Negative numbers and BigInts print with a
+                // leading `-`, i.e. as a unary operator.
                 if matches!(
                     e.left(),
                     Expression::UnaryExpression(_)
                         | Expression::AwaitExpression(_)
                         | Expression::TSTypeAssertion(_)
                         | Expression::NumericLiteral(_)
+                        | Expression::BigIntLiteral(_)
                 ) {
                     self.left_precedence = Precedence::Call;
+                }
+            }
+            BinaryishOperator::Binary(BinaryOperator::BitwiseOR | BinaryOperator::BitwiseAnd) => {
+                // Without parentheses, `|` or `&` becomes part of the type in
+                // `(value satisfies Type) | other` or `(value satisfies Type) & other`.
+                if matches!(e.left(), Expression::TSSatisfiesExpression(_)) {
+                    self.left_precedence = Precedence::Compare;
                 }
             }
 

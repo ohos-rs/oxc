@@ -1,10 +1,11 @@
 use oxc_ast::ast::*;
+use oxc_formatter_core::{Buffer, BufferExtensions, Format, ScratchBuffer};
 use oxc_span::GetSpan;
 
 use crate::{
     ast_nodes::{AstNode, AstNodes},
     formatter::{
-        Buffer, BufferExtensions, Format, JsFormatter, VecBuffer,
+        JsFormatter,
         prelude::{FormatElements, format_once, line_suffix_boundary, *},
         trivia::FormatTrailingComments,
     },
@@ -556,9 +557,13 @@ impl<'a> AssignmentLike<'a, '_> {
                 // Determine if the chain is eligible based on the following checks:
                 // 1. For variable declarators: only continue if this isn't the final assignment in the chain
                 (matches!(parent, AstNodes::VariableDeclarator(_)) && !right_is_tail) ||
-                // 2. For assignment expressions: continue unless this is the final assignment in an expression statement
+                // 2. For assignment expressions: continue unless this is the final assignment
+                // in an expression statement or concise arrow body.
                 matches!(parent, AstNodes::AssignmentExpression(parent_assignment)
-                    if !right_is_tail || !matches!(parent_assignment.parent(), AstNodes::ExpressionStatement(_))
+                    if !right_is_tail || !matches!(
+                        parent_assignment.parent(),
+                        AstNodes::ArrowFunctionExpression(_) | AstNodes::ExpressionStatement(_)
+                    )
                 )
             } else {
                 false
@@ -568,14 +573,11 @@ impl<'a> AssignmentLike<'a, '_> {
             if right_is_tail {
                 match right_expression {
                     Expression::ArrowFunctionExpression(arrow) => {
-                        if arrow.expression {
-                            let Statement::ExpressionStatement(stmt) = &arrow.body.statements[0]
-                            else {
-                                unreachable!()
-                            };
-                            if matches!(&stmt.expression, Expression::ArrowFunctionExpression(_)) {
-                                return Some(AssignmentLikeLayout::ChainTailArrowFunction);
-                            }
+                        if matches!(
+                            arrow.get_expression(),
+                            Some(Expression::ArrowFunctionExpression(_))
+                        ) {
+                            return Some(AssignmentLikeLayout::ChainTailArrowFunction);
                         }
                         Some(AssignmentLikeLayout::ChainTail)
                     }
@@ -835,17 +837,18 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AssignmentLike<'a, '_> {
             // can can be known only when it's formatted (it can incur in some transformation,
             // like removing some escapes, etc.).
             //
-            // 1. we crate a temporary buffer
+            // 1. we create a scratch accumulator as a temporary heap buffer
+            //    (see `AccumulatorBuffer` for why neither the arena nor the shared scratch fits)
             // 2. we write the left hand side into the buffer and retrieve the `is_left_short` info
-            // which is computed only when we format it
+            //    which is computed only when we format it
             // 3. we compute the layout
             // 4. we write the left node inside the main buffer based on the layout
-            let mut buffer = VecBuffer::new(f.state_mut());
-            let is_left_short = self.write_left(&mut Formatter::new(&mut buffer));
-            let formatted_left = buffer.into_vec();
+            let mut formatted_left = ScratchBuffer::new();
+            let is_left_short =
+                self.write_left(&mut Formatter::new(&mut formatted_left.writer(f.state_mut())));
             let left_may_break = formatted_left.may_directly_break();
 
-            let left = format_once(|f| f.write_elements(formatted_left));
+            let left = format_once(move |f| f.write_elements(formatted_left.drain()));
 
             // Compare name only if we are in a position of computing it.
             // If not (for example, left is not an identifier), then let's fallback to false,

@@ -145,7 +145,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         }
     }
 
-    pub(crate) fn check_ets_binding_name(&mut self, name: &str, span: oxc_span::Span) {
+    pub(crate) fn check_ets_binding_name(&mut self, name: &'a str, span: oxc_span::Span) {
         if !self.source_type.is_ets_static() {
             return;
         }
@@ -195,7 +195,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
     }
 
     pub(crate) fn parse_ets_package_declaration(&mut self) -> Statement<'a> {
-        let span = self.start_span();
+        let span = self.cur_start();
         if !self.ctx.has_top_level() || !self.state.ets_in_declaration_scope {
             self.error(crate::diagnostics::ets_nested_declaration(
                 "Package",
