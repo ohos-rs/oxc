@@ -294,7 +294,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
     /// Creates a LeadingDotExpression, similar to CallExpression but starting with a dot
     pub(crate) fn parse_leading_dot_expression(&mut self) -> Expression<'a> {
         use crate::lexer::Kind;
-        let span = self.start_span();
+        let span = self.cur_start();
 
         // Consume the leading dot
         self.expect(Kind::Dot);
@@ -338,7 +338,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
         // In ArkUI function bodies, parse the entire chain and store in expression field
         // LeadingDotExpression's arguments field should be empty - arguments are in the expression field
-        let type_arguments_for_chain = type_arguments.clone_in(self.ast.allocator());
+        let type_arguments_for_chain = type_arguments.clone_in(self.allocator());
         let empty_arguments = ArenaVec::new_in(self); // LeadingDotExpression should have empty arguments
 
         if self.supports_arkui_dsl()
@@ -419,7 +419,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         // For non-chained case, we still need to create the expression
         // The expression field should start from fontSize(size) (without the leading dot)
         // Start the expression span from the property (not including the leading dot)
-        let expression_start_span = self.start_span();
+        let expression_start_span = self.cur_start();
         let property_ident = Expression::new_identifier(property.span, property.name, self);
 
         // Create CallExpression with Identifier as callee (not StaticMemberExpression)
@@ -452,105 +452,6 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             initial_call,
             self,
         )
-    }
-
-    /// Parse member expression rest starting from a given LHS for primary expressions
-    /// Used for ArkUI expressions starting with dots in object literals and other contexts
-    #[expect(dead_code)]
-    pub(crate) fn parse_member_expression_rest_from_lhs_for_primary(
-        &mut self,
-        _lhs_span: u32,
-        lhs: Expression<'a>,
-    ) -> Expression<'a> {
-        use crate::lexer::Kind;
-        let mut lhs = lhs;
-
-        loop {
-            if self.fatal_error.is_some() {
-                return lhs;
-            }
-
-            // Check if we should stop parsing the chain
-            // Stop if we encounter semicolon, comma, or closing brace
-            // Comma stops the chain in object literal contexts (indicates next property)
-            // Note: comma inside function arguments won't reach here as it's handled by parse_delimited_list
-            if matches!(self.cur_kind(), Kind::Semicolon | Kind::Comma | Kind::RCurly) {
-                break;
-            }
-
-            let is_property_access = self.eat(Kind::Dot);
-            if !is_property_access {
-                break;
-            }
-
-            if self.cur_kind().is_identifier_or_keyword() {
-                let ident_span = self.start_span();
-                let ident = self.parse_identifier_name();
-                if self.at(Kind::LParen) {
-                    // Method call: .methodName(...)
-                    let member_expr = Expression::new_static_member_expression(
-                        self.end_span(ident_span),
-                        lhs,
-                        ident,
-                        false,
-                        self,
-                    );
-                    // Parse call arguments
-                    let call_span = self.start_span();
-                    let opening_span = self.cur_token().span();
-                    self.expect(Kind::LParen);
-                    let (exprs, _) = self.parse_delimited_list(
-                        Kind::RParen,
-                        Kind::Comma,
-                        opening_span,
-                        Self::parse_assignment_expression_or_higher,
-                    );
-                    let mut call_args = ArenaVec::new_in(self);
-                    for expr in exprs {
-                        call_args.push(Argument::from(expr));
-                    }
-                    self.expect(Kind::RParen);
-                    // Create call expression
-                    lhs = Expression::new_call_expression(
-                        self.end_span(call_span),
-                        member_expr,
-                        None,
-                        call_args,
-                        false,
-                        self,
-                    );
-                    // Continue parsing more chain expressions
-                    // Check if next token is a dot (chain continues) or semicolon/comma/brace (chain ends)
-                    if !self.at(Kind::Dot)
-                        || matches!(self.cur_kind(), Kind::Semicolon | Kind::Comma | Kind::RCurly)
-                    {
-                        break;
-                    }
-                    continue;
-                }
-
-                // Property access: .propertyName
-                lhs = Expression::new_static_member_expression(
-                    self.end_span(ident_span),
-                    lhs,
-                    ident,
-                    false,
-                    self,
-                );
-                // Check if there are more chain expressions
-                // Stop if next token is not a dot, or if it's semicolon/comma/brace
-                if !self.at(Kind::Dot)
-                    || matches!(self.cur_kind(), Kind::Semicolon | Kind::Comma | Kind::RCurly)
-                {
-                    break;
-                }
-                continue;
-            }
-
-            break;
-        }
-
-        lhs
     }
 
     fn parse_parenthesized_expression(&mut self) -> Expression<'a> {
@@ -2290,9 +2191,8 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         if self.source_type.is_ets_static() {
             let start = self.cur_start();
             self.bump_any(); // consume `await`
-            let argument = self.context_add(Context::Await, |p| {
-                p.parse_unary_expression_or_higher(p.cur_start())
-            });
+            let argument = self
+                .context_add(Context::Await, |p| p.parse_unary_expression_or_higher(p.cur_start()));
             return Expression::new_await_expression(self.end_span(start), argument, self);
         }
         // Case 1: In await context (async function, module top-level, unambiguous mode top-level)

@@ -427,7 +427,6 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             }
         }
         TSInterfaceBody::boxed(self.end_span(start), body_list, self)
-
     }
 
     /// Parse a static ETS interface member.
@@ -437,7 +436,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
     /// declarations. Those members use the same AST nodes as class members so
     /// their bodies and modifiers remain lossless.
     fn parse_ets_interface_signature(&mut self) -> TSSignature<'a> {
-        let span = self.start_span();
+        let span = self.cur_start();
 
         if matches!(self.cur_kind(), Kind::LParen | Kind::LAngle) {
             if !self.ctx.has_ambient() {
@@ -745,7 +744,6 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                 return Declaration::TSExternalModuleDeclaration(
                     self.parse_ambient_external_module_declaration(start, modifiers),
                 );
-
             }
             TSNamespaceDeclarationKind::Module
         };
@@ -987,7 +985,6 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                 );
                 let mut decl = self.parse_variable_declaration(
                     start,
-
                     kind,
                     VariableDeclarationParent::Statement,
                     modifiers.contains_declare(),
@@ -1084,7 +1081,6 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                     ETSOverloadDeclarationKind::Function,
                 );
                 Declaration::ETSOverloadDeclaration(declaration)
-
             }
             _ if self.at_function_with_async() => {
                 let declare = modifiers.contains(ModifierKind::Declare);
@@ -1388,14 +1384,10 @@ export declare struct Foo {
         );
         // export declare struct is parsed as ExportDeclaration containing StructStatement
         match ret.program.body.first() {
-            Some(Statement::ExportDeclaration(export_decl)) => {
-                match &export_decl.declaration {
-                    oxc_ast::ast::Declaration::StructStatement(_) => {}
-                    other => panic!(
-                        "Expected StructStatement in ExportDeclaration, got: {other:?}"
-                    ),
-                }
-            }
+            Some(Statement::ExportDeclaration(export_decl)) => match &export_decl.declaration {
+                oxc_ast::ast::Declaration::StructStatement(_) => {}
+                other => panic!("Expected StructStatement in ExportDeclaration, got: {other:?}"),
+            },
             _ => panic!("Expected ExportDeclaration, got: {:?}", ret.program.body.first()),
         }
     }

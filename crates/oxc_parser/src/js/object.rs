@@ -63,7 +63,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         while !self.at(Kind::RCurly) && !self.has_fatal_error() {
             if self.at(Kind::Dot) {
                 // Parse expression statement starting with dot as LeadingDotExpression
-                let expr_span = self.start_span();
+                let expr_span = self.cur_start();
                 let expr = self.parse_leading_dot_expression();
                 let expr_end_span = self.end_span(expr_span);
 
@@ -265,7 +265,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         let value =
             if self.supports_arkui_dsl() && self.is_in_arkui_dsl_context() && self.at(Kind::LCurly)
             {
-                let obj_span = self.start_span();
+                let obj_span = self.cur_start();
                 let opening_span = self.cur_token().span();
                 self.expect(Kind::LCurly);
 
@@ -350,7 +350,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             if self.cur_token().is_on_new_line() {
                 expr
             } else {
-                let lhs_span = self.start_span();
+                let lhs_span = self.cur_start();
                 self.bump_any();
                 let type_annotation = self.parse_ts_type();
                 let span = self.end_span(lhs_span);

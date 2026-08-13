@@ -487,9 +487,10 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             diagnostics::modifier_cannot_be_used_here,
         );
 
-        let mut function = Function::boxed(
+        let mut function = Function::boxed_with_decorators(
             self.end_span(start),
             function_type,
+            decorators,
             id,
             generator.is_some(),
             r#async,
@@ -501,7 +502,6 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             body,
             self,
         );
-        function.decorators = decorators;
         if self.source_type.is_ets_static() {
             function.r#final = modifiers.contains(ModifierKind::Final);
             function.native = modifiers.contains(ModifierKind::Native);

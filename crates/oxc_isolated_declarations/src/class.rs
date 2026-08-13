@@ -67,9 +67,12 @@ impl<'a> IsolatedDeclarations<'a> {
             self,
         );
         let class_body = ClassBody::boxed(decl.body.span, class_elements, self);
-        let heritage = decl.super_class.as_ref().map(|super_class| ClassHeritage {
-            expression: super_class.clone_in(self.allocator()),
-            type_arguments: decl.super_type_arguments.clone_in(self.allocator()),
+        let heritage = decl.super_class.as_ref().map(|super_class| {
+            ClassHeritage::new(
+                super_class.clone_in(self.allocator()),
+                decl.super_type_arguments.clone_in(self.allocator()),
+                self,
+            )
         });
         let mut class = Class::new(
             decl.span,

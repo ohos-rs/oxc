@@ -27,12 +27,6 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         self.token.start()
     }
 
-    /// Compatibility alias used by ArkTS / ArkUI parser paths.
-    #[inline]
-    pub(crate) fn start_span(&self) -> u32 {
-        self.cur_start()
-    }
-
     /// Create a [`Span`] from provided `start` to end of previous token.
     #[inline]
     pub(crate) fn end_span(&self, start: u32) -> Span {

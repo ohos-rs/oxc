@@ -81,22 +81,16 @@ impl<'a> Format<'a, JsFormatContext<'a>> for FormatStatementsWithImports<'a, '_>
                 // `@decorator export class A {}`
                 // Get the span of the decorator.
                 Statement::ExportDeclaration(export) => {
-                    let decorator_start = match &export.declaration {
-                        Declaration::ClassDeclaration(decl) => {
-                            decl.decorators.first().map(|decorator| decorator.span())
-                        }
-                        Declaration::StructStatement(decl) => {
-                            decl.decorators.first().map(|decorator| decorator.span())
-                        }
-                        Declaration::FunctionDeclaration(decl) => {
-                            decl.decorators.first().map(|decorator| decorator.span())
-                        }
+                    let decorator = match &export.declaration {
+                        Declaration::ClassDeclaration(decl) => decl.decorators.first(),
+                        Declaration::StructStatement(decl) => decl.decorators.first(),
+                        Declaration::FunctionDeclaration(decl) => decl.decorators.first(),
                         _ => None,
                     };
-                    if let Some(decorator_span) = decorator_start
-                        && decorator_span.start < export.span.start
+                    if let Some(decorator) = decorator
+                        && decorator.span().start < export.span.start
                     {
-                        decorator_span
+                        decorator.span()
                     } else {
                         export.span
                     }
