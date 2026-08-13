@@ -159,7 +159,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             }
             _ => {
                 let ident_name = self.parse_identifier_name();
-                self.check_ets_binding_name(&ident_name.name, ident_name.span);
+                self.check_ets_binding_name(ident_name.name.as_str(), ident_name.span);
                 TSEnumMemberName::Identifier(self.alloc(ident_name))
             }
         }
@@ -516,7 +516,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                     || (modifier.kind == ModifierKind::Default && !self.ctx.has_ambient())
                 {
                     self.error(diagnostics::ets_modifier_not_allowed(
-                        &modifier,
+                        modifier,
                         "an interface method",
                     ));
                 }
@@ -582,7 +582,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             .then(|| self.context_add(Context::In, Self::parse_assignment_expression_or_higher));
         for modifier in modifiers.iter() {
             if modifier.kind != ModifierKind::Readonly {
-                self.error(diagnostics::ets_modifier_not_allowed(&modifier, "an interface field"));
+                self.error(diagnostics::ets_modifier_not_allowed(modifier, "an interface field"));
             }
         }
         if definite {

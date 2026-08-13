@@ -125,7 +125,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                         | ModifierKind::Default
                 );
                 if !allowed {
-                    self.error(diagnostics::ets_modifier_not_allowed(&modifier, "a class"));
+                    self.error(diagnostics::ets_modifier_not_allowed(modifier, "a class"));
                 }
             }
         }
@@ -1149,7 +1149,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         for modifier in modifiers.iter() {
             if !allowed.contains(modifier.kind) {
                 self.error(diagnostics::ets_modifier_not_allowed(
-                    &modifier,
+                    modifier,
                     match kind {
                         MethodDefinitionKind::Constructor => "a constructor",
                         MethodDefinitionKind::Get | MethodDefinitionKind::Set => "an accessor",

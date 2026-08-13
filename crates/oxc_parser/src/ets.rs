@@ -145,7 +145,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         }
     }
 
-    pub(crate) fn check_ets_binding_name(&mut self, name: &str, span: oxc_span::Span) {
+    pub(crate) fn check_ets_binding_name(&mut self, name: &'a str, span: oxc_span::Span) {
         if !self.source_type.is_ets_static() {
             return;
         }

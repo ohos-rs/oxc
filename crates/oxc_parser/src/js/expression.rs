@@ -109,7 +109,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         }
         self.check_identifier(cur, self.ctx);
         let (span, name) = self.parse_identifier_kind(Kind::Ident);
-        self.check_ets_binding_name(&name, span);
+        self.check_ets_binding_name(name.as_str(), span);
         BindingIdentifier::new(span, name, self)
     }
 

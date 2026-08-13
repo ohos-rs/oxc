@@ -132,7 +132,10 @@ impl<'a> ModuleRecordBuilder<'a> {
                 if local_name.name != export_name.name
                     && self.ets_annotation_names.contains(&local_name.name)
                 {
-                    errors.push(diagnostics::ets_annotation_export_rename(export_name.span));
+                    errors.push(
+                        diagnostics::ets_annotation_export_rename(export_name.span)
+                            .into_diagnostic(),
+                    );
                 }
             }
 
@@ -143,8 +146,10 @@ impl<'a> ModuleRecordBuilder<'a> {
                     continue;
                 };
                 if !self.ets_local_bindings.contains(&local_name.name) {
-                    errors
-                        .push(diagnostics::ets_unknown_export(&local_name.name, export_name.span));
+                    errors.push(
+                        diagnostics::ets_unknown_export(local_name.name.as_str(), export_name.span)
+                            .into_diagnostic(),
+                    );
                 }
             }
 
@@ -155,7 +160,9 @@ impl<'a> ModuleRecordBuilder<'a> {
             {
                 let Some(module_request) = &entry.module_request else { continue };
                 if self.is_ets_self_reexport(&module_request.name) {
-                    errors.push(diagnostics::ets_self_reexport(entry.statement_span));
+                    errors.push(
+                        diagnostics::ets_self_reexport(entry.statement_span).into_diagnostic(),
+                    );
                 }
             }
         }
