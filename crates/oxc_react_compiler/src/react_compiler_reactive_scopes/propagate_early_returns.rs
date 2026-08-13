@@ -10,8 +10,9 @@
 //!
 //! Corresponds to `src/ReactiveScopes/PropagateEarlyReturns.ts`.
 
-use std::mem::take;
+use std::mem::replace;
 
+use oxc_allocator::{Box as ArenaBox, Vec as ArenaVec};
 use oxc_diagnostics::OxcDiagnostic;
 use oxc_str::{Ident, format_ident};
 
@@ -123,7 +124,7 @@ impl<'a, 'e> ReactiveFunctionTransform<'a> for Transform<'a, 'e> {
                 existing.clone()
             } else {
                 // Create a new early return identifier
-                let identifier_id = create_temporary_place_id(self.env, span);
+                let identifier_id = create_generated_temporary_place_id(self.env);
                 promote_temporary(self.env, identifier_id);
                 let label = self.env.next_block_id();
                 EarlyReturnInfo { value: identifier_id, span, label }
@@ -131,7 +132,8 @@ impl<'a, 'e> ReactiveFunctionTransform<'a> for Transform<'a, 'e> {
 
             state.early_return_value = Some(early_return_value.clone());
 
-            let return_value = value.clone();
+            let return_value = *value;
+            let alloc = self.env.allocator;
 
             return Ok(Transformed::ReplaceMany(vec![
                 // StoreLocal: reassign the early return value
@@ -154,14 +156,18 @@ impl<'a, 'e> ReactiveFunctionTransform<'a> for Transform<'a, 'e> {
                     span,
                 }),
                 // Break to the label
-                ReactiveStatement::Terminal(Box::new(ReactiveTerminalStatement {
-                    terminal: ReactiveTerminal::Break {
-                        target: early_return_value.label,
-                        id: EvaluationOrder::UNSET,
-                        target_kind: ReactiveTerminalTargetKind::Labeled,
+                ReactiveStatement::Terminal(ArenaBox::new_in(
+                    ReactiveTerminalStatement {
+                        terminal: ReactiveTerminal::Break {
+                            target: early_return_value.label,
+                            id: EvaluationOrder::UNSET,
+                            target_kind: ReactiveTerminalTargetKind::Labeled,
+                        },
+                        label: None,
+                        span: span.unwrap_or_default(),
                     },
-                    label: None,
-                })),
+                    &alloc,
+                )),
             ]));
         }
 
@@ -181,7 +187,6 @@ fn apply_early_return_to_scope<'a>(
     early_return: &EarlyReturnInfo,
 ) {
     let scope_id = scope_block.scope;
-    let span = early_return.span;
 
     // Set early return value on the scope
     env.scopes[scope_id].early_return_value = Some(ReactiveScopeEarlyReturn {
@@ -197,140 +202,151 @@ fn apply_early_return_to_scope<'a>(
     ));
 
     // Create temporary places for the sentinel initialization
-    let sentinel_temp = create_temporary_place_id(env, span);
-    let symbol_temp = create_temporary_place_id(env, span);
-    let for_temp = create_temporary_place_id(env, span);
-    let arg_temp = create_temporary_place_id(env, span);
+    let sentinel_temp = create_generated_temporary_place_id(env);
+    let symbol_temp = create_generated_temporary_place_id(env);
+    let for_temp = create_generated_temporary_place_id(env);
+    let arg_temp = create_generated_temporary_place_id(env);
 
-    let original_instructions = take(&mut scope_block.instructions);
+    let alloc = env.allocator;
+    let original_instructions = replace(&mut scope_block.instructions, ArenaVec::new_in(&alloc));
 
-    scope_block.instructions = vec![
-        // LoadGlobal Symbol
-        ReactiveStatement::Instruction(ReactiveInstruction {
-            id: EvaluationOrder::UNSET,
-            lvalue: Some(Place {
-                identifier: symbol_temp,
-                effect: Effect::Unknown,
-                reactive: false,
-                span: None, // GeneratedSource
-            }),
-            value: ReactiveValue::Instruction(InstructionValue::LoadGlobal {
-                binding: NonLocalBinding::Global { name: Ident::from("Symbol") },
-                span,
-            }),
-            span,
-        }),
-        // PropertyLoad Symbol.for
-        ReactiveStatement::Instruction(ReactiveInstruction {
-            id: EvaluationOrder::UNSET,
-            lvalue: Some(Place {
-                identifier: for_temp,
-                effect: Effect::Unknown,
-                reactive: false,
-                span: None, // GeneratedSource
-            }),
-            value: ReactiveValue::Instruction(InstructionValue::PropertyLoad {
-                object: Place {
+    scope_block.instructions = ArenaVec::from_iter_in(
+        [
+            // LoadGlobal Symbol
+            ReactiveStatement::Instruction(ReactiveInstruction {
+                id: EvaluationOrder::UNSET,
+                lvalue: Some(Place {
                     identifier: symbol_temp,
                     effect: Effect::Unknown,
                     reactive: false,
                     span: None, // GeneratedSource
-                },
-                property: PropertyLiteral::String(Ident::from("for")),
-                span,
+                }),
+                value: ReactiveValue::Instruction(InstructionValue::LoadGlobal {
+                    binding: NonLocalBinding::Global { name: Ident::from("Symbol") },
+                    span: None,
+                }),
+                span: None,
             }),
-            span,
-        }),
-        // Primitive: the sentinel string
-        ReactiveStatement::Instruction(ReactiveInstruction {
-            id: EvaluationOrder::UNSET,
-            lvalue: Some(Place {
-                identifier: arg_temp,
-                effect: Effect::Unknown,
-                reactive: false,
-                span: None, // GeneratedSource
-            }),
-            value: ReactiveValue::Instruction(InstructionValue::Primitive {
-                value: PrimitiveValue::String(EARLY_RETURN_SENTINEL.into()),
-                span,
-            }),
-            span,
-        }),
-        // MethodCall: Symbol.for("react.early_return_sentinel")
-        ReactiveStatement::Instruction(ReactiveInstruction {
-            id: EvaluationOrder::UNSET,
-            lvalue: Some(Place {
-                identifier: sentinel_temp,
-                effect: Effect::Unknown,
-                reactive: false,
-                span: None, // GeneratedSource
-            }),
-            value: ReactiveValue::Instruction(InstructionValue::MethodCall {
-                receiver: Place {
-                    identifier: symbol_temp,
-                    effect: Effect::Unknown,
-                    reactive: false,
-                    span: None, // GeneratedSource
-                },
-                property: Place {
+            // PropertyLoad Symbol.for
+            ReactiveStatement::Instruction(ReactiveInstruction {
+                id: EvaluationOrder::UNSET,
+                lvalue: Some(Place {
                     identifier: for_temp,
                     effect: Effect::Unknown,
                     reactive: false,
                     span: None, // GeneratedSource
-                },
-                args: vec![PlaceOrSpread::Place(Place {
+                }),
+                value: ReactiveValue::Instruction(InstructionValue::PropertyLoad {
+                    object: Place {
+                        identifier: symbol_temp,
+                        effect: Effect::Unknown,
+                        reactive: false,
+                        span: None, // GeneratedSource
+                    },
+                    property: PropertyLiteral::String(Ident::from("for")),
+                    property_span: None,
+                    span: None,
+                }),
+                span: None,
+            }),
+            // Primitive: the sentinel string
+            ReactiveStatement::Instruction(ReactiveInstruction {
+                id: EvaluationOrder::UNSET,
+                lvalue: Some(Place {
                     identifier: arg_temp,
                     effect: Effect::Unknown,
                     reactive: false,
                     span: None, // GeneratedSource
-                })],
-                span,
+                }),
+                value: ReactiveValue::Instruction(InstructionValue::Primitive {
+                    value: PrimitiveValue::String(EARLY_RETURN_SENTINEL.into()),
+                    span: None,
+                }),
+                span: None,
             }),
-            span,
-        }),
-        // StoreLocal: let earlyReturnValue = sentinel
-        ReactiveStatement::Instruction(ReactiveInstruction {
-            id: EvaluationOrder::UNSET,
-            lvalue: None,
-            value: ReactiveValue::Instruction(InstructionValue::StoreLocal {
-                lvalue: LValue {
-                    kind: InstructionKind::Let,
-                    place: Place {
-                        identifier: early_return.value,
-                        effect: Effect::ConditionallyMutate,
-                        reactive: true,
-                        span,
-                    },
-                },
-                value: Place {
+            // MethodCall: Symbol.for("react.early_return_sentinel")
+            ReactiveStatement::Instruction(ReactiveInstruction {
+                id: EvaluationOrder::UNSET,
+                lvalue: Some(Place {
                     identifier: sentinel_temp,
                     effect: Effect::Unknown,
                     reactive: false,
                     span: None, // GeneratedSource
-                },
-                span,
+                }),
+                value: ReactiveValue::Instruction(InstructionValue::MethodCall {
+                    receiver: Place {
+                        identifier: symbol_temp,
+                        effect: Effect::Unknown,
+                        reactive: false,
+                        span: None, // GeneratedSource
+                    },
+                    property: Place {
+                        identifier: for_temp,
+                        effect: Effect::Unknown,
+                        reactive: false,
+                        span: None, // GeneratedSource
+                    },
+                    args: ArenaVec::from_array_in(
+                        [PlaceOrSpread::Place(Place {
+                            identifier: arg_temp,
+                            effect: Effect::Unknown,
+                            reactive: false,
+                            span: None, // GeneratedSource
+                        })],
+                        &alloc,
+                    ),
+                    span: None,
+                }),
+                span: None,
             }),
-            span,
-        }),
-        // Label terminal wrapping the original instructions
-        ReactiveStatement::Terminal(Box::new(ReactiveTerminalStatement {
-            label: Some(ReactiveLabel { id: early_return.label, implicit: false }),
-            terminal: ReactiveTerminal::Label {
-                block: original_instructions,
+            // StoreLocal: let earlyReturnValue = sentinel
+            ReactiveStatement::Instruction(ReactiveInstruction {
                 id: EvaluationOrder::UNSET,
-            },
-        })),
-    ];
+                lvalue: None,
+                value: ReactiveValue::Instruction(InstructionValue::StoreLocal {
+                    lvalue: LValue {
+                        kind: InstructionKind::Let,
+                        place: Place {
+                            identifier: early_return.value,
+                            effect: Effect::ConditionallyMutate,
+                            reactive: true,
+                            span: None,
+                        },
+                    },
+                    value: Place {
+                        identifier: sentinel_temp,
+                        effect: Effect::Unknown,
+                        reactive: false,
+                        span: None, // GeneratedSource
+                    },
+                    span: None,
+                }),
+                span: None,
+            }),
+            // Label terminal wrapping the original instructions
+            ReactiveStatement::Terminal(ArenaBox::new_in(
+                ReactiveTerminalStatement {
+                    label: Some(ReactiveLabel { id: early_return.label, implicit: false }),
+                    terminal: ReactiveTerminal::Label {
+                        block: original_instructions,
+                        block_span: None,
+                        id: EvaluationOrder::UNSET,
+                    },
+                    span: Span::default(),
+                },
+                &alloc,
+            )),
+        ],
+        &alloc,
+    );
 }
 
 // =============================================================================
 // Helper: create a temporary place identifier
 // =============================================================================
 
-fn create_temporary_place_id(env: &mut Environment, span: Option<Span>) -> IdentifierId {
-    let id = env.next_identifier_id();
-    env.identifiers[id].span = span;
-    id
+fn create_generated_temporary_place_id(env: &mut Environment) -> IdentifierId {
+    env.next_identifier_id()
 }
 
 fn promote_temporary<'a>(env: &mut Environment<'a>, identifier_id: IdentifierId) {

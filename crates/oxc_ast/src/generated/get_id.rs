@@ -1717,6 +1717,22 @@ impl ImportAttribute<'_> {
     }
 }
 
+impl ExportDeclaration<'_> {
+    /// Get [`NodeId`] of [`ExportDeclaration`].
+    ///
+    /// Only use this method on a post-semantic AST where [`NodeId`]s are always defined.
+    #[inline]
+    pub fn node_id(&self) -> NodeId {
+        self.node_id.get()
+    }
+
+    /// Set [`NodeId`] of [`ExportDeclaration`].
+    #[inline]
+    pub fn set_node_id(&self, node_id: NodeId) {
+        self.node_id.set(node_id);
+    }
+}
+
 impl ExportNamedDeclaration<'_> {
     /// Get [`NodeId`] of [`ExportNamedDeclaration`].
     ///
@@ -1727,6 +1743,22 @@ impl ExportNamedDeclaration<'_> {
     }
 
     /// Set [`NodeId`] of [`ExportNamedDeclaration`].
+    #[inline]
+    pub fn set_node_id(&self, node_id: NodeId) {
+        self.node_id.set(node_id);
+    }
+}
+
+impl ExportFromDeclaration<'_> {
+    /// Get [`NodeId`] of [`ExportFromDeclaration`].
+    ///
+    /// Only use this method on a post-semantic AST where [`NodeId`]s are always defined.
+    #[inline]
+    pub fn node_id(&self) -> NodeId {
+        self.node_id.get()
+    }
+
+    /// Set [`NodeId`] of [`ExportFromDeclaration`].
     #[inline]
     pub fn set_node_id(&self, node_id: NodeId) {
         self.node_id.set(node_id);
@@ -3036,8 +3068,8 @@ impl TSTypePredicate<'_> {
     }
 }
 
-impl TSModuleDeclaration<'_> {
-    /// Get [`NodeId`] of [`TSModuleDeclaration`].
+impl TSExternalModuleDeclaration<'_> {
+    /// Get [`NodeId`] of [`TSExternalModuleDeclaration`].
     ///
     /// Only use this method on a post-semantic AST where [`NodeId`]s are always defined.
     #[inline]
@@ -3045,13 +3077,13 @@ impl TSModuleDeclaration<'_> {
         self.node_id.get()
     }
 
-    /// Set [`NodeId`] of [`TSModuleDeclaration`].
+    /// Set [`NodeId`] of [`TSExternalModuleDeclaration`].
     #[inline]
     pub fn set_node_id(&self, node_id: NodeId) {
         self.node_id.set(node_id);
     }
 
-    /// Get [`ScopeId`] of [`TSModuleDeclaration`].
+    /// Get [`ScopeId`] of [`TSExternalModuleDeclaration`].
     ///
     /// Only use this method on a post-semantic AST where [`ScopeId`]s are always defined.
     ///
@@ -3062,7 +3094,40 @@ impl TSModuleDeclaration<'_> {
         self.scope_id.get().unwrap()
     }
 
-    /// Set [`ScopeId`] of [`TSModuleDeclaration`].
+    /// Set [`ScopeId`] of [`TSExternalModuleDeclaration`].
+    #[inline]
+    pub fn set_scope_id(&self, scope_id: ScopeId) {
+        self.scope_id.set(Some(scope_id));
+    }
+}
+
+impl TSNamespaceDeclaration<'_> {
+    /// Get [`NodeId`] of [`TSNamespaceDeclaration`].
+    ///
+    /// Only use this method on a post-semantic AST where [`NodeId`]s are always defined.
+    #[inline]
+    pub fn node_id(&self) -> NodeId {
+        self.node_id.get()
+    }
+
+    /// Set [`NodeId`] of [`TSNamespaceDeclaration`].
+    #[inline]
+    pub fn set_node_id(&self, node_id: NodeId) {
+        self.node_id.set(node_id);
+    }
+
+    /// Get [`ScopeId`] of [`TSNamespaceDeclaration`].
+    ///
+    /// Only use this method on a post-semantic AST where [`ScopeId`]s are always defined.
+    ///
+    /// # Panics
+    /// Panics if `scope_id` is [`None`].
+    #[inline]
+    pub fn scope_id(&self) -> ScopeId {
+        self.scope_id.get().unwrap()
+    }
+
+    /// Set [`ScopeId`] of [`TSNamespaceDeclaration`].
     #[inline]
     pub fn set_scope_id(&self, scope_id: ScopeId) {
         self.scope_id.set(Some(scope_id));
@@ -4154,7 +4219,8 @@ impl Statement<'_> {
             Self::TSTypeAliasDeclaration(it) => it.node_id(),
             Self::TSInterfaceDeclaration(it) => it.node_id(),
             Self::TSEnumDeclaration(it) => it.node_id(),
-            Self::TSModuleDeclaration(it) => it.node_id(),
+            Self::TSExternalModuleDeclaration(it) => it.node_id(),
+            Self::TSNamespaceDeclaration(it) => it.node_id(),
             Self::TSGlobalDeclaration(it) => it.node_id(),
             Self::TSImportEqualsDeclaration(it) => it.node_id(),
             Self::StructStatement(it) => it.node_id(),
@@ -4164,7 +4230,9 @@ impl Statement<'_> {
             Self::LazyImportDeclaration(it) => it.node_id(),
             Self::ExportAllDeclaration(it) => it.node_id(),
             Self::ExportDefaultDeclaration(it) => it.node_id(),
+            Self::ExportDeclaration(it) => it.node_id(),
             Self::ExportNamedDeclaration(it) => it.node_id(),
+            Self::ExportFromDeclaration(it) => it.node_id(),
             Self::TSExportAssignment(it) => it.node_id(),
             Self::TSNamespaceExportDeclaration(it) => it.node_id(),
         }
@@ -4183,7 +4251,8 @@ impl Declaration<'_> {
             Self::TSTypeAliasDeclaration(it) => it.node_id(),
             Self::TSInterfaceDeclaration(it) => it.node_id(),
             Self::TSEnumDeclaration(it) => it.node_id(),
-            Self::TSModuleDeclaration(it) => it.node_id(),
+            Self::TSExternalModuleDeclaration(it) => it.node_id(),
+            Self::TSNamespaceDeclaration(it) => it.node_id(),
             Self::TSGlobalDeclaration(it) => it.node_id(),
             Self::TSImportEqualsDeclaration(it) => it.node_id(),
             Self::StructStatement(it) => it.node_id(),
@@ -4291,6 +4360,69 @@ impl BindingPattern<'_> {
     }
 }
 
+impl ArrowFunctionBody<'_> {
+    /// Get [`NodeId`] of [`ArrowFunctionBody`].
+    // `#[inline(always)]` because this should boil down to a single instruction.
+    #[inline(always)]
+    pub fn node_id(&self) -> NodeId {
+        match self {
+            Self::FunctionBody(it) => it.node_id(),
+            Self::BooleanLiteral(it) => it.node_id(),
+            Self::NullLiteral(it) => it.node_id(),
+            Self::NumericLiteral(it) => it.node_id(),
+            Self::BigIntLiteral(it) => it.node_id(),
+            Self::RegExpLiteral(it) => it.node_id(),
+            Self::StringLiteral(it) => it.node_id(),
+            Self::TemplateLiteral(it) => it.node_id(),
+            Self::Identifier(it) => it.node_id(),
+            Self::Super(it) => it.node_id(),
+            Self::ArrayExpression(it) => it.node_id(),
+            Self::ArrowFunctionExpression(it) => it.node_id(),
+            Self::AssignmentExpression(it) => it.node_id(),
+            Self::AwaitExpression(it) => it.node_id(),
+            Self::BinaryExpression(it) => it.node_id(),
+            Self::CallExpression(it) => it.node_id(),
+            Self::ChainExpression(it) => it.node_id(),
+            Self::ClassExpression(it) => it.node_id(),
+            Self::ConditionalExpression(it) => it.node_id(),
+            Self::FunctionExpression(it) => it.node_id(),
+            Self::ImportExpression(it) => it.node_id(),
+            Self::LogicalExpression(it) => it.node_id(),
+            Self::NewExpression(it) => it.node_id(),
+            Self::ObjectExpression(it) => it.node_id(),
+            Self::ParenthesizedExpression(it) => it.node_id(),
+            Self::SequenceExpression(it) => it.node_id(),
+            Self::TaggedTemplateExpression(it) => it.node_id(),
+            Self::ThisExpression(it) => it.node_id(),
+            Self::UnaryExpression(it) => it.node_id(),
+            Self::UpdateExpression(it) => it.node_id(),
+            Self::YieldExpression(it) => it.node_id(),
+            Self::PrivateInExpression(it) => it.node_id(),
+            Self::ImportMeta(it) => it.node_id(),
+            Self::NewTarget(it) => it.node_id(),
+            Self::JSXElement(it) => it.node_id(),
+            Self::JSXFragment(it) => it.node_id(),
+            Self::TSAsExpression(it) => it.node_id(),
+            Self::TSSatisfiesExpression(it) => it.node_id(),
+            Self::TSTypeAssertion(it) => it.node_id(),
+            Self::TSNonNullExpression(it) => it.node_id(),
+            Self::TSInstantiationExpression(it) => it.node_id(),
+            Self::V8IntrinsicExpression(it) => it.node_id(),
+            Self::ArkUIComponentExpression(it) => it.node_id(),
+            Self::LeadingDotExpression(it) => it.node_id(),
+            Self::CharLiteral(it) => it.node_id(),
+            Self::ETSTrailingBlockExpression(it) => it.node_id(),
+            Self::ETSInstanceOfExpression(it) => it.node_id(),
+            Self::ETSNewClassInstanceExpression(it) => it.node_id(),
+            Self::ETSNewArrayInstanceExpression(it) => it.node_id(),
+            Self::ETSNewMultiDimArrayInstanceExpression(it) => it.node_id(),
+            Self::ComputedMemberExpression(it) => it.node_id(),
+            Self::StaticMemberExpression(it) => it.node_id(),
+            Self::PrivateFieldExpression(it) => it.node_id(),
+        }
+    }
+}
+
 impl ClassElement<'_> {
     /// Get [`NodeId`] of [`ClassElement`].
     // `#[inline(always)]` because this should boil down to a single instruction.
@@ -4318,7 +4450,9 @@ impl ModuleDeclaration<'_> {
             Self::LazyImportDeclaration(it) => it.node_id(),
             Self::ExportAllDeclaration(it) => it.node_id(),
             Self::ExportDefaultDeclaration(it) => it.node_id(),
+            Self::ExportDeclaration(it) => it.node_id(),
             Self::ExportNamedDeclaration(it) => it.node_id(),
+            Self::ExportFromDeclaration(it) => it.node_id(),
             Self::TSExportAssignment(it) => it.node_id(),
             Self::TSNamespaceExportDeclaration(it) => it.node_id(),
         }
@@ -4742,25 +4876,13 @@ impl TSTypePredicateName<'_> {
     }
 }
 
-impl TSModuleDeclarationName<'_> {
-    /// Get [`NodeId`] of [`TSModuleDeclarationName`].
+impl TSNamespaceDeclarationBody<'_> {
+    /// Get [`NodeId`] of [`TSNamespaceDeclarationBody`].
     // `#[inline(always)]` because this should boil down to a single instruction.
     #[inline(always)]
     pub fn node_id(&self) -> NodeId {
         match self {
-            Self::Identifier(it) => it.node_id(),
-            Self::StringLiteral(it) => it.node_id(),
-        }
-    }
-}
-
-impl TSModuleDeclarationBody<'_> {
-    /// Get [`NodeId`] of [`TSModuleDeclarationBody`].
-    // `#[inline(always)]` because this should boil down to a single instruction.
-    #[inline(always)]
-    pub fn node_id(&self) -> NodeId {
-        match self {
-            Self::TSModuleDeclaration(it) => it.node_id(),
+            Self::TSNamespaceDeclaration(it) => it.node_id(),
             Self::TSModuleBlock(it) => it.node_id(),
         }
     }

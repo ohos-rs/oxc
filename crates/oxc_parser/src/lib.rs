@@ -96,7 +96,7 @@ use oxc_ast::{
     ast::{Expression, Program, Statement},
     builder::{AstBuilder, GetAstBuilder},
 };
-use oxc_diagnostics::{Diagnostics, OxcDiagnostic};
+use oxc_diagnostics::Diagnostics;
 use oxc_span::{SourceType, Span};
 use oxc_syntax::module_record::ModuleRecord;
 
@@ -106,6 +106,7 @@ use crate::{
         LexerConfig, NoTokensParserConfig, ParserConfig, RuntimeParserConfig, TokensParserConfig,
     },
     context::{Context, StatementContext},
+    diagnostics::ParserDiagnostic,
     error_handler::FatalError,
     lexer::Lexer,
     module_record::ModuleRecordBuilder,
@@ -555,7 +556,7 @@ mod parser_parse {
         /// use oxc_parser::Parser;
         /// use oxc_span::SourceType;
         ///
-        /// let src = "let x = 1 + 2;";
+        /// let src = "1 + 2";
         /// let allocator = Allocator::new();
         /// let source_type = SourceType::default();
         ///
@@ -795,16 +796,18 @@ struct ParserImpl<'a, C: ParserConfig> {
 
     /// All syntax errors from parser and lexer
     /// Note: favor adding to `Diagnostics` instead of raising Err
-    errors: Vec<OxcDiagnostic>,
+    ///
+    /// Stored in deferred (unmaterialized) form and materialized once at parse exit.
+    errors: Vec<ParserDiagnostic<'a>>,
 
     /// Errors that are only valid if the file is determined to be a Script (not a Module).
     /// For `ModuleKind::Unambiguous`, we defer ESM-only errors (like top-level await)
     /// until we know whether the file is ESM or Script.
     /// If resolved to Module → discard these errors.
     /// If resolved to Script → emit these errors.
-    deferred_script_errors: Vec<OxcDiagnostic>,
+    deferred_script_errors: Vec<ParserDiagnostic<'a>>,
 
-    fatal_error: Option<FatalError>,
+    fatal_error: Option<FatalError<'a>>,
 
     /// The current parsing token
     token: Token,
@@ -904,14 +907,14 @@ impl<'a, C: ParserConfig> ParserImpl<'a, C> {
             && let Some(error) = self.flow_error()
         {
             is_flow_language = true;
-            errors.push(error);
+            errors.push(error.into_diagnostic());
         }
         let (module_record, mut module_record_errors) = self.module_record_builder.build();
         if errors.len() != 1 {
             errors
                 .reserve(self.lexer.errors.len() + self.errors.len() + module_record_errors.len());
-            errors.append(&mut self.lexer.errors);
-            errors.append(&mut self.errors);
+            errors.extend(self.lexer.errors.drain(..).map(ParserDiagnostic::into_diagnostic));
+            errors.extend(self.errors.drain(..).map(ParserDiagnostic::into_diagnostic));
             errors.append(&mut module_record_errors);
         }
         let irregular_whitespaces =
@@ -923,12 +926,19 @@ impl<'a, C: ParserConfig> ParserImpl<'a, C> {
                 // Resolved to Module - discard deferred script errors (TLA is valid in ESM)
                 // but emit deferred module errors (HTML comments are invalid in ESM)
                 program.source_type = source_type.with_module(true);
-                errors.append(&mut self.lexer.deferred_module_errors);
+                errors.extend(
+                    self.lexer
+                        .deferred_module_errors
+                        .drain(..)
+                        .map(ParserDiagnostic::into_diagnostic),
+                );
             } else {
                 // Resolved to Script - emit deferred script errors
                 // discard deferred module errors (HTML comments are valid in scripts)
                 program.source_type = source_type.with_script(true);
-                errors.extend(self.deferred_script_errors);
+                errors.extend(
+                    self.deferred_script_errors.into_iter().map(ParserDiagnostic::into_diagnostic),
+                );
             }
         }
 
@@ -952,11 +962,20 @@ impl<'a, C: ParserConfig> ParserImpl<'a, C> {
         // initialize cur_token and prev_token by moving onto the first token
         self.bump_any();
         let expr = self.parse_expr();
+        if !self.at(Kind::Eof) {
+            self.set_unexpected();
+        }
         if let Some(FatalError { error, .. }) = self.fatal_error.take() {
-            return Err(error.into());
+            return Err(error.into_diagnostic().into());
         }
         self.check_unfinished_errors();
-        let errors = self.lexer.errors.into_iter().chain(self.errors).collect::<Diagnostics>();
+        let errors = self
+            .lexer
+            .errors
+            .into_iter()
+            .chain(self.errors)
+            .map(ParserDiagnostic::into_diagnostic)
+            .collect::<Diagnostics>();
         if !errors.is_empty() {
             return Err(errors);
         }
@@ -978,7 +997,9 @@ impl<'a, C: ParserConfig> ParserImpl<'a, C> {
         // we need to reparse statements that were originally parsed with `await` as identifier.
         // TypeScript's behavior: initially parse `await /x/` as division, then reparse as
         // await expression with regex when ESM is detected.
-        if self.source_type.is_unambiguous()
+        // Preserve a fatal error from the initial parse instead of rewinding past it.
+        if self.fatal_error.is_none()
+            && self.source_type.is_unambiguous()
             && self.module_record_builder.has_module_syntax()
             && !self.state.potential_await_reparse.is_empty()
         {
@@ -1050,7 +1071,7 @@ impl<'a, C: ParserConfig> ParserImpl<'a, C> {
 
     /// Check for Flow declaration if the file cannot be parsed.
     /// The declaration must be [on the first line before any code](https://flow.org/en/docs/usage/#toc-prepare-your-code-for-flow)
-    fn flow_error(&mut self) -> Option<OxcDiagnostic> {
+    fn flow_error(&mut self) -> Option<ParserDiagnostic<'a>> {
         if !self.source_type.is_javascript() {
             return None;
         }
@@ -1075,7 +1096,7 @@ impl<'a, C: ParserConfig> ParserImpl<'a, C> {
     /// Check if source length exceeds MAX_LEN, if the file cannot be parsed.
     /// Original parsing error is not real - `Lexer::new` substituted "\0" as the source text.
     #[cold]
-    fn overlong_error(&self) -> Option<OxcDiagnostic> {
+    fn overlong_error(&self) -> Option<ParserDiagnostic<'a>> {
         if self.source_text.len() > MAX_LEN {
             return Some(diagnostics::overlong_source());
         }
@@ -1106,12 +1127,11 @@ impl<'a, C: ParserConfig> GetAstBuilder<'a> for ParserImpl<'a, C> {
 
 #[cfg(test)]
 mod test {
-    use oxc_ast::ast::AnnotationElement;
     use std::path::Path;
 
     use oxc_ast::ast::{
-        ArkUIChild, ClassElement, CommentKind, Expression, ObjectPropertyKind, Statement,
-        StructElement,
+        AnnotationElement, ArkUIChild, ClassElement, CommentKind, Expression, ObjectPropertyKind,
+        Statement, StructElement, TSNamespaceDeclarationBody, TSNamespaceDeclarationKind,
     };
     use oxc_span::GetSpan;
 
@@ -1138,6 +1158,7 @@ mod test {
     }
 
     #[test]
+
     fn ets_static_must_be_selected_explicitly() {
         let allocator = Allocator::default();
         let source = "let character: char = c'a'; let value: float = 1.25f;";
@@ -1362,7 +1383,7 @@ mod test {
         else {
             panic!("Expected ForEach callback");
         };
-        let Statement::ExpressionStatement(text) = &callback.body.statements[0] else {
+        let Statement::ExpressionStatement(text) = &callback.get_function_body().unwrap().statements[0] else {
             panic!("Expected Text expression");
         };
         assert!(matches!(text.expression, Expression::ArkUIComponentExpression(_)));
@@ -1533,6 +1554,15 @@ mod test {
     }
 
     #[test]
+    fn parse_expression_rejects_trailing_tokens() {
+        let allocator = Allocator::default();
+        let source_type = SourceType::default();
+        for source in ["a b", "a;", "let x = 1"] {
+            assert!(Parser::new(&allocator, source, source_type).parse_expression().is_err());
+        }
+    }
+
+    #[test]
     fn flow_error() {
         let allocator = Allocator::default();
         let source_type = SourceType::default();
@@ -1558,9 +1588,40 @@ mod test {
     fn ts_module_declaration() {
         let allocator = Allocator::default();
         let source_type = SourceType::from_path(Path::new("module.ts")).unwrap();
-        let source = "declare module 'test'\n";
+        let source =
+            "declare module 'test'; namespace Foo.Bar {} module Baz {} declare module 'raw' {}";
         let ret = Parser::new(&allocator, source, source_type).parse();
-        assert_eq!(ret.diagnostics.len(), 0);
+        assert!(ret.diagnostics.is_empty());
+
+        let Statement::TSExternalModuleDeclaration(external) = &ret.program.body[0] else {
+            panic!("expected external module declaration");
+        };
+        assert_eq!(external.id.value, "test");
+        assert!(external.body.is_none());
+        assert!(external.declare);
+
+        let Statement::TSNamespaceDeclaration(namespace) = &ret.program.body[1] else {
+            panic!("expected namespace declaration");
+        };
+        assert_eq!(namespace.id.name, "Foo");
+        assert_eq!(namespace.kind, TSNamespaceDeclarationKind::Namespace);
+        let TSNamespaceDeclarationBody::TSNamespaceDeclaration(inner) = &namespace.body else {
+            panic!("expected dotted namespace declaration");
+        };
+        assert_eq!(inner.id.name, "Bar");
+
+        let Statement::TSNamespaceDeclaration(module) = &ret.program.body[2] else {
+            panic!("expected identifier module declaration");
+        };
+        assert_eq!(module.id.name, "Baz");
+        assert_eq!(module.kind, TSNamespaceDeclarationKind::Module);
+
+        let Statement::TSExternalModuleDeclaration(external) = &ret.program.body[3] else {
+            panic!("expected external module declaration");
+        };
+        assert_eq!(external.id.value, "raw");
+        assert!(external.body.is_some());
+        assert!(external.declare);
     }
 
     #[test]
@@ -2125,7 +2186,7 @@ mod test {
         else {
             panic!("Expected ForEach UI callback");
         };
-        let Statement::ExpressionStatement(text_statement) = &ui_callback.body.statements[0] else {
+        let Statement::ExpressionStatement(text_statement) = &ui_callback.get_function_body().unwrap().statements[0] else {
             panic!("Expected Text expression statement");
         };
         assert!(matches!(text_statement.expression, Expression::ArkUIComponentExpression(_)));
@@ -2141,12 +2202,16 @@ mod test {
         else {
             panic!("Expected ordinary callback");
         };
-        let Statement::ExpressionStatement(text_statement) = &ordinary_callback.body.statements[0]
+        let Statement::ExpressionStatement(text_statement) =
+            &ordinary_callback.get_function_body().unwrap().statements[0]
         else {
             panic!("Expected ordinary Text call");
         };
         assert!(matches!(text_statement.expression, Expression::CallExpression(_)));
-        assert!(matches!(ordinary_callback.body.statements[1], Statement::BlockStatement(_)));
+        assert!(matches!(
+            ordinary_callback.get_function_body().unwrap().statements[1],
+            Statement::BlockStatement(_)
+        ));
 
         let Statement::ExpressionStatement(repeat_statement) = &statements[2] else {
             panic!("Expected Repeat.each expression statement");
@@ -2159,7 +2224,7 @@ mod test {
         else {
             panic!("Expected Repeat.each UI callback");
         };
-        let Statement::ExpressionStatement(text_statement) = &repeat_callback.body.statements[0]
+        let Statement::ExpressionStatement(text_statement) = &repeat_callback.get_function_body().unwrap().statements[0]
         else {
             panic!("Expected Repeat.each Text statement");
         };

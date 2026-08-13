@@ -115,7 +115,7 @@ fn pre_resolve_globals_recursive<'a>(
             let instr = &inner.instructions[instr_id.index()];
             match &instr.value {
                 InstructionValue::LoadGlobal { binding, span, .. } => {
-                    load_globals.push((instr_id, binding.clone(), *span));
+                    load_globals.push((instr_id, *binding, *span));
                 }
                 InstructionValue::FunctionExpression {
                     lowered_func: LoweredFunction { func: fid },
@@ -390,7 +390,7 @@ fn generate_for_function_id<'a>(
     allocator: &'a Allocator,
 ) -> Result<(), OxcDiagnostic> {
     // Take the function out temporarily to avoid borrow conflicts
-    let inner = replace(&mut functions[func_id], placeholder_function());
+    let inner = replace(&mut functions[func_id], placeholder_function(allocator));
 
     // Process params for component inner functions
     if inner.fn_type == ReactFunctionType::Component {
@@ -575,7 +575,7 @@ fn generate_instruction_types<'a>(
         InstructionValue::ObjectExpression { properties, .. } => {
             for prop in properties {
                 if let ObjectPropertyOrSpread::Property(obj_prop) = prop
-                    && let ObjectPropertyKey::Computed { name } = &obj_prop.key
+                    && let ObjectPropertyKey::Computed { name, .. } = &obj_prop.key
                 {
                     let name_type = get_type(name.identifier, identifiers);
                     unifier.unify(name_type, Type::Primitive, shapes)?;
@@ -671,8 +671,8 @@ fn generate_instruction_types<'a>(
                 for prop in &object_pattern.properties {
                     if let ObjectPropertyOrSpread::Property(obj_prop) = prop {
                         match &obj_prop.key {
-                            ObjectPropertyKey::Identifier { name }
-                            | ObjectPropertyKey::String { name } => {
+                            ObjectPropertyKey::Identifier { name, .. }
+                            | ObjectPropertyKey::String { name, .. } => {
                                 let prop_place_type =
                                     get_type(obj_prop.place.identifier, identifiers);
                                 let value_type = get_type(value.identifier, identifiers);
@@ -757,7 +757,7 @@ fn generate_instruction_types<'a>(
         InstructionValue::JsxExpression { props, .. } => {
             if unifier.enable_treat_ref_like_identifiers_as_refs {
                 for prop in props {
-                    if let JsxAttribute::Attribute { name, place } = prop
+                    if let JsxAttribute::Attribute { name, place, .. } = prop
                         && name == "ref"
                     {
                         let ref_type = get_type(place.identifier, identifiers);
@@ -1062,7 +1062,7 @@ fn apply_instruction_operands<'a>(
                 match prop {
                     ObjectPropertyOrSpread::Property(obj_prop) => {
                         resolve_identifier(obj_prop.place.identifier, identifiers, types, unifier);
-                        if let ObjectPropertyKey::Computed { name } = &obj_prop.key {
+                        if let ObjectPropertyKey::Computed { name, .. } = &obj_prop.key {
                             resolve_identifier(name.identifier, identifiers, types, unifier);
                         }
                     }
@@ -1094,7 +1094,7 @@ fn apply_instruction_operands<'a>(
                     JsxAttribute::Attribute { place, .. } => {
                         resolve_identifier(place.identifier, identifiers, types, unifier);
                     }
-                    JsxAttribute::SpreadAttribute { argument } => {
+                    JsxAttribute::SpreadAttribute { argument, .. } => {
                         resolve_identifier(argument.identifier, identifiers, types, unifier);
                     }
                 }
@@ -1194,31 +1194,18 @@ impl<'a> Unifier<'a> {
         t_b: Type<'a>,
         shapes: &ShapeRegistry<'a>,
     ) -> Result<(), OxcDiagnostic> {
-        self.unify_impl(t_a, t_b, shapes)
-    }
-
-    fn unify_impl(
-        &mut self,
-        t_a: Type<'a>,
-        t_b: Type<'a>,
-        shapes: &ShapeRegistry<'a>,
-    ) -> Result<(), OxcDiagnostic> {
         // Handle Property in the RHS position
         if let Type::Property { ref object_type, ref object_name, ref property_name } = t_b {
             // Check enableTreatRefLikeIdentifiersAsRefs
             if self.enable_treat_ref_like_identifiers_as_refs
                 && is_ref_like_name(object_name, property_name)
             {
-                self.unify_impl(
+                self.unify(
                     *object_type.clone(),
                     Type::Object { shape_id: Some(BUILT_IN_USE_REF_ID) },
                     shapes,
                 )?;
-                self.unify_impl(
-                    t_a,
-                    Type::Object { shape_id: Some(BUILT_IN_REF_VALUE_ID) },
-                    shapes,
-                )?;
+                self.unify(t_a, Type::Object { shape_id: Some(BUILT_IN_REF_VALUE_ID) }, shapes)?;
                 return Ok(());
             }
 
@@ -1231,7 +1218,7 @@ impl<'a> Unifier<'a> {
                 self.custom_hook_type.as_ref(),
             );
             if let Some(property_type) = property_type {
-                self.unify_impl(t_a, property_type, shapes)?;
+                self.unify(t_a, property_type, shapes)?;
             }
             return Ok(());
         }
@@ -1256,7 +1243,7 @@ impl<'a> Unifier<'a> {
         ) = (&t_a, &t_b)
             && con_a == con_b
         {
-            self.unify_impl(*ret_a.clone(), *ret_b.clone(), shapes)?;
+            self.unify(*ret_a.clone(), *ret_b.clone(), shapes)?;
         }
         Ok(())
     }
@@ -1278,14 +1265,14 @@ impl<'a> Unifier<'a> {
         }
 
         if let Some(existing) = self.substitutions.get(&v_id).cloned() {
-            self.unify_impl(existing, ty, shapes)?;
+            self.unify(existing, ty, shapes)?;
             return Ok(());
         }
 
         if let Type::Var { id: ty_id } = &ty
             && let Some(existing) = self.substitutions.get(ty_id).cloned()
         {
-            self.unify_impl(v, existing, shapes)?;
+            self.unify(v, existing, shapes)?;
             return Ok(());
         }
 
@@ -1319,7 +1306,7 @@ impl<'a> Unifier<'a> {
             }
 
             if let Some(candidate) = candidate_type {
-                self.unify_impl(v, candidate, shapes)?;
+                self.unify(v, candidate, shapes)?;
                 return Ok(());
             }
         }
@@ -1369,7 +1356,7 @@ impl<'a> Unifier<'a> {
                 Some(Type::Property {
                     object_type: Box::new(object_type),
                     object_name: *object_name,
-                    property_name: property_name.clone(),
+                    property_name: *property_name,
                 })
             }
             Type::Function { shape_id, return_type, is_constructor } => {

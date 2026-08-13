@@ -51,11 +51,21 @@ fn get_statement_span(stmt: &Statement<'_>) -> u32 {
                 export.span.start
             }
         }
-        Statement::ExportNamedDeclaration(export) => {
-            if let Some(Declaration::ClassDeclaration(class)) = &export.declaration
-                && let Some(decorator) = class.decorators.first()
-            {
-                min(decorator.span.start, export.span.start)
+        Statement::ExportDeclaration(export) => {
+            let decorator_start = match &export.declaration {
+                Declaration::ClassDeclaration(class) => {
+                    class.decorators.first().map(|decorator| decorator.span.start)
+                }
+                Declaration::StructStatement(struct_stmt) => {
+                    struct_stmt.decorators.first().map(|decorator| decorator.span.start)
+                }
+                Declaration::FunctionDeclaration(function) => {
+                    function.decorators.first().map(|decorator| decorator.span.start)
+                }
+                _ => None,
+            };
+            if let Some(start) = decorator_start {
+                min(start, export.span.start)
             } else {
                 export.span.start
             }

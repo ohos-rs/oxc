@@ -8,7 +8,7 @@ use oxc_language_server::{LanguageId, run_server};
 use oxc_span::ExplicitLanguage;
 use tower_lsp_server::ls_types::Uri;
 
-use crate::core::{ExternalFormatter, JsConfigLoaderCb, utils};
+use crate::core::{ExternalServices, JsConfigLoaderCb, utils};
 
 mod options;
 mod server_formatter;
@@ -68,7 +68,7 @@ pub fn create_fake_file_path_from_language_id(
 /// Run the language server
 pub async fn run_lsp(
     js_config_loader: JsConfigLoaderCb,
-    external_formatter: ExternalFormatter,
+    external_services: ExternalServices,
     language: Option<ExplicitLanguage>,
 ) {
     let version = {
@@ -85,7 +85,7 @@ pub async fn run_lsp(
         oxc_language_server::WorkerManager::new_dynamic(Arc::new(
             server_formatter::ServerFormatterBuilder::new(
                 js_config_loader,
-                external_formatter,
+                external_services,
                 language,
             ),
         )),

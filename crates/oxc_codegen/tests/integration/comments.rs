@@ -354,7 +354,95 @@ export type TSTypeLiteral = {
 }
 
 pub mod coverage {
+    use oxc_allocator::Allocator;
+    use oxc_codegen::{Codegen, CodegenOptions, CommentOptions};
+    use oxc_parser::Parser;
+    use oxc_span::SourceType;
+
     use crate::snapshot;
+
+    fn codegen_after_removing_first_statement(source_text: &str) -> String {
+        codegen_after_removing_first_statement_with_options(source_text, CodegenOptions::default())
+    }
+
+    fn codegen_after_removing_first_statement_with_options(
+        source_text: &str,
+        options: CodegenOptions,
+    ) -> String {
+        let allocator = Allocator::default();
+        let ret = Parser::new(&allocator, source_text, SourceType::ts()).parse();
+        assert!(ret.diagnostics.is_empty());
+        let mut program = ret.program;
+        program.body.remove(0);
+        Codegen::new().with_options(options).build(&program).code
+    }
+
+    #[test]
+    fn preserve_file_coverage_comment_when_anchor_is_removed() {
+        // https://github.com/oxc-project/oxc/issues/23667
+        for comment in [
+            "/* v8 ignore file */",
+            "// v8 ignore file",
+            "/* v8 ignore file -- @preserve */",
+            "/* istanbul ignore file */",
+            "// istanbul ignore file -- generated",
+        ] {
+            let source_text =
+                format!("{comment}\nimport type {{ Foo }} from './types';\nexport default {{}};");
+            assert_eq!(
+                codegen_after_removing_first_statement(&source_text),
+                format!("{comment}\nexport default {{}};\n")
+            );
+        }
+    }
+
+    #[test]
+    fn preserve_file_coverage_comment_when_only_anchor_is_removed() {
+        for comment in ["/* v8 ignore file */", "// istanbul ignore file -- generated"] {
+            let source_text = format!("{comment}\nconst removed = 1;");
+            assert_eq!(
+                codegen_after_removing_first_statement(&source_text),
+                format!("{comment}\n")
+            );
+        }
+    }
+
+    #[test]
+    fn preserve_file_coverage_comment_after_hashbang_when_anchor_is_removed() {
+        let source_text =
+            "#!/usr/bin/env node\n/* v8 ignore file */\nconst removed = 1;\nsurvivor();";
+        assert_eq!(
+            codegen_after_removing_first_statement(source_text),
+            "#!/usr/bin/env node\n/* v8 ignore file */\nsurvivor();\n"
+        );
+    }
+
+    #[test]
+    fn respect_disabled_annotation_comments_when_anchor_is_removed() {
+        let source_text = "/* v8 ignore file */\nconst removed = 1;\nsurvivor();";
+        let options = CodegenOptions {
+            comments: CommentOptions { annotation: false, ..CommentOptions::default() },
+            ..CodegenOptions::default()
+        };
+        assert_eq!(
+            codegen_after_removing_first_statement_with_options(source_text, options),
+            "survivor();\n"
+        );
+    }
+
+    #[test]
+    fn do_not_preserve_non_file_coverage_comment_when_anchor_is_removed() {
+        for comment in [
+            "/* v8 ignore next */",
+            "/* v8 ignore filename */",
+            "/* c8 ignore next */",
+            "/* istanbul ignore next */",
+            "/* node:coverage disable */",
+        ] {
+            let source_text = format!("{comment}\nconst removed = 1;\nsurvivor();");
+            assert_eq!(codegen_after_removing_first_statement(&source_text), "survivor();\n");
+        }
+    }
 
     #[test]
     fn comment() {
@@ -867,4 +955,12 @@ fn test_comment_inside_parenthesized_expression_with_pife_arrow() {
 #[test]
 fn test_comment_inside_double_parenthesized_pife_arrow() {
     test_idempotency("const x = foo ? bar : ( ( ( a ) => a ) );");
+}
+
+// A leading comment on the statement which closes the directive prologue was dropped, because the
+// paren-protecting path prints that statement itself instead of going through its printer.
+#[test]
+fn test_comment_on_paren_protected_prologue_boundary() {
+    test_same("// leading comment\n(\"use strict\");\nfoo();\n");
+    test_same("\"use asm\";\n// leading comment\n(\"use strict\");\nfoo();\n");
 }

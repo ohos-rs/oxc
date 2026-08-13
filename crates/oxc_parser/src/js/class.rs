@@ -1,4 +1,4 @@
-use oxc_allocator::{ArenaBox, ArenaVec};
+use oxc_allocator::{ArenaBox, ArenaVec, GetAllocator};
 use oxc_ast::ast::*;
 use oxc_ecmascript::PropName;
 use oxc_span::{GetSpan, Span};
@@ -15,18 +15,18 @@ type ImplementsWithKeywordSpan<'a> = (Span, ArenaVec<'a, TSClassImplements<'a>>)
 
 /// Section 15.7 Class Definitions
 impl<'a, C: Config> ParserImpl<'a, C> {
-    // `start_span` points at the start of all decoractors and `class` keyword.
+    // `start` points at the start of all decorators and `class` keyword.
     pub(crate) fn parse_class_statement(
         &mut self,
-        start_span: u32,
+        start: u32,
         stmt_ctx: StatementContext,
         modifiers: &Modifiers,
         decorators: ArenaVec<'a, Decorator<'a>>,
     ) -> Statement<'a> {
         if self.source_type.is_ets_static() && !self.state.ets_in_declaration_scope {
-            self.error(diagnostics::ets_nested_declaration("Class", Span::empty(start_span)));
+            self.error(diagnostics::ets_nested_declaration("Class", Span::empty(start)));
         }
-        let decl = self.parse_class_declaration(start_span, modifiers, decorators);
+        let decl = self.parse_class_declaration(start, modifiers, decorators);
         if stmt_ctx.is_single_statement() {
             self.error(diagnostics::class_declaration(Span::new(
                 decl.span.start,
@@ -39,11 +39,11 @@ impl<'a, C: Config> ParserImpl<'a, C> {
     /// Section 15.7 Class Definitions
     pub(crate) fn parse_class_declaration(
         &mut self,
-        start_span: u32,
+        start: u32,
         modifiers: &Modifiers,
         decorators: ArenaVec<'a, Decorator<'a>>,
     ) -> ArenaBox<'a, Class<'a>> {
-        self.parse_class(start_span, ClassType::ClassDeclaration, modifiers, decorators)
+        self.parse_class(start, ClassType::ClassDeclaration, modifiers, decorators)
     }
 
     /// Section [Class Definitions](https://tc39.es/ecma262/#prod-ClassExpression)
@@ -51,17 +51,17 @@ impl<'a, C: Config> ParserImpl<'a, C> {
     ///     class `BindingIdentifier`[?Yield, ?Await]opt `ClassTail`[?Yield, ?Await]
     pub(crate) fn parse_class_expression(
         &mut self,
-        span: u32,
+        start: u32,
         modifiers: &Modifiers,
         decorators: ArenaVec<'a, Decorator<'a>>,
     ) -> Expression<'a> {
-        let class = self.parse_class(span, ClassType::ClassExpression, modifiers, decorators);
+        let class = self.parse_class(start, ClassType::ClassExpression, modifiers, decorators);
         Expression::ClassExpression(class)
     }
 
     fn parse_class(
         &mut self,
-        start_span: u32,
+        start: u32,
         r#type: ClassType,
         modifiers: &Modifiers,
         decorators: ArenaVec<'a, Decorator<'a>>,
@@ -69,11 +69,11 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         self.bump_any(); // advance `class`
 
         // Move span start to decorator position if this is a class expression.
-        let mut start_span = start_span;
+        let mut start = start;
         if r#type == ClassType::ClassExpression
             && let Some(d) = decorators.first()
         {
-            start_span = d.span.start;
+            start = d.span.start;
         }
 
         let id = if self.cur_kind().is_binding_identifier()
@@ -97,15 +97,13 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
         let type_parameters =
             if self.is_ts { self.parse_ts_type_parameters_with_variance() } else { None };
-        let (extends, implements) = self.parse_heritage_clause(Self::parse_class_extends_clause);
-        let mut super_class = None;
-        let mut super_type_parameters = None;
+        let (extends, implements) = self.parse_class_heritage_clause();
+        let mut heritage = None;
         if let Some(mut extends) = extends
             && !extends.is_empty()
         {
             let (expression, type_arguments) = extends.remove(0);
-            super_class = Some(expression);
-            super_type_parameters = type_arguments;
+            heritage = Some(ClassHeritage::new(expression, type_arguments, self));
             for (expression, type_arguments) in extends {
                 let expression_span = expression.span();
                 let span = type_arguments.map_or(expression_span, |type_arguments| {
@@ -140,13 +138,12 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         );
 
         let mut class = Class::boxed(
-            self.end_span(start_span),
+            self.end_span(start),
             r#type,
             decorators,
             id,
             type_parameters,
-            super_class,
-            super_type_parameters,
+            heritage,
             implements.map_or_else(|| ArenaVec::new_in(self), |(_, implements)| implements),
             body,
             modifiers.contains_abstract(),
@@ -174,7 +171,8 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         loop {
             match self.cur_kind() {
                 Kind::Extends => {
-                    if extends.is_some() {
+                    let duplicate_extends = extends.is_some();
+                    if duplicate_extends {
                         self.error(diagnostics::extends_clause_already_seen(
                             self.cur_token().span(),
                         ));
@@ -184,7 +182,10 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                             implements_span,
                         ));
                     }
-                    extends = Some(parse_extends_clause(self));
+                    let parsed_extends = parse_extends_clause(self);
+                    if !duplicate_extends {
+                        extends = Some(parsed_extends);
+                    }
                 }
                 Kind::Implements => {
                     if let Some((implements_span, _)) = implements {
@@ -208,6 +209,18 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         }
 
         (extends, implements)
+    }
+
+    #[expect(clippy::type_complexity)]
+    fn parse_class_heritage_clause(
+        &mut self,
+    ) -> (
+        Option<
+            ArenaVec<'a, (Expression<'a>, Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>>)>,
+        >,
+        Option<ImplementsWithKeywordSpan<'a>>,
+    ) {
+        self.parse_heritage_clause(Self::parse_class_extends_clause)
     }
 
     /// `ClassHeritage`
@@ -244,7 +257,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
     }
 
     fn parse_class_body(&mut self) -> ArenaBox<'a, ClassBody<'a>> {
-        let span = self.start_span();
+        let start = self.cur_start();
         let class_elements = self.parse_normal_list_breakable(Kind::LCurly, Kind::RCurly, |p| {
             // Skip empty class element `;`
             if p.eat(Kind::Semicolon) {
@@ -269,7 +282,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                 }
             }
         }
-        ClassBody::boxed(self.end_span(span), class_elements, self)
+        ClassBody::boxed(self.end_span(start), class_elements, self)
     }
 
     fn parse_class_element(&mut self) -> ClassElement<'a> {
@@ -287,7 +300,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
     }
 
     fn parse_class_element_impl(&mut self) -> ClassElement<'a> {
-        let span = self.start_span();
+        let start = self.cur_start();
 
         if self.source_type.is_ets_static()
             && matches!(self.cur_kind(), Kind::LParen | Kind::LAngle)
@@ -315,7 +328,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
         if self.source_type.is_ets_static() && self.at(Kind::Overload) {
             return ClassElement::ETSOverloadDeclaration(self.parse_ets_overload_declaration(
-                span,
+                start,
                 decorators,
                 &modifiers,
                 ETSOverloadDeclarationKind::ClassMethod,
@@ -333,7 +346,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                 false,
                 diagnostics::modifiers_cannot_appear_here,
             );
-            return self.parse_class_static_block(span);
+            return self.parse_class_static_block(start);
         }
 
         self.verify_modifiers(
@@ -353,7 +366,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
         if self.parse_contextual_modifier(Kind::Get) {
             return self.parse_accessor_declaration(
-                span,
+                start,
                 r#type,
                 MethodDefinitionKind::Get,
                 &modifiers,
@@ -363,7 +376,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
         if self.parse_contextual_modifier(Kind::Set) {
             return self.parse_accessor_declaration(
-                span,
+                start,
                 r#type,
                 MethodDefinitionKind::Set,
                 &modifiers,
@@ -375,7 +388,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             && !modifiers.contains(ModifierKind::Static)
             && let Some(name) = self.parse_constructor_name()
         {
-            return self.parse_constructor_declaration(span, r#type, name, &modifiers, decorators);
+            return self.parse_constructor_declaration(start, r#type, name, &modifiers, decorators);
         }
 
         if self.is_index_signature() {
@@ -392,7 +405,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             );
 
             return ClassElement::TSIndexSignature(
-                self.parse_index_signature_declaration(span, &modifiers),
+                self.parse_index_signature_declaration(start, &modifiers),
             );
         }
 
@@ -401,10 +414,10 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             let is_ambient = modifiers.contains(ModifierKind::Declare);
             return if is_ambient {
                 self.context_add(Context::Ambient, |p| {
-                    p.parse_property_or_method_declaration(span, r#type, &modifiers, decorators)
+                    p.parse_property_or_method_declaration(start, r#type, &modifiers, decorators)
                 })
             } else {
-                self.parse_property_or_method_declaration(span, r#type, &modifiers, decorators)
+                self.parse_property_or_method_declaration(start, r#type, &modifiers, decorators)
             };
         }
 
@@ -454,20 +467,20 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
     /// `ClassStaticBlockStatementList` :
     ///    `StatementList`[~Yield, +Await, ~Return]
-    pub(crate) fn parse_class_static_block(&mut self, span: u32) -> ClassElement<'a> {
+    pub(crate) fn parse_class_static_block(&mut self, start: u32) -> ClassElement<'a> {
         self.bump_any(); // bump `static`
         let block = self.context(
             Context::Await | Context::NewTarget,
             Context::Yield | Context::Return,
             Self::parse_block,
         );
-        ClassElement::new_static_block(self.end_span(span), block.unbox().body, self)
+        ClassElement::new_static_block(self.end_span(start), block.unbox().body, self)
     }
 
     /// <https://github.com/tc39/proposal-decorators>
     pub(crate) fn parse_class_accessor_property(
         &mut self,
-        span: u32,
+        start: u32,
         key: PropertyKey<'a>,
         computed: bool,
         definite: Option<u32>,
@@ -475,9 +488,12 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         decorators: ArenaVec<'a, Decorator<'a>>,
     ) -> ClassElement<'a> {
         let type_annotation = if self.is_ts { self.parse_ts_type_annotation() } else { None };
-        // `new.target` is allowed in a class accessor field initializer.
         let value = self.eat(Kind::Eq).then(|| {
-            self.context_add(Context::NewTarget, Self::parse_assignment_expression_or_higher)
+            self.context(
+                Context::In | Context::NewTarget,
+                Context::Yield | Context::Await,
+                Self::parse_assignment_expression_or_higher,
+            )
         });
         self.asi();
         let r#type = if modifiers.contains(ModifierKind::Abstract) {
@@ -515,7 +531,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             }
         }
         ClassElement::new_accessor_property(
-            self.end_span(span),
+            self.end_span(start),
             r#type,
             decorators,
             key,
@@ -532,7 +548,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
     fn parse_accessor_declaration(
         &mut self,
-        span: u32,
+        start: u32,
         r#type: MethodDefinitionType,
         kind: MethodDefinitionKind,
         modifiers: &Modifiers,
@@ -543,7 +559,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             self.with_ets_this_return_type(!modifiers.contains(ModifierKind::Static), |p| {
                 p.parse_method(
                     modifiers.contains(ModifierKind::Async),
-                    false,
+                    None,
                     FunctionKind::ClassMethod,
                 )
             });
@@ -552,7 +568,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             value.native = modifiers.contains(ModifierKind::Native);
         }
         let mut method_definition = MethodDefinition::boxed(
-            self.end_span(span),
+            self.end_span(start),
             r#type,
             decorators,
             name,
@@ -586,7 +602,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
     pub(crate) fn parse_constructor_declaration(
         &mut self,
-        span: u32,
+        start: u32,
         r#type: MethodDefinitionType,
         name: PropertyKey<'a>,
         modifiers: &Modifiers,
@@ -598,7 +614,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
         let mut value = self.parse_method(
             modifiers.contains(ModifierKind::Async),
-            false,
+            None,
             FunctionKind::Constructor,
         );
         if self.source_type.is_ets_static() {
@@ -606,7 +622,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             value.native = modifiers.contains(ModifierKind::Native);
         }
         let mut method_definition = MethodDefinition::boxed(
-            self.end_span(span),
+            self.end_span(start),
             r#type,
             decorators,
             name,
@@ -656,12 +672,12 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
     fn parse_property_or_method_declaration(
         &mut self,
-        span: u32,
+        start: u32,
         r#type: MethodDefinitionType,
         modifiers: &Modifiers,
         decorators: ArenaVec<'a, Decorator<'a>>,
     ) -> ClassElement<'a> {
-        let generator = self.eat(Kind::Star);
+        let generator = self.eat(Kind::Star).then_some(self.prev_token_end - 1);
         let (name, computed) = self.parse_class_element_name(modifiers);
 
         let cur_token = self.cur_token();
@@ -673,7 +689,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
         let optional = optional_span.is_some();
 
-        if generator || matches!(self.cur_kind(), Kind::LParen | Kind::LAngle) {
+        if generator.is_some() || matches!(self.cur_kind(), Kind::LParen | Kind::LAngle) {
             self.verify_modifiers(
                 modifiers,
                 ModifierKinds::all_except([ModifierKind::Declare, ModifierKind::Readonly]),
@@ -704,7 +720,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                 },
             );
             return self.parse_method_declaration(
-                span, r#type, generator, name, computed, optional, modifiers, decorators,
+                start, r#type, generator, name, computed, optional, modifiers, decorators,
             );
         }
 
@@ -723,12 +739,12 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                 self.error(diagnostics::constructor_accessor(name.span()));
             }
             return self.parse_class_accessor_property(
-                span, name, computed, definite, modifiers, decorators,
+                start, name, computed, definite, modifiers, decorators,
             );
         }
 
         self.parse_property_declaration(
-            span,
+            start,
             name,
             computed,
             optional_span,
@@ -740,9 +756,9 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
     fn parse_method_declaration(
         &mut self,
-        span: u32,
+        start: u32,
         r#type: MethodDefinitionType,
-        generator: bool,
+        generator: Option<u32>,
         name: PropertyKey<'a>,
         computed: bool,
         optional: bool,
@@ -774,7 +790,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             value.native = modifiers.contains(ModifierKind::Native);
         }
         let mut method_definition = MethodDefinition::boxed(
-            self.end_span(span),
+            self.end_span(start),
             r#type,
             decorators,
             name,
@@ -808,7 +824,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
     fn parse_property_declaration(
         &mut self,
-        span: u32,
+        start: u32,
         name: PropertyKey<'a>,
         computed: bool,
         optional_span: Option<Span>,
@@ -823,7 +839,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             self.context(
                 Context::In | Context::NewTarget,
                 Context::Yield | Context::Await,
-                Self::parse_expr,
+                Self::parse_assignment_expression_or_higher,
             )
         });
 
@@ -858,10 +874,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             self.error(diagnostics::abstract_with_private_identifier(name.span()));
         }
         if !self.source_type.is_ets_static() && r#abstract && initializer.is_some() {
-            let (name, span) = name.prop_name().unwrap_or_else(|| {
-                let span = name.span();
-                (&self.source_text[span], span)
-            });
+            let (name, span) = self.abstract_member_name(&name);
             self.error(diagnostics::abstract_property_cannot_have_initializer(name, span));
         }
         if !self.source_type.is_ets_static()
@@ -906,7 +919,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             self.error(diagnostics::ets_unsupported_syntax("Static override fields", name.span()));
         }
         ClassElement::new_property_definition(
-            self.end_span(span),
+            self.end_span(start),
             r#type,
             decorators,
             name,
@@ -956,6 +969,17 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                 self.error(diagnostics::setter_with_initializer(function.params.span));
             }
         }
+    }
+
+    /// Resolve a class member's name (falling back to the source text of its key) to an arena
+    /// `&'a str` for use in a diagnostic. `prop_name()` yields a borrow tied to `&self`, so the
+    /// name is promoted into the arena to reach `'a`.
+    fn abstract_member_name(&self, key: &PropertyKey<'a>) -> (&'a str, Span) {
+        let (name, span) = key.prop_name().unwrap_or_else(|| {
+            let span = key.span();
+            (&self.source_text[span], span)
+        });
+        (self.allocator().alloc_str(name), span)
     }
 
     fn check_method_definition(&mut self, method: &MethodDefinition<'a>) {
@@ -1023,10 +1047,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             && method.r#type.is_abstract()
             && method.value.body.is_some()
         {
-            let (name, span) = method.key.prop_name().unwrap_or_else(|| {
-                let span = method.key.span();
-                (&self.source_text[span], span)
-            });
+            let (name, span) = self.abstract_member_name(&method.key);
             self.error(diagnostics::abstract_accessor_cannot_have_implementation(name, span));
         }
     }
@@ -1063,10 +1084,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             && method.r#type.is_abstract()
             && method.value.body.is_some()
         {
-            let (name, span) = method.key.prop_name().unwrap_or_else(|| {
-                let span = method.key.span();
-                (&self.source_text[span], span)
-            });
+            let (name, span) = self.abstract_member_name(&method.key);
             self.error(diagnostics::abstract_method_cannot_have_implementation(name, span));
         }
     }

@@ -13,7 +13,7 @@ use crate::{
     comments::{
         Gap, classify_gap, flush_leading_comments, flush_trailing_inside_comments,
         is_suppression_comment, last_line_has_inline_comment, write_leading_comments,
-        write_trailing_same_line_comment,
+        write_trailing_same_line_comments,
     },
     format::to_span,
     print::{
@@ -100,7 +100,7 @@ pub(super) fn write_statement_sequence_bounded<'a>(
             let prev_end = stmt_end(&statements[i - 1], f);
             // Trailing comment on the same line as the previous statement
             // (but not one that sits after the NEXT statement on that line).
-            write_trailing_same_line_comment(prev_end, upper.min(start), f);
+            write_trailing_same_line_comments(prev_end, upper.min(start), f);
             // The gap considered is from the end of the previous statement to the
             // next printed position (comment or stmt).
             let next_start =
@@ -154,7 +154,7 @@ pub(super) fn write_statement_sequence_bounded<'a>(
         let _ = f.context().comments().take_before(end);
     }
     if let Some(last) = statements.last() {
-        write_trailing_same_line_comment(stmt_end(last, f), upper, f);
+        write_trailing_same_line_comments(stmt_end(last, f), upper, f);
     }
 }
 
@@ -646,14 +646,6 @@ fn respace_value_tokens(v: &str) -> String {
 /// Mirrors Prettier's block printing: `{` + indented statements + `}`.
 /// An empty block prints as `{\n}`.
 pub(super) fn write_block<'a>(block: &SimpleBlock<'a>, f: &mut CssFormatter<'_, 'a>) {
-    let depth = f.context().block_depth();
-    depth.set(depth.get() + 1);
-    write_block_inner(block, f);
-    let depth = f.context().block_depth();
-    depth.set(depth.get() - 1);
-}
-
-fn write_block_inner<'a>(block: &SimpleBlock<'a>, f: &mut CssFormatter<'_, 'a>) {
     let block_span = to_span(&block.span);
     let r_curly = block_span.end.saturating_sub(1);
 

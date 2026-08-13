@@ -3,16 +3,15 @@ use std::{iter, ops::ControlFlow};
 use crate::generated::ancestor::Ancestor;
 use oxc_allocator::{ArenaBox, ArenaVec, TakeIn};
 use oxc_ast::ast::*;
-use oxc_ast_visit::VisitJs;
+use oxc_ast_visit::{VisitJs, walk_js};
 use oxc_ecmascript::{
-    constant_evaluation::{DetermineValueType, IsLiteralValue, ValueType},
+    constant_evaluation::{ConstantEvaluation, DetermineValueType, IsLiteralValue, ValueType},
     side_effects::MayHaveSideEffects,
 };
 use oxc_semantic::ScopeFlags;
-use oxc_span::{ContentEq, GetSpan, GetSpanMut};
-use oxc_syntax::symbol::SymbolId;
+use oxc_span::{ContentEq, GetSpan, GetSpanMut, SPAN};
 
-use crate::{TraverseCtx, keep_var::KeepVar};
+use crate::{TraverseCtx, is_terminated::IsTerminated, keep_var::KeepVar};
 
 use super::PeepholeOptimizations;
 
@@ -81,9 +80,7 @@ impl<'a> PeepholeOptimizations {
             // kept block ending in a jump, an if/else or try/catch where
             // every branch jumps — makes the rest of the list unreachable.
             // https://github.com/rolldown/rolldown/issues/10184
-            if !is_control_flow_dead
-                && stmts.last().is_some_and(Self::statement_never_completes_normally)
-            {
+            if !is_control_flow_dead && stmts.last().is_some_and(Statement::is_terminated) {
                 is_control_flow_dead = true;
             }
         }
@@ -107,31 +104,11 @@ impl<'a> PeepholeOptimizations {
         }
 
         // Drop a trailing unconditional jump statement if applicable
-        if let Some(last_stmt) = stmts.last() {
-            match last_stmt {
-                // "while (x) { y(); continue; }" => "while (x) { y(); }"
-                Statement::ContinueStatement(s) if s.label.is_none() => {
-                    if matches!(
-                        ctx.ancestors().nth(1),
-                        Some(
-                            Ancestor::ForStatementBody(_)
-                                | Ancestor::ForInStatementBody(_)
-                                | Ancestor::ForOfStatementBody(_),
-                        )
-                    ) {
-                        let dropped = stmts.pop().unwrap();
-                        ctx.drop_statement(&dropped);
-                    }
-                }
-                // "function f() { x(); return; }" => "function f() { x(); }"
-                Statement::ReturnStatement(s) if s.argument.is_none() => {
-                    if let Ancestor::FunctionBodyStatements(_) = ctx.parent() {
-                        let dropped = stmts.pop().unwrap();
-                        ctx.drop_statement(&dropped);
-                    }
-                }
-                _ => {}
-            }
+        if let Some(last_stmt) = stmts.last()
+            && Self::can_remove_termination_statement(last_stmt, ctx)
+        {
+            let dropped = stmts.pop().unwrap();
+            ctx.drop_statement(&dropped);
         }
 
         // Merge certain statements in reverse order
@@ -433,65 +410,6 @@ impl<'a> PeepholeOptimizations {
         false
     }
 
-    /// Whether control never falls through to the statement after this one in
-    /// the same statement list (terser's `aborts`).
-    ///
-    /// Any abrupt completion qualifies, whatever its target: a `break` or
-    /// `continue` transfers control past the end of the enclosing statement
-    /// list, never to the next statement in it.
-    ///
-    /// Conservative on purpose:
-    /// - A labeled statement completes normally when its body breaks out of
-    ///   its own label (`a: { break a; }`), so it never counts.
-    /// - Loops and switches count as completing normally; `while (true)`
-    ///   without `break` is handled by loop-specific folds instead.
-    fn statement_never_completes_normally(stmt: &Statement<'a>) -> bool {
-        match stmt {
-            Statement::ReturnStatement(_)
-            | Statement::ThrowStatement(_)
-            | Statement::BreakStatement(_)
-            | Statement::ContinueStatement(_) => true,
-            Statement::BlockStatement(block) => Self::block_never_completes_normally(block),
-            Statement::IfStatement(if_stmt) => {
-                if_stmt.alternate.as_ref().is_some_and(Self::statement_never_completes_normally)
-                    && Self::statement_never_completes_normally(&if_stmt.consequent)
-            }
-            Statement::TryStatement(try_stmt) => {
-                // A finalizer that aborts overrides however the other
-                // blocks complete. Otherwise the try block must abort, and
-                // so must the catch block when present (an exception
-                // thrown before the try block's jump lands there).
-                try_stmt.finalizer.as_ref().is_some_and(|f| Self::block_never_completes_normally(f))
-                    || (Self::block_never_completes_normally(&try_stmt.block)
-                        && try_stmt
-                            .handler
-                            .as_ref()
-                            .is_none_or(|h| Self::block_never_completes_normally(&h.body)))
-            }
-            _ => false,
-        }
-    }
-
-    fn block_never_completes_normally(block: &BlockStatement<'a>) -> bool {
-        // A minimized dead zone keeps only hoisting survivors after the jump:
-        // `function` declarations and the initializer-less `var` stub
-        // re-emitted by `KeepVar`. Their bindings initialize at scope entry
-        // and nothing after an aborting statement ever runs, so skip them
-        // from the back before testing how the block completes.
-        block
-            .body
-            .iter()
-            .rev()
-            .find(|stmt| match stmt {
-                Statement::FunctionDeclaration(_) => false,
-                Statement::VariableDeclaration(decl) => {
-                    !(decl.kind.is_var() && decl.declarations.iter().all(|d| d.init.is_none()))
-                }
-                _ => true,
-            })
-            .is_some_and(Self::statement_never_completes_normally)
-    }
-
     /// For variable declarations:
     /// * merge with the previous variable declarator if their kinds are the same
     /// * remove the variable declarator if it is unused
@@ -515,7 +433,10 @@ impl<'a> PeepholeOptimizations {
 
         // If `join_vars` is off, but there are unused declarators ... just join them to make our code simpler.
         if !ctx.options().join_vars
-            && var_decl.declarations.iter().all(|d| !Self::should_remove_unused_declarator(d, ctx))
+            && var_decl
+                .declarations
+                .iter()
+                .all(|d| !Self::should_remove_unused_declarator(d, var_decl.kind, ctx))
         {
             result.push(Statement::VariableDeclaration(var_decl));
             return;
@@ -528,7 +449,7 @@ impl<'a> PeepholeOptimizations {
         }
         let VariableDeclaration { span, kind, declarations, declare, .. } = var_decl.unbox();
         for mut decl in declarations {
-            if Self::should_remove_unused_declarator(&decl, ctx) {
+            if Self::should_remove_unused_declarator(&decl, kind, ctx) {
                 // `init` is `mut` because `remove_unused_expression` rewrites
                 // it in place (peeling pure-call wrappers, etc). It is taken
                 // out first because it may survive as an expression statement
@@ -557,18 +478,6 @@ impl<'a> PeepholeOptimizations {
         }
     }
 
-    /// Whether an expression is or contains a `super()` call at the top level
-    /// (i.e., in a sequence expression, but not nested inside conditionals/functions).
-    fn expression_contains_super_call(expr: &Expression<'a>) -> bool {
-        match expr {
-            _ if expr.is_super_call_expression() => true,
-            Expression::SequenceExpression(seq) => {
-                seq.expressions.iter().any(Expression::is_super_call_expression)
-            }
-            _ => false,
-        }
-    }
-
     fn handle_expression_statement(
         mut expr_stmt: ArenaBox<'a, ExpressionStatement<'a>>,
         result: &mut ArenaVec<'a, Statement<'a>>,
@@ -587,7 +496,7 @@ impl<'a> PeepholeOptimizations {
         // Only consider top-level expression statements — `super()` inside `if`/loops
         // is conditional and doesn't guarantee `this` is initialized.
         if matches!(expr_stmt.expression, Expression::ThisExpression(_))
-            && Self::this_is_inside_derived_constructor(ctx)
+            && Self::derived_constructor_this_scope(ctx).is_some()
             && result.iter().rev().any(|stmt| {
                 matches!(
                     stmt,
@@ -686,13 +595,14 @@ impl<'a> PeepholeOptimizations {
         if !matches!(&var_decl.kind, VariableDeclarationKind::Var | VariableDeclarationKind::Let) {
             return false;
         }
+        let declaration_kind = var_decl.kind;
         for decl in var_decl.declarations.iter_mut().rev() {
             let BindingPattern::BindingIdentifier(kind) = &decl.id else {
                 break;
             };
             if kind.name == id.name {
                 if decl.init.is_none()
-                    && (decl.kind == VariableDeclarationKind::Var
+                    && (declaration_kind == VariableDeclarationKind::Var
                         || assign_expr.right.is_literal_value(true, ctx))
                 {
                     // "var a; a = b();" => "var a = b();"
@@ -714,7 +624,7 @@ impl<'a> PeepholeOptimizations {
             }
             // should not move assignment above other variables for let
             // this could cause TDZ errors (e.g. `let a, b; b = a;`)
-            if decl.kind == VariableDeclarationKind::Let {
+            if declaration_kind == VariableDeclarationKind::Let {
                 break;
             }
         }
@@ -735,6 +645,17 @@ impl<'a> PeepholeOptimizations {
         };
 
         is_empty && stmt.test.as_ref().is_none_or(Expression::is_literal)
+    }
+
+    /// Check if a switch case can be inlined by verifying:
+    /// - The test expression has no side effects
+    /// - All statements can be safely inlined (no unlabeled breaks)
+    pub fn can_switch_case_be_inlined(case: &SwitchCase<'a>) -> bool {
+        if !case.test.as_ref().is_none_or(Expression::is_literal) {
+            return false;
+        }
+
+        case.consequent.is_empty() || !FindNestedBreak::has_unlabelled_break_in_switch_case(case)
     }
 
     fn handle_switch_statement(
@@ -820,6 +741,61 @@ impl<'a> PeepholeOptimizations {
                 ctx,
             ));
             return;
+        } else if let Some(last_case) = switch_stmt.cases.last_mut()
+            && let Some(Statement::BreakStatement(last_break)) = last_case.consequent.last()
+            && last_break.label.is_none()
+        {
+            let dropped = last_case.consequent.pop().unwrap();
+            ctx.drop_statement(&dropped);
+        }
+
+        if !ctx.is_tree_shake_only()
+            && switch_stmt.cases.len() == 1
+            && Self::can_switch_case_be_inlined(&switch_stmt.cases[0])
+            && let Some(mut case) = switch_stmt.cases.pop()
+        {
+            ctx.notice_change();
+
+            let block_stmt = if case.consequent.len() == 1
+                && matches!(case.consequent[0], Statement::BlockStatement(_))
+            {
+                case.consequent.pop().unwrap()
+            } else {
+                Statement::new_block_statement_with_scope_id(
+                    case.span,
+                    case.consequent.take_in(ctx),
+                    switch_stmt.scope_id(),
+                    ctx,
+                )
+            };
+
+            if let Some(test) = case.test {
+                result.push(Statement::new_if_statement(
+                    switch_stmt.span,
+                    Expression::new_binary_expression(
+                        SPAN,
+                        switch_stmt.discriminant.take_in(ctx),
+                        BinaryOperator::StrictEquality,
+                        test,
+                        ctx,
+                    ),
+                    block_stmt,
+                    None,
+                    ctx,
+                ));
+                return;
+            }
+
+            if !switch_stmt.discriminant.is_literal() {
+                result.push(Statement::new_expression_statement(
+                    switch_stmt.discriminant.span(),
+                    switch_stmt.discriminant.take_in(ctx),
+                    ctx,
+                ));
+            }
+
+            result.push(block_stmt);
+            return;
         }
 
         result.push(Statement::SwitchStatement(switch_stmt));
@@ -866,26 +842,7 @@ impl<'a> PeepholeOptimizations {
                     ctx.drop_statement(&dropped);
                 }
 
-                let mut optimize_implicit_jump = false;
-                // "while (x) { if (y) continue; z(); }" => "while (x) { if (!y) z(); }"
-                // "while (x) { if (y) continue; else z(); w(); }" => "while (x) { if (!y) { z(); w(); } }" => "for (; x;) !y && (z(), w());"
-                if ctx.ancestors().nth(1).is_some_and(|v| {
-                    v.is_for_statement() || v.is_for_in_statement() || v.is_for_of_statement()
-                }) && let Statement::ContinueStatement(continue_stmt) = &if_stmt.consequent
-                    && continue_stmt.label.is_none()
-                {
-                    optimize_implicit_jump = true;
-                }
-
-                // "let x = () => { if (y) return; z(); };" => "let x = () => { if (!y) z(); };"
-                // "let x = () => { if (y) return; else z(); w(); };" => "let x = () => { if (!y) { z(); w(); } };" => "let x = () => { !y && (z(), w()); };"
-                if ctx.parent().is_function_body()
-                    && let Statement::ReturnStatement(return_stmt) = &if_stmt.consequent
-                    && return_stmt.argument.is_none()
-                {
-                    optimize_implicit_jump = true;
-                }
-                if optimize_implicit_jump {
+                if Self::can_remove_termination_statement(&if_stmt.consequent, ctx) {
                     // Don't do this transformation if the branch condition could
                     // potentially access symbols declared later on on this scope below.
                     // If so, inverting the branch condition and nesting statements after
@@ -899,20 +856,11 @@ impl<'a> PeepholeOptimizations {
                     //   if (a(() => b)) return; let b;
                     //   if (a(() => b)) { let b; }
                     //
-                    let mut can_move_branch_condition_outside_scope = true;
-                    if let Some(alternate) = &if_stmt.alternate
-                        && Self::statement_cares_about_scope(alternate)
-                    {
-                        can_move_branch_condition_outside_scope = false;
-                    }
-                    if let Some(stmts) = stmts.get(i + 1..) {
-                        for stmt in stmts {
-                            if Self::statement_cares_about_scope(stmt) {
-                                can_move_branch_condition_outside_scope = false;
-                                break;
-                            }
-                        }
-                    }
+                    let can_move_branch_condition_outside_scope =
+                        !if_stmt.alternate.as_ref().is_some_and(Self::statement_cares_about_scope)
+                            && !stmts.get(i + 1..).is_some_and(|stmts| {
+                                stmts.iter().any(Self::statement_cares_about_scope)
+                            });
 
                     if can_move_branch_condition_outside_scope {
                         let drained_stmts = stmts.drain(i + 1..);
@@ -948,27 +896,30 @@ impl<'a> PeepholeOptimizations {
                         return ControlFlow::Break(());
                     }
                 }
+            }
 
-                if if_stmt.alternate.is_some() {
-                    // "if (a) return b; else if (c) return d; else return e;" => "if (a) return b; if (c) return d; return e;"
-                    result.push(Statement::IfStatement(if_stmt));
-                    loop {
-                        if let Some(Statement::IfStatement(if_stmt)) = result.last_mut()
-                            && if_stmt.consequent.is_jump_statement()
-                            && let Some(stmt) = if_stmt.alternate.take()
-                        {
-                            if let Statement::BlockStatement(block_stmt) = stmt {
-                                Self::handle_block(result, block_stmt, ctx);
-                            } else {
-                                result.push(stmt);
-                                ctx.notice_change();
-                            }
-                            continue;
+            if !if_stmt.alternate.as_ref().is_none_or(Self::statement_cares_about_scope)
+                && if_stmt.consequent.is_terminated()
+            {
+                // "if (a) return b; else if (c) return d; else return e;" => "if (a) return b; if (c) return d; return e;"
+                result.push(Statement::IfStatement(if_stmt));
+                loop {
+                    if let Some(Statement::IfStatement(if_stmt)) = result.last_mut()
+                        && !if_stmt.alternate.as_ref().is_none_or(Self::statement_cares_about_scope)
+                        && if_stmt.consequent.is_terminated()
+                        && let Some(stmt) = if_stmt.alternate.take()
+                    {
+                        if let Statement::BlockStatement(block_stmt) = stmt {
+                            Self::handle_block(result, block_stmt, ctx);
+                        } else {
+                            result.push(stmt);
+                            ctx.notice_change();
                         }
-                        break;
+                        continue;
                     }
-                    return ControlFlow::Continue(());
+                    break;
                 }
+                return ControlFlow::Continue(());
             }
         }
 
@@ -1058,10 +1009,11 @@ impl<'a> PeepholeOptimizations {
         if let Some(init) = &mut for_stmt.init {
             match init {
                 ForStatementInit::VariableDeclaration(var_decl) => {
+                    let declaration_kind = var_decl.kind;
                     if let Some(first_decl) = var_decl.declarations.first_mut()
                         && let Some(first_decl_init) = first_decl.init.as_mut()
                     {
-                        let is_block_scoped_decl = !first_decl.kind.is_var();
+                        let is_block_scoped_decl = !declaration_kind.is_var();
                         Self::substitute_single_use_symbol_in_statement(
                             first_decl_init,
                             result,
@@ -1083,18 +1035,19 @@ impl<'a> PeepholeOptimizations {
         }
 
         if let Some(ForStatementInit::VariableDeclaration(var_decl)) = &mut for_stmt.init {
+            let declaration_kind = var_decl.kind;
             let old_len = var_decl.declarations.len();
             var_decl.declarations.retain_mut(|decl| {
-                let should_keep = !Self::should_remove_unused_declarator(decl, ctx)
-                    || decl
-                        .init
-                        .as_ref()
-                        .is_some_and(|init| Self::has_side_effects_or_preserved_iife(init, ctx));
+                let should_keep =
+                    !Self::should_remove_unused_declarator(decl, declaration_kind, ctx)
+                        || decl.init.as_ref().is_some_and(|init| {
+                            Self::has_side_effects_or_preserved_iife(init, ctx)
+                        });
                 if !should_keep {
                     // Same leak hazard as `remove_unused_variable_declaration`:
                     // the `retain` silently drops the declarator, so its refs
                     // (init and TS type annotation) need an explicit walk to
-                    // reach `PassDirty`.
+                    // reach `PassChanges`.
                     ctx.drop_variable_declarator(decl);
                 }
                 should_keep
@@ -1179,32 +1132,30 @@ impl<'a> PeepholeOptimizations {
                 Some(Statement::ExpressionStatement(prev_expr_stmt)) => {
                     // Annex B.3.5 allows initializers in non-strict mode
                     // <https://tc39.es/ecma262/multipage/additional-ecmascript-features-for-web-browsers.html#sec-initializers-in-forin-statement-heads>
-                    // If there's a side-effectful initializer, we should not move the previous statement inside.
-                    let has_side_effectful_initializer = {
-                        if let ForStatementLeft::VariableDeclaration(var_decl) = &for_in_stmt.left {
-                            if var_decl.declarations.len() == 1 {
-                                // only var can have a initializer
-                                var_decl.kind.is_var()
-                                    && var_decl.declarations[0]
-                                        .init
-                                        .as_ref()
-                                        .is_some_and(|init| init.may_have_side_effects(ctx))
-                            } else {
-                                // the spec does not allow multiple declarations though
-                                true
-                            }
-                        } else {
-                            false
-                        }
-                    };
-                    // Only allow inlining when the for-in variable is declared with `var`.
+                    // Only allow inlining when the for-in variable is declared with `var` and
+                    // there's not a side-effectful initializer.
                     // Block-scoped declarations (let/const) can cause variable shadowing issues
                     // where the inlined expression might reference a variable with the same name
                     // as the for-in variable, but after inlining, it would incorrectly refer to
                     // the shadowed for-in variable instead.
-                    // See: https://github.com/oxc-project/oxc/issues/18650
-                    let is_block_scoped = matches!(&for_in_stmt.left, ForStatementLeft::VariableDeclaration(var_decl) if !var_decl.kind.is_var());
-                    if !has_side_effectful_initializer && !is_block_scoped {
+                    // <https://github.com/oxc-project/oxc/issues/18650>
+                    let can_inline = if let ForStatementLeft::VariableDeclaration(var_decl) =
+                        &for_in_stmt.left
+                    {
+                        match var_decl.declarations.as_slice() {
+                            [decl] => {
+                                var_decl.kind.is_var()
+                                    && !decl
+                                        .init
+                                        .as_ref()
+                                        .is_some_and(|init| init.may_have_side_effects(ctx))
+                            }
+                            _ => false,
+                        }
+                    } else {
+                        true
+                    };
+                    if can_inline {
                         let a = &mut prev_expr_stmt.expression;
                         for_in_stmt.right = Self::join_sequence(a, &mut for_in_stmt.right, ctx);
                         let dropped = result.pop().unwrap();
@@ -1285,7 +1236,7 @@ impl<'a> PeepholeOptimizations {
         result.push(Statement::ForOfStatement(for_of_stmt));
     }
 
-    /// `appendIfOrLabelBodyPreservingScope`: <https://github.com/evanw/esbuild/blob/v0.24.2/internal/js_ast/js_parser.go#L9852>
+    /// `appendIfOrLabelBodyPreservingScope`: <https://github.com/evanw/esbuild/blob/v0.24.2/internal/js_parser/js_parser.go#L9839>
     fn handle_block(
         result: &mut ArenaVec<'a, Statement<'a>>,
         block_stmt: ArenaBox<'a, BlockStatement<'a>>,
@@ -1300,7 +1251,7 @@ impl<'a> PeepholeOptimizations {
         }
     }
 
-    /// `statementCaresAboutScope`: <https://github.com/evanw/esbuild/blob/v0.24.2/internal/js_ast/js_parser.go#L9767>
+    /// `statementCaresAboutScope`: <https://github.com/evanw/esbuild/blob/v0.24.2/internal/js_parser/js_parser.go#L9754-L9768>
     pub fn statement_cares_about_scope(stmt: &Statement<'a>) -> bool {
         match stmt {
             Statement::BlockStatement(_)
@@ -1319,8 +1270,8 @@ impl<'a> PeepholeOptimizations {
             | Statement::ReturnStatement(_)
             | Statement::ThrowStatement(_)
             | Statement::BreakStatement(_)
-            | Statement::ContinueStatement(_)
-            | Statement::LabeledStatement(_) => false,
+            | Statement::ContinueStatement(_) => false,
+            Statement::LabeledStatement(label) => Self::statement_cares_about_scope(&label.body),
             Statement::VariableDeclaration(decl) => !decl.kind.is_var(),
             _ => true,
         }
@@ -1344,9 +1295,7 @@ impl<'a> PeepholeOptimizations {
         ctx: &mut TraverseCtx<'a>,
         non_scoped_literal_only: bool,
     ) -> bool {
-        if Self::keep_top_level_var_in_script_mode(ctx)
-            || ctx.current_scope_flags().contains_direct_eval()
-        {
+        if Self::is_script_root_scope(ctx) || ctx.current_scope_flags().contains_direct_eval() {
             return false;
         }
 
@@ -1388,7 +1337,7 @@ impl<'a> PeepholeOptimizations {
         declarations: &mut ArenaVec<'a, VariableDeclarator<'a>>,
         ctx: &mut TraverseCtx<'a>,
     ) -> bool {
-        if Self::keep_top_level_var_in_script_mode(ctx)
+        if Self::is_script_root_scope(ctx)
             || ctx.current_scope_flags().contains_direct_eval()
             || kind.is_using()
         {
@@ -1453,16 +1402,17 @@ impl<'a> PeepholeOptimizations {
             if ctx.is_expression_whose_name_needs_to_be_kept(prev_decl_init) {
                 return true;
             }
-            let Some(symbol_value) =
-                ctx.state.symbol_values.get_symbol_value(prev_decl_id.symbol_id())
-            else {
+            let Some(symbol_value) = ctx.state.symbols.value(prev_decl_id.symbol_id()) else {
                 return true;
             };
-            // we should check whether it's exported by `symbol_value.exported`
-            // because the variable might be exported with `export { foo }` rather than `export var foo`
-            if symbol_value.exported
-                || symbol_value.read_references_count > 1
-                || symbol_value.write_references_count > 0
+            // Implicitly observable bindings remain live independently of
+            // their resolved-reference count.
+            // An `export { foo }` specifier also contributes a reference, but
+            // consult the shared metadata explicitly for consistency with the
+            // other count-based consumers.
+            if ctx.state.symbols.is_implicitly_observable(prev_decl_id.symbol_id())
+                || symbol_value.references.has_multiple_reads()
+                || symbol_value.references.has_writes()
             {
                 return true;
             }
@@ -1485,40 +1435,6 @@ impl<'a> PeepholeOptimizations {
             None => 0,
             Some(last_non_inlined_index) => last_non_inlined_index + 1,
         }
-    }
-
-    /// Whether reordering this read before a side-effecting replacement could
-    /// observe `symbol_id` in its Temporal Dead Zone.
-    ///
-    /// The hazard is a block-scoped binding (`let`/`const`/`using`/`class`/`enum`)
-    /// closed over from an enclosing function: the function can suspend at an
-    /// `await`/`yield` while outer code initializes the binding, so the earlier
-    /// (reordered) read hits the TDZ where the original would not. A same-function
-    /// binding can't be initialized mid-suspension, so it stays inlinable.
-    ///
-    /// <https://github.com/rolldown/rolldown/issues/9959>
-    fn is_tdz_closed_over_read(symbol_id: SymbolId, ctx: &TraverseCtx<'a>) -> bool {
-        ctx.scoping().symbol_flags(symbol_id).is_block_scoped()
-            && Self::read_crosses_function_boundary(
-                ctx.current_scope_id(),
-                ctx.scoping().symbol_scope_id(symbol_id),
-                ctx,
-            )
-    }
-
-    /// Whether reordering a side-effecting replacement past this member
-    /// assignment-target object is unsafe. The object is evaluated before the
-    /// replacement, so it is unsafe if its reference may change, or if it reads
-    /// a closed-over lexical that could be in its TDZ (e.g. `v.x = await f()`
-    /// reading `v` before the await). See [`Self::is_tdz_closed_over_read`].
-    fn member_object_blocks_reorder(object: &Expression<'a>, ctx: &TraverseCtx<'a>) -> bool {
-        Self::is_expression_that_reference_may_change(object, ctx)
-            || matches!(object, Expression::Identifier(id)
-                if ctx
-                    .scoping()
-                    .get_reference(id.reference_id())
-                    .symbol_id()
-                    .is_some_and(|symbol_id| Self::is_tdz_closed_over_read(symbol_id, ctx)))
     }
 
     /// Returns Some(true) when the expression is successfully replaced.
@@ -1549,6 +1465,8 @@ impl<'a> PeepholeOptimizations {
                 }
                 // If the identifier is not a getter and the identifier is read-only,
                 // we know that the value is same even if we reordered the expression.
+                // Imported names are live bindings, so local read-only status is
+                // insufficient for them.
                 //
                 // But a lexical binding that is closed over from an enclosing
                 // function/module scope may still be in its Temporal Dead Zone
@@ -1557,10 +1475,7 @@ impl<'a> PeepholeOptimizations {
                 // in particular before a side-effecting replacement such as an
                 // `await` — can surface a `ReferenceError` that the original order
                 // avoids. https://github.com/rolldown/rolldown/issues/9959
-                if let Some(symbol_id) = ctx.scoping().get_reference(id.reference_id()).symbol_id()
-                    && !Self::is_symbol_mutated(symbol_id, ctx)
-                    && !Self::is_tdz_closed_over_read(symbol_id, ctx)
-                {
+                if !Self::identifier_read_blocks_reorder(id, ctx) {
                     return None;
                 }
             }
@@ -1686,13 +1601,17 @@ impl<'a> PeepholeOptimizations {
                     let may_depend_on_side_effect = match &assign_expr.left {
                         AssignmentTarget::AssignmentTargetIdentifier(_) => false,
                         AssignmentTarget::ComputedMemberExpression(member_expr) => {
-                            Self::member_object_blocks_reorder(&member_expr.object, ctx)
+                            Self::member_part_blocks_reorder(&member_expr.object, ctx)
+                                || Self::computed_key_blocks_reorder(
+                                    &member_expr.expression,
+                                    ctx,
+                                )
                         }
                         AssignmentTarget::PrivateFieldExpression(member_expr) => {
-                            Self::member_object_blocks_reorder(&member_expr.object, ctx)
+                            Self::member_part_blocks_reorder(&member_expr.object, ctx)
                         }
                         AssignmentTarget::StaticMemberExpression(member_expr) => {
-                            Self::member_object_blocks_reorder(&member_expr.object, ctx)
+                            Self::member_part_blocks_reorder(&member_expr.object, ctx)
                         }
                         // LeadingDotExpression is now a separate Expression type, not an AssignmentTarget
                         AssignmentTarget::ArrayAssignmentTarget(_)
@@ -2109,5 +2028,77 @@ impl<'a> PeepholeOptimizations {
 
         // Otherwise we should stop trying to substitute past this point
         Some(false)
+    }
+
+    /// Returns `true` if the statement is an unconditional termination that can be
+    /// safely removed:
+    /// - Unlabeled `continue` statements that terminate a loop body
+    /// - Bare `return` statements that terminate a function body
+    fn can_remove_termination_statement(stmt: &Statement<'a>, ctx: &TraverseCtx<'a>) -> bool {
+        match stmt {
+            // unlabeled `continue;` that terminates a `for`, `for...in`, `for...of`, `while`, `do...while` body.
+            Statement::ContinueStatement(stmt) if stmt.label.is_none() => {
+                matches!(
+                    ctx.ancestors().nth(1),
+                    Some(
+                        Ancestor::ForStatementBody(_)
+                            | Ancestor::ForInStatementBody(_)
+                            | Ancestor::ForOfStatementBody(_)
+                            | Ancestor::WhileStatementBody(_)
+                            | Ancestor::DoWhileStatementBody(_)
+                    )
+                )
+            }
+            // unlabeled `break;` that terminates a `do...while` body if test is false.
+            Statement::BreakStatement(stmt) if stmt.label.is_none() => {
+                match ctx.ancestors().nth(1) {
+                    Some(Ancestor::DoWhileStatementBody(do_while)) => {
+                        do_while.test().get_side_free_boolean_value(ctx) == Some(false)
+                    }
+                    _ => false,
+                }
+            }
+            // bare `return;` in function-body scope.
+            Statement::ReturnStatement(stmt) if stmt.argument.is_none() => {
+                ctx.parent().is_function_body()
+            }
+            _ => false,
+        }
+    }
+}
+
+#[derive(Default)]
+struct FindNestedBreak {
+    found_unlabelled_break: bool,
+}
+
+impl FindNestedBreak {
+    fn has_unlabelled_break_in_switch_case(node: &SwitchCase) -> bool {
+        let mut visitor = Self::default();
+        visitor.visit_switch_case(node);
+        visitor.found_unlabelled_break
+    }
+}
+
+impl<'a> VisitJs<'a> for FindNestedBreak {
+    fn visit_expression(&mut self, _it: &Expression<'a>) {
+        // do nothing
+    }
+
+    fn visit_statement(&mut self, it: &Statement<'a>) {
+        if self.found_unlabelled_break || it.is_declaration() || it.is_iteration_statement() {
+            return;
+        }
+        match it {
+            Statement::ThrowStatement(_)
+            | Statement::SwitchStatement(_)
+            | Statement::ContinueStatement(_)
+            | Statement::ReturnStatement(_)
+            | Statement::ExpressionStatement(_) => {}
+            Statement::BreakStatement(it) if it.label.is_none() => {
+                self.found_unlabelled_break = true;
+            }
+            _ => walk_js::walk_statement(self, it),
+        }
     }
 }

@@ -877,7 +877,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         modifiers: &Modifiers,
         decorators: Vec<'a, Decorator<'a>>,
     ) -> StructElement<'a> {
-        let generator = self.eat(Kind::Star);
+        let generator = self.eat(Kind::Star).then_some(self.prev_token_end - 1);
         let (name, computed) = self.parse_property_name();
 
         // Handle optional ? token (aligned with class parsing)
@@ -890,7 +890,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         let optional = optional_span.is_some();
 
         // Check if this is a method (generator or has parentheses or type parameters)
-        if generator || matches!(self.cur_kind(), Kind::LParen | Kind::LAngle) {
+        if generator.is_some() || matches!(self.cur_kind(), Kind::LParen | Kind::LAngle) {
             return StructElement::MethodDefinition(self.parse_method_declaration_for_struct(
                 span, r#type, generator, name, computed, optional, modifiers, decorators,
             ));
@@ -934,7 +934,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         &mut self,
         span: u32,
         r#type: MethodDefinitionType,
-        generator: bool,
+        generator: Option<u32>,
         name: PropertyKey<'a>,
         computed: bool,
         optional: bool,
@@ -1056,7 +1056,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             self.with_ets_this_return_type(!modifiers.contains(ModifierKind::Static), |p| {
                 p.parse_method(
                     modifiers.contains(ModifierKind::Async),
-                    false,
+                    None,
                     FunctionKind::ClassMethod,
                 )
             });

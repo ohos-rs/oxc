@@ -3,12 +3,13 @@
 
 #![expect(clippy::match_same_arms)]
 use oxc_ast::ast::*;
+use oxc_formatter_core::Format;
 use oxc_span::GetSpan;
 
 use crate::{
     ast_nodes::AstNode,
     formatter::{
-        Format, JsFormatContext, JsFormatter, JsFormatterExt as _,
+        JsFormatContext, JsFormatter, JsFormatterExt as _,
         trivia::{format_leading_comments, format_trailing_comments},
     },
     parentheses::NeedsParentheses,
@@ -1994,9 +1995,19 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, Declaration<'a>> {
                     })
                     .fmt(f);
             }
-            Declaration::TSModuleDeclaration(inner) => {
+            Declaration::TSExternalModuleDeclaration(inner) => {
                 allocator
-                    .alloc(AstNode::<TSModuleDeclaration> {
+                    .alloc(AstNode::<TSExternalModuleDeclaration> {
+                        inner,
+                        parent,
+                        allocator,
+                        following_span_start: self.following_span_start,
+                    })
+                    .fmt(f);
+            }
+            Declaration::TSNamespaceDeclaration(inner) => {
+                allocator
+                    .alloc(AstNode::<TSNamespaceDeclaration> {
                         inner,
                         parent,
                         allocator,
@@ -2613,6 +2624,37 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, FunctionBody<'a>> {
     }
 }
 
+impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, ArrowFunctionBody<'a>> {
+    #[inline]
+    fn fmt(&self, f: &mut JsFormatter<'_, 'a>) {
+        let allocator = self.allocator;
+        let parent = self.parent;
+        match self.inner {
+            ArrowFunctionBody::FunctionBody(inner) => {
+                allocator
+                    .alloc(AstNode::<FunctionBody> {
+                        inner,
+                        parent,
+                        allocator,
+                        following_span_start: self.following_span_start,
+                    })
+                    .fmt(f);
+            }
+            it @ match_expression!(ArrowFunctionBody) => {
+                let inner = it.to_expression();
+                allocator
+                    .alloc(AstNode::<'a, Expression> {
+                        inner,
+                        parent,
+                        allocator,
+                        following_span_start: self.following_span_start,
+                    })
+                    .fmt(f);
+            }
+        }
+    }
+}
+
 impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, ArrowFunctionExpression<'a>> {
     fn fmt(&self, f: &mut JsFormatter<'_, 'a>) {
         let is_suppressed = f.comments().is_suppressed(self.span().start);
@@ -2692,6 +2734,19 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, Class<'a>> {
         }
         if needs_parentheses {
             ")".fmt(f);
+        }
+        self.format_trailing_comments(f);
+    }
+}
+
+impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, ClassHeritage<'a>> {
+    fn fmt(&self, f: &mut JsFormatter<'_, 'a>) {
+        let is_suppressed = f.comments().is_suppressed(self.span().start);
+        self.format_leading_comments(f);
+        if is_suppressed {
+            FormatSuppressedNode(self.span()).fmt(f);
+        } else {
+            self.write(f);
         }
         self.format_trailing_comments(f);
     }
@@ -2888,9 +2943,29 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, ModuleDeclaration<'a>> 
                     })
                     .fmt(f);
             }
+            ModuleDeclaration::ExportDeclaration(inner) => {
+                allocator
+                    .alloc(AstNode::<ExportDeclaration> {
+                        inner,
+                        parent,
+                        allocator,
+                        following_span_start: self.following_span_start,
+                    })
+                    .fmt(f);
+            }
             ModuleDeclaration::ExportNamedDeclaration(inner) => {
                 allocator
                     .alloc(AstNode::<ExportNamedDeclaration> {
+                        inner,
+                        parent,
+                        allocator,
+                        following_span_start: self.following_span_start,
+                    })
+                    .fmt(f);
+            }
+            ModuleDeclaration::ExportFromDeclaration(inner) => {
+                allocator
+                    .alloc(AstNode::<ExportFromDeclaration> {
                         inner,
                         parent,
                         allocator,
@@ -3116,7 +3191,33 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, ImportAttributeKey<'a>>
     }
 }
 
+impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, ExportDeclaration<'a>> {
+    fn fmt(&self, f: &mut JsFormatter<'_, 'a>) {
+        let is_suppressed = f.comments().is_suppressed(self.span().start);
+        if is_suppressed {
+            self.format_leading_comments(f);
+            FormatSuppressedNode(self.span()).fmt(f);
+            self.format_trailing_comments(f);
+        } else {
+            self.write(f);
+        }
+    }
+}
+
 impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, ExportNamedDeclaration<'a>> {
+    fn fmt(&self, f: &mut JsFormatter<'_, 'a>) {
+        let is_suppressed = f.comments().is_suppressed(self.span().start);
+        if is_suppressed {
+            self.format_leading_comments(f);
+            FormatSuppressedNode(self.span()).fmt(f);
+            self.format_trailing_comments(f);
+        } else {
+            self.write(f);
+        }
+    }
+}
+
+impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, ExportFromDeclaration<'a>> {
     fn fmt(&self, f: &mut JsFormatter<'_, 'a>) {
         let is_suppressed = f.comments().is_suppressed(self.span().start);
         if is_suppressed {
@@ -5287,7 +5388,7 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, TSTypePredicateName<'a>
     }
 }
 
-impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, TSModuleDeclaration<'a>> {
+impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, TSExternalModuleDeclaration<'a>> {
     fn fmt(&self, f: &mut JsFormatter<'_, 'a>) {
         let is_suppressed = f.comments().is_suppressed(self.span().start);
         self.format_leading_comments(f);
@@ -5300,45 +5401,28 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, TSModuleDeclaration<'a>
     }
 }
 
-impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, TSModuleDeclarationName<'a>> {
-    #[inline]
+impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, TSNamespaceDeclaration<'a>> {
     fn fmt(&self, f: &mut JsFormatter<'_, 'a>) {
-        let allocator = self.allocator;
-        let parent = self.parent;
-        match self.inner {
-            TSModuleDeclarationName::Identifier(inner) => {
-                allocator
-                    .alloc(AstNode::<BindingIdentifier> {
-                        inner,
-                        parent,
-                        allocator,
-                        following_span_start: self.following_span_start,
-                    })
-                    .fmt(f);
-            }
-            TSModuleDeclarationName::StringLiteral(inner) => {
-                allocator
-                    .alloc(AstNode::<StringLiteral> {
-                        inner,
-                        parent,
-                        allocator,
-                        following_span_start: self.following_span_start,
-                    })
-                    .fmt(f);
-            }
+        let is_suppressed = f.comments().is_suppressed(self.span().start);
+        self.format_leading_comments(f);
+        if is_suppressed {
+            FormatSuppressedNode(self.span()).fmt(f);
+        } else {
+            self.write(f);
         }
+        self.format_trailing_comments(f);
     }
 }
 
-impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, TSModuleDeclarationBody<'a>> {
+impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, TSNamespaceDeclarationBody<'a>> {
     #[inline]
     fn fmt(&self, f: &mut JsFormatter<'_, 'a>) {
         let allocator = self.allocator;
         let parent = self.parent;
         match self.inner {
-            TSModuleDeclarationBody::TSModuleDeclaration(inner) => {
+            TSNamespaceDeclarationBody::TSNamespaceDeclaration(inner) => {
                 allocator
-                    .alloc(AstNode::<TSModuleDeclaration> {
+                    .alloc(AstNode::<TSNamespaceDeclaration> {
                         inner,
                         parent,
                         allocator,
@@ -5346,7 +5430,7 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, TSModuleDeclarationBody
                     })
                     .fmt(f);
             }
-            TSModuleDeclarationBody::TSModuleBlock(inner) => {
+            TSNamespaceDeclarationBody::TSModuleBlock(inner) => {
                 allocator
                     .alloc(AstNode::<TSModuleBlock> {
                         inner,

@@ -6,7 +6,7 @@ use oxc_napi::OxcError;
 use oxc_span::ExplicitLanguage;
 
 use crate::core::{
-    ExternalFormatter, FormatResult, JsFormatEmbeddedCb, JsFormatEmbeddedDocCb, JsFormatFileCb,
+    ExternalServices, FormatResult, JsFormatEmbeddedCb, JsFormatEmbeddedDocCb, JsFormatFileCb,
     JsSortTailwindClassesCb, ResolveOutcome, SourceFormatter, classify_file_kind_with_language,
     resolve_for_api, utils,
 };
@@ -35,7 +35,7 @@ pub fn run(
     let cwd = env::current_dir().expect("Failed to get current working directory");
     let num_of_threads = 1;
 
-    let external_formatter = ExternalFormatter::new(
+    let external_services = ExternalServices::new(
         format_file_cb,
         format_embedded_cb,
         format_embedded_doc_cb,
@@ -47,7 +47,7 @@ pub fn run(
         Some(Value::String(language)) => match language.parse::<ExplicitLanguage>() {
             Ok(language) => Some(language),
             Err(error) => {
-                external_formatter.cleanup();
+                external_services.cleanup();
                 return ApiFormatResult {
                     code: source_text,
                     errors: vec![OxcError::new(error.to_string())],
@@ -55,7 +55,7 @@ pub fn run(
             }
         },
         Some(_) => {
-            external_formatter.cleanup();
+            external_services.cleanup();
             return ApiFormatResult {
                 code: source_text,
                 errors: vec![OxcError::new("`lang` must be the string `ets-static`".to_string())],
@@ -65,7 +65,7 @@ pub fn run(
 
     let filepath = utils::normalize_relative_path(&cwd, Path::new(filename));
     let Some(kind) = classify_file_kind_with_language(Arc::from(filepath), language) else {
-        external_formatter.cleanup();
+        external_services.cleanup();
         return ApiFormatResult {
             code: source_text,
             errors: vec![OxcError::new(format!("Unsupported file type: {filename}"))],
@@ -74,7 +74,7 @@ pub fn run(
     let strategy = match resolve_for_api(options.unwrap_or_default(), kind, &cwd) {
         Ok(ResolveOutcome::Format(strategy)) => strategy,
         Ok(ResolveOutcome::MissingPlugin(plugin)) => {
-            external_formatter.cleanup();
+            external_services.cleanup();
             return ApiFormatResult {
                 code: source_text,
                 errors: vec![OxcError::new(format!(
@@ -83,7 +83,7 @@ pub fn run(
             };
         }
         Err(err) => {
-            external_formatter.cleanup();
+            external_services.cleanup();
             return ApiFormatResult {
                 code: source_text,
                 errors: vec![OxcError::new(format!("Failed to parse configuration: {err}"))],
@@ -93,7 +93,7 @@ pub fn run(
 
     // Create formatter and format
     let formatter = SourceFormatter::new(num_of_threads)
-        .with_external_formatter(Some(external_formatter.clone()));
+        .with_external_services(Some(external_services.clone()));
 
     // Use `block_in_place()` to avoid nested async runtime access
     let result = match tokio::task::block_in_place(|| formatter.format(&source_text, strategy)) {
@@ -106,7 +106,7 @@ pub fn run(
 
     // Explicitly drop ThreadsafeFunctions before returning to prevent
     // use-after-free during V8 cleanup (Node.js issue with TSFN cleanup timing)
-    external_formatter.cleanup();
+    external_services.cleanup();
 
     result
 }

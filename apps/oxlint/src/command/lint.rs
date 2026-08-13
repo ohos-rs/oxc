@@ -204,7 +204,7 @@ pub enum LintFilter {
         String,
     ),
     Warn(
-        /// Deny the rule or category (emit a warning)
+        /// Warn on the rule or category (emit a warning)
         #[bpaf(short('W'), long("warn"), argument("NAME"))]
         String,
     ),

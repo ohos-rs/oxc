@@ -194,7 +194,11 @@ impl UnstableAddress for WithClause<'_> {}
 
 impl UnstableAddress for ImportAttribute<'_> {}
 
+impl UnstableAddress for ExportDeclaration<'_> {}
+
 impl UnstableAddress for ExportNamedDeclaration<'_> {}
+
+impl UnstableAddress for ExportFromDeclaration<'_> {}
 
 impl UnstableAddress for ExportDefaultDeclaration<'_> {}
 
@@ -344,7 +348,9 @@ impl UnstableAddress for TSInterfaceHeritage<'_> {}
 
 impl UnstableAddress for TSTypePredicate<'_> {}
 
-impl UnstableAddress for TSModuleDeclaration<'_> {}
+impl UnstableAddress for TSExternalModuleDeclaration<'_> {}
+
+impl UnstableAddress for TSNamespaceDeclaration<'_> {}
 
 impl UnstableAddress for TSGlobalDeclaration<'_> {}
 

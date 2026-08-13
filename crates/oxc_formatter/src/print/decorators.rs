@@ -44,18 +44,17 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, ArenaVec<'a, Decorator<
                 // Otherwise, format normally
                 if matches!(
                     function.parent(),
-                    AstNodes::ExportNamedDeclaration(_) | AstNodes::ExportDefaultDeclaration(_)
+                    AstNodes::ExportDeclaration(_) | AstNodes::ExportDefaultDeclaration(_)
                 ) {
                     // This case is handled by export_declarations.rs, so we just format the decorators
                     // without extra line breaks (the export formatter handles positioning)
-                    // Format decorators inline, then the export formatter will add the hard_line_break
                     f.join_with(&soft_line_break_or_space()).entries(self.iter());
                     return;
                 }
                 // Non-exported function decorators
                 write!(f, [expand_parent()]);
             }
-            AstNodes::ExportNamedDeclaration(_) | AstNodes::ExportDefaultDeclaration(_) => {
+            AstNodes::ExportDeclaration(_) | AstNodes::ExportDefaultDeclaration(_) => {
                 write!(f, [hard_line_break()]);
             }
             _ => {

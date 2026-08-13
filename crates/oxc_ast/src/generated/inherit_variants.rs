@@ -2752,7 +2752,8 @@ impl<'a> Statement<'a> {
                 | Self::TSTypeAliasDeclaration(_)
                 | Self::TSInterfaceDeclaration(_)
                 | Self::TSEnumDeclaration(_)
-                | Self::TSModuleDeclaration(_)
+                | Self::TSExternalModuleDeclaration(_)
+                | Self::TSNamespaceDeclaration(_)
                 | Self::TSGlobalDeclaration(_)
                 | Self::TSImportEqualsDeclaration(_)
                 | Self::StructStatement(_)
@@ -2856,7 +2857,10 @@ impl<'a> TryFrom<Statement<'a>> for Declaration<'a> {
             Statement::TSTypeAliasDeclaration(o) => Ok(Declaration::TSTypeAliasDeclaration(o)),
             Statement::TSInterfaceDeclaration(o) => Ok(Declaration::TSInterfaceDeclaration(o)),
             Statement::TSEnumDeclaration(o) => Ok(Declaration::TSEnumDeclaration(o)),
-            Statement::TSModuleDeclaration(o) => Ok(Declaration::TSModuleDeclaration(o)),
+            Statement::TSExternalModuleDeclaration(o) => {
+                Ok(Declaration::TSExternalModuleDeclaration(o))
+            }
+            Statement::TSNamespaceDeclaration(o) => Ok(Declaration::TSNamespaceDeclaration(o)),
             Statement::TSGlobalDeclaration(o) => Ok(Declaration::TSGlobalDeclaration(o)),
             Statement::TSImportEqualsDeclaration(o) => {
                 Ok(Declaration::TSImportEqualsDeclaration(o))
@@ -2882,7 +2886,10 @@ impl<'a> From<Declaration<'a>> for Statement<'a> {
             Declaration::TSTypeAliasDeclaration(o) => Statement::TSTypeAliasDeclaration(o),
             Declaration::TSInterfaceDeclaration(o) => Statement::TSInterfaceDeclaration(o),
             Declaration::TSEnumDeclaration(o) => Statement::TSEnumDeclaration(o),
-            Declaration::TSModuleDeclaration(o) => Statement::TSModuleDeclaration(o),
+            Declaration::TSExternalModuleDeclaration(o) => {
+                Statement::TSExternalModuleDeclaration(o)
+            }
+            Declaration::TSNamespaceDeclaration(o) => Statement::TSNamespaceDeclaration(o),
             Declaration::TSGlobalDeclaration(o) => Statement::TSGlobalDeclaration(o),
             Declaration::TSImportEqualsDeclaration(o) => Statement::TSImportEqualsDeclaration(o),
             Declaration::StructStatement(o) => Statement::StructStatement(o),
@@ -2902,7 +2909,9 @@ impl<'a> Statement<'a> {
                 | Self::LazyImportDeclaration(_)
                 | Self::ExportAllDeclaration(_)
                 | Self::ExportDefaultDeclaration(_)
+                | Self::ExportDeclaration(_)
                 | Self::ExportNamedDeclaration(_)
+                | Self::ExportFromDeclaration(_)
                 | Self::TSExportAssignment(_)
                 | Self::TSNamespaceExportDeclaration(_)
         )
@@ -3003,9 +3012,11 @@ impl<'a> TryFrom<Statement<'a>> for ModuleDeclaration<'a> {
             Statement::ExportDefaultDeclaration(o) => {
                 Ok(ModuleDeclaration::ExportDefaultDeclaration(o))
             }
+            Statement::ExportDeclaration(o) => Ok(ModuleDeclaration::ExportDeclaration(o)),
             Statement::ExportNamedDeclaration(o) => {
                 Ok(ModuleDeclaration::ExportNamedDeclaration(o))
             }
+            Statement::ExportFromDeclaration(o) => Ok(ModuleDeclaration::ExportFromDeclaration(o)),
             Statement::TSExportAssignment(o) => Ok(ModuleDeclaration::TSExportAssignment(o)),
             Statement::TSNamespaceExportDeclaration(o) => {
                 Ok(ModuleDeclaration::TSNamespaceExportDeclaration(o))
@@ -3028,7 +3039,9 @@ impl<'a> From<ModuleDeclaration<'a>> for Statement<'a> {
             ModuleDeclaration::ExportDefaultDeclaration(o) => {
                 Statement::ExportDefaultDeclaration(o)
             }
+            ModuleDeclaration::ExportDeclaration(o) => Statement::ExportDeclaration(o),
             ModuleDeclaration::ExportNamedDeclaration(o) => Statement::ExportNamedDeclaration(o),
+            ModuleDeclaration::ExportFromDeclaration(o) => Statement::ExportFromDeclaration(o),
             ModuleDeclaration::TSExportAssignment(o) => Statement::TSExportAssignment(o),
             ModuleDeclaration::TSNamespaceExportDeclaration(o) => {
                 Statement::TSNamespaceExportDeclaration(o)
@@ -4074,6 +4087,453 @@ impl<'a> From<AssignmentTargetPattern<'a>> for ForStatementLeft<'a> {
             }
             AssignmentTargetPattern::ObjectAssignmentTarget(o) => {
                 ForStatementLeft::ObjectAssignmentTarget(o)
+            }
+        }
+    }
+}
+
+impl<'a> ArrowFunctionBody<'a> {
+    /// Return if an [`ArrowFunctionBody`] is an [`Expression`].
+    #[inline]
+    pub fn is_expression(&self) -> bool {
+        matches!(
+            self,
+            Self::BooleanLiteral(_)
+                | Self::NullLiteral(_)
+                | Self::NumericLiteral(_)
+                | Self::BigIntLiteral(_)
+                | Self::RegExpLiteral(_)
+                | Self::StringLiteral(_)
+                | Self::TemplateLiteral(_)
+                | Self::Identifier(_)
+                | Self::Super(_)
+                | Self::ArrayExpression(_)
+                | Self::ArrowFunctionExpression(_)
+                | Self::AssignmentExpression(_)
+                | Self::AwaitExpression(_)
+                | Self::BinaryExpression(_)
+                | Self::CallExpression(_)
+                | Self::ChainExpression(_)
+                | Self::ClassExpression(_)
+                | Self::ConditionalExpression(_)
+                | Self::FunctionExpression(_)
+                | Self::ImportExpression(_)
+                | Self::LogicalExpression(_)
+                | Self::NewExpression(_)
+                | Self::ObjectExpression(_)
+                | Self::ParenthesizedExpression(_)
+                | Self::SequenceExpression(_)
+                | Self::TaggedTemplateExpression(_)
+                | Self::ThisExpression(_)
+                | Self::UnaryExpression(_)
+                | Self::UpdateExpression(_)
+                | Self::YieldExpression(_)
+                | Self::PrivateInExpression(_)
+                | Self::ImportMeta(_)
+                | Self::NewTarget(_)
+                | Self::JSXElement(_)
+                | Self::JSXFragment(_)
+                | Self::TSAsExpression(_)
+                | Self::TSSatisfiesExpression(_)
+                | Self::TSTypeAssertion(_)
+                | Self::TSNonNullExpression(_)
+                | Self::TSInstantiationExpression(_)
+                | Self::V8IntrinsicExpression(_)
+                | Self::ArkUIComponentExpression(_)
+                | Self::LeadingDotExpression(_)
+                | Self::CharLiteral(_)
+                | Self::ETSTrailingBlockExpression(_)
+                | Self::ETSInstanceOfExpression(_)
+                | Self::ETSNewClassInstanceExpression(_)
+                | Self::ETSNewArrayInstanceExpression(_)
+                | Self::ETSNewMultiDimArrayInstanceExpression(_)
+                | Self::ComputedMemberExpression(_)
+                | Self::StaticMemberExpression(_)
+                | Self::PrivateFieldExpression(_)
+        )
+    }
+
+    /// Convert an [`ArrowFunctionBody`] to an [`Expression`].
+    ///
+    /// # Panics
+    /// Panics if not convertible.
+    #[inline]
+    pub fn into_expression(self) -> Expression<'a> {
+        Expression::try_from(self).unwrap()
+    }
+
+    /// Convert an [`&ArrowFunctionBody`] to an [`&Expression`].
+    ///
+    /// [`&ArrowFunctionBody`]: ArrowFunctionBody
+    /// [`&Expression`]: Expression
+    #[inline]
+    pub fn as_expression(&self) -> Option<&Expression<'a>> {
+        if self.is_expression() {
+            // SAFETY: Transmute is safe because discriminants + types are identical between
+            // `parent` and `child` for the shared variants
+            Some(unsafe { NonNull::from_ref(self).cast::<Expression>().as_ref() })
+        } else {
+            None
+        }
+    }
+
+    /// Convert an [`&mut ArrowFunctionBody`] to an [`&mut Expression`].
+    ///
+    /// [`&mut ArrowFunctionBody`]: ArrowFunctionBody
+    /// [`&mut Expression`]: Expression
+    #[inline]
+    pub fn as_expression_mut(&mut self) -> Option<&mut Expression<'a>> {
+        if self.is_expression() {
+            // SAFETY: Transmute is safe because discriminants + types are identical between
+            // `parent` and `child` for the shared variants
+            Some(unsafe { NonNull::from_mut(self).cast::<Expression>().as_mut() })
+        } else {
+            None
+        }
+    }
+
+    /// Convert an [`&ArrowFunctionBody`] to an [`&Expression`].
+    ///
+    /// # Panics
+    /// Panics if not convertible.
+    ///
+    /// [`&ArrowFunctionBody`]: ArrowFunctionBody
+    /// [`&Expression`]: Expression
+    #[inline]
+    pub fn to_expression(&self) -> &Expression<'a> {
+        self.as_expression().unwrap()
+    }
+
+    /// Convert an [`&mut ArrowFunctionBody`] to an [`&mut Expression`].
+    ///
+    /// # Panics
+    /// Panics if not convertible.
+    ///
+    /// [`&mut ArrowFunctionBody`]: ArrowFunctionBody
+    /// [`&mut Expression`]: Expression
+    #[inline]
+    pub fn to_expression_mut(&mut self) -> &mut Expression<'a> {
+        self.as_expression_mut().unwrap()
+    }
+}
+
+impl<'a> Expression<'a> {
+    /// Convert an [`&Expression`] to an [`&ArrowFunctionBody`].
+    ///
+    /// [`&Expression`]: Expression
+    /// [`&ArrowFunctionBody`]: ArrowFunctionBody
+    #[inline]
+    pub fn as_arrow_function_body(&self) -> &ArrowFunctionBody<'a> {
+        // SAFETY: Transmute is safe because discriminants + types are identical between
+        // `parent` and `child` for the shared variants
+        unsafe { NonNull::from_ref(self).cast::<ArrowFunctionBody>().as_ref() }
+    }
+}
+
+impl<'a> TryFrom<ArrowFunctionBody<'a>> for Expression<'a> {
+    type Error = ();
+
+    /// Convert an [`ArrowFunctionBody`] to an [`Expression`].
+    ///
+    /// # Errors
+    /// Returns `Err` if not convertible.
+    #[inline]
+    fn try_from(value: ArrowFunctionBody<'a>) -> Result<Self, Self::Error> {
+        // Compiler should implement this as a check of discriminant and then zero-cost transmute,
+        // as discriminants for `parent` and `child` are aligned
+        match value {
+            ArrowFunctionBody::BooleanLiteral(o) => Ok(Expression::BooleanLiteral(o)),
+            ArrowFunctionBody::NullLiteral(o) => Ok(Expression::NullLiteral(o)),
+            ArrowFunctionBody::NumericLiteral(o) => Ok(Expression::NumericLiteral(o)),
+            ArrowFunctionBody::BigIntLiteral(o) => Ok(Expression::BigIntLiteral(o)),
+            ArrowFunctionBody::RegExpLiteral(o) => Ok(Expression::RegExpLiteral(o)),
+            ArrowFunctionBody::StringLiteral(o) => Ok(Expression::StringLiteral(o)),
+            ArrowFunctionBody::TemplateLiteral(o) => Ok(Expression::TemplateLiteral(o)),
+            ArrowFunctionBody::Identifier(o) => Ok(Expression::Identifier(o)),
+            ArrowFunctionBody::Super(o) => Ok(Expression::Super(o)),
+            ArrowFunctionBody::ArrayExpression(o) => Ok(Expression::ArrayExpression(o)),
+            ArrowFunctionBody::ArrowFunctionExpression(o) => {
+                Ok(Expression::ArrowFunctionExpression(o))
+            }
+            ArrowFunctionBody::AssignmentExpression(o) => Ok(Expression::AssignmentExpression(o)),
+            ArrowFunctionBody::AwaitExpression(o) => Ok(Expression::AwaitExpression(o)),
+            ArrowFunctionBody::BinaryExpression(o) => Ok(Expression::BinaryExpression(o)),
+            ArrowFunctionBody::CallExpression(o) => Ok(Expression::CallExpression(o)),
+            ArrowFunctionBody::ChainExpression(o) => Ok(Expression::ChainExpression(o)),
+            ArrowFunctionBody::ClassExpression(o) => Ok(Expression::ClassExpression(o)),
+            ArrowFunctionBody::ConditionalExpression(o) => Ok(Expression::ConditionalExpression(o)),
+            ArrowFunctionBody::FunctionExpression(o) => Ok(Expression::FunctionExpression(o)),
+            ArrowFunctionBody::ImportExpression(o) => Ok(Expression::ImportExpression(o)),
+            ArrowFunctionBody::LogicalExpression(o) => Ok(Expression::LogicalExpression(o)),
+            ArrowFunctionBody::NewExpression(o) => Ok(Expression::NewExpression(o)),
+            ArrowFunctionBody::ObjectExpression(o) => Ok(Expression::ObjectExpression(o)),
+            ArrowFunctionBody::ParenthesizedExpression(o) => {
+                Ok(Expression::ParenthesizedExpression(o))
+            }
+            ArrowFunctionBody::SequenceExpression(o) => Ok(Expression::SequenceExpression(o)),
+            ArrowFunctionBody::TaggedTemplateExpression(o) => {
+                Ok(Expression::TaggedTemplateExpression(o))
+            }
+            ArrowFunctionBody::ThisExpression(o) => Ok(Expression::ThisExpression(o)),
+            ArrowFunctionBody::UnaryExpression(o) => Ok(Expression::UnaryExpression(o)),
+            ArrowFunctionBody::UpdateExpression(o) => Ok(Expression::UpdateExpression(o)),
+            ArrowFunctionBody::YieldExpression(o) => Ok(Expression::YieldExpression(o)),
+            ArrowFunctionBody::PrivateInExpression(o) => Ok(Expression::PrivateInExpression(o)),
+            ArrowFunctionBody::ImportMeta(o) => Ok(Expression::ImportMeta(o)),
+            ArrowFunctionBody::NewTarget(o) => Ok(Expression::NewTarget(o)),
+            ArrowFunctionBody::JSXElement(o) => Ok(Expression::JSXElement(o)),
+            ArrowFunctionBody::JSXFragment(o) => Ok(Expression::JSXFragment(o)),
+            ArrowFunctionBody::TSAsExpression(o) => Ok(Expression::TSAsExpression(o)),
+            ArrowFunctionBody::TSSatisfiesExpression(o) => Ok(Expression::TSSatisfiesExpression(o)),
+            ArrowFunctionBody::TSTypeAssertion(o) => Ok(Expression::TSTypeAssertion(o)),
+            ArrowFunctionBody::TSNonNullExpression(o) => Ok(Expression::TSNonNullExpression(o)),
+            ArrowFunctionBody::TSInstantiationExpression(o) => {
+                Ok(Expression::TSInstantiationExpression(o))
+            }
+            ArrowFunctionBody::V8IntrinsicExpression(o) => Ok(Expression::V8IntrinsicExpression(o)),
+            ArrowFunctionBody::ArkUIComponentExpression(o) => {
+                Ok(Expression::ArkUIComponentExpression(o))
+            }
+            ArrowFunctionBody::LeadingDotExpression(o) => Ok(Expression::LeadingDotExpression(o)),
+            ArrowFunctionBody::CharLiteral(o) => Ok(Expression::CharLiteral(o)),
+            ArrowFunctionBody::ETSTrailingBlockExpression(o) => {
+                Ok(Expression::ETSTrailingBlockExpression(o))
+            }
+            ArrowFunctionBody::ETSInstanceOfExpression(o) => {
+                Ok(Expression::ETSInstanceOfExpression(o))
+            }
+            ArrowFunctionBody::ETSNewClassInstanceExpression(o) => {
+                Ok(Expression::ETSNewClassInstanceExpression(o))
+            }
+            ArrowFunctionBody::ETSNewArrayInstanceExpression(o) => {
+                Ok(Expression::ETSNewArrayInstanceExpression(o))
+            }
+            ArrowFunctionBody::ETSNewMultiDimArrayInstanceExpression(o) => {
+                Ok(Expression::ETSNewMultiDimArrayInstanceExpression(o))
+            }
+            ArrowFunctionBody::ComputedMemberExpression(o) => {
+                Ok(Expression::ComputedMemberExpression(o))
+            }
+            ArrowFunctionBody::StaticMemberExpression(o) => {
+                Ok(Expression::StaticMemberExpression(o))
+            }
+            ArrowFunctionBody::PrivateFieldExpression(o) => {
+                Ok(Expression::PrivateFieldExpression(o))
+            }
+            _ => Err(()),
+        }
+    }
+}
+
+impl<'a> From<Expression<'a>> for ArrowFunctionBody<'a> {
+    /// Convert an [`Expression`] to an [`ArrowFunctionBody`].
+    #[inline]
+    fn from(value: Expression<'a>) -> Self {
+        // Compiler should implement this as zero-cost transmute as discriminants
+        // for `child` and `parent` are aligned
+        match value {
+            Expression::BooleanLiteral(o) => ArrowFunctionBody::BooleanLiteral(o),
+            Expression::NullLiteral(o) => ArrowFunctionBody::NullLiteral(o),
+            Expression::NumericLiteral(o) => ArrowFunctionBody::NumericLiteral(o),
+            Expression::BigIntLiteral(o) => ArrowFunctionBody::BigIntLiteral(o),
+            Expression::RegExpLiteral(o) => ArrowFunctionBody::RegExpLiteral(o),
+            Expression::StringLiteral(o) => ArrowFunctionBody::StringLiteral(o),
+            Expression::TemplateLiteral(o) => ArrowFunctionBody::TemplateLiteral(o),
+            Expression::Identifier(o) => ArrowFunctionBody::Identifier(o),
+            Expression::Super(o) => ArrowFunctionBody::Super(o),
+            Expression::ArrayExpression(o) => ArrowFunctionBody::ArrayExpression(o),
+            Expression::ArrowFunctionExpression(o) => ArrowFunctionBody::ArrowFunctionExpression(o),
+            Expression::AssignmentExpression(o) => ArrowFunctionBody::AssignmentExpression(o),
+            Expression::AwaitExpression(o) => ArrowFunctionBody::AwaitExpression(o),
+            Expression::BinaryExpression(o) => ArrowFunctionBody::BinaryExpression(o),
+            Expression::CallExpression(o) => ArrowFunctionBody::CallExpression(o),
+            Expression::ChainExpression(o) => ArrowFunctionBody::ChainExpression(o),
+            Expression::ClassExpression(o) => ArrowFunctionBody::ClassExpression(o),
+            Expression::ConditionalExpression(o) => ArrowFunctionBody::ConditionalExpression(o),
+            Expression::FunctionExpression(o) => ArrowFunctionBody::FunctionExpression(o),
+            Expression::ImportExpression(o) => ArrowFunctionBody::ImportExpression(o),
+            Expression::LogicalExpression(o) => ArrowFunctionBody::LogicalExpression(o),
+            Expression::NewExpression(o) => ArrowFunctionBody::NewExpression(o),
+            Expression::ObjectExpression(o) => ArrowFunctionBody::ObjectExpression(o),
+            Expression::ParenthesizedExpression(o) => ArrowFunctionBody::ParenthesizedExpression(o),
+            Expression::SequenceExpression(o) => ArrowFunctionBody::SequenceExpression(o),
+            Expression::TaggedTemplateExpression(o) => {
+                ArrowFunctionBody::TaggedTemplateExpression(o)
+            }
+            Expression::ThisExpression(o) => ArrowFunctionBody::ThisExpression(o),
+            Expression::UnaryExpression(o) => ArrowFunctionBody::UnaryExpression(o),
+            Expression::UpdateExpression(o) => ArrowFunctionBody::UpdateExpression(o),
+            Expression::YieldExpression(o) => ArrowFunctionBody::YieldExpression(o),
+            Expression::PrivateInExpression(o) => ArrowFunctionBody::PrivateInExpression(o),
+            Expression::ImportMeta(o) => ArrowFunctionBody::ImportMeta(o),
+            Expression::NewTarget(o) => ArrowFunctionBody::NewTarget(o),
+            Expression::JSXElement(o) => ArrowFunctionBody::JSXElement(o),
+            Expression::JSXFragment(o) => ArrowFunctionBody::JSXFragment(o),
+            Expression::TSAsExpression(o) => ArrowFunctionBody::TSAsExpression(o),
+            Expression::TSSatisfiesExpression(o) => ArrowFunctionBody::TSSatisfiesExpression(o),
+            Expression::TSTypeAssertion(o) => ArrowFunctionBody::TSTypeAssertion(o),
+            Expression::TSNonNullExpression(o) => ArrowFunctionBody::TSNonNullExpression(o),
+            Expression::TSInstantiationExpression(o) => {
+                ArrowFunctionBody::TSInstantiationExpression(o)
+            }
+            Expression::V8IntrinsicExpression(o) => ArrowFunctionBody::V8IntrinsicExpression(o),
+            Expression::ArkUIComponentExpression(o) => {
+                ArrowFunctionBody::ArkUIComponentExpression(o)
+            }
+            Expression::LeadingDotExpression(o) => ArrowFunctionBody::LeadingDotExpression(o),
+            Expression::CharLiteral(o) => ArrowFunctionBody::CharLiteral(o),
+            Expression::ETSTrailingBlockExpression(o) => {
+                ArrowFunctionBody::ETSTrailingBlockExpression(o)
+            }
+            Expression::ETSInstanceOfExpression(o) => ArrowFunctionBody::ETSInstanceOfExpression(o),
+            Expression::ETSNewClassInstanceExpression(o) => {
+                ArrowFunctionBody::ETSNewClassInstanceExpression(o)
+            }
+            Expression::ETSNewArrayInstanceExpression(o) => {
+                ArrowFunctionBody::ETSNewArrayInstanceExpression(o)
+            }
+            Expression::ETSNewMultiDimArrayInstanceExpression(o) => {
+                ArrowFunctionBody::ETSNewMultiDimArrayInstanceExpression(o)
+            }
+            Expression::ComputedMemberExpression(o) => {
+                ArrowFunctionBody::ComputedMemberExpression(o)
+            }
+            Expression::StaticMemberExpression(o) => ArrowFunctionBody::StaticMemberExpression(o),
+            Expression::PrivateFieldExpression(o) => ArrowFunctionBody::PrivateFieldExpression(o),
+        }
+    }
+}
+
+impl<'a> ArrowFunctionBody<'a> {
+    /// Return if an [`ArrowFunctionBody`] is a [`MemberExpression`].
+    #[inline]
+    pub fn is_member_expression(&self) -> bool {
+        matches!(
+            self,
+            Self::ComputedMemberExpression(_)
+                | Self::StaticMemberExpression(_)
+                | Self::PrivateFieldExpression(_)
+        )
+    }
+
+    /// Convert an [`ArrowFunctionBody`] to a [`MemberExpression`].
+    ///
+    /// # Panics
+    /// Panics if not convertible.
+    #[inline]
+    pub fn into_member_expression(self) -> MemberExpression<'a> {
+        MemberExpression::try_from(self).unwrap()
+    }
+
+    /// Convert an [`&ArrowFunctionBody`] to a [`&MemberExpression`].
+    ///
+    /// [`&ArrowFunctionBody`]: ArrowFunctionBody
+    /// [`&MemberExpression`]: MemberExpression
+    #[inline]
+    pub fn as_member_expression(&self) -> Option<&MemberExpression<'a>> {
+        if self.is_member_expression() {
+            // SAFETY: Transmute is safe because discriminants + types are identical between
+            // `parent` and `child` for the shared variants
+            Some(unsafe { NonNull::from_ref(self).cast::<MemberExpression>().as_ref() })
+        } else {
+            None
+        }
+    }
+
+    /// Convert an [`&mut ArrowFunctionBody`] to a [`&mut MemberExpression`].
+    ///
+    /// [`&mut ArrowFunctionBody`]: ArrowFunctionBody
+    /// [`&mut MemberExpression`]: MemberExpression
+    #[inline]
+    pub fn as_member_expression_mut(&mut self) -> Option<&mut MemberExpression<'a>> {
+        if self.is_member_expression() {
+            // SAFETY: Transmute is safe because discriminants + types are identical between
+            // `parent` and `child` for the shared variants
+            Some(unsafe { NonNull::from_mut(self).cast::<MemberExpression>().as_mut() })
+        } else {
+            None
+        }
+    }
+
+    /// Convert an [`&ArrowFunctionBody`] to a [`&MemberExpression`].
+    ///
+    /// # Panics
+    /// Panics if not convertible.
+    ///
+    /// [`&ArrowFunctionBody`]: ArrowFunctionBody
+    /// [`&MemberExpression`]: MemberExpression
+    #[inline]
+    pub fn to_member_expression(&self) -> &MemberExpression<'a> {
+        self.as_member_expression().unwrap()
+    }
+
+    /// Convert an [`&mut ArrowFunctionBody`] to a [`&mut MemberExpression`].
+    ///
+    /// # Panics
+    /// Panics if not convertible.
+    ///
+    /// [`&mut ArrowFunctionBody`]: ArrowFunctionBody
+    /// [`&mut MemberExpression`]: MemberExpression
+    #[inline]
+    pub fn to_member_expression_mut(&mut self) -> &mut MemberExpression<'a> {
+        self.as_member_expression_mut().unwrap()
+    }
+}
+
+impl<'a> MemberExpression<'a> {
+    /// Convert a [`&MemberExpression`] to an [`&ArrowFunctionBody`].
+    ///
+    /// [`&MemberExpression`]: MemberExpression
+    /// [`&ArrowFunctionBody`]: ArrowFunctionBody
+    #[inline]
+    pub fn as_arrow_function_body(&self) -> &ArrowFunctionBody<'a> {
+        // SAFETY: Transmute is safe because discriminants + types are identical between
+        // `parent` and `child` for the shared variants
+        unsafe { NonNull::from_ref(self).cast::<ArrowFunctionBody>().as_ref() }
+    }
+}
+
+impl<'a> TryFrom<ArrowFunctionBody<'a>> for MemberExpression<'a> {
+    type Error = ();
+
+    /// Convert an [`ArrowFunctionBody`] to a [`MemberExpression`].
+    ///
+    /// # Errors
+    /// Returns `Err` if not convertible.
+    #[inline]
+    fn try_from(value: ArrowFunctionBody<'a>) -> Result<Self, Self::Error> {
+        // Compiler should implement this as a check of discriminant and then zero-cost transmute,
+        // as discriminants for `parent` and `child` are aligned
+        match value {
+            ArrowFunctionBody::ComputedMemberExpression(o) => {
+                Ok(MemberExpression::ComputedMemberExpression(o))
+            }
+            ArrowFunctionBody::StaticMemberExpression(o) => {
+                Ok(MemberExpression::StaticMemberExpression(o))
+            }
+            ArrowFunctionBody::PrivateFieldExpression(o) => {
+                Ok(MemberExpression::PrivateFieldExpression(o))
+            }
+            _ => Err(()),
+        }
+    }
+}
+
+impl<'a> From<MemberExpression<'a>> for ArrowFunctionBody<'a> {
+    /// Convert a [`MemberExpression`] to an [`ArrowFunctionBody`].
+    #[inline]
+    fn from(value: MemberExpression<'a>) -> Self {
+        // Compiler should implement this as zero-cost transmute as discriminants
+        // for `child` and `parent` are aligned
+        match value {
+            MemberExpression::ComputedMemberExpression(o) => {
+                ArrowFunctionBody::ComputedMemberExpression(o)
+            }
+            MemberExpression::StaticMemberExpression(o) => {
+                ArrowFunctionBody::StaticMemberExpression(o)
+            }
+            MemberExpression::PrivateFieldExpression(o) => {
+                ArrowFunctionBody::PrivateFieldExpression(o)
             }
         }
     }
@@ -5483,7 +5943,8 @@ macro_rules! match_declaration {
             | $ty::TSTypeAliasDeclaration(_)
             | $ty::TSInterfaceDeclaration(_)
             | $ty::TSEnumDeclaration(_)
-            | $ty::TSModuleDeclaration(_)
+            | $ty::TSExternalModuleDeclaration(_)
+            | $ty::TSNamespaceDeclaration(_)
             | $ty::TSGlobalDeclaration(_)
             | $ty::TSImportEqualsDeclaration(_)
             | $ty::StructStatement(_)
@@ -5501,7 +5962,9 @@ macro_rules! match_module_declaration {
             | $ty::LazyImportDeclaration(_)
             | $ty::ExportAllDeclaration(_)
             | $ty::ExportDefaultDeclaration(_)
+            | $ty::ExportDeclaration(_)
             | $ty::ExportNamedDeclaration(_)
+            | $ty::ExportFromDeclaration(_)
             | $ty::TSExportAssignment(_)
             | $ty::TSNamespaceExportDeclaration(_)
     };
