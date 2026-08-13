@@ -92,7 +92,70 @@ pub enum LanguageVariant {
     Jsx = 1,
     /// For sources using ArkUI (ETS files)
     Arkui = 2,
+    /// For sources using the static ETS language implemented by `ets2panda`, including its
+    /// ArkTS/ArkUI 1.2 UI DSL.
+    ///
+    /// Static ETS shares the `.ets` extension with ArkUI/ArkTS 1.1, so this
+    /// variant is only selected explicitly and is never inferred from a path.
+    EtsStatic = 3,
 }
+
+/// Language modes that cannot be inferred from a file extension and must be
+/// selected explicitly by a tool or API caller.
+///
+/// Static ETS intentionally lives here instead of in [`FileExtension`]: it
+/// shares `.ets` with ArkUI/ArkTS 1.1, and changing extension inference would
+/// silently change existing users' parser behavior.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ExplicitLanguage {
+    /// Static ETS / ArkTS 1.2 as implemented by `es2panda`.
+    EtsStatic,
+}
+
+impl ExplicitLanguage {
+    /// Canonical command-line/API spelling.
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::EtsStatic => "ets-static",
+        }
+    }
+
+    /// Source type selected by this explicit language mode.
+    pub const fn source_type(self) -> SourceType {
+        match self {
+            Self::EtsStatic => SourceType::ets_static(),
+        }
+    }
+}
+
+impl Display for ExplicitLanguage {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl FromStr for ExplicitLanguage {
+    type Err = UnknownExplicitLanguage;
+
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        match value {
+            "ets-static" => Ok(Self::EtsStatic),
+            _ => Err(UnknownExplicitLanguage(value.to_string())),
+        }
+    }
+}
+
+/// Error returned when an explicitly selected language mode is unknown.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UnknownExplicitLanguage(String);
+
+impl Display for UnknownExplicitLanguage {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Unknown language '{}'. Supported explicit languages: ets-static.", self.0)
+    }
+}
+
+impl Error for UnknownExplicitLanguage {}
 
 impl Default for SourceType {
     #[inline]
@@ -395,6 +458,31 @@ impl SourceType {
         }
     }
 
+    /// Creates a [`SourceType`] representing an explicitly selected static ETS file.
+    ///
+    /// Static ETS / ArkTS 1.2 and legacy ArkUI both use the `.ets` extension. Consequently,
+    /// [`SourceType::from_path`] continues to return [`SourceType::ets`] for
+    /// `.ets` paths; callers must opt in to this mode explicitly.
+    ///
+    /// ## Example
+    /// ```
+    /// # use oxc_span::SourceType;
+    ///
+    /// let ets_static = SourceType::ets_static();
+    /// assert!(ets_static.is_typescript());
+    /// assert!(ets_static.is_module());
+    /// assert!(ets_static.is_ets_static());
+    /// assert!(!ets_static.is_arkui());
+    /// ```
+    pub const fn ets_static() -> Self {
+        Self {
+            language: Language::TypeScript,
+            module_kind: ModuleKind::Module,
+            variant: LanguageVariant::EtsStatic,
+            extension: Some(FileExtension::Ets),
+        }
+    }
+
     /// Creates a [`SourceType`] representing a [`TypeScript definition`] file.
     ///
     /// ## Example
@@ -477,6 +565,16 @@ impl SourceType {
     /// Returns `true` if this source type is using ArkUI (ETS files).
     pub fn is_arkui(self) -> bool {
         self.variant == LanguageVariant::Arkui
+    }
+
+    /// Returns `true` if static ETS syntax was selected explicitly.
+    pub fn is_ets_static(self) -> bool {
+        self.variant == LanguageVariant::EtsStatic
+    }
+
+    /// Returns `true` for either ArkUI/ArkTS 1.1 or static ETS sources.
+    pub fn is_ets(self) -> bool {
+        matches!(self.variant, LanguageVariant::Arkui | LanguageVariant::EtsStatic)
     }
 
     /// Does this source type implicitly use strict mode semantics?
@@ -611,6 +709,21 @@ impl SourceType {
         self
     }
 
+    /// Mark this [`SourceType`] as using static ETS if `yes` is `true`.
+    ///
+    /// This is an explicit opt-in. Inferring a source type from an `.ets` path
+    /// always remains on the ArkUI/ArkTS 1.1 path.
+    #[must_use]
+    pub const fn with_ets_static(mut self, yes: bool) -> Self {
+        if yes {
+            self.language = Language::TypeScript;
+            self.module_kind = ModuleKind::Module;
+            self.variant = LanguageVariant::EtsStatic;
+            self.extension = Some(FileExtension::Ets);
+        }
+        self
+    }
+
     /// Converts a file [`Path`] to [`SourceType`].
     ///
     /// ## Examples
@@ -721,7 +834,22 @@ impl Error for UnknownExtension {}
 
 #[cfg(test)]
 mod tests {
-    use super::{FileExtension, SourceType};
+    use super::{ExplicitLanguage, FileExtension, SourceType};
+
+    #[test]
+    fn test_explicit_language() {
+        let language = "ets-static".parse::<ExplicitLanguage>().unwrap();
+        assert_eq!(language, ExplicitLanguage::EtsStatic);
+        assert_eq!(language.as_str(), "ets-static");
+        assert_eq!(language.to_string(), "ets-static");
+        assert!(language.source_type().is_ets_static());
+
+        let error = "ets".parse::<ExplicitLanguage>().unwrap_err();
+        assert_eq!(
+            error.to_string(),
+            "Unknown language 'ets'. Supported explicit languages: ets-static."
+        );
+    }
 
     #[test]
     fn test_ts_from_path() {
@@ -854,6 +982,18 @@ mod tests {
         assert!(ets.is_strict());
 
         assert_eq!(SourceType::ets(), ets);
+
+        // `.ets` remains ArkUI/ArkTS 1.1 unless static ETS is requested explicitly.
+        assert!(!ets.is_ets_static());
+        assert!(ets.is_ets());
+
+        let ets_static = SourceType::ets_static();
+        assert!(ets_static.is_typescript());
+        assert!(ets_static.is_module());
+        assert!(ets_static.is_ets_static());
+        assert!(ets_static.is_ets());
+        assert!(!ets_static.is_arkui());
+        assert_eq!(ets_static.extension(), Some(FileExtension::Ets));
     }
 }
 

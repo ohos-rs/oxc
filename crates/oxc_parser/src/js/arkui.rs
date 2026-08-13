@@ -8,9 +8,11 @@
 use oxc_allocator::{ArenaBox as Box, ArenaVec as Vec};
 use oxc_ast::ast::*;
 use oxc_span::{GetSpan, Span};
+use oxc_str::Ident;
 
 use crate::{
-    Context, ParserConfig as Config, ParserImpl, StatementContext, diagnostics,
+    ArkTsOptions, Context, EtsStaticArkUiOptions, ParserConfig as Config, ParserImpl,
+    StatementContext, diagnostics,
     lexer::Kind,
     modifiers::{ModifierKind, ModifierKinds, Modifiers},
 };
@@ -18,16 +20,121 @@ use crate::{
 use super::FunctionKind;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
-pub(crate) enum ArkUIArgumentContext {
+pub enum ArkUIArgumentContext {
     None,
     SkipFirst,
     All,
 }
 
+#[derive(Clone, Copy)]
+enum ArkUiDslOptions<'a> {
+    Legacy(&'a ArkTsOptions),
+    EtsStatic(&'a EtsStaticArkUiOptions),
+}
+
+impl ArkUiDslOptions<'_> {
+    fn has_component(self, name: &str) -> bool {
+        match self {
+            Self::Legacy(options) => options.components.iter().any(|component| component == name),
+            Self::EtsStatic(options) => {
+                options.components.iter().any(|component| component == name)
+            }
+        }
+    }
+
+    fn has_render_method(self, name: &str) -> bool {
+        match self {
+            Self::Legacy(options) => options.render_methods.iter().any(|method| method == name),
+            Self::EtsStatic(options) => options.render_methods.iter().any(|method| method == name),
+        }
+    }
+
+    fn has_render_decorator(self, name: &str) -> bool {
+        match self {
+            Self::Legacy(options) => {
+                options.render_decorators.iter().any(|decorator| decorator == name)
+            }
+            Self::EtsStatic(options) => {
+                options.render_decorators.iter().any(|decorator| decorator == name)
+            }
+        }
+    }
+
+    fn has_styles_decorator(self, name: &str) -> bool {
+        match self {
+            Self::Legacy(options) => options.styles_decorator.as_deref() == Some(name),
+            Self::EtsStatic(options) => options.styles_decorator.as_deref() == Some(name),
+        }
+    }
+
+    fn has_extend_decorator(self, name: &str) -> bool {
+        match self {
+            Self::Legacy(options) => {
+                options.extend_decorators.iter().any(|decorator| decorator == name)
+            }
+            Self::EtsStatic(options) => {
+                options.extend_decorators.iter().any(|decorator| decorator == name)
+            }
+        }
+    }
+
+    fn has_parameter_ui_callback(self, name: &str) -> bool {
+        match self {
+            Self::Legacy(options) => {
+                options.parameter_ui_callbacks.iter().any(|callback| callback == name)
+            }
+            Self::EtsStatic(options) => {
+                options.parameter_ui_callbacks.iter().any(|callback| callback == name)
+            }
+        }
+    }
+
+    fn has_attribute_ui_callback(self, component: &str, attribute: &str) -> bool {
+        match self {
+            Self::Legacy(options) => options.attribute_ui_callbacks.iter().any(|callback| {
+                callback.component == component
+                    && callback.attributes.iter().any(|name| name == attribute)
+            }),
+            Self::EtsStatic(options) => options.attribute_ui_callbacks.iter().any(|callback| {
+                callback.component == component
+                    && callback.attributes.iter().any(|name| name == attribute)
+            }),
+        }
+    }
+
+    fn annotations(self) -> bool {
+        match self {
+            Self::Legacy(options) => options.annotations,
+            Self::EtsStatic(options) => options.annotations,
+        }
+    }
+}
+
 impl<'a, C: Config> ParserImpl<'a, C> {
+    /// Both ETS dialects have an ArkUI DSL, but they enter it through different grammar paths.
+    ///
+    /// Legacy ArkUI uses its historic implicit `struct build()` behavior. Static ArkTS only enters
+    /// the same AST representation from an explicitly annotated ArkUI 1.2 component or Builder
+    /// context. Keeping that distinction here prevents static ETS trailing blocks from being
+    /// reinterpreted as legacy ArkUI syntax.
+    pub(crate) fn supports_arkui_dsl(&self) -> bool {
+        self.source_type.is_arkui() || self.source_type.is_ets_static()
+    }
+
+    fn arkui_dsl_options(&self) -> Option<ArkUiDslOptions<'_>> {
+        if self.source_type.is_arkui() {
+            self.arkui_options.legacy.as_ref().map(ArkUiDslOptions::Legacy)
+        } else if self.source_type.is_ets_static() {
+            self.arkui_options.ets_static.as_ref().map(ArkUiDslOptions::EtsStatic)
+        } else {
+            None
+        }
+    }
+
     pub(crate) fn at_arkts_annotation_declaration(&mut self) -> bool {
-        self.source_type.is_arkui()
-            && self.arkts_options.as_ref().is_none_or(|options| options.annotations)
+        (self.source_type.is_ets_static()
+            || (self.source_type.is_arkui()
+                && self.arkui_dsl_options().is_none_or(ArkUiDslOptions::annotations)))
             && self.at(Kind::At)
             && self.lexer.peek_token().kind() == Kind::Interface
     }
@@ -38,8 +145,23 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
     pub(crate) fn is_builtin_arkui_component(&self, expression: &Expression<'a>) -> bool {
         let Expression::Identifier(identifier) = expression else { return false };
-        if let Some(options) = &self.arkts_options {
-            return options.components.iter().any(|name| name == identifier.name.as_str());
+        if self.source_type.is_ets_static()
+            && !self.is_ets_static_arkui_callback(expression)
+            && self.state.ets_static_arkui_component_names.contains(&identifier.name)
+        {
+            return true;
+        }
+        if let Some(options) = self.arkui_dsl_options() {
+            return options.has_component(identifier.name.as_str());
+        }
+        if self.source_type.is_ets_static() {
+            if self.is_ets_static_arkui_callback(expression) {
+                return false;
+            }
+            // Static ArkUI components, including project-local components imported from another
+            // source file, follow the PascalCase naming rule. This avoids maintaining a stale
+            // duplicate of the rapidly changing SDK component list in the parser.
+            return identifier.name.as_bytes().first().is_some_and(u8::is_ascii_uppercase);
         }
         matches!(
             identifier.name.as_str(),
@@ -149,6 +271,14 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         )
     }
 
+    fn is_ets_static_arkui_callback(&self, expression: &Expression<'a>) -> bool {
+        self.source_type.is_ets_static()
+            && matches!(
+                Self::arkui_call_root_identifier(expression),
+                Some("ForEach" | "LazyForEach" | "Repeat")
+            )
+    }
+
     pub(crate) fn in_arkui_dsl_context<T>(&mut self, f: impl FnOnce(&mut Self) -> T) -> T {
         self.state.arkui_dsl_depth += 1;
         let result = f(self);
@@ -176,11 +306,28 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         result
     }
 
+    fn in_ets_static_arkui_component_scope<T>(&mut self, f: impl FnOnce(&mut Self) -> T) -> T {
+        debug_assert!(self.source_type.is_ets_static());
+        self.state.ets_static_arkui_component_scope_depth += 1;
+        let result = f(self);
+        self.state.ets_static_arkui_component_scope_depth -= 1;
+        result
+    }
+
+    fn is_in_ets_static_arkui_component_scope(&self) -> bool {
+        self.state.ets_static_arkui_component_scope_depth > 0
+    }
+
     pub(crate) fn is_arkui_render_method(&self, name: &str) -> bool {
-        self.arkts_options.as_ref().map_or_else(
+        self.arkui_dsl_options().map_or_else(
             || matches!(name, "build" | "pageTransition"),
-            |options| options.render_methods.iter().any(|method| method == name),
+            |options| options.has_render_method(name),
         )
+    }
+
+    pub(crate) fn is_arkui_render_method_in_current_scope(&self, name: &str) -> bool {
+        self.is_arkui_render_method(name)
+            && (self.source_type.is_arkui() || self.is_in_ets_static_arkui_component_scope())
     }
 
     pub(crate) fn decorators_enable_arkui_dsl(&self, decorators: &[Decorator<'a>]) -> bool {
@@ -189,23 +336,18 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
     fn is_arkui_dsl_decorator(&self, expression: &Expression<'a>) -> bool {
         match expression {
-            Expression::Identifier(ident) => self.arkts_options.as_ref().map_or_else(
+            Expression::Identifier(ident) => self.arkui_dsl_options().map_or_else(
                 || matches!(ident.name.as_str(), "Builder" | "LocalBuilder" | "Styles"),
                 |options| {
-                    options.render_decorators.iter().any(|name| name == ident.name.as_str())
-                        || options
-                            .styles_decorator
-                            .as_deref()
-                            .is_some_and(|name| name == ident.name.as_str())
+                    options.has_render_decorator(ident.name.as_str())
+                        || options.has_styles_decorator(ident.name.as_str())
                 },
             ),
             Expression::CallExpression(call) => {
                 let Expression::Identifier(ident) = &call.callee else { return false };
-                self.arkts_options.as_ref().map_or_else(
+                self.arkui_dsl_options().map_or_else(
                     || matches!(ident.name.as_str(), "Extend" | "AnimatableExtend"),
-                    |options| {
-                        options.extend_decorators.iter().any(|name| name == ident.name.as_str())
-                    },
+                    |options| options.has_extend_decorator(ident.name.as_str()),
                 )
             }
             _ => false,
@@ -217,14 +359,9 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         expression: &Expression<'a>,
     ) -> ArkUIArgumentContext {
         if let Expression::Identifier(identifier) = expression {
-            let is_parameter_callback = self.arkts_options.as_ref().map_or_else(
+            let is_parameter_callback = self.arkui_dsl_options().map_or_else(
                 || matches!(identifier.name.as_str(), "ForEach" | "LazyForEach"),
-                |options| {
-                    options
-                        .parameter_ui_callbacks
-                        .iter()
-                        .any(|name| name == identifier.name.as_str())
-                },
+                |options| options.has_parameter_ui_callback(identifier.name.as_str()),
             );
             if is_parameter_callback {
                 return ArkUIArgumentContext::SkipFirst;
@@ -237,14 +374,9 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         let attribute = member.property.name.as_str();
         let component = Self::arkui_call_root_identifier(&member.object);
         let Some(component) = component else { return ArkUIArgumentContext::None };
-        let is_attribute_callback = self.arkts_options.as_ref().map_or_else(
+        let is_attribute_callback = self.arkui_dsl_options().map_or_else(
             || component == "Repeat" && matches!(attribute, "each" | "template"),
-            |options| {
-                options.attribute_ui_callbacks.iter().any(|callback| {
-                    callback.component == component
-                        && callback.attributes.iter().any(|name| name == attribute)
-                })
-            },
+            |options| options.has_attribute_ui_callback(component, attribute),
         );
         if is_attribute_callback { ArkUIArgumentContext::All } else { ArkUIArgumentContext::None }
     }
@@ -258,6 +390,58 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                 Expression::ArkUIComponentExpression(component) => expression = &component.callee,
                 _ => return None,
             }
+        }
+    }
+
+    fn is_ets_static_arkui_component_declaration(&self, decorators: &[Decorator<'a>]) -> bool {
+        self.source_type.is_ets_static()
+            && decorators.iter().any(|decorator| {
+                let name = match &decorator.expression {
+                    Expression::Identifier(identifier) => Some(identifier.name.as_str()),
+                    Expression::CallExpression(call) => {
+                        let Expression::Identifier(identifier) = &call.callee else {
+                            return false;
+                        };
+                        Some(identifier.name.as_str())
+                    }
+                    _ => None,
+                };
+                matches!(name, Some("Component" | "ComponentV2" | "CustomDialog" | "Entry"))
+            })
+    }
+
+    pub(crate) fn register_ets_static_arkui_component_imports(
+        &mut self,
+        import: &ImportDeclaration<'a>,
+    ) {
+        if !self.source_type.is_ets_static()
+            || import.source.value.as_str() != "@ohos.arkui.component"
+        {
+            return;
+        }
+        let Some(specifiers) = &import.specifiers else { return };
+        for specifier in specifiers {
+            let local = match specifier {
+                ImportDeclarationSpecifier::ImportSpecifier(specifier)
+                    if specifier.import_kind == ImportOrExportKind::Value =>
+                {
+                    Some(specifier.local.name)
+                }
+                ImportDeclarationSpecifier::ImportDefaultSpecifier(specifier) => {
+                    Some(specifier.local.name)
+                }
+                ImportDeclarationSpecifier::ImportSpecifier(_)
+                | ImportDeclarationSpecifier::ImportNamespaceSpecifier(_) => None,
+            };
+            if let Some(local) = local {
+                self.state.ets_static_arkui_component_names.insert(local);
+            }
+        }
+    }
+
+    fn register_ets_static_arkui_component(&mut self, name: Ident<'a>) {
+        if self.source_type.is_ets_static() {
+            self.state.ets_static_arkui_component_names.insert(name);
         }
     }
 
@@ -280,6 +464,9 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         modifiers: &Modifiers,
         decorators: Vec<'a, Decorator<'a>>,
     ) -> Statement<'a> {
+        if self.source_type.is_ets_static() && !self.state.ets_in_declaration_scope {
+            self.error(diagnostics::ets_nested_declaration("Struct", Span::empty(start_span)));
+        }
         let decl = self.parse_struct_declaration(start_span, modifiers, decorators);
         if stmt_ctx.is_single_statement() {
             self.error(diagnostics::class_declaration(Span::new(
@@ -310,6 +497,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         } else {
             self.unexpected::<BindingIdentifier<'a>>()
         };
+        self.register_ets_type_name(id.name);
 
         let type_parameters = if self.is_ts { self.parse_ts_type_parameters() } else { None };
         let (extends, implements) = self.parse_heritage_clause(Self::parse_class_extends_clause);
@@ -329,7 +517,16 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                 self.error(diagnostics::classes_can_only_extend_single_class(span));
             }
         }
-        let body = self.parse_struct_body();
+        let is_ets_static_arkui_component =
+            self.is_ets_static_arkui_component_declaration(decorators.as_slice());
+        if is_ets_static_arkui_component {
+            self.register_ets_static_arkui_component(id.name);
+        }
+        let body = if is_ets_static_arkui_component {
+            self.in_ets_static_arkui_component_scope(Self::parse_struct_body)
+        } else {
+            self.parse_struct_body()
+        };
 
         self.verify_modifiers(
             modifiers,
@@ -343,7 +540,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         let r#abstract = modifiers.contains(ModifierKind::Abstract);
         let declare = modifiers.contains(ModifierKind::Declare);
 
-        StructStatement::boxed(
+        let mut strukt = StructStatement::boxed(
             span,
             decorators,
             id,
@@ -355,7 +552,13 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             r#abstract,
             declare,
             self,
-        )
+        );
+        if self.source_type.is_ets_static() {
+            strukt.r#final = modifiers.contains(ModifierKind::Final);
+            strukt.native = modifiers.contains(ModifierKind::Native);
+            strukt.r#static = modifiers.contains(ModifierKind::Static);
+        }
+        strukt
     }
 
     /// Parse an annotation statement
@@ -419,6 +622,19 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         } else {
             self.unexpected::<BindingIdentifier<'a>>()
         };
+
+        self.register_ets_type_name(id.name);
+        if self.source_type.is_ets_static() {
+            self.module_record_builder.register_ets_annotation(id.name.into());
+            for modifier in modifiers.iter() {
+                if matches!(
+                    modifier.kind,
+                    ModifierKind::Public | ModifierKind::Private | ModifierKind::Protected
+                ) {
+                    self.error(diagnostics::ets_annotation_access_modifier(modifier.span()));
+                }
+            }
+        }
 
         let body = self.parse_annotation_body();
 
@@ -494,6 +710,11 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         let initializer = self
             .eat(Kind::Eq)
             .then(|| self.context(Context::In, Context::Yield | Context::Await, Self::parse_expr));
+        if self.source_type.is_ets_static()
+            && let Some(initializer) = &initializer
+        {
+            self.check_ets_annotation_value(initializer);
+        }
 
         // Semicolon is optional in annotation bodies
         let _ = self.eat(Kind::Semicolon);
@@ -547,6 +768,15 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             /* permit_const_as_modifier */ true,
             /* stop_on_start_of_class_static_block */ true,
         );
+
+        if self.source_type.is_ets_static() && self.at(Kind::Overload) {
+            return StructElement::ETSOverloadDeclaration(self.parse_ets_overload_declaration(
+                span,
+                decorators,
+                &modifiers,
+                ETSOverloadDeclarationKind::StructMethod,
+            ));
+        }
 
         if self.at(Kind::Static) && self.lexer.peek_token().kind() == Kind::LCurly {
             for decorator in decorators {
@@ -711,28 +941,35 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         modifiers: &Modifiers,
         decorators: Vec<'a, Decorator<'a>>,
     ) -> Box<'a, MethodDefinition<'a>> {
-        let is_arkui_dsl_method = self.source_type.is_arkui()
+        let is_arkui_dsl_method = self.supports_arkui_dsl()
             && ((!computed
-                && name
-                    .static_name()
-                    .is_some_and(|name| self.is_arkui_render_method(name.as_ref())))
+                && name.static_name().is_some_and(|name| {
+                    self.is_arkui_render_method_in_current_scope(name.as_ref())
+                }))
                 || self.decorators_enable_arkui_dsl(decorators.as_slice()));
-        let value = if is_arkui_dsl_method {
-            self.next_function_in_arkui_dsl(|p| {
-                p.parse_method(
-                    modifiers.contains(ModifierKind::Async),
-                    generator,
-                    FunctionKind::ClassMethod,
-                )
-            })
-        } else {
-            self.parse_method(
-                modifiers.contains(ModifierKind::Async),
-                generator,
-                FunctionKind::ClassMethod,
-            )
-        };
-        MethodDefinition::boxed(
+        let mut value =
+            self.with_ets_this_return_type(!modifiers.contains(ModifierKind::Static), |p| {
+                if is_arkui_dsl_method {
+                    p.next_function_in_arkui_dsl(|p| {
+                        p.parse_method(
+                            modifiers.contains(ModifierKind::Async),
+                            generator,
+                            FunctionKind::ClassMethod,
+                        )
+                    })
+                } else {
+                    p.parse_method(
+                        modifiers.contains(ModifierKind::Async),
+                        generator,
+                        FunctionKind::ClassMethod,
+                    )
+                }
+            });
+        if self.source_type.is_ets_static() {
+            value.r#final = modifiers.contains(ModifierKind::Final);
+            value.native = modifiers.contains(ModifierKind::Native);
+        }
+        let mut method = MethodDefinition::boxed(
             self.end_span(span),
             r#type,
             decorators,
@@ -745,7 +982,12 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             optional,
             modifiers.accessibility(),
             self,
-        )
+        );
+        if self.source_type.is_ets_static() {
+            method.r#final = modifiers.contains(ModifierKind::Final);
+            method.native = modifiers.contains(ModifierKind::Native);
+        }
+        method
     }
 
     /// Parse property declaration for struct (similar to class)
@@ -810,12 +1052,19 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         decorators: Vec<'a, Decorator<'a>>,
     ) -> Box<'a, MethodDefinition<'a>> {
         let (name, computed) = self.parse_property_name();
-        let value = self.parse_method(
-            modifiers.contains(ModifierKind::Async),
-            false,
-            FunctionKind::ClassMethod,
-        );
-        let method_definition = MethodDefinition::boxed(
+        let mut value =
+            self.with_ets_this_return_type(!modifiers.contains(ModifierKind::Static), |p| {
+                p.parse_method(
+                    modifiers.contains(ModifierKind::Async),
+                    false,
+                    FunctionKind::ClassMethod,
+                )
+            });
+        if self.source_type.is_ets_static() {
+            value.r#final = modifiers.contains(ModifierKind::Final);
+            value.native = modifiers.contains(ModifierKind::Native);
+        }
+        let mut method_definition = MethodDefinition::boxed(
             self.end_span(span),
             r#type,
             decorators,
@@ -829,6 +1078,10 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             modifiers.accessibility(),
             self,
         );
+        if self.source_type.is_ets_static() {
+            method_definition.r#final = modifiers.contains(ModifierKind::Final);
+            method_definition.native = modifiers.contains(ModifierKind::Native);
+        }
         match kind {
             MethodDefinitionKind::Get => self.check_getter(&method_definition.value),
             MethodDefinitionKind::Set => self.check_setter(&method_definition.value),

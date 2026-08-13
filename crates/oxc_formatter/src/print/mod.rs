@@ -116,6 +116,108 @@ pub trait FormatWrite<'ast, T = ()> {
     }
 }
 
+impl<'a> FormatWrite<'a> for AstNode<'a, CharLiteral<'a>> {
+    fn write(&self, f: &mut JsFormatter<'_, 'a>) {
+        // Like numeric literals, keep the parser-validated token spelling. In
+        // particular this preserves the distinction between an escaped UTF-16
+        // code unit and the corresponding source character.
+        write!(f, text_without_whitespace(f.source_text().text_for(self)));
+    }
+}
+
+impl<'a> FormatWrite<'a> for AstNode<'a, ETSPackageDeclaration<'a>> {
+    fn write(&self, f: &mut JsFormatter<'_, 'a>) {
+        write!(f, ["package", space()]);
+        let mut names = self.name().iter();
+        if let Some(first) = names.next() {
+            write!(f, first);
+            for name in names {
+                write!(f, [".", name]);
+            }
+        }
+        write!(f, OptionalSemicolon);
+    }
+}
+
+impl<'a> FormatWrite<'a> for AstNode<'a, ETSInstanceOfExpression<'a>> {
+    fn write(&self, f: &mut JsFormatter<'_, 'a>) {
+        write!(f, group(&format_args!(self.left(), space(), "instanceof", space(), self.right())));
+    }
+}
+
+impl<'a> FormatWrite<'a> for AstNode<'a, ETSNewClassInstanceExpression<'a>> {
+    fn write(&self, f: &mut JsFormatter<'_, 'a>) {
+        write!(f, ["new", space(), self.type_annotation()]);
+        if self.has_arguments() {
+            write!(f, self.arguments());
+        }
+    }
+}
+
+impl<'a> FormatWrite<'a> for AstNode<'a, ETSNewArrayInstanceExpression<'a>> {
+    fn write(&self, f: &mut JsFormatter<'_, 'a>) {
+        write!(f, ["new", space(), self.type_annotation(), "[", self.dimension(), "]"]);
+    }
+}
+
+impl<'a> FormatWrite<'a> for AstNode<'a, ETSNewMultiDimArrayInstanceExpression<'a>> {
+    fn write(&self, f: &mut JsFormatter<'_, 'a>) {
+        write!(f, ["new", space(), self.type_annotation()]);
+        for dimension in self.dimensions() {
+            write!(f, ["[", dimension, "]"]);
+        }
+    }
+}
+
+impl<'a> FormatWrite<'a> for AstNode<'a, ETSTrailingBlockExpression<'a>> {
+    fn write(&self, f: &mut JsFormatter<'_, 'a>) {
+        write!(f, [self.call(), space(), self.block()]);
+    }
+}
+
+impl<'a> FormatWrite<'a> for AstNode<'a, ETSOverloadDeclaration<'a>> {
+    fn write(&self, f: &mut JsFormatter<'_, 'a>) {
+        if !self.decorators.is_empty() {
+            write!(f, self.decorators());
+        }
+        if self.declare() {
+            write!(f, ["declare", space()]);
+        }
+        if let Some(accessibility) = self.accessibility() {
+            write!(f, [accessibility.as_str(), space()]);
+        }
+        if self.r#abstract() {
+            write!(f, ["abstract", space()]);
+        }
+        if self.r#static() {
+            write!(f, ["static", space()]);
+        }
+        if self.r#final() {
+            write!(f, ["final", space()]);
+        }
+        if self.native() {
+            write!(f, ["native", space()]);
+        }
+
+        let overloads = format_with(|f| {
+            let separator = format_with(|f| write!(f, [",", soft_line_break_or_space()]));
+            f.join_with(&separator).entries(self.overloads().iter());
+        });
+        write!(
+            f,
+            group(&format_args!(
+                "overload",
+                space(),
+                self.key(),
+                space(),
+                "{",
+                soft_block_indent_with_maybe_space(&overloads, true),
+                "}"
+            ))
+        );
+    }
+}
+
 impl<'a> FormatWrite<'a> for AstNode<'a, IdentifierName<'a>> {
     fn write(&self, f: &mut JsFormatter<'_, 'a>) {
         let text = text_without_whitespace(self.name().as_str());
@@ -209,7 +311,7 @@ impl<'a> FormatWrite<'a> for AstNode<'a, ObjectProperty<'a>> {
         }
 
         let is_accessor = match &self.kind() {
-            PropertyKind::Init => false,
+            PropertyKind::Init | PropertyKind::EtsEquals => false,
             PropertyKind::Get => {
                 write!(f, ["get", space()]);
                 true
@@ -268,7 +370,7 @@ impl<'a> FormatWrite<'a> for AstNode<'a, ObjectProperty<'a>> {
 fn is_arkui_leading_dot_expression<'a>(expr: &AstNode<'a, Expression<'a>>) -> bool {
     match expr.as_ast_nodes() {
         AstNodes::LeadingDotExpression(_) => true,
-        AstNodes::CallExpression(call) => is_arkui_leading_dot_expression(&call.callee()),
+        AstNodes::CallExpression(call) => is_arkui_leading_dot_expression(call.callee()),
         AstNodes::StaticMemberExpression(member) => {
             is_arkui_leading_dot_expression(member.object())
         }
@@ -282,7 +384,7 @@ impl<'a> FormatWrite<'a> for AstNode<'a, LeadingDotExpression<'a>> {
             f,
             [group(&format_args!(
                 soft_line_break_or_space(),
-                self.optional().then_some("?.").unwrap_or("."),
+                if self.optional() { "?." } else { "." },
                 self.expression()
             ))]
         );
@@ -1381,13 +1483,33 @@ impl<'a> FormatWrite<'a> for AstNode<'a, RegExpLiteral<'a>> {
 
 impl<'a> FormatWrite<'a> for AstNode<'a, TSEnumDeclaration<'a>> {
     fn write(&self, f: &mut JsFormatter<'_, 'a>) {
+        if !f.context().source_type().is_ets_static() {
+            if self.declare() {
+                write!(f, ["declare", space()]);
+            }
+            if self.r#const() {
+                write!(f, ["const", space()]);
+            }
+            write!(f, ["enum", space(), self.id(), space(), "{", self.body(), "}"]);
+            return;
+        }
+
+        if self.decorators.is_some() {
+            write!(f, self.decorators());
+        }
         if self.declare() {
             write!(f, ["declare", space()]);
         }
         if self.r#const() {
             write!(f, ["const", space()]);
         }
-        write!(f, ["enum", space(), self.id(), space(), "{", self.body(), "}"]);
+        write!(f, ["enum", space(), self.id()]);
+        if self.underlying_type.is_some()
+            && let Some(underlying_type) = self.underlying_type()
+        {
+            write!(f, [":", space(), underlying_type]);
+        }
+        write!(f, [space(), "{", self.body(), "}"]);
     }
 }
 
@@ -1692,6 +1814,9 @@ impl<'a> FormatWrite<'a> for AstNode<'a, TSTypeParameterDeclaration<'a>> {
 
 impl<'a> FormatWrite<'a> for AstNode<'a, TSTypeAliasDeclaration<'a>> {
     fn write(&self, f: &mut JsFormatter<'_, 'a>) {
+        if self.decorators.is_some() {
+            write!(f, self.decorators());
+        }
         let content = AssignmentLike::TSTypeAliasDeclaration(self);
         write!(
             f,
@@ -1706,6 +1831,9 @@ impl<'a> FormatWrite<'a> for AstNode<'a, TSTypeAliasDeclaration<'a>> {
 
 impl<'a> FormatWrite<'a> for AstNode<'a, TSInterfaceDeclaration<'a>> {
     fn write(&self, f: &mut JsFormatter<'_, 'a>) {
+        if self.decorators.is_some() {
+            write!(f, self.decorators());
+        }
         let id = self.id();
         let type_parameters = self.type_parameters();
         let extends = self.extends();
@@ -1870,6 +1998,14 @@ impl<'a> Format<'a, JsFormatContext<'a>> for FormatTSSignature<'a, '_> {
         }
 
         write!(f, [&self.signature]);
+
+        if matches!(
+            self.signature.as_ref(),
+            TSSignature::MethodDefinition(method) if method.value.body.is_some()
+        ) || matches!(self.signature.as_ref(), TSSignature::ETSOverloadDeclaration(_))
+        {
+            return;
+        }
 
         match f.options().semicolons {
             Semicolons::Always => {
@@ -2204,10 +2340,31 @@ impl<'a> FormatWrite<'a> for AstNode<'a, StructStatement<'a>> {
             write!(f, ["declare", space()]);
         }
 
+        if self.r#abstract() {
+            write!(f, ["abstract", space()]);
+        }
+        if self.r#static() {
+            write!(f, ["static", space()]);
+        }
+        if self.r#final() {
+            write!(f, ["final", space()]);
+        }
+        if self.native() {
+            write!(f, ["native", space()]);
+        }
+
         write!(f, ["struct", space(), id]);
 
         if let Some(type_parameters) = type_parameters {
             write!(f, type_parameters);
+        }
+
+        if let Some(super_class) = self.super_class() {
+            write!(f, [space(), "extends", space(), super_class, self.super_type_arguments()]);
+        }
+
+        if !self.implements().is_empty() {
+            write!(f, [space(), "implements", space(), self.implements()]);
         }
 
         write!(f, [space(), body]);
@@ -2304,8 +2461,10 @@ impl<'a, 'b> FormatStructElementWithSemicolon<'a, 'b> {
         let Some(next_element) = next_element else { return false };
         matches!(
             (element.as_ref(), next_element.as_ref()),
-            (StructElement::PropertyDefinition(_), StructElement::PropertyDefinition(_))
-                | (StructElement::PropertyDefinition(_), StructElement::MethodDefinition(_))
+            (
+                StructElement::PropertyDefinition(_),
+                StructElement::PropertyDefinition(_) | StructElement::MethodDefinition(_),
+            )
         )
     }
 }
@@ -2323,11 +2482,8 @@ impl<'a> Format<'a, JsFormatContext<'a>> for FormatStructElementWithSemicolon<'a
         if needs_semi {
             write!(f, [FormatNodeWithoutTrailingComments(self.element), ";"]);
             // Print trailing comments after the semicolon
-            match self.element.as_ast_nodes() {
-                AstNodes::PropertyDefinition(prop) => {
-                    prop.format_trailing_comments(f);
-                }
-                _ => {}
+            if let AstNodes::PropertyDefinition(prop) = self.element.as_ast_nodes() {
+                prop.format_trailing_comments(f);
             }
         } else {
             self.element.fmt(f);
@@ -2496,28 +2652,20 @@ fn should_break_arkui_chain(
     }
 
     // Check if any chain expression has complex arguments (arrow functions, function expressions, etc.)
-    for chain_expr in chain_expressions.iter() {
+    for chain_expr in chain_expressions {
         // Check the arguments directly from the CallExpression
         let arguments = &chain_expr.arguments;
-        if arguments.len() > 0 {
+        if !arguments.is_empty() {
             // Check if any argument is an arrow function or function expression
-            for arg in arguments.iter() {
-                match arg {
-                    Argument::ArrowFunctionExpression(_) | Argument::FunctionExpression(_) => {
-                        return true;
-                    }
-                    _ => {
-                        // Check if the argument is a complex expression (object, array, etc.)
-                        if let Some(expr) = arg.as_expression() {
-                            match expr {
-                                Expression::ObjectExpression(_)
-                                | Expression::ArrayExpression(_) => {
-                                    return true;
-                                }
-                                _ => {}
-                            }
-                        }
-                    }
+            for arg in arguments {
+                if matches!(
+                    arg,
+                    Argument::ArrowFunctionExpression(_) | Argument::FunctionExpression(_)
+                ) || matches!(
+                    arg.as_expression(),
+                    Some(Expression::ObjectExpression(_) | Expression::ArrayExpression(_))
+                ) {
+                    return true;
                 }
             }
         }
@@ -2568,7 +2716,8 @@ fn find_arkui_children_block_span(
     let mut block_end: Option<u32> = None;
 
     for (i, byte) in search_range.bytes().enumerate() {
-        let pos = search_start + i as u32;
+        let offset = u32::try_from(i).ok()?;
+        let pos = search_start.checked_add(offset)?;
         match byte {
             b'{' if block_start.is_none() => {
                 // Found the opening brace - content starts after it
@@ -2581,7 +2730,6 @@ fn find_arkui_children_block_span(
             }
             b' ' | b'\t' | b'\n' | b'\r' | b')' if block_start.is_none() => {
                 // Skip whitespace and closing paren before finding `{`
-                continue;
             }
             _ if block_start.is_none() => {
                 // Some other character before `{` - not a children block
@@ -2589,7 +2737,6 @@ fn find_arkui_children_block_span(
             }
             _ => {
                 // Inside the block, continue looking for `}`
-                continue;
             }
         }
     }
@@ -2645,7 +2792,7 @@ impl<'a> FormatWrite<'a> for AstNode<'a, ArkUIComponentExpression<'a>> {
             // This should be after the children block or arguments
             let initial_prev_end = if has_children && !children.as_ref().is_empty() {
                 // After children block - find the end of last child
-                children.as_ref().last().map(|c| c.span().end).unwrap_or(self.span.start)
+                children.as_ref().last().map_or(self.span.start, |c| c.span().end)
             } else if has_children
                 && let Some(block_span) =
                     find_arkui_children_block_span(self.as_ref(), f.source_text().as_ref())
@@ -2690,7 +2837,7 @@ impl<'a> FormatWrite<'a> for AstNode<'a, ArkUIComponentExpression<'a>> {
                 // In single-line format, chain expressions should be directly connected (no space)
                 let format_chains_single_line = format_with(|f| {
                     let mut prev_end = initial_prev_end;
-                    for chain_expr_node in chain_refs.iter() {
+                    for chain_expr_node in &chain_refs {
                         write!(f, [FormatArkUIChainExpression::new(chain_expr_node, prev_end)]);
                         prev_end = chain_expr_node.span.end;
                     }
@@ -2743,7 +2890,7 @@ impl<'a> FormatWrite<'a> for AstNode<'a, ArkUIComponentExpression<'a>> {
 impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, ArenaVec<'a, ArkUIChild<'a>>> {
     fn fmt(&self, f: &mut JsFormatter<'_, 'a>) {
         let mut join = f.join_nodes_with_hardline();
-        for child in self.iter() {
+        for child in self {
             join.entry(child.span(), child);
         }
     }

@@ -306,7 +306,30 @@ impl Gen for Statement<'_> {
                 decl.print(p, ctx);
                 p.print_soft_newline();
             }
+            Self::ETSOverloadDeclaration(decl) => {
+                p.print_comments_at(decl.span.start);
+                p.print_indent();
+                decl.print(p, ctx);
+                p.print_soft_newline();
+            }
+            Self::ETSPackageDeclaration(decl) => decl.print(p, ctx),
         }
+    }
+}
+
+impl Gen for ETSPackageDeclaration<'_> {
+    fn r#gen(&self, p: &mut Codegen, ctx: Context) {
+        p.print_comments_at(self.span.start);
+        p.print_indent();
+        p.print_str("package");
+        p.print_soft_space();
+        for (index, part) in self.name.iter().enumerate() {
+            if index > 0 {
+                p.print_ascii_byte(b'.');
+            }
+            part.print(p, ctx);
+        }
+        p.print_semicolon_after_statement();
     }
 }
 
@@ -816,6 +839,9 @@ impl Gen for DebuggerStatement {
 impl Gen for VariableDeclaration<'_> {
     fn r#gen(&self, p: &mut Codegen, ctx: Context) {
         p.add_source_mapping(self.span);
+        if let Some(decorators) = &self.decorators {
+            p.print_decorators(decorators, ctx);
+        }
         p.print_space_before_identifier();
         if self.declare {
             p.print_str("declare ");
@@ -879,6 +905,12 @@ impl Gen for Function<'_> {
             p.add_source_mapping(self.span);
             if self.declare {
                 p.print_str("declare ");
+            }
+            if self.r#final {
+                p.print_str("final ");
+            }
+            if self.native {
+                p.print_str("native ");
             }
             if self.r#async {
                 p.print_str("async ");
@@ -1180,20 +1212,20 @@ impl Gen for ExportNamedDeclaration<'_> {
             } else {
                 false
             };
-        if has_function_decorators {
-            if let Some(Declaration::FunctionDeclaration(func)) = &self.declaration {
-                p.print_decorators(&func.decorators, ctx);
-            }
+        if has_function_decorators
+            && let Some(Declaration::FunctionDeclaration(func)) = &self.declaration
+        {
+            p.print_decorators(&func.decorators, ctx);
         }
         let has_arkui_class_decorators = p.is_arkui
             && matches!(
                 &self.declaration,
                 Some(Declaration::ClassDeclaration(class)) if !class.decorators.is_empty()
             );
-        if has_arkui_class_decorators {
-            if let Some(Declaration::ClassDeclaration(class)) = &self.declaration {
-                p.print_decorators(&class.decorators, ctx);
-            }
+        if has_arkui_class_decorators
+            && let Some(Declaration::ClassDeclaration(class)) = &self.declaration
+        {
+            p.print_decorators(&class.decorators, ctx);
         }
         let has_struct_decorators_before_export =
             if let Some(Declaration::StructStatement(struct_stmt)) = &self.declaration {
@@ -1202,13 +1234,16 @@ impl Gen for ExportNamedDeclaration<'_> {
             } else {
                 false
             };
-        if has_struct_decorators_before_export {
-            if let Some(Declaration::StructStatement(struct_stmt)) = &self.declaration {
-                p.print_decorators(&struct_stmt.decorators, ctx);
-            }
+        if has_struct_decorators_before_export
+            && let Some(Declaration::StructStatement(struct_stmt)) = &self.declaration
+        {
+            p.print_decorators(&struct_stmt.decorators, ctx);
         }
         p.add_source_mapping(self.span);
         p.print_str("export");
+        if self.ets_default {
+            p.print_str(" default");
+        }
         if let Some(decl) = &self.declaration {
             // A decorated class starts with `@`, so no hard space is needed after `export`.
             if matches!(decl, Declaration::ClassDeclaration(c) if !c.decorators.is_empty()) {
@@ -1241,6 +1276,7 @@ impl Gen for ExportNamedDeclaration<'_> {
                 Declaration::TSImportEqualsDeclaration(decl) => decl.print(p, ctx),
                 Declaration::StructStatement(decl) => decl.print(p, ctx),
                 Declaration::AnnotationDeclaration(decl) => decl.print(p, ctx),
+                Declaration::ETSOverloadDeclaration(decl) => decl.print(p, ctx),
             }
             // Restore the flags
             p.skip_function_decorators = old_skip_function_decorators;
@@ -1258,6 +1294,13 @@ impl Gen for ExportNamedDeclaration<'_> {
                 p.needs_semicolon = false;
             }
         } else {
+            if self.ets_single {
+                p.print_hard_space();
+                debug_assert_eq!(self.specifiers.len(), 1);
+                self.specifiers[0].print(p, ctx);
+                p.print_semicolon_after_statement();
+                return;
+            }
             if self.export_kind.is_type() {
                 p.print_hard_space();
                 p.print_str("type");
@@ -1404,10 +1447,10 @@ impl Gen for ExportDefaultDeclaration<'_> {
                 ExportDefaultDeclarationKind::ClassDeclaration(class)
                     if !class.decorators.is_empty()
             );
-        if has_arkui_class_decorators {
-            if let ExportDefaultDeclarationKind::ClassDeclaration(class) = &self.declaration {
-                p.print_decorators(&class.decorators, ctx);
-            }
+        if has_arkui_class_decorators
+            && let ExportDefaultDeclarationKind::ClassDeclaration(class) = &self.declaration
+        {
+            p.print_decorators(&class.decorators, ctx);
         }
         let has_struct_decorators_before_export =
             if let ExportDefaultDeclarationKind::StructStatement(struct_stmt) = &self.declaration {
@@ -1416,10 +1459,10 @@ impl Gen for ExportDefaultDeclaration<'_> {
             } else {
                 false
             };
-        if has_struct_decorators_before_export {
-            if let ExportDefaultDeclarationKind::StructStatement(struct_stmt) = &self.declaration {
-                p.print_decorators(&struct_stmt.decorators, ctx);
-            }
+        if has_struct_decorators_before_export
+            && let ExportDefaultDeclarationKind::StructStatement(struct_stmt) = &self.declaration
+        {
+            p.print_decorators(&struct_stmt.decorators, ctx);
         }
         p.add_source_mapping(self.span);
         p.print_str("export default");
@@ -1474,6 +1517,14 @@ impl GenExpr for Expression<'_> {
             // Literals (very common)
             Self::NumericLiteral(lit) => lit.print_expr(p, precedence, ctx),
             Self::StringLiteral(lit) => lit.print(p, ctx),
+            Self::CharLiteral(lit) => lit.print(p, ctx),
+            Self::ETSTrailingBlockExpression(expr) => expr.print_expr(p, precedence, ctx),
+            Self::ETSInstanceOfExpression(expr) => expr.print_expr(p, precedence, ctx),
+            Self::ETSNewClassInstanceExpression(expr) => expr.print_expr(p, precedence, ctx),
+            Self::ETSNewArrayInstanceExpression(expr) => expr.print_expr(p, precedence, ctx),
+            Self::ETSNewMultiDimArrayInstanceExpression(expr) => {
+                expr.print_expr(p, precedence, ctx);
+            }
             Self::BooleanLiteral(lit) => lit.print(p, ctx),
             Self::NullLiteral(lit) => lit.print(p, ctx),
             // Binary and logical operations (common)
@@ -1693,7 +1744,42 @@ impl Gen for RegExpLiteral<'_> {
 
 impl Gen for StringLiteral<'_> {
     fn r#gen(&self, p: &mut Codegen, _ctx: Context) {
-        p.print_string_literal(self, true);
+        p.print_string_literal(self, !p.in_ets_annotation_value);
+    }
+}
+
+impl Gen for CharLiteral<'_> {
+    fn r#gen(&self, p: &mut Codegen, _ctx: Context) {
+        p.add_source_mapping(self.span);
+        if let Some(raw) = &self.raw {
+            p.print_str(raw.as_str());
+            return;
+        }
+
+        p.print_str("c'");
+        match self.value {
+            0x27 => p.print_str("\\'"),
+            0x5C => p.print_str("\\\\"),
+            0x0A => p.print_str("\\n"),
+            0x0D => p.print_str("\\r"),
+            0x09 => p.print_str("\\t"),
+            value => {
+                if let Some(ch) = char::from_u32(value)
+                    && !ch.is_control()
+                {
+                    let mut bytes = [0; 4];
+                    p.print_str(ch.encode_utf8(&mut bytes));
+                } else {
+                    const HEX: &[u8; 16] = b"0123456789ABCDEF";
+                    p.print_str("\\u");
+                    p.print_ascii_byte(HEX[((value >> 12) & 0xF) as usize]);
+                    p.print_ascii_byte(HEX[((value >> 8) & 0xF) as usize]);
+                    p.print_ascii_byte(HEX[((value >> 4) & 0xF) as usize]);
+                    p.print_ascii_byte(HEX[(value & 0xF) as usize]);
+                }
+            }
+        }
+        p.print_ascii_byte(b'\'');
     }
 }
 
@@ -1811,6 +1897,73 @@ impl GenExpr for CallExpression<'_> {
                 && !cjs_module_lexer::try_print_require_call(p, self)
             {
                 p.print_arguments(self.span, &self.arguments, ctx);
+            }
+        });
+    }
+}
+
+impl GenExpr for ETSTrailingBlockExpression<'_> {
+    fn gen_expr(&self, p: &mut Codegen, precedence: Precedence, ctx: Context) {
+        let wrap = precedence >= Precedence::New || ctx.intersects(Context::FORBID_CALL);
+        p.wrap(wrap, |p| {
+            self.call.print_expr(p, Precedence::Lowest, Context::empty());
+            p.print_soft_space();
+            self.block.print(p, ctx);
+        });
+    }
+}
+
+impl GenExpr for ETSInstanceOfExpression<'_> {
+    fn gen_expr(&self, p: &mut Codegen, precedence: Precedence, ctx: Context) {
+        p.wrap(precedence >= Precedence::Compare, |p| {
+            self.left.print_expr(p, Precedence::Compare, ctx);
+            p.print_space_before_identifier();
+            p.print_str("instanceof");
+            p.print_hard_space();
+            self.right.print(p, Context::empty());
+        });
+    }
+}
+
+impl GenExpr for ETSNewClassInstanceExpression<'_> {
+    fn gen_expr(&self, p: &mut Codegen, precedence: Precedence, ctx: Context) {
+        p.wrap(precedence >= Precedence::New, |p| {
+            p.print_space_before_identifier();
+            p.print_str("new");
+            p.print_hard_space();
+            self.type_annotation.print(p, ctx);
+            if self.has_arguments {
+                p.print_arguments(self.span, &self.arguments, ctx);
+            }
+        });
+    }
+}
+
+impl GenExpr for ETSNewArrayInstanceExpression<'_> {
+    fn gen_expr(&self, p: &mut Codegen, precedence: Precedence, ctx: Context) {
+        p.wrap(precedence >= Precedence::New, |p| {
+            p.print_space_before_identifier();
+            p.print_str("new");
+            p.print_hard_space();
+            self.type_annotation.print(p, ctx);
+            p.print_ascii_byte(b'[');
+            self.dimension.print_expr(p, Precedence::Comma, Context::empty());
+            p.print_ascii_byte(b']');
+        });
+    }
+}
+
+impl GenExpr for ETSNewMultiDimArrayInstanceExpression<'_> {
+    fn gen_expr(&self, p: &mut Codegen, precedence: Precedence, ctx: Context) {
+        p.wrap(precedence >= Precedence::New, |p| {
+            p.print_space_before_identifier();
+            p.print_str("new");
+            p.print_hard_space();
+            self.type_annotation.print(p, ctx);
+            for dimension in &self.dimensions {
+                p.print_ascii_byte(b'[');
+                dimension.print_expr(p, Precedence::Comma, Context::empty());
+                p.print_ascii_byte(b']');
             }
         });
     }
@@ -1939,7 +2092,7 @@ impl Gen for ObjectProperty<'_> {
         if let Expression::FunctionExpression(func) = &self.value {
             p.add_source_mapping(self.span);
             let is_accessor = match &self.kind {
-                PropertyKind::Init => false,
+                PropertyKind::Init | PropertyKind::EtsEquals => false,
                 PropertyKind::Get => {
                     p.print_str("get");
                     p.print_soft_space();
@@ -1991,6 +2144,24 @@ impl Gen for ObjectProperty<'_> {
                 }
                 return;
             }
+        }
+
+        if self.kind == PropertyKind::EtsEquals {
+            if self.computed {
+                p.print_ascii_byte(b'[');
+            }
+            self.key.print(p, ctx);
+            if self.computed {
+                p.print_ascii_byte(b']');
+            }
+            p.print_soft_space();
+            p.print_ascii_byte(b'=');
+            p.print_soft_space();
+            let was_in_annotation_value = p.in_ets_annotation_value;
+            p.in_ets_annotation_value = true;
+            self.value.print_expr(p, Precedence::Comma, Context::empty());
+            p.in_ets_annotation_value = was_in_annotation_value;
+            return;
         }
 
         let mut shorthand = false;
@@ -2743,6 +2914,15 @@ impl Gen for Class<'_> {
             if self.r#abstract {
                 p.print_str("abstract ");
             }
+            if self.r#static {
+                p.print_str("static ");
+            }
+            if self.r#final {
+                p.print_str("final ");
+            }
+            if self.native {
+                p.print_str("native ");
+            }
             p.print_str("class");
             if let Some(id) = &self.id {
                 p.print_hard_space();
@@ -2807,6 +2987,14 @@ impl Gen for ClassElement<'_> {
                 p.print_semicolon_after_statement();
             }
             Self::TSIndexSignature(elem) => {
+                elem.print(p, ctx);
+                p.print_semicolon_after_statement();
+            }
+            Self::ETSOverloadDeclaration(elem) => {
+                elem.print(p, ctx);
+                p.print_soft_newline();
+            }
+            Self::TSCallSignatureDeclaration(elem) => {
                 elem.print(p, ctx);
                 p.print_semicolon_after_statement();
             }
@@ -2899,6 +3087,15 @@ impl Gen for StructStatement<'_> {
         if self.r#abstract {
             p.print_str("abstract ");
         }
+        if self.r#static {
+            p.print_str("static ");
+        }
+        if self.r#final {
+            p.print_str("final ");
+        }
+        if self.native {
+            p.print_str("native ");
+        }
         p.print_str("struct");
         p.print_hard_space();
         self.id.print(p, ctx);
@@ -2959,7 +3156,10 @@ impl Gen for AnnotationBody<'_> {
                 p.print_semicolon_if_needed();
                 p.print_leading_comments(item.span().start);
                 p.print_indent();
+                let was_in_annotation_value = p.in_ets_annotation_value;
+                p.in_ets_annotation_value = true;
                 item.print(p, ctx);
+                p.in_ets_annotation_value = was_in_annotation_value;
             }
         });
     }
@@ -2996,7 +3196,67 @@ impl Gen for StructElement<'_> {
                 elem.print(p, ctx);
                 p.print_semicolon_after_statement();
             }
+            Self::ETSOverloadDeclaration(elem) => {
+                elem.print(p, ctx);
+                p.print_soft_newline();
+            }
         }
+    }
+}
+
+impl Gen for ETSOverloadDeclaration<'_> {
+    fn r#gen(&self, p: &mut Codegen, ctx: Context) {
+        p.add_source_mapping(self.span);
+        p.print_decorators(&self.decorators, ctx);
+        if self.declare {
+            p.print_space_before_identifier();
+            p.print_str("declare");
+            p.print_soft_space();
+        }
+        if let Some(accessibility) = self.accessibility {
+            p.print_space_before_identifier();
+            p.print_str(accessibility.as_str());
+            p.print_soft_space();
+        }
+        if self.r#abstract {
+            p.print_space_before_identifier();
+            p.print_str("abstract");
+            p.print_soft_space();
+        }
+        if self.r#static {
+            p.print_space_before_identifier();
+            p.print_str("static");
+            p.print_soft_space();
+        }
+        if self.r#final {
+            p.print_space_before_identifier();
+            p.print_str("final");
+            p.print_soft_space();
+        }
+        if self.native {
+            p.print_space_before_identifier();
+            p.print_str("native");
+            p.print_soft_space();
+        }
+        p.print_space_before_identifier();
+        p.print_str("overload");
+        p.print_hard_space();
+        self.key.print(p, ctx);
+        p.print_soft_space();
+        p.print_ascii_byte(b'{');
+        if !self.overloads.is_empty() {
+            p.print_soft_space();
+            for (index, overload) in self.overloads.iter().enumerate() {
+                if index != 0 {
+                    p.print_comma();
+                    p.print_soft_space();
+                }
+                overload.print_expr(p, Precedence::Comma, ctx);
+            }
+            p.print_soft_space();
+        }
+        p.print_ascii_byte(b'}');
+        p.print_semicolon();
     }
 }
 
@@ -3256,6 +3516,16 @@ impl Gen for MethodDefinition<'_> {
             p.print_str("override");
             p.print_soft_space();
         }
+        if self.r#final {
+            p.print_space_before_identifier();
+            p.print_str("final");
+            p.print_soft_space();
+        }
+        if self.native {
+            p.print_space_before_identifier();
+            p.print_str("native");
+            p.print_soft_space();
+        }
         match &self.kind {
             MethodDefinitionKind::Constructor | MethodDefinitionKind::Method => {}
             MethodDefinitionKind::Get => {
@@ -3279,6 +3549,13 @@ impl Gen for MethodDefinition<'_> {
         }
         if self.computed {
             p.print_ascii_byte(b'[');
+        }
+        if self.kind == MethodDefinitionKind::Constructor
+            && !self.key.is_specific_static_name("constructor")
+        {
+            p.print_space_before_identifier();
+            p.print_str("constructor");
+            p.print_hard_space();
         }
         self.key.print(p, ctx);
         if self.computed {
@@ -4012,7 +4289,12 @@ impl Gen for TSTypeLiteral<'_> {
                 p.print_leading_comments(item.span().start);
                 p.print_indent();
                 item.print(p, ctx);
-                p.print_semicolon();
+                if !matches!(
+                    item,
+                    TSSignature::MethodDefinition(_) | TSSignature::ETSOverloadDeclaration(_)
+                ) {
+                    p.print_semicolon();
+                }
                 p.print_soft_newline();
             }
         });
@@ -4119,24 +4401,7 @@ impl Gen for TSSignature<'_> {
             Self::TSIndexSignature(signature) => signature.print(p, ctx),
             Self::TSPropertySignature(signature) => signature.r#gen(p, ctx),
             Self::TSCallSignatureDeclaration(signature) => {
-                if let Some(type_parameters) = signature.type_parameters.as_ref() {
-                    type_parameters.print(p, ctx);
-                }
-                p.print_ascii_byte(b'(');
-                if let Some(this_param) = &signature.this_param {
-                    this_param.print(p, ctx);
-                    if !signature.params.is_empty() || signature.params.rest.is_some() {
-                        p.print_ascii_byte(b',');
-                        p.print_soft_space();
-                    }
-                }
-                signature.params.print(p, ctx);
-                p.print_ascii_byte(b')');
-                if let Some(return_type) = &signature.return_type {
-                    p.print_colon();
-                    p.print_soft_space();
-                    return_type.print(p, ctx);
-                }
+                signature.print(p, ctx);
             }
             Self::TSConstructSignatureDeclaration(signature) => {
                 p.print_str("new ");
@@ -4200,6 +4465,32 @@ impl Gen for TSSignature<'_> {
                     return_type.print(p, ctx);
                 }
             }
+            Self::MethodDefinition(method) => method.print(p, ctx),
+            Self::PropertyDefinition(property) => property.print(p, ctx),
+            Self::ETSOverloadDeclaration(overload) => overload.print(p, ctx),
+        }
+    }
+}
+
+impl Gen for TSCallSignatureDeclaration<'_> {
+    fn r#gen(&self, p: &mut Codegen, ctx: Context) {
+        if let Some(type_parameters) = self.type_parameters.as_ref() {
+            type_parameters.print(p, ctx);
+        }
+        p.print_ascii_byte(b'(');
+        if let Some(this_param) = &self.this_param {
+            this_param.print(p, ctx);
+            if !self.params.is_empty() || self.params.rest.is_some() {
+                p.print_ascii_byte(b',');
+                p.print_soft_space();
+            }
+        }
+        self.params.print(p, ctx);
+        p.print_ascii_byte(b')');
+        if let Some(return_type) = &self.return_type {
+            p.print_colon();
+            p.print_soft_space();
+            return_type.print(p, ctx);
         }
     }
 }
@@ -4468,6 +4759,10 @@ fn is_leftmost_intrinsic_reference(ty: &TSType) -> bool {
 
 impl Gen for TSTypeAliasDeclaration<'_> {
     fn r#gen(&self, p: &mut Codegen, ctx: Context) {
+        if let Some(decorators) = &self.decorators {
+            p.print_decorators(decorators, ctx);
+        }
+        p.print_space_before_identifier();
         if self.declare {
             p.print_str("declare ");
         }
@@ -4491,6 +4786,9 @@ impl Gen for TSTypeAliasDeclaration<'_> {
 
 impl Gen for TSInterfaceDeclaration<'_> {
     fn r#gen(&self, p: &mut Codegen, ctx: Context) {
+        if let Some(decorators) = &self.decorators {
+            p.print_decorators(decorators, ctx);
+        }
         p.print_space_before_identifier();
         if self.declare {
             p.print_str("declare ");
@@ -4513,7 +4811,12 @@ impl Gen for TSInterfaceDeclaration<'_> {
                 p.print_leading_comments(item.span().start);
                 p.print_indent();
                 item.print(p, ctx);
-                p.print_semicolon();
+                if !matches!(
+                    item,
+                    TSSignature::MethodDefinition(_) | TSSignature::ETSOverloadDeclaration(_)
+                ) {
+                    p.print_semicolon();
+                }
                 p.print_soft_newline();
             }
         });
@@ -4531,6 +4834,9 @@ impl Gen for TSInterfaceHeritage<'_> {
 
 impl Gen for TSEnumDeclaration<'_> {
     fn r#gen(&self, p: &mut Codegen, ctx: Context) {
+        if let Some(decorators) = &self.decorators {
+            p.print_decorators(decorators, ctx);
+        }
         p.print_space_before_identifier();
         if self.declare {
             p.print_str("declare ");
@@ -4540,6 +4846,11 @@ impl Gen for TSEnumDeclaration<'_> {
         }
         p.print_str("enum ");
         self.id.print(p, ctx);
+        if let Some(underlying_type) = &self.underlying_type {
+            p.print_colon();
+            p.print_soft_space();
+            underlying_type.print(p, ctx);
+        }
         p.print_soft_space();
         self.body.print(p, ctx);
     }

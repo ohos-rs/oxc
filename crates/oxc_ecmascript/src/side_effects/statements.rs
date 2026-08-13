@@ -20,7 +20,8 @@ impl<'a> MayHaveSideEffects<'a> for Statement<'a> {
             Statement::WhileStatement(while_stmt) => while_stmt.may_have_side_effects(ctx),
             Statement::BreakStatement(_)
             | Statement::ContinueStatement(_)
-            | Statement::EmptyStatement(_) => false,
+            | Statement::EmptyStatement(_)
+            | Statement::ETSPackageDeclaration(_) => false,
             match_declaration!(Statement) => self.to_declaration().may_have_side_effects(ctx),
             Statement::ForInStatement(_)
             | Statement::ForOfStatement(_)
@@ -88,7 +89,10 @@ impl<'a> MayHaveSideEffects<'a> for Declaration<'a> {
     fn may_have_side_effects(&self, ctx: &impl MayHaveSideEffectsContext<'a>) -> bool {
         match self {
             Declaration::VariableDeclaration(var_decl) => var_decl.may_have_side_effects(ctx),
-            Declaration::FunctionDeclaration(_) => false,
+            Declaration::FunctionDeclaration(_)
+            | Declaration::StructStatement(_)
+            | Declaration::AnnotationDeclaration(_)
+            | Declaration::ETSOverloadDeclaration(_) => false,
             Declaration::ClassDeclaration(class_decl) => class_decl.may_have_side_effects(ctx),
             Declaration::TSEnumDeclaration(_)
             | Declaration::TSImportEqualsDeclaration(_)
@@ -96,8 +100,6 @@ impl<'a> MayHaveSideEffects<'a> for Declaration<'a> {
             | Declaration::TSGlobalDeclaration(_)
             | Declaration::TSInterfaceDeclaration(_)
             | Declaration::TSTypeAliasDeclaration(_) => unreachable!(),
-            Declaration::StructStatement(_) => false, // Struct declarations don't have side effects
-            Declaration::AnnotationDeclaration(_) => false, // Annotation declarations don't have side effects
         }
     }
 }
