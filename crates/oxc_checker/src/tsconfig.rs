@@ -35,6 +35,8 @@ pub struct CompilerOptions {
     /// `isolatedDeclarations`. The checker forces this mode regardless; the
     /// flag is accepted for compatibility.
     pub isolated_declarations: Option<bool>,
+    /// `skipLibCheck`.
+    pub skip_lib_check: Option<bool>,
 }
 
 impl TsConfig {
@@ -58,6 +60,11 @@ impl TsConfig {
     /// Whether callers requested isolated-declaration diagnostics.
     pub fn isolated_declarations(&self) -> bool {
         self.compiler_options.isolated_declarations.unwrap_or(false)
+    }
+
+    /// Whether declaration-file diagnostics are skipped.
+    pub fn skip_lib_check(&self) -> bool {
+        self.compiler_options.skip_lib_check.unwrap_or(false)
     }
 
     /// Compute the root file set for the program.

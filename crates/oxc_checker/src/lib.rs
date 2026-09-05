@@ -63,8 +63,13 @@ pub struct CheckOptions {
     pub tsconfig_path: Option<PathBuf>,
     /// Additional package roots such as OpenHarmony `oh_modules` directories.
     pub module_paths: Vec<PathBuf>,
+    /// Resolver aliases derived from the owning build system's package graph.
+    pub aliases: Vec<(String, PathBuf)>,
     /// Whether `null` and `undefined` participate in strict relations.
     pub strict_null_checks: bool,
+    /// Skip diagnostics originating in declaration files, matching
+    /// TypeScript's `skipLibCheck` compiler option.
+    pub skip_lib_check: bool,
     /// Report diagnostics produced by the isolated-declaration surface pass.
     pub report_isolated_declaration_diagnostics: bool,
 }
@@ -80,12 +85,13 @@ pub fn check(options: CheckOptions) -> Result<CheckResult, String> {
             options.project_root.display()
         ));
     }
+    let skip_lib_check = options.skip_lib_check;
     let roots = options
         .root_files
         .into_iter()
         .map(|path| if path.is_absolute() { path } else { options.project_root.join(path) })
         .collect();
-    let resolver = make_resolver(options.tsconfig_path, &options.module_paths);
+    let resolver = make_resolver(options.tsconfig_path, &options.module_paths, &options.aliases);
     let loaded = loader::load(roots, &resolver, options.report_isolated_declaration_diagnostics);
     let env = link::link(loaded, options.strict_null_checks);
     let mut per_file = check::check_program(&env);
@@ -97,6 +103,9 @@ pub fn check(options: CheckOptions) -> Result<CheckResult, String> {
         .map(|(file, checked)| {
             let mut diagnostics = file.diagnostics;
             diagnostics.append(checked);
+            if skip_lib_check && is_declaration_file(&file.path) {
+                diagnostics.clear();
+            }
             diagnostics
                 .sort_by_key(|d| d.labels.first().map_or(0, oxc_diagnostics::LabeledSpan::offset));
             FileResult { path: file.path, source_text: file.source_text, diagnostics }
@@ -132,16 +141,39 @@ pub fn check_project(path: &Path) -> Result<CheckResult, String> {
         root_files: roots,
         tsconfig_path,
         module_paths: Vec::new(),
+        aliases: Vec::new(),
         strict_null_checks: config.strict_null_checks(),
+        skip_lib_check: config.skip_lib_check(),
         report_isolated_declaration_diagnostics: config.isolated_declarations(),
     })
 }
 
-fn make_resolver(tsconfig: Option<PathBuf>, module_paths: &[PathBuf]) -> oxc_resolver::Resolver {
+fn is_declaration_file(path: &Path) -> bool {
+    let name = path.file_name().and_then(|name| name.to_str()).unwrap_or_default();
+    name.ends_with(".d.ts")
+        || name.ends_with(".d.ets")
+        || name.ends_with(".d.mts")
+        || name.ends_with(".d.cts")
+}
+
+fn make_resolver(
+    tsconfig: Option<PathBuf>,
+    module_paths: &[PathBuf],
+    aliases: &[(String, PathBuf)],
+) -> oxc_resolver::Resolver {
     use oxc_resolver::{
         ResolveOptions, Resolver, TsconfigDiscovery, TsconfigOptions, TsconfigReferences,
     };
     Resolver::new(ResolveOptions {
+        alias: aliases
+            .iter()
+            .map(|(specifier, target)| {
+                (
+                    specifier.clone(),
+                    vec![oxc_resolver::AliasValue::Path(target.to_string_lossy().into_owned())],
+                )
+            })
+            .collect(),
         extensions: [
             ".ets", ".d.ets", ".ts", ".tsx", ".d.ts", ".mts", ".cts", ".d.mts", ".d.cts", ".js",
             ".mjs", ".cjs", ".json",

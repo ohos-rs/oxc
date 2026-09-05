@@ -28,7 +28,9 @@ const bad: string = 1;
         root_files: vec![source],
         tsconfig_path: None,
         module_paths: Vec::new(),
+        aliases: Vec::new(),
         strict_null_checks: false,
+        skip_lib_check: true,
         report_isolated_declaration_diagnostics: false,
     })
     .unwrap();
