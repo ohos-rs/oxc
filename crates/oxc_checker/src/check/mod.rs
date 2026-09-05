@@ -13,9 +13,9 @@ pub use relate::{Relation, relate};
 
 use oxc_allocator::Allocator;
 use oxc_ast::ast::{
-    BindingPattern, Declaration, ExportNamedDeclaration, Expression, Function, ImportDeclaration,
-    ImportDeclarationSpecifier, Program, ReturnStatement, Statement, TSType, VariableDeclaration,
-    VariableDeclarationKind,
+    BindingPattern, Declaration, ExportFromDeclaration, Expression, Function, ImportDeclaration,
+    ImportDeclarationSpecifier, Program, ReturnStatement, Statement, TSType, TSTypeName,
+    VariableDeclaration, VariableDeclarationKind,
 };
 use oxc_diagnostics::OxcDiagnostic;
 use oxc_parser::Parser;
@@ -175,7 +175,7 @@ fn check_file(env: &ProgramEnv, file_id: FileId) -> Vec<OxcDiagnostic> {
     let source_type = SourceType::from_path(&file.path).unwrap_or_else(|_| SourceType::ts());
     let allocator = Allocator::default();
     let parsed = Parser::new(&allocator, &file.source_text, source_type).parse();
-    if !parsed.errors.is_empty() {
+    if !parsed.diagnostics.is_empty() {
         // Pass A already recorded the parse errors.
         return Vec::new();
     }
@@ -211,7 +211,7 @@ impl FileChecker<'_> {
         for stmt in &program.body {
             match stmt {
                 Statement::ImportDeclaration(import) => self.bind_import(import),
-                Statement::ExportNamedDeclaration(export) => self.validate_export_from(export),
+                Statement::ExportFromDeclaration(export) => self.validate_export_from(export),
                 Statement::ExportAllDeclaration(export) => {
                     self.validate_specifier_resolves(
                         export.source.value.as_str(),
@@ -226,7 +226,7 @@ impl FileChecker<'_> {
         //    order. Forward references between them degrade to silence.
         for stmt in &program.body {
             let decl = match stmt {
-                Statement::ExportNamedDeclaration(export) => export.declaration.as_ref(),
+                Statement::ExportDeclaration(export) => Some(&export.declaration),
                 _ => stmt.as_declaration(),
             };
             match decl {
@@ -273,7 +273,7 @@ impl FileChecker<'_> {
                 Some(Declaration::TSInterfaceDeclaration(iface)) => {
                     // TS2314/TS2344 in `extends` clauses.
                     for heritage in &iface.extends {
-                        if let Expression::Identifier(base) = &heritage.expression {
+                        if let TSTypeName::IdentifierReference(base) = &heritage.type_name {
                             self.validate_reference(
                                 base.name.as_str(),
                                 heritage.type_arguments.as_deref(),
@@ -298,7 +298,7 @@ impl FileChecker<'_> {
                             let names: Vec<Box<str>> =
                                 params.iter().map(|p| p.name.clone()).collect();
                             let body = Lowerer::with_params(&mut self.view.sink, &resolver, names)
-                                .lower_interface(iface);
+                                .lower_interface(&iface);
                             let index = u32::try_from(self.local_generics.len()).unwrap();
                             self.local_generics.push(LocalGeneric {
                                 name: name.into(),
@@ -315,8 +315,8 @@ impl FileChecker<'_> {
                             });
                             TypeNameEntry::LocalGeneric(index)
                         } else {
-                            let ty =
-                                Lowerer::new(&mut self.view.sink, &resolver).lower_interface(iface);
+                            let ty = Lowerer::new(&mut self.view.sink, &resolver)
+                                .lower_interface(&iface);
                             TypeNameEntry::Inline(self.name_wrap(name, ty))
                         };
                         self.type_names.insert(name.into(), entry);
@@ -330,8 +330,8 @@ impl FileChecker<'_> {
         for stmt in &program.body {
             let func = match stmt {
                 Statement::FunctionDeclaration(func) => func,
-                Statement::ExportNamedDeclaration(export) => match &export.declaration {
-                    Some(Declaration::FunctionDeclaration(func)) => func,
+                Statement::ExportDeclaration(export) => match &export.declaration {
+                    Declaration::FunctionDeclaration(func) => func,
                     _ => continue,
                 },
                 _ => continue,
@@ -763,6 +763,15 @@ impl FileChecker<'_> {
     /// clause.
     fn check_class(&mut self, class: &oxc_ast::ast::Class<'_>) {
         use oxc_ast::ast::{ClassElement, TSTypeName};
+        for element in &class.body.body {
+            match element {
+                ClassElement::PropertyDefinition(property) => {
+                    self.check_property_definition(property);
+                }
+                ClassElement::MethodDefinition(method) => self.check_function(&method.value),
+                _ => {}
+            }
+        }
         let Some(id) = &class.id else { return };
         self.bind_class_or_enum(id.name.as_str());
         let Some(&symbol) = self.env.file(self.file_id).local_type_names.get(id.name.as_str())
@@ -857,6 +866,33 @@ impl FileChecker<'_> {
                 ));
             }
         }
+    }
+
+    /// Check ArkTS 1.1 component-struct members with the same assignment and
+    /// return contracts used for class members.
+    fn check_struct(&mut self, structure: &oxc_ast::ast::StructStatement<'_>) {
+        use oxc_ast::ast::StructElement;
+        self.bind_class_or_enum(structure.id.name.as_str());
+        for element in &structure.body.body {
+            match element {
+                StructElement::PropertyDefinition(property) => {
+                    self.check_property_definition(property);
+                }
+                StructElement::MethodDefinition(method) => self.check_function(&method.value),
+                _ => {}
+            }
+        }
+    }
+
+    fn check_property_definition(&mut self, property: &oxc_ast::ast::PropertyDefinition<'_>) {
+        let (Some(annotation), Some(value)) =
+            (property.type_annotation.as_ref(), property.value.as_ref())
+        else {
+            return;
+        };
+        let target = self.lower_ts_type(&annotation.type_annotation);
+        let source = self.infer(value);
+        self.check_assignable(Some(value), source, target, property.key.span(), Head::Assign);
     }
 
     fn bind_import(&mut self, import: &ImportDeclaration<'_>) {
@@ -960,10 +996,9 @@ impl FileChecker<'_> {
         self.type_names.insert(local.into(), TypeNameEntry::Opaque);
     }
 
-    fn validate_export_from(&mut self, export: &ExportNamedDeclaration<'_>) {
-        let Some(source) = &export.source else { return };
-        let specifier = source.value.as_str();
-        if !self.validate_specifier_resolves(specifier, source.span) {
+    fn validate_export_from(&mut self, export: &ExportFromDeclaration<'_>) {
+        let specifier = export.source.value.as_str();
+        if !self.validate_specifier_resolves(specifier, export.source.span) {
             return;
         }
         if let Some(ModuleResolution::File(file_id)) = self.resolution(specifier) {
@@ -989,16 +1024,18 @@ impl FileChecker<'_> {
             Statement::VariableDeclaration(var) => self.check_variable_declaration(var),
             Statement::FunctionDeclaration(func) => self.check_function(func),
             Statement::ClassDeclaration(class) => self.check_class(class),
+            Statement::StructStatement(structure) => self.check_struct(structure),
             Statement::TSEnumDeclaration(enum_decl) => {
                 self.bind_class_or_enum(enum_decl.id.name.as_str());
             }
-            Statement::ExportNamedDeclaration(export) => match &export.declaration {
-                Some(Declaration::VariableDeclaration(var)) => {
-                    self.check_variable_declaration(var);
+            Statement::ExportDeclaration(export) => match &export.declaration {
+                Declaration::VariableDeclaration(var) => {
+                    self.check_variable_declaration(&var);
                 }
-                Some(Declaration::FunctionDeclaration(func)) => self.check_function(func),
-                Some(Declaration::ClassDeclaration(class)) => self.check_class(class),
-                Some(Declaration::TSEnumDeclaration(enum_decl)) => {
+                Declaration::FunctionDeclaration(func) => self.check_function(&func),
+                Declaration::ClassDeclaration(class) => self.check_class(&class),
+                Declaration::StructStatement(structure) => self.check_struct(&structure),
+                Declaration::TSEnumDeclaration(enum_decl) => {
                     self.bind_class_or_enum(enum_decl.id.name.as_str());
                 }
                 _ => {}
@@ -1647,6 +1684,35 @@ impl FileChecker<'_> {
                 );
             }
         } else {
+            let saved_reliable = self.narrow_reliable;
+            self.narrow_reliable = true;
+            self.narrow_stack.push(FxHashMap::default());
+            self.walk_body(&body.statements, target);
+            self.narrow_stack.pop();
+            self.narrow_reliable = saved_reliable;
+        }
+        self.use_flow = saved_flow;
+    }
+
+    /// Check either OXC representation of an arrow body.
+    pub(super) fn check_arrow_return_body(
+        &mut self,
+        target: TypeId,
+        body: &oxc_ast::ast::ArrowFunctionBody<'_>,
+    ) {
+        let saved_flow = std::mem::take(&mut self.use_flow);
+        if let Some(expression) = body.as_expression() {
+            if !matches!(expression, Expression::Identifier(_)) {
+                let source = self.infer(expression);
+                self.check_assignable(
+                    Some(expression),
+                    source,
+                    target,
+                    expression.span(),
+                    Head::Assign,
+                );
+            }
+        } else if let oxc_ast::ast::ArrowFunctionBody::FunctionBody(body) = body {
             let saved_reliable = self.narrow_reliable;
             self.narrow_reliable = true;
             self.narrow_stack.push(FxHashMap::default());
@@ -2516,7 +2582,7 @@ fn statement_returns(stmt: &Statement<'_>) -> Returns {
 /// tsc prints resolved module paths without the extension.
 fn module_display_path(path: &std::path::Path) -> String {
     let s = path.to_string_lossy();
-    for ext in [".d.ts", ".d.mts", ".d.cts", ".ts", ".tsx", ".mts", ".cts"] {
+    for ext in [".d.ts", ".d.mts", ".d.cts", ".d.ets", ".ts", ".tsx", ".mts", ".cts", ".ets"] {
         if let Some(stripped) = s.strip_suffix(ext) {
             return stripped.to_string();
         }

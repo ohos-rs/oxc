@@ -37,10 +37,8 @@ fn main() {
         file_count += 1;
         error_count += file.diagnostics.len();
         // Paths print relative to the working directory, like tsc/oxlint.
-        let display_path = cwd
-            .as_ref()
-            .and_then(|cwd| file.path.strip_prefix(cwd).ok())
-            .unwrap_or(&file.path);
+        let display_path =
+            cwd.as_ref().and_then(|cwd| file.path.strip_prefix(cwd).ok()).unwrap_or(&file.path);
         let source =
             Arc::new(NamedSource::new(display_path.to_string_lossy(), file.source_text.clone()));
         let mut rendered = String::new();

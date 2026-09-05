@@ -60,7 +60,11 @@ pub struct LoadedFile {
 }
 
 /// Load the transitive program from `roots`, in parallel waves.
-pub fn load(roots: Vec<PathBuf>, resolver: &oxc_resolver::Resolver) -> Vec<LoadedFile> {
+pub fn load(
+    roots: Vec<PathBuf>,
+    resolver: &oxc_resolver::Resolver,
+    report_isolated_declaration_diagnostics: bool,
+) -> Vec<LoadedFile> {
     let mut seen: FxHashSet<PathBuf> = FxHashSet::default();
     let mut queue: Vec<PathBuf> = roots;
     let mut loaded: Vec<LoadedFile> = Vec::new();
@@ -71,8 +75,10 @@ pub fn load(roots: Vec<PathBuf>, resolver: &oxc_resolver::Resolver) -> Vec<Loade
         if batch.is_empty() {
             break;
         }
-        let results: Vec<LoadedFile> =
-            batch.par_iter().map(|path| load_file(path, resolver)).collect();
+        let results: Vec<LoadedFile> = batch
+            .par_iter()
+            .map(|path| load_file(path, resolver, report_isolated_declaration_diagnostics))
+            .collect();
         for file in &results {
             for resolution in file.resolutions.values() {
                 if let RawResolution::File(path) = resolution
@@ -89,7 +95,11 @@ pub fn load(roots: Vec<PathBuf>, resolver: &oxc_resolver::Resolver) -> Vec<Loade
 
 fn file_kind(path: &Path) -> FileKind {
     let s = path.to_string_lossy();
-    if s.ends_with(".d.ts") || s.ends_with(".d.mts") || s.ends_with(".d.cts") {
+    if s.ends_with(".d.ts")
+        || s.ends_with(".d.mts")
+        || s.ends_with(".d.cts")
+        || s.ends_with(".d.ets")
+    {
         FileKind::Dts
     } else {
         FileKind::Ts
@@ -99,10 +109,18 @@ fn file_kind(path: &Path) -> FileKind {
 /// Whether a resolved path is a TypeScript file that should join the program.
 fn joins_program(path: &Path) -> bool {
     let s = path.to_string_lossy();
-    s.ends_with(".ts") || s.ends_with(".tsx") || s.ends_with(".mts") || s.ends_with(".cts")
+    s.ends_with(".ts")
+        || s.ends_with(".tsx")
+        || s.ends_with(".mts")
+        || s.ends_with(".cts")
+        || s.ends_with(".ets")
 }
 
-fn load_file(path: &Path, resolver: &oxc_resolver::Resolver) -> LoadedFile {
+fn load_file(
+    path: &Path,
+    resolver: &oxc_resolver::Resolver,
+    report_isolated_declaration_diagnostics: bool,
+) -> LoadedFile {
     let kind = file_kind(path);
     let source_text = match std::fs::read_to_string(path) {
         Ok(text) => text,
@@ -126,7 +144,7 @@ fn load_file(path: &Path, resolver: &oxc_resolver::Resolver) -> LoadedFile {
     let allocator = Allocator::default();
     let parsed = Parser::new(&allocator, &source_text, source_type).parse();
 
-    let mut diagnostics: Vec<OxcDiagnostic> = parsed.errors;
+    let mut diagnostics: Vec<OxcDiagnostic> = parsed.diagnostics.into_iter().collect();
     let parse_failed = parsed.panicked || !diagnostics.is_empty();
 
     // Surface: a .d.ts file is already a surface; a .ts file goes through the
@@ -142,7 +160,9 @@ fn load_file(path: &Path, resolver: &oxc_resolver::Resolver) -> LoadedFile {
             IsolatedDeclarationsOptions { strip_internal: false },
         )
         .build(&parsed.program);
-        diagnostics.extend(id_ret.errors);
+        if report_isolated_declaration_diagnostics {
+            diagnostics.extend(id_ret.diagnostics);
+        }
         let mut surface = build_surface(&id_ret.program);
         // The declaration output drops unreferenced local declarations; the
         // checker still needs local enums as symbols.
@@ -160,10 +180,8 @@ fn load_file(path: &Path, resolver: &oxc_resolver::Resolver) -> LoadedFile {
                 Statement::ImportDeclaration(import) => {
                     specifiers.insert(import.source.value.as_str());
                 }
-                Statement::ExportNamedDeclaration(export) => {
-                    if let Some(source) = &export.source {
-                        specifiers.insert(source.value.as_str());
-                    }
+                Statement::ExportFromDeclaration(export) => {
+                    specifiers.insert(export.source.value.as_str());
                 }
                 Statement::ExportAllDeclaration(export) => {
                     specifiers.insert(export.source.value.as_str());

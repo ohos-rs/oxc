@@ -55,6 +55,11 @@ impl TsConfig {
         self.compiler_options.strict_null_checks.or(self.compiler_options.strict).unwrap_or(false)
     }
 
+    /// Whether callers requested isolated-declaration diagnostics.
+    pub fn isolated_declarations(&self) -> bool {
+        self.compiler_options.isolated_declarations.unwrap_or(false)
+    }
+
     /// Compute the root file set for the program.
     ///
     /// - `files` entries are taken verbatim.
@@ -117,7 +122,11 @@ impl TsConfig {
 /// Whether a path has an extension the checker accepts as a root file.
 pub fn is_checkable_ext(path: &Path) -> bool {
     let s = path.to_string_lossy();
-    s.ends_with(".ts") || s.ends_with(".tsx") || s.ends_with(".mts") || s.ends_with(".cts")
+    s.ends_with(".ts")
+        || s.ends_with(".tsx")
+        || s.ends_with(".mts")
+        || s.ends_with(".cts")
+        || s.ends_with(".ets")
 }
 
 /// Leading literal path segments of an include/exclude pattern

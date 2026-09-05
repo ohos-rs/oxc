@@ -291,7 +291,7 @@ impl FileChecker<'_> {
                 {
                     let target = self.lower_ts_type(&return_type.type_annotation);
                     let shadowed = self.bind_params(&arrow.params);
-                    self.check_return_body(target, &arrow.body, arrow.expression);
+                    self.check_arrow_return_body(target, &arrow.body);
                     self.unbind_params(shadowed);
                 }
                 ty

@@ -343,7 +343,10 @@ impl<'a, R: ResolveName> Lowerer<'a, R> {
                 // v0 models member-by-member.
                 TSSignature::TSIndexSignature(_)
                 | TSSignature::TSCallSignatureDeclaration(_)
-                | TSSignature::TSConstructSignatureDeclaration(_) => inexact = true,
+                | TSSignature::TSConstructSignatureDeclaration(_)
+                | TSSignature::MethodDefinition(_)
+                | TSSignature::PropertyDefinition(_)
+                | TSSignature::ETSOverloadDeclaration(_) => inexact = true,
             }
         }
         self.sink.push(Type::Object(ObjectShape { members: out.into_boxed_slice(), inexact }))

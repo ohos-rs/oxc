@@ -9,9 +9,9 @@
 
 use oxc_ast::ast::{
     BindingPattern, Class, Declaration, ExportDefaultDeclarationKind, Expression, Function,
-    ImportDeclarationSpecifier, Program, Statement, TSEnumDeclaration, TSInterfaceDeclaration,
-    TSModuleDeclaration, TSModuleDeclarationName, TSTypeAliasDeclaration, UnaryOperator,
-    VariableDeclarator,
+    ImportDeclarationSpecifier, Program, Statement, StructElement, StructStatement,
+    TSEnumDeclaration, TSInterfaceDeclaration, TSNamespaceDeclaration, TSTypeAliasDeclaration,
+    TSTypeName, UnaryOperator, VariableDeclarator,
 };
 use oxc_span::Span;
 use rustc_hash::FxHashMap;
@@ -180,10 +180,11 @@ enum DeclItem<'b, 'a> {
     Var(&'b VariableDeclarator<'a>),
     Func(&'b Function<'a>),
     Class(&'b Class<'a>),
+    Struct(&'b StructStatement<'a>),
     Alias(&'b TSTypeAliasDeclaration<'a>),
     Interface(&'b TSInterfaceDeclaration<'a>),
     Enum(&'b TSEnumDeclaration<'a>),
-    Namespace(#[expect(dead_code)] &'b TSModuleDeclaration<'a>),
+    Namespace(#[expect(dead_code)] &'b TSNamespaceDeclaration<'a>),
     /// `export default <expression>` — typed `any` in v0.
     ExpressionDefault,
 }
@@ -270,24 +271,30 @@ pub fn build_surface(program: &Program<'_>) -> FileSurface {
                     bindings,
                 });
             }
+            Statement::ExportDeclaration(export) => {
+                collect_declaration(
+                    &export.declaration,
+                    &mut works,
+                    &mut decl_names,
+                    &mut surface,
+                    true,
+                );
+            }
             Statement::ExportNamedDeclaration(export) => {
-                if let Some(decl) = &export.declaration {
-                    collect_declaration(decl, &mut works, &mut decl_names, &mut surface, true);
-                } else if let Some(source) = &export.source {
-                    for spec in &export.specifiers {
-                        surface.reexports.push(SurfaceReexport::Named {
-                            specifier: source.value.as_str().into(),
-                            imported: spec.local.name().as_str().into(),
-                            exported: spec.exported.name().as_str().into(),
-                        });
-                    }
-                } else {
-                    for spec in &export.specifiers {
-                        surface.exports.push(SurfaceExport::Named {
-                            local: spec.local.name().as_str().into(),
-                            exported: spec.exported.name().as_str().into(),
-                        });
-                    }
+                for spec in &export.specifiers {
+                    surface.exports.push(SurfaceExport::Named {
+                        local: spec.local.name().as_str().into(),
+                        exported: spec.exported.name().as_str().into(),
+                    });
+                }
+            }
+            Statement::ExportFromDeclaration(export) => {
+                for spec in &export.specifiers {
+                    surface.reexports.push(SurfaceReexport::Named {
+                        specifier: export.source.value.as_str().into(),
+                        imported: spec.local.name().as_str().into(),
+                        exported: spec.exported.name().as_str().into(),
+                    });
                 }
             }
             Statement::ExportAllDeclaration(export) => {
@@ -316,6 +323,11 @@ pub fn build_surface(program: &Program<'_>) -> FileSurface {
                             .map_or_else(|| "default".into(), |id| id.name.as_str().into()),
                         span: class.id.as_ref().map_or(export.span, |id| id.span),
                         item: DeclItem::Class(class),
+                    },
+                    ExportDefaultDeclarationKind::StructStatement(structure) => DeclWork {
+                        name: structure.id.name.as_str().into(),
+                        span: structure.id.span,
+                        item: DeclItem::Struct(structure),
                     },
                     ExportDefaultDeclarationKind::TSInterfaceDeclaration(iface) => DeclWork {
                         name: iface.id.name.as_str().into(),
@@ -383,11 +395,10 @@ pub fn build_surface(program: &Program<'_>) -> FileSurface {
                     .extends
                     .iter()
                     .filter_map(|heritage| {
-                        use oxc_ast::ast::Expression;
                         if heritage.type_arguments.is_some() {
                             return None; // generic bases unmodeled
                         }
-                        let Expression::Identifier(base) = &heritage.expression else {
+                        let TSTypeName::IdentifierReference(base) = &heritage.type_name else {
                             return None;
                         };
                         match resolver.resolve(base.name.as_str()) {
@@ -403,6 +414,10 @@ pub fn build_surface(program: &Program<'_>) -> FileSurface {
             }
             DeclItem::Class(class) => {
                 let instance = lower_class_instance(&mut sink, &resolver, class);
+                SurfaceDeclKind::Class { instance }
+            }
+            DeclItem::Struct(structure) => {
+                let instance = lower_struct_instance(&mut sink, &resolver, structure);
                 SurfaceDeclKind::Class { instance }
             }
             DeclItem::Enum(enum_decl) => {
@@ -426,8 +441,8 @@ pub fn augment_surface_with_local_enums(surface: &mut FileSurface, program: &Pro
     for stmt in &program.body {
         let enum_decl = match stmt {
             Statement::TSEnumDeclaration(e) => e,
-            Statement::ExportNamedDeclaration(export) => match &export.declaration {
-                Some(Declaration::TSEnumDeclaration(e)) => e,
+            Statement::ExportDeclaration(export) => match &export.declaration {
+                Declaration::TSEnumDeclaration(e) => e,
                 _ => continue,
             },
             _ => continue,
@@ -454,7 +469,7 @@ pub fn lower_class_instance<R: ResolveName>(
 ) -> TypeId {
     use oxc_ast::ast::{ClassElement, MethodDefinitionKind, TSAccessibility};
     let mut members: Vec<crate::ir::Member> = Vec::new();
-    let mut inexact = class.super_class.is_some();
+    let mut inexact = class.heritage.is_some();
     let mut lowerer = Lowerer::new(sink, resolver);
     for element in &class.body.body {
         match element {
@@ -513,10 +528,81 @@ pub fn lower_class_instance<R: ResolveName>(
                     MethodDefinitionKind::Constructor => unreachable!(),
                 }
             }
-            ClassElement::TSIndexSignature(_) | ClassElement::AccessorProperty(_) => {
+            ClassElement::TSIndexSignature(_)
+            | ClassElement::AccessorProperty(_)
+            | ClassElement::ETSOverloadDeclaration(_)
+            | ClassElement::TSCallSignatureDeclaration(_) => {
                 inexact = true;
             }
             ClassElement::StaticBlock(_) => {}
+        }
+    }
+    sink.push(Type::Object(crate::ir::ObjectShape { members: members.into_boxed_slice(), inexact }))
+}
+
+/// Lower an ArkTS 1.1 component struct using the same public-instance model
+/// as a TypeScript class.
+pub fn lower_struct_instance<R: ResolveName>(
+    sink: &mut TypeSink,
+    resolver: &R,
+    structure: &StructStatement<'_>,
+) -> TypeId {
+    use oxc_ast::ast::{MethodDefinitionKind, TSAccessibility};
+    let mut members: Vec<crate::ir::Member> = Vec::new();
+    let mut inexact = structure.super_class.is_some();
+    let mut lowerer = Lowerer::new(sink, resolver);
+    for element in &structure.body.body {
+        match element {
+            StructElement::PropertyDefinition(property) => {
+                if property.r#static {
+                    continue;
+                }
+                if matches!(
+                    property.accessibility,
+                    Some(TSAccessibility::Private | TSAccessibility::Protected)
+                ) {
+                    inexact = true;
+                    continue;
+                }
+                let Some(name) = crate::lower::property_key_name(&property.key) else {
+                    inexact = true;
+                    continue;
+                };
+                let ty = lowerer.lower_annotation(property.type_annotation.as_deref());
+                members.push(crate::ir::Member { name, ty, optional: property.optional });
+            }
+            StructElement::MethodDefinition(method) => {
+                if method.r#static || method.kind == MethodDefinitionKind::Constructor {
+                    continue;
+                }
+                let Some(name) = crate::lower::property_key_name(&method.key) else {
+                    inexact = true;
+                    continue;
+                };
+                let ty = match method.kind {
+                    MethodDefinitionKind::Method => {
+                        let shape = lowerer.lower_function_shape(
+                            &method.value.params,
+                            method.value.return_type.as_deref(),
+                        );
+                        lowerer.sink.push(Type::Function(Box::new(shape)))
+                    }
+                    MethodDefinitionKind::Get => {
+                        lowerer.lower_annotation(method.value.return_type.as_deref())
+                    }
+                    MethodDefinitionKind::Set => {
+                        method.value.params.items.first().map_or(TypeTable::ANY, |parameter| {
+                            lowerer.lower_annotation(parameter.type_annotation.as_deref())
+                        })
+                    }
+                    MethodDefinitionKind::Constructor => unreachable!(),
+                };
+                members.push(crate::ir::Member { name, ty, optional: false });
+            }
+            StructElement::TSIndexSignature(_)
+            | StructElement::AccessorProperty(_)
+            | StructElement::ETSOverloadDeclaration(_) => inexact = true,
+            StructElement::StaticBlock(_) => {}
         }
     }
     sink.push(Type::Object(crate::ir::ObjectShape { members: members.into_boxed_slice(), inexact }))
@@ -570,7 +656,9 @@ fn as_declaration<'b, 'a>(stmt: &'b Statement<'a>) -> Option<&'b Declaration<'a>
         | Statement::TSTypeAliasDeclaration(_)
         | Statement::TSInterfaceDeclaration(_)
         | Statement::TSEnumDeclaration(_)
-        | Statement::TSModuleDeclaration(_)
+        | Statement::TSExternalModuleDeclaration(_)
+        | Statement::TSNamespaceDeclaration(_)
+        | Statement::TSGlobalDeclaration(_)
         | Statement::TSImportEqualsDeclaration(_) => stmt.as_declaration(),
         _ => None,
     }
@@ -632,6 +720,11 @@ fn collect_declaration<'b, 'a>(
                 });
             }
         }
+        Declaration::StructStatement(structure) => add(DeclWork {
+            name: structure.id.name.as_str().into(),
+            span: structure.id.span,
+            item: DeclItem::Struct(structure),
+        }),
         Declaration::TSTypeAliasDeclaration(alias) => add(DeclWork {
             name: alias.id.name.as_str().into(),
             span: alias.id.span,
@@ -647,19 +740,20 @@ fn collect_declaration<'b, 'a>(
             span: enum_decl.id.span,
             item: DeclItem::Enum(enum_decl),
         }),
-        Declaration::TSModuleDeclaration(module) => {
-            // Only identifier-named namespaces; ambient `declare module "x"`
-            // and `declare global` are unmodeled in v0.
-            if let TSModuleDeclarationName::Identifier(id) = &module.id {
-                add(DeclWork {
-                    name: id.name.as_str().into(),
-                    span: id.span,
-                    item: DeclItem::Namespace(module),
-                });
-            }
+        Declaration::TSNamespaceDeclaration(module) => {
+            add(DeclWork {
+                name: module.id.name.as_str().into(),
+                span: module.id.span,
+                item: DeclItem::Namespace(module),
+            });
         }
-        // `declare global` blocks and `import =` aliases are unmodeled in v0.
-        Declaration::TSGlobalDeclaration(_) | Declaration::TSImportEqualsDeclaration(_) => {}
+        // Ambient string modules, `declare global` blocks and `import =`
+        // aliases are unmodeled.
+        Declaration::TSExternalModuleDeclaration(_)
+        | Declaration::TSGlobalDeclaration(_)
+        | Declaration::TSImportEqualsDeclaration(_)
+        | Declaration::AnnotationDeclaration(_)
+        | Declaration::ETSOverloadDeclaration(_) => {}
     }
 }
 
