@@ -304,7 +304,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
     fn parse_lazy_import_declaration(
         &mut self,
         span: u32,
-        _should_record_module_record: bool,
+        should_record_module_record: bool,
     ) -> Statement<'a> {
         // We've already consumed "import" and "lazy"
         // Now parse the specifiers
@@ -366,6 +366,11 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
         let lazy_import_decl =
             LazyImportDeclaration::boxed(span, specifiers, source, with_clause, self);
+
+        if should_record_module_record {
+            self.module_record_builder
+                .visit_lazy_import_declaration(&lazy_import_decl);
+        }
 
         Statement::LazyImportDeclaration(lazy_import_decl)
     }
@@ -1711,6 +1716,31 @@ export declare struct Foo {
             assert_eq!(specifiers[0].name(), "Foo");
             assert_eq!(decl.source.value.as_str(), "./Foo");
         });
+    }
+
+    /// `import lazy` must reach the module record like a value import does.
+    /// Otherwise module resolution never sees the dependency and the bindings
+    /// are absent from the import entries.
+    #[test]
+    fn arkui_lazy_import_records_module_request() {
+        let source_type = SourceType::default().with_typescript(true).with_arkui(true);
+        let allocator = Allocator::default();
+        let ret =
+            Parser::new(&allocator, "import lazy { Foo, Bar } from './Foo';", source_type).parse();
+        assert!(ret.diagnostics.is_empty(), "errors: {:?}", ret.diagnostics);
+
+        let module_record = &ret.module_record;
+        let requests: Vec<_> =
+            module_record.requested_modules.keys().map(|name| name.as_str()).collect();
+        assert!(requests.contains(&"./Foo"), "module request missing, got {requests:?}");
+
+        let locals: Vec<_> = module_record
+            .import_entries
+            .iter()
+            .map(|entry| entry.local_name.name.as_str())
+            .collect();
+        assert!(locals.contains(&"Foo"), "default binding missing, got {locals:?}");
+        assert!(locals.contains(&"Bar"), "named binding missing, got {locals:?}");
     }
 
     #[test]
