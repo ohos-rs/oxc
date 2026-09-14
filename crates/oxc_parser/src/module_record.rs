@@ -318,9 +318,35 @@ impl<'a> ModuleRecordBuilder<'a> {
     }
 
     pub fn visit_import_declaration(&mut self, decl: &ImportDeclaration<'a>) {
-        let module_request = NameSpan::new(decl.source.value, decl.source.span);
+        self.record_import_entries(
+            decl.span,
+            &decl.source,
+            decl.specifiers.as_deref().map(|v| &**v),
+            decl.import_kind,
+        );
+    }
 
-        if let Some(specifiers) = &decl.specifiers {
+    /// ArkUI `import lazy` declarations carry the same specifier and source shape as a
+    /// value import, so they must contribute to the module record identically.
+    pub fn visit_lazy_import_declaration(&mut self, decl: &LazyImportDeclaration<'a>) {
+        self.record_import_entries(
+            decl.span,
+            &decl.source,
+            decl.specifiers.as_deref().map(|v| &**v),
+            ImportOrExportKind::Value,
+        );
+    }
+
+    fn record_import_entries(
+        &mut self,
+        span: Span,
+        source: &StringLiteral<'a>,
+        specifiers: Option<&[ImportDeclarationSpecifier<'a>]>,
+        import_kind: ImportOrExportKind,
+    ) {
+        let module_request = NameSpan::new(source.value, source.span);
+
+        if let Some(specifiers) = specifiers {
             for specifier in specifiers {
                 let (import_name, local_name, is_type) = match specifier {
                     ImportDeclarationSpecifier::ImportSpecifier(specifier) => (
@@ -329,21 +355,21 @@ impl<'a> ModuleRecordBuilder<'a> {
                             specifier.imported.span(),
                         )),
                         NameSpan::new(specifier.local.name.into(), specifier.local.span),
-                        decl.import_kind.is_type() || specifier.import_kind.is_type(),
+                        import_kind.is_type() || specifier.import_kind.is_type(),
                     ),
                     ImportDeclarationSpecifier::ImportNamespaceSpecifier(specifier) => (
                         ImportImportName::NamespaceObject,
                         NameSpan::new(specifier.local.name.into(), specifier.local.span),
-                        decl.import_kind.is_type(),
+                        import_kind.is_type(),
                     ),
                     ImportDeclarationSpecifier::ImportDefaultSpecifier(specifier) => (
                         ImportImportName::Default(specifier.span),
                         NameSpan::new(specifier.local.name.into(), specifier.local.span),
-                        decl.import_kind.is_type(),
+                        import_kind.is_type(),
                     ),
                 };
                 self.add_import_entry(ImportEntry {
-                    statement_span: decl.span,
+                    statement_span: span,
                     module_request: module_request.clone(),
                     import_name,
                     local_name,
@@ -354,9 +380,9 @@ impl<'a> ModuleRecordBuilder<'a> {
         self.add_module_request(
             module_request.name,
             RequestedModule {
-                statement_span: decl.span,
+                statement_span: span,
                 span: module_request.span,
-                is_type: decl.import_kind.is_type(),
+                is_type: import_kind.is_type(),
                 is_import: true,
             },
         );
