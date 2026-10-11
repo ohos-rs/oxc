@@ -92,7 +92,7 @@ const e = (expression: ESTree.Expression) => program(stmt(expression));
 // --- Runner ---------------------------------------------------------------------------------
 
 /** A case: its name, the AST to print, and the output the printer must produce for it. */
-type Case = [name: string, ast: ESTree.Node, output: string];
+type Case = [name: string, ast: ESTree.Program | ESTree.Statement, output: string];
 
 /**
  * Define one test per case, checking the printer's output is exactly the expected string.
@@ -101,21 +101,75 @@ type Case = [name: string, ast: ESTree.Node, output: string];
  */
 function checkCases(cases: Case[]): void {
   test.each(cases)("%s", (_name, ast, output) => {
-    expect(printSync(ast)).toBe(output);
+    expect(printSync(ast).code).toBe(output);
   });
 }
 
 // --- Tests ----------------------------------------------------------------------------------
 
+describe("single statements", () => {
+  /** Parse one source statement for public-API tests which do not print a whole program. */
+  function parseStatement(filename: string, sourceText: string): ESTree.Statement {
+    const { program: parsed, errors } = parseSync(filename, sourceText, PARSE_OPTIONS);
+    if (errors.length > 0) throw new Error(`fixture parse failed: ${errors[0].message}`);
+    const [statement] = parsed.body;
+    if (statement === undefined || parsed.body.length !== 1) {
+      throw new Error(`Expected exactly one statement in ${filename}`);
+    }
+    return statement;
+  }
+
+  test("prints a JavaScript statement", () => {
+    const statement = parseStatement("statement.js", "const value=1;");
+    expect(printSync(statement).code).toBe("const value = 1;\n");
+  });
+
+  test("prints a TypeScript statement", () => {
+    const statement = parseStatement("statement.ts", "type Box<T>={value:T};");
+    expect(printSync(statement, { ts: true }).code).toBe("type Box<T> = {\n\tvalue: T;\n};\n");
+  });
+
+  test("returns a source map for a JavaScript statement", () => {
+    const sourceText = "const value=1;";
+    const statement = parseStatement("statement.js", sourceText);
+    const { code, map } = printSync(statement, {
+      sourcemap: true,
+      sourceFilename: "statement.js",
+      sourceText,
+    });
+    expect(code).toBe("const value = 1;\n");
+    expect(map).toMatchObject({
+      sources: ["statement.js"],
+      sourcesContent: [sourceText],
+    });
+  });
+});
+
+describe("indent", () => {
+  const ast = e(id("x"));
+
+  test.each(["", "x", "\n", "\r\n", " x "])("rejects %j", (indent) => {
+    expect(() => printSync(ast, { indent })).toThrow(
+      new TypeError("`indent` must be a non-empty string containing only spaces and tabs"),
+    );
+  });
+
+  test.each([4, null, {}])("rejects non-string value %j", (indent) => {
+    expect(() => printSync(ast, { indent: indent as unknown as string })).toThrow(
+      new TypeError("`indent` must be a non-empty string containing only spaces and tabs"),
+    );
+  });
+});
+
 describe("starting indent level", () => {
   const ast = e(id("x"));
 
   test("indents from a valid level", () => {
-    expect(printSync(ast, { startingIndentLevel: 1 })).toBe("\tx;\n");
+    expect(printSync(ast, { startingIndentLevel: 1 }).code).toBe("\tx;\n");
   });
 
   test("accepts the maximum level", () => {
-    expect(printSync(ast, { startingIndentLevel: 1000 })).toBe(`${"\t".repeat(1000)}x;\n`);
+    expect(printSync(ast, { startingIndentLevel: 1000 }).code).toBe(`${"\t".repeat(1000)}x;\n`);
   });
 
   test.each([
@@ -214,6 +268,36 @@ describe("numbers", () => {
   ]);
 });
 
+// String printing has a deliberately broad fast path. In particular, a `<` by itself is harmless;
+// only the case-insensitive `</script` sequence must be broken up for safe inline-script output.
+describe("strings", () => {
+  checkCases([
+    ["harmless less-than", e(str("a < b; <div> is text")), '("a < b; <div> is text");\n'],
+    ["script close tag", e(str("</script")), '("<\\/script");\n'],
+    ["mixed-case script close tag", e(str("</ScRiPt")), '("<\\/ScRiPt");\n'],
+    // This is a prefix check, matching the HTML parser behavior and the previous slow-path test.
+    ["script close tag prefix", e(str("</scripture")), '("<\\/scripture");\n'],
+    [
+      "quote and controls",
+      e(str('"\\\0' + "1\n\r\u0007\u000b\f\u001b\u00a0\u2028\u2029")),
+      '("\\\"\\\\\\x001\\n\\r\\x07\\v\\f\\x1B\\xA0\\u2028\\u2029");\n',
+    ],
+    ["paired surrogate", e(str("\ud83d\ude00")), '("😀");\n'],
+    ["lone high surrogate", e(str("\ud800")), '("\\ud800");\n'],
+    ["lone low surrogate", e(str("\udc00")), '("\\udc00");\n'],
+  ]);
+
+  test("template literal quasis also escape script close tags", () => {
+    const { program: parsed, errors } = parseSync(
+      "fixture.js",
+      "const value = `before </ScRiPt> after`;",
+      PARSE_OPTIONS,
+    );
+    if (errors.length > 0) throw new Error(`fixture parse failed: ${errors[0].message}`);
+    expect(printSync(parsed).code).toBe("const value = `before <\\/ScRiPt> after`;\n");
+  });
+});
+
 // A negative bigint is parenthesized where the position binds tighter than a prefix operator, the
 // same rule `printNumericLiteral` follows. `-1n` parses as a unary minus around a positive literal,
 // so a `BigIntLiteral` whose text starts with `-` never comes from a parser and this whole branch
@@ -268,6 +352,8 @@ describe("unary and update expressions", () => {
     ["delete-infinity", e(unary("delete", num(Infinity))), "delete (0, Infinity);\n"],
     ["minus-negative-literal", e(unary("-", num(-1))), "- -1;\n"],
     ["plus-negative-literal", e(unary("+", num(-1))), "+-1;\n"],
+    ["minus-negative-bigint", e(unary("-", big("-1"))), "- -1n;\n"],
+    ["plus-negative-bigint", e(unary("+", big("-1"))), "+-1n;\n"],
     ["preinc", e(update("++", id("x"))), "++x;\n"],
     ["postinc", e(update("++", id("x"), false)), "x++;\n"],
     ["predec", e(update("--", id("x"))), "--x;\n"],
@@ -303,7 +389,7 @@ describe("directives", () => {
   ])("%s", (_name, source, output) => {
     const { program: parsed, errors } = parseSync("fixture.js", source, PARSE_OPTIONS);
     if (errors.length > 0) throw new Error(`fixture parse failed: ${errors[0].message}`);
-    expect(printSync(parsed)).toBe(output);
+    expect(printSync(parsed).code).toBe(output);
   });
 });
 
@@ -346,7 +432,7 @@ describe("export default declarations", () => {
   ])("%s", (_name, source, output) => {
     const { program: parsed, errors } = parseSync("fixture.ts", source, PARSE_OPTIONS);
     if (errors.length > 0) throw new Error(`fixture parse failed: ${errors[0].message}`);
-    expect(printSync(parsed, { ts: true })).toBe(output);
+    expect(printSync(parsed, { ts: true }).code).toBe(output);
   });
 });
 
@@ -386,12 +472,12 @@ describe("JSX strings", () => {
     };
 
     // From `raw`, as a parser supplies it
-    expect(printSync(parse(), { jsx: true })).toBe(output);
+    expect(printSync(parse(), { jsx: true }).code).toBe(output);
 
     // From `value`, which is where a change in the parser would show
     const fromValue = parse();
     dropJsxRaw(fromValue);
-    expect(printSync(fromValue, { jsx: true })).toBe(output);
+    expect(printSync(fromValue, { jsx: true }).code).toBe(output);
   });
 });
 

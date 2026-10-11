@@ -56,7 +56,7 @@ impl<'a> IsolatedDeclarations<'a> {
     ) -> Option<VariableDeclarator<'a>> {
         if decl.id.is_destructuring_pattern() {
             decl.id.bound_names(&mut |id| {
-                if !check_binding || self.scope.has_value_reference(&id.name) {
+                if !check_binding || self.scope.has_value_reference(id.name) {
                     self.error(binding_element_export(id.span));
                 }
             });
@@ -65,7 +65,7 @@ impl<'a> IsolatedDeclarations<'a> {
 
         if check_binding
             && let Some(name) = decl.id.get_identifier_name()
-            && !self.scope.has_value_reference(&name)
+            && !self.scope.has_value_reference(name)
         {
             return None;
         }
@@ -182,7 +182,7 @@ impl<'a> IsolatedDeclarations<'a> {
         match decl {
             Declaration::FunctionDeclaration(func) => {
                 let needs_transform = !check_binding
-                    || func.id.as_ref().is_some_and(|id| self.scope.has_value_reference(&id.name));
+                    || func.id.as_ref().is_some_and(|id| self.scope.has_value_reference(id.name));
                 needs_transform
                     .then(|| Declaration::FunctionDeclaration(self.transform_function(func, None)))
             }
@@ -191,12 +191,12 @@ impl<'a> IsolatedDeclarations<'a> {
                 .map(Declaration::VariableDeclaration),
             Declaration::ClassDeclaration(decl) => {
                 let needs_transform = !check_binding
-                    || decl.id.as_ref().is_some_and(|id| self.scope.has_reference(&id.name));
+                    || decl.id.as_ref().is_some_and(|id| self.scope.has_reference(id.name));
                 needs_transform
                     .then(|| Declaration::ClassDeclaration(self.transform_class(decl, None)))
             }
             Declaration::TSTypeAliasDeclaration(alias_decl) => {
-                if !check_binding || self.scope.has_reference(&alias_decl.id.name) {
+                if !check_binding || self.scope.has_reference(alias_decl.id.name) {
                     let mut decl = decl.clone_in(self.allocator());
                     self.visit_declaration(&mut decl);
                     Some(decl)
@@ -205,7 +205,7 @@ impl<'a> IsolatedDeclarations<'a> {
                 }
             }
             Declaration::TSInterfaceDeclaration(interface_decl) => {
-                if !check_binding || self.scope.has_reference(&interface_decl.id.name) {
+                if !check_binding || self.scope.has_reference(interface_decl.id.name) {
                     let mut decl = decl.clone_in(self.allocator());
                     self.visit_declaration(&mut decl);
                     Some(decl)
@@ -214,7 +214,7 @@ impl<'a> IsolatedDeclarations<'a> {
                 }
             }
             Declaration::TSEnumDeclaration(enum_decl) => {
-                if !check_binding || self.scope.has_reference(&enum_decl.id.name) {
+                if !check_binding || self.scope.has_reference(enum_decl.id.name) {
                     Some(self.transform_ts_enum_declaration(enum_decl))
                 } else {
                     None
@@ -222,7 +222,7 @@ impl<'a> IsolatedDeclarations<'a> {
             }
             Declaration::StructStatement(struct_decl) => {
                 let needs_transform =
-                    !check_binding || self.scope.has_reference(&struct_decl.id.name);
+                    !check_binding || self.scope.has_reference(struct_decl.id.name);
                 needs_transform
                     .then(|| Declaration::StructStatement(self.transform_struct(struct_decl, None)))
             }
@@ -236,7 +236,7 @@ impl<'a> IsolatedDeclarations<'a> {
                 }
             }
             Declaration::TSNamespaceDeclaration(decl) => {
-                if !check_binding || self.scope.has_reference(&decl.id.name) {
+                if !check_binding || self.scope.has_reference(decl.id.name) {
                     Some(Declaration::TSNamespaceDeclaration(
                         self.transform_ts_namespace_declaration(decl),
                     ))
@@ -248,7 +248,7 @@ impl<'a> IsolatedDeclarations<'a> {
                 Some(Declaration::TSGlobalDeclaration(decl.clone_in(self.allocator())))
             }
             Declaration::TSImportEqualsDeclaration(decl) => {
-                if !check_binding || self.scope.has_reference(&decl.id.name) {
+                if !check_binding || self.scope.has_reference(decl.id.name) {
                     Some(Declaration::TSImportEqualsDeclaration(decl.clone_in(self.allocator())))
                 } else {
                     None
@@ -256,7 +256,7 @@ impl<'a> IsolatedDeclarations<'a> {
             }
             Declaration::AnnotationDeclaration(annotation_decl) => {
                 let needs_transform =
-                    !check_binding || self.scope.has_reference(&annotation_decl.id.name);
+                    !check_binding || self.scope.has_reference(annotation_decl.id.name);
                 needs_transform.then(|| {
                     let mut decl = decl.clone_in(self.ast.allocator());
                     if self.is_ets_static

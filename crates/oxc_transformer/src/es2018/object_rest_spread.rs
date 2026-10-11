@@ -820,7 +820,7 @@ impl<'a> ObjectRestSpread<'a> {
                 new_decls.push((i, decls));
             }
         }
-        for (i, decls) in new_decls {
+        for (i, decls) in new_decls.into_iter().rev() {
             decl.declarations.splice(i..=i, decls);
         }
     }
@@ -1192,21 +1192,19 @@ impl<'a> ReferenceBuilder<'a> {
         force_create_binding: bool,
         ctx: &mut TraverseCtx<'a>,
     ) -> Self {
-        let expr = expr.take_in(&ctx.ast);
-        let binding;
-        let maybe_bound_identifier;
-        match &expr {
+        let expr = expr.take_in(ctx);
+        let (binding, maybe_bound_identifier) = match &expr {
             Expression::Identifier(ident) if !force_create_binding => {
-                binding = None;
-                maybe_bound_identifier =
-                    MaybeBoundIdentifier::from_identifier_reference(ident, ctx);
+                (None, MaybeBoundIdentifier::from_identifier_reference(ident, ctx))
             }
             expr => {
                 let bound_identifier = ctx.generate_uid_based_on_node(expr, scope_id, symbol_flags);
-                binding = Some(bound_identifier.create_binding_pattern(ctx));
-                maybe_bound_identifier = bound_identifier.to_maybe_bound_identifier();
+                (
+                    Some(bound_identifier.create_binding_pattern(ctx)),
+                    bound_identifier.to_maybe_bound_identifier(),
+                )
             }
-        }
+        };
         Self { expr: Some(expr), binding, maybe_bound_identifier }
     }
 

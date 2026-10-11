@@ -29,7 +29,11 @@ consume(character) { let nested: int = 1 }
     let ret = Parser::new(&allocator, source, source_type).parse();
     assert!(ret.diagnostics.is_empty(), "Parse errors: {:?}", ret.diagnostics);
     let mut program = ret.program;
-    let options = MinifierOptions { compress: Some(CompressOptions::default()), mangle: None };
+    let options = MinifierOptions {
+        compress: Some(CompressOptions::default()),
+        mangle: None,
+        mangle_properties: None,
+    };
     let ret = Minifier::new(options).minify(&allocator, &mut program);
     let output = Codegen::new()
         .with_options(CodegenOptions::minify())

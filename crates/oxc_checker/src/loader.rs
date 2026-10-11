@@ -145,7 +145,7 @@ fn load_file(
     let parsed = Parser::new(&allocator, &source_text, source_type).parse();
 
     let mut diagnostics: Vec<OxcDiagnostic> = parsed.diagnostics.into_iter().collect();
-    let parse_failed = parsed.panicked || !diagnostics.is_empty();
+    let parse_failed = parsed.fatal_error || !diagnostics.is_empty();
 
     // Surface: a .d.ts file is already a surface; a .ts file goes through the
     // *forced* IsolatedDeclarations transform, whose violations are hard

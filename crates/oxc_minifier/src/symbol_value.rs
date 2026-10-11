@@ -85,13 +85,18 @@ pub struct SymbolValue<'a> {
     /// `None` when the value is not a constant evaluated value.
     pub initialized_constant: Option<ConstantValue<'a>>,
 
-    /// The `initialized_constant` is the implicit `undefined` of a declaration
-    /// with no initializer (`let x;`), not an evaluated initializer. Textually
-    /// inlining such a read prints `void 0` — longer than a mangled identifier
-    /// read — and there is no initializer whose elimination pays for it, so
-    /// `inline_identifier_reference` skips it (rolldown#10174). Constant-driven
-    /// folds (`if (x)`, `x === void 0`, `return x`) are unaffected: they
-    /// resolve the value through `initialized_constant`.
+    /// Whether bare reads may be replaced with the constant. IIFE parameter
+    /// constants guide folding, but their arguments remain at the call site,
+    /// so replacing bare reads would duplicate the argument's text.
+    pub allow_constant_inlining: bool,
+
+    /// The `initialized_constant` originates from the implicit `undefined` of
+    /// a declaration with no initializer, possibly through direct aliases.
+    /// Textually inlining such a read prints `void 0` — longer than a mangled
+    /// identifier read — and can also preempt more profitable alias collapsing,
+    /// so `inline_identifier_reference` skips it (rolldown#10174).
+    /// Constant-driven folds (`if (x)`, `x === void 0`, `return x`) are
+    /// unaffected: they resolve the value through `initialized_constant`.
     pub implicit_undefined: bool,
 
     pub references: ReferenceCounts,
@@ -125,7 +130,8 @@ impl SymbolValue<'_> {
     /// [esbuild]: https://github.com/evanw/esbuild/blob/f6058f8364fe7ab91ca57a83e02577ed74c9cae4/internal/js_ast/js_ast.go#L1650-L1685
     /// [swc]: https://github.com/swc-project/swc/blob/6c778430811853d4feee2ab3af1473669deb7b2a/crates/swc_ecma_minifier/src/compress/optimize/inline.rs#L277-L295
     pub fn can_inline_initialized_constant(&self) -> bool {
-        if self.references.has_writes() || self.implicit_undefined {
+        if !self.allow_constant_inlining || self.references.has_writes() || self.implicit_undefined
+        {
             return false;
         }
         let Some(constant) = &self.initialized_constant else { return false };

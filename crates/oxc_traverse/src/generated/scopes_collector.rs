@@ -2112,6 +2112,7 @@ impl<'a> Visit<'a> for ChildScopeCollector {
 
     #[inline]
     fn visit_ts_method_signature(&mut self, it: &TSMethodSignature<'a>) {
+        self.visit_property_key(&it.key);
         self.add_scope(&it.scope_id);
     }
 

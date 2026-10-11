@@ -1,4 +1,4 @@
-use super::PeepholeOptimizations;
+use super::{PeepholeOptimizations, remove_unused_expression::ClassRemovability};
 use crate::{CompressOptionsUnused, TraverseCtx};
 use oxc_ast::ast::*;
 use oxc_ecmascript::constant_evaluation::{DetermineValueType, ValueType};
@@ -64,6 +64,25 @@ impl<'a> PeepholeOptimizations {
         })
     }
 
+    /// Keep an unused declarator when dropping its class initializer would
+    /// leave an executing anonymous class expression without its inferred
+    /// name. The name can be observed by static blocks and decorators before
+    /// any later use of the binding, so `keep_names` cannot be applied after
+    /// the declarator has been reduced to a bare class expression.
+    fn class_initializer_name_needs_to_be_kept(
+        decl: &VariableDeclarator<'a>,
+        ctx: &TraverseCtx<'a>,
+    ) -> bool {
+        let Some(init) = &decl.init else { return false };
+        if !ctx.is_expression_whose_name_needs_to_be_kept(init) {
+            return false;
+        }
+        let Expression::ClassExpression(class) = init else {
+            return false;
+        };
+        matches!(Self::classify_class_removability(class, ctx), ClassRemovability::Keep)
+    }
+
     fn is_sync_iterator_expr(expr: &Expression<'a>, ctx: &TraverseCtx<'a>) -> bool {
         match expr {
             Expression::ArrayExpression(_)
@@ -99,10 +118,9 @@ impl<'a> PeepholeOptimizations {
         match &decl.id {
             BindingPattern::BindingIdentifier(ident) => {
                 if let Some(symbol_id) = ident.symbol_id.get() {
-                    return Self::symbol_is_unused_by_count(symbol_id, ctx)
-                        || Self::self_recursive_function_declarator_is_unused(
-                            decl, symbol_id, ctx,
-                        );
+                    let is_unused = Self::symbol_is_unused_by_count(symbol_id, ctx)
+                        || Self::self_recursive_function_declarator_is_unused(decl, symbol_id, ctx);
+                    return is_unused && !Self::class_initializer_name_needs_to_be_kept(decl, ctx);
                 }
                 false
             }
@@ -231,6 +249,18 @@ impl<'a> PeepholeOptimizations {
     /// import 'b'
     /// ```
     pub fn remove_unused_import_specifiers(stmt: &mut Statement<'a>, ctx: &mut TraverseCtx<'a>) {
+        let Statement::ImportDeclaration(import_decl) = stmt else { return };
+
+        // `import {} from 'x'` -> `import 'x'`
+        if import_decl.phase.is_none()
+            && import_decl.import_kind.is_value()
+            && import_decl.specifiers.as_ref().is_some_and(|specifiers| specifiers.is_empty())
+        {
+            import_decl.specifiers = None;
+            ctx.notice_change();
+            return;
+        }
+
         if ctx.options().treeshake.invalid_import_side_effects
             || ctx.options().unused == CompressOptionsUnused::Keep
         {
@@ -242,8 +272,6 @@ impl<'a> PeepholeOptimizations {
         }
 
         debug_assert!(!ctx.source_type().is_script(), "imports are not allowed in script mode");
-
-        let Statement::ImportDeclaration(import_decl) = stmt else { return };
 
         if let Some(phase) = import_decl.phase {
             let (ImportPhase::Defer | ImportPhase::Source) = phase;

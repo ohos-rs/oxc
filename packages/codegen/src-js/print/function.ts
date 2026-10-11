@@ -2,14 +2,17 @@
 
 import { typeAssertIs } from "../asserts.ts";
 import { printBindingPattern } from "./binding_pattern.ts";
+import { CAT_CLOSE_BRACKET, CAT_IDENT, CAT_OTHER, CAT_START_OF_STMT } from "./categories.ts";
 import {
-  CAT_IDENT,
-  CAT_OTHER,
-  CAT_START_OF_STMT,
   debugAssertLastFresh,
+  markMapStart,
   write,
+  writeIdent,
   writeNoLast,
   writeWithMap,
+  writeWithMapEnd,
+  writeWithMapNamed,
+  writeWithMapNoLast,
 } from "./write.ts";
 import { printDecorators } from "./class.ts";
 import { printSpaceBeforeIdentifier } from "./space.ts";
@@ -21,6 +24,47 @@ import type { State } from "../state.ts";
 import type * as ESTree from "../../../../npm/oxc-types/types.d.ts";
 
 /**
+ * The keywords a named function begins with, indexed as described in `printFunction`.
+ *
+ * Each ends with a space, which separates it from the name.
+ * After `*` the space is not needed, but matches `oxc_codegen`'s style.
+ *
+ * Only TS builds include the `declare` forms.
+ */
+const NAMED_FUNCTION_PREFIXES = TS
+  ? [
+      "function ",
+      "async function ",
+      "function* ",
+      "async function* ",
+      "declare function ",
+      "declare async function ",
+      "declare function* ",
+      "declare async function* ",
+    ]
+  : ["function ", "async function ", "function* ", "async function* "];
+
+/**
+ * The keywords an anonymous function begins with, indexed as described in `printFunction`.
+ *
+ * No trailing space is needed. The generator forms have one after `*` anyway, to match `oxc_codegen`'s style.
+ *
+ * Only TS builds include the `declare` forms.
+ */
+const ANONYMOUS_FUNCTION_PREFIXES = TS
+  ? [
+      "function",
+      "async function",
+      "function* ",
+      "async function* ",
+      "declare function",
+      "declare async function",
+      "declare function* ",
+      "declare async function* ",
+    ]
+  : ["function", "async function", "function* ", "async function* "];
+
+/**
  * Print a function declaration or expression, from `async` through to the closing brace of its body.
  *
  * A function expression is parenthesized where the statement or an `export default` starts with it,
@@ -30,7 +74,7 @@ export function printFunction(node: ESTree.Function, state: State): void {
   let wrap = false;
   if (node.type === "FunctionExpression") {
     debugAssertLastFresh(state);
-    // `CAT_START_OF_STMT` or `CAT_START_OF_DEFAULT_EXPORT`, which are adjacent - see `write.ts`
+    // `CAT_START_OF_STMT` or `CAT_START_OF_DEFAULT_EXPORT`, which are adjacent - see `categories.ts`
     wrap = (state.last | 1) === CAT_START_OF_STMT;
   }
 
@@ -38,20 +82,36 @@ export function printFunction(node: ESTree.Function, state: State): void {
 
   printSpaceBeforeIdentifier(state);
 
-  // The node's mapping goes on whichever of these is written first
-  const declare = TS && node.declare;
-  if (declare) {
-    writeWithMap(state, "declare ", CAT_OTHER, node);
-    write(state, node.async ? "async function" : "function", CAT_IDENT);
+  // The node's mapping goes on whatever keyword begins the function, which is written as a single string.
+  //
+  // The string comes from a table, rather than from testing each flag in turn.
+  // Real code mixes `async` and plain functions freely, so a branch on `async` would often be mispredicted.
+  // Bit 0 of the index is `async`, bit 1 is generator, and bit 2 is `declare` (TS builds only).
+  //
+  // V8 compiles each `flag === true` to a single compare against the `true` object, with no branch.
+  // Any value other than `true` (e.g. `null` or `undefined`) counts as `false`.
+  const generator = node.generator === true;
+  const prefixIndex = TS
+    ? ((node.async === true) as unknown as number)
+      | (((generator === true) as unknown as number) << 1)
+      | (((node.declare === true) as unknown as number) << 2)
+    : ((node.async === true) as unknown as number)
+      | (((generator === true) as unknown as number) << 1);
+
+  const { id } = node;
+  if (id != null) {
+    writeWithMapNoLast(state, NAMED_FUNCTION_PREFIXES[prefixIndex], node.start, node.end, node);
+    writeWithMapNamed(state, id.name, id.start, id.end, id);
   } else {
-    writeWithMap(state, node.async ? "async function" : "function", CAT_IDENT, node);
-  }
-
-  if (node.generator) write(state, "* ", CAT_OTHER);
-
-  if (node.id != null) {
-    printSpaceBeforeIdentifier(state);
-    writeWithMap(state, node.id.name, CAT_IDENT, node.id);
+    writeWithMap(
+      state,
+      ANONYMOUS_FUNCTION_PREFIXES[prefixIndex],
+      // Only the generator prefixes end with a space
+      generator === true ? CAT_OTHER : CAT_IDENT,
+      node.start,
+      node.end,
+      node,
+    );
   }
 
   if (TS) printTypeParameters(node.typeParameters, state);
@@ -67,7 +127,7 @@ export function printFunction(node: ESTree.Function, state: State): void {
     write(state, ";", CAT_OTHER);
   }
 
-  if (wrap) write(state, ")", CAT_OTHER);
+  if (wrap) write(state, ")", CAT_CLOSE_BRACKET);
 }
 
 /**
@@ -76,13 +136,13 @@ export function printFunction(node: ESTree.Function, state: State): void {
 export function printParenParams(params: ESTree.ParamPattern[], state: State): void {
   // `(params)`, as a single write when there are none
   if (params.length === 0) {
-    write(state, "()", CAT_OTHER);
+    write(state, "()", CAT_CLOSE_BRACKET);
     return;
   }
 
   write(state, "(", CAT_OTHER);
   printParams(params, state);
-  write(state, ")", CAT_OTHER);
+  write(state, ")", CAT_CLOSE_BRACKET);
 }
 
 /**
@@ -98,8 +158,20 @@ function printParams(params: ESTree.ParamPattern[], state: State): void {
 
     const param = params[i];
 
+    // Oxc stores TypeScript's special `this` parameter separately from formal parameters
+    // and prints it without a source mapping.
+    if (TS && param.type === "Identifier" && param.name === "this") {
+      writeIdent(state, "this");
+      if (param.typeAnnotation != null) printTypeAnnotation(param.typeAnnotation, state);
+      continue;
+    }
+
     const { decorators } = param;
-    if (decorators != null && decorators.length > 0) printDecorators(decorators, state);
+    if (decorators != null && decorators.length > 0) {
+      printDecorators(decorators, state);
+    } else {
+      markMapStart(state, param.start, param.end, param);
+    }
 
     if (TS && param.type === "TSParameterProperty") {
       if (param.accessibility != null) {
@@ -136,17 +208,18 @@ export function printFunctionBody(body: ESTree.FunctionBody, state: State): void
   // `body` is a BlockStatement holding directives + statements.
   const statements = body.body;
   if (statements.length === 0) {
-    writeWithMap(state, "{}", CAT_OTHER, body);
+    writeWithMapNoLast(state, "{", body.start, body.end, body);
+    writeWithMapEnd(state, "}", CAT_OTHER, body.start, body.end, body);
     return;
   }
 
-  writeWithMap(state, "{\n", CAT_OTHER, body);
+  writeWithMap(state, "{\n", CAT_OTHER, body.start, body.end, body);
   state.indentLevel++;
   printDirectivesAndStatements(statements, state);
   state.indentLevel--;
   printIndent(state);
 
-  write(state, "}", CAT_OTHER);
+  writeWithMapEnd(state, "}", CAT_OTHER, body.start, body.end, body);
 }
 
 /**

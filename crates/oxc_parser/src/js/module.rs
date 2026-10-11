@@ -5,7 +5,7 @@ use rustc_hash::FxHashMap;
 
 use super::FunctionKind;
 use crate::{
-    ParserConfig as Config, ParserImpl, diagnostics,
+    ParserConfig as Config, ParserImpl, StatementContext, diagnostics,
     lexer::Kind,
     modifiers::{Modifier, ModifierKind, Modifiers},
 };
@@ -138,14 +138,13 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         } else if self.is_ts && token_after_import.kind() == Kind::Type {
             // `import type ...`
 
-            if token_after_import.escaped() {
-                self.error(diagnostics::escaped_keyword(token_after_import.span()));
-            }
-
             let kind = self.cur_kind();
             if kind == Kind::LCurly || kind == Kind::Star {
                 // `import type { ...`
                 // `import type * ...`
+                if token_after_import.escaped() {
+                    self.error(diagnostics::escaped_keyword(token_after_import.span()));
+                }
                 import_kind = ImportOrExportKind::Type;
                 has_default_specifier = false;
             } else if kind.is_binding_identifier() {
@@ -154,10 +153,16 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                 let identifier_after_type = self.parse_binding_identifier();
                 if token.kind() == Kind::From && self.at(Kind::Str) {
                     // `import type from 'source'`
+                    if token.escaped() {
+                        self.error(diagnostics::escaped_keyword(token.span()));
+                    }
                     has_default_specifier = true;
                     import_kind = ImportOrExportKind::Value;
                     should_parse_specifiers = false;
                 } else {
+                    if token_after_import.escaped() {
+                        self.error(diagnostics::escaped_keyword(token_after_import.span()));
+                    }
                     identifier_after_import = Some(identifier_after_type);
                     import_kind = ImportOrExportKind::Type;
 
@@ -204,9 +209,9 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         } else if token_after_import.kind() == Kind::Source {
             if self.cur_kind().is_binding_identifier() {
                 // `import source something ...`
-                let kind = self.cur_kind();
+                let token = self.cur_token();
                 let identifier_after_source = self.parse_binding_identifier();
-                if kind == Kind::From {
+                if token.kind() == Kind::From {
                     // `import source from ...`
                     if self.at(Kind::From) {
                         // `import source from from ...`
@@ -215,6 +220,9 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                         has_default_specifier = true;
                     } else if self.at(Kind::Str) {
                         // `import source from 'source'`
+                        if token.escaped() {
+                            self.error(diagnostics::escaped_keyword(token.span()));
+                        }
                         has_default_specifier = true;
                         should_parse_specifiers = false;
                     }
@@ -241,6 +249,11 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                 has_default_specifier = false;
             }
             // else: `import source from 'source'` - source is the binding name, no phase
+        }
+
+        // The first identifier is a keyword only after resolving the import phase.
+        if phase.is_some() && token_after_import.escaped() {
+            self.error(diagnostics::escaped_keyword(token_after_import.span()));
         }
 
         let specifiers = if self.at(Kind::Str) {
@@ -368,8 +381,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             LazyImportDeclaration::boxed(span, specifiers, source, with_clause, self);
 
         if should_record_module_record {
-            self.module_record_builder
-                .visit_lazy_import_declaration(&lazy_import_decl);
+            self.module_record_builder.visit_lazy_import_declaration(&lazy_import_decl);
         }
 
         Statement::LazyImportDeclaration(lazy_import_decl)
@@ -566,13 +578,34 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         TSNamespaceExportDeclaration::boxed(self.end_span(start), id, self)
     }
 
+    /// Check the parse goal and placement of the `import` / `export` declaration at the current token.
+    pub(crate) fn check_module_declaration(&mut self, stmt_ctx: StatementContext) {
+        // TypeScript cannot tell script from module by syntax,
+        // and permits module declarations in namespaces and ambient modules.
+        if self.is_ts {
+            return;
+        }
+        let statement = if self.at(Kind::Import) { "import statement" } else { "export statement" };
+        let span = self.cur_token().span();
+        if self.source_type.is_script() || self.source_type.is_commonjs() {
+            self.error(diagnostics::module_code(statement, span));
+        } else if stmt_ctx != StatementContext::Program {
+            self.error(diagnostics::top_level(statement, span));
+        }
+    }
+
     /// [Exports](https://tc39.es/ecma262/#sec-exports)
     pub(crate) fn parse_export_declaration(
         &mut self,
         start: u32,
         mut decorators: ArenaVec<'a, Decorator<'a>>,
+        stmt_ctx: StatementContext,
     ) -> Statement<'a> {
+        self.check_module_declaration(stmt_ctx);
         self.bump_any(); // bump `export`
+        // export /* @__NO_SIDE_EFFECTS__ */ ...
+        let no_side_effects_comments =
+            self.lexer.trivia_builder.previous_token_no_side_effects_comments();
         // `export` is unambiguously module syntax (ECMA-262 §16.2.3): commit to the
         // Module goal so the declaration parses under `Await` on the first pass and
         // isn't reparsed. e.g. `@foo export default class C { x = await + 1 }`
@@ -717,7 +750,13 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                 )
             }
         };
-        Statement::from(decl)
+        let mut stmt = Statement::from(decl);
+        if let Some(comments) = no_side_effects_comments
+            && Self::set_pure_on_function_stmt(&mut stmt)
+        {
+            self.lexer.trivia_builder.mark_no_side_effects_comments_applied(comments);
+        }
+        stmt
     }
 
     /// Static ETS permits a single local export without braces: `export value;`.
@@ -817,7 +856,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             })
         });
         self.expect(Kind::RCurly);
-        let (source, with_clause) = if self.eat(Kind::From) && self.cur_kind().is_literal() {
+        let (source, with_clause) = if self.eat(Kind::From) {
             let source = self.parse_literal_string();
             (Some(source), self.parse_import_attributes())
         } else {
@@ -934,8 +973,8 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         let decl_start = self.cur_start();
 
         // export default /* @__NO_SIDE_EFFECTS__ */ ...
-        let has_no_side_effects_comment =
-            self.lexer.trivia_builder.previous_token_has_no_side_effects_comment();
+        let no_side_effects_comments =
+            self.lexer.trivia_builder.previous_token_no_side_effects_comments();
 
         // export default @decorator ...
         if self.at(Kind::At) {
@@ -987,8 +1026,9 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                         FunctionKind::DefaultExport,
                         ArenaVec::new_in(self), // decorators
                     );
-                    if has_no_side_effects_comment {
+                    if let Some(comments) = no_side_effects_comments {
                         func.pure = true;
+                        self.lexer.trivia_builder.mark_no_side_effects_comments_applied(comments);
                     }
                     return ExportDefaultDeclarationKind::FunctionDeclaration(func);
                 }
@@ -1037,8 +1077,9 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                 FunctionKind::DefaultExport,
                 decorators,
             );
-            if has_no_side_effects_comment {
+            if let Some(comments) = no_side_effects_comments {
                 func.pure = true;
+                self.lexer.trivia_builder.mark_no_side_effects_comments_applied(comments);
             }
             return ExportDefaultDeclarationKind::FunctionDeclaration(func);
         }
@@ -1132,11 +1173,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                         can_parse_as_keyword = false;
                     } else {
                         // { type as as }
-                        property_name = Some(ModuleExportName::new_identifier_name(
-                            type_or_name_token.span(),
-                            self.ident(self.token_source(&type_or_name_token)),
-                            self,
-                        ));
+                        property_name = Some(name);
                         name = ModuleExportName::new_identifier_name(
                             second_as.span,
                             second_as.name,
@@ -1172,7 +1209,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             name = self.parse_module_export_name();
         }
 
-        if self.is_ts && type_or_name_token_kind == Kind::Type && type_or_name_token.escaped() {
+        if kind == ImportOrExportKind::Type && type_or_name_token.escaped() {
             self.error(diagnostics::escaped_keyword(type_or_name_token.span()));
         }
 
@@ -1237,8 +1274,10 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                 let literal = self.parse_literal_string();
                 // ModuleExportName : StringLiteral
                 // It is a Syntax Error if IsStringWellFormedUnicode(the SV of StringLiteral) is false.
-                if literal.lone_surrogates || !literal.is_string_well_formed_unicode() {
-                    self.error(diagnostics::export_lone_surrogate(literal.span));
+                // The error is fatal so that no AST ever carries an ill-formed export name.
+                if !literal.is_string_well_formed_unicode() {
+                    let error = diagnostics::export_lone_surrogate(literal.span);
+                    return self.fatal_error(error);
                 }
                 ModuleExportName::StringLiteral(literal)
             }
@@ -1679,12 +1718,10 @@ export declare struct Foo {
         assert!(ret.diagnostics.is_empty(), "Unexpected errors: {:?}", ret.diagnostics);
         // export declare struct is parsed as ExportDeclaration containing StructStatement
         match ret.program.body.first() {
-            Some(Statement::ExportDeclaration(export_decl)) => {
-                match &export_decl.declaration {
-                    oxc_ast::ast::Declaration::StructStatement(_) => {}
-                    other => panic!("Expected StructStatement in ExportDeclaration, got: {other:?}"),
-                }
-            }
+            Some(Statement::ExportDeclaration(export_decl)) => match &export_decl.declaration {
+                oxc_ast::ast::Declaration::StructStatement(_) => {}
+                other => panic!("Expected StructStatement in ExportDeclaration, got: {other:?}"),
+            },
             _ => panic!("Expected ExportDeclaration, got: {:?}", ret.program.body.first()),
         }
     }
@@ -1731,7 +1768,7 @@ export declare struct Foo {
 
         let module_record = &ret.module_record;
         let requests: Vec<_> =
-            module_record.requested_modules.keys().map(|name| name.as_str()).collect();
+            module_record.requested_modules.keys().map(oxc_str::Str::as_str).collect();
         assert!(requests.contains(&"./Foo"), "module request missing, got {requests:?}");
 
         let locals: Vec<_> = module_record

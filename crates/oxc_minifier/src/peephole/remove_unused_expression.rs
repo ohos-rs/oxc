@@ -92,16 +92,14 @@ impl<'a> PeepholeOptimizations {
         let Expression::UnaryExpression(unary_expr) = e else { return false };
         match unary_expr.operator {
             UnaryOperator::Void | UnaryOperator::LogicalNot => {
-                let new_expr = unary_expr.argument.take_in(&ctx.ast);
-                ctx.replace_expression(e, new_expr);
+                ctx.replace_expression_with(e, Self::unwrap_unary);
                 Self::remove_unused_expression(e, ctx)
             }
             UnaryOperator::Typeof => {
                 if unary_expr.argument.is_identifier_reference() {
                     true
                 } else {
-                    let new_expr = unary_expr.argument.take_in(&ctx.ast);
-                    ctx.replace_expression(e, new_expr);
+                    ctx.replace_expression_with(e, Self::unwrap_unary);
                     Self::remove_unused_expression(e, ctx)
                 }
             }
@@ -180,7 +178,7 @@ impl<'a> PeepholeOptimizations {
                         };
                         if let Some((name, id)) = name_and_id
                             && Self::inject_optional_chaining_if_matched(
-                                &name,
+                                name,
                                 id,
                                 logical_right,
                                 ctx,
@@ -613,6 +611,9 @@ impl<'a> PeepholeOptimizations {
                 }
             }
             BinaryOperator::Addition => {
+                if !e.may_have_side_effects(ctx) {
+                    return true;
+                }
                 Self::fold_string_addition_chain(e, ctx);
                 matches!(e, Expression::StringLiteral(_))
             }
@@ -1099,10 +1100,9 @@ impl<'a> PeepholeOptimizations {
             // Unwrap parens and sequence tails — `(0, x)` — so the
             // classification does not change when a later fold surfaces
             // the inner expression.
-            let mut e = super_class.get_inner_expression();
-            while let Expression::SequenceExpression(seq) = e {
-                let Some(last) = seq.expressions.last() else { break };
-                e = last.get_inner_expression();
+            let mut e = super_class;
+            if let Expression::SequenceExpression(seq) = e {
+                e = Self::last_expression_in_sequence(seq).unwrap_or(e);
             }
             // Keep the existing statically-provable TypeError for literal
             // arrow heritage: `class C extends (() => {}) {}`.

@@ -5989,25 +5989,6 @@ impl<'new_alloc> CloneIn<'new_alloc> for CommentContent {
     }
 }
 
-impl<'new_alloc> CloneIn<'new_alloc> for Comment {
-    type Cloned = Comment;
-
-    fn clone_in_impl(
-        &self,
-        with_semantic_ids: CloneInSemanticIds,
-        allocator: &'new_alloc Allocator,
-    ) -> Self::Cloned {
-        Comment {
-            span: CloneIn::clone_in_impl(&self.span, with_semantic_ids, allocator),
-            attached_to: CloneIn::clone_in_impl(&self.attached_to, with_semantic_ids, allocator),
-            kind: CloneIn::clone_in_impl(&self.kind, with_semantic_ids, allocator),
-            position: CloneIn::clone_in_impl(&self.position, with_semantic_ids, allocator),
-            newlines: CloneIn::clone_in_impl(&self.newlines, with_semantic_ids, allocator),
-            content: CloneIn::clone_in_impl(&self.content, with_semantic_ids, allocator),
-        }
-    }
-}
-
 impl<'new_alloc> CloneIn<'new_alloc> for StructStatement<'_> {
     type Cloned = StructStatement<'new_alloc>;
 

@@ -343,16 +343,14 @@ fn get_struct_params<'s>(
             // A field is default if the field is marked `#[builder(default)]`,
             // or its innermost type is marked `#[builder(default)]`
             let is_skipped = field.builder.skip;
-            let is_default = is_skipped
-                || field.builder.is_default
-                || {
-                    let innermost_type = type_def.innermost_type(schema);
-                    match innermost_type {
-                        TypeDef::Struct(inner_struct) => inner_struct.builder.is_default,
-                        TypeDef::Enum(inner_enum) => inner_enum.builder.is_default,
-                        _ => false,
-                    }
-                };
+            let is_default = is_skipped || field.builder.is_default || {
+                let innermost_type = type_def.innermost_type(schema);
+                match innermost_type {
+                    TypeDef::Struct(inner_struct) => inner_struct.builder.is_default,
+                    TypeDef::Enum(inner_enum) => inner_enum.builder.is_default,
+                    _ => false,
+                }
+            };
             if is_default && !is_skipped {
                 has_default_fields = true;
             }
@@ -449,11 +447,8 @@ fn get_struct_fn_params_and_fields(
         }
 
         if param.is_default {
-            let include_default = if param.is_vec_default {
-                include_vec_defaults
-            } else {
-                include_regular_defaults
-            };
+            let include_default =
+                if param.is_vec_default { include_vec_defaults } else { include_regular_defaults };
             if include_default {
                 // Builder methods which take default fields receive the innermost type as param.
                 // So wrap the param's value in `Cell::new(...)`, or `Some(...)` if necessary.
@@ -466,9 +461,9 @@ fn get_struct_fn_params_and_fields(
 
             let field_type = param.field.type_def(schema);
             let default_value = if matches!(field_type, TypeDef::Vec(_)) {
-                quote!( ArenaVec::new_in(builder) )
+                quote!(ArenaVec::new_in(builder))
             } else {
-                quote!( Default::default() )
+                quote!(Default::default())
             };
             fields.push(quote!( #param_ident: #default_value ));
             return None;

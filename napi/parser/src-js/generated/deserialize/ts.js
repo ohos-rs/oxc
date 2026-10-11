@@ -75,9 +75,9 @@ function deserializeProgram(pos) {
       if (first.type === "ExportNamedDeclaration" || first.type === "ExportDefaultDeclaration") {
         let { declaration } = first;
         if (
-          declaration !== null &&
-          declaration.type === "ClassDeclaration" &&
-          declaration.decorators.length > 0
+          declaration !== null
+          && declaration.type === "ClassDeclaration"
+          && declaration.decorators.length > 0
         ) {
           let decoratorStart = declaration.decorators[0].start;
           decoratorStart < start && (start = decoratorStart);
@@ -589,9 +589,9 @@ function deserializeTemplateElement(pos) {
     start = deserializeI32(pos) - 1,
     end = deserializeI32(pos + 4) + 2 - tail,
     value = deserializeTemplateElementValue(pos + 16);
-  value.cooked !== null &&
-    deserializeBool(pos + 13) &&
-    (value.cooked = value.cooked.replace(/\uFFFD(.{4})/g, (_, hex) =>
+  value.cooked !== null
+    && deserializeBool(pos + 13)
+    && (value.cooked = value.cooked.replace(/\uFFFD(.{4})/g, (_, hex) =>
       String.fromCodePoint(parseInt(hex, 16)),
     ));
   return {
@@ -1170,8 +1170,8 @@ function deserializeAssignmentTargetPropertyIdentifier(pos) {
       end: key.end,
     },
     init = deserializeOptionExpression(pos + 48);
-  init !== null &&
-    (value = {
+  init !== null
+    && (value = {
       type: "AssignmentPattern",
       decorators: [],
       left: value,
@@ -2027,7 +2027,8 @@ function deserializeFormalParameters(pos) {
     restFieldPos32 = (pos >> 2) + 10;
   if (int32[restFieldPos32] !== 0 && int32[restFieldPos32 + 1] !== 0) {
     pos = int32[restFieldPos32];
-    let end,
+    let start,
+      end,
       rest = {
         type: "RestElement",
         decorators: [],
@@ -2035,15 +2036,16 @@ function deserializeFormalParameters(pos) {
         optional: false,
         typeAnnotation: null,
         value: null,
-        start: deserializeI32(pos + 40),
+        start: (start = deserializeI32(pos + 40)),
         end: (end = deserializeI32(pos + 44)),
       };
     rest.argument = deserializeBindingPattern(pos + 56);
+    rest.decorators = deserializeVecDecorator(pos + 16);
+    rest.decorators.length !== 0 && (start = rest.decorators[0].start);
     rest.typeAnnotation = deserializeOptionBoxTSTypeAnnotation(pos + 72);
-    if (rest.typeAnnotation !== null) {
-      end = rest.typeAnnotation.end;
-      rest.end = end;
-    }
+    rest.typeAnnotation !== null && (end = rest.typeAnnotation.end);
+    rest.start = start;
+    rest.end = end;
     params.push(rest);
   }
   return params;
@@ -2676,9 +2678,9 @@ function deserializeExportDeclaration(pos) {
   decoratorsValue.length !== 0 && (node.decorators = decoratorsValue);
   node.declaration = declaration;
   node.exportKind =
-    declaration.declare === true ||
-    declaration.type === "TSTypeAliasDeclaration" ||
-    declaration.type === "TSInterfaceDeclaration"
+    declaration.declare === true
+    || declaration.type === "TSTypeAliasDeclaration"
+    || declaration.type === "TSInterfaceDeclaration"
       ? "type"
       : "value";
   etsDefaultValue && (node.etsDefault = etsDefaultValue);
@@ -2964,8 +2966,10 @@ function deserializeStringLiteral(pos) {
       end,
     },
     value = deserializeStr(pos + 16);
-  deserializeBool(pos + 12) &&
-    (value = value.replace(/\uFFFD(.{4})/g, (_, hex) => String.fromCodePoint(parseInt(hex, 16))));
+  deserializeBool(pos + 12)
+    && (value = value.replace(/\uFFFD(.{4})/g, (_, hex) =>
+      String.fromCodePoint(parseInt(hex, 16)),
+    ));
   node.value = value;
   return node;
 }
@@ -4866,18 +4870,23 @@ function deserializeCommentKind(pos) {
       return "Block";
     case 2:
       return "Block";
+    case 3:
+      return "Line";
+    case 4:
+      return "Line";
     default:
       throw Error(`Unexpected discriminant ${uint8[pos]} for CommentKind`);
   }
 }
 
 function deserializeComment(pos) {
-  let type = deserializeCommentKind(pos + 12),
+  let type = deserializeCommentKind(pos + 17),
     start = deserializeI32(pos),
-    end = deserializeI32(pos + 4);
+    end = deserializeI32(pos + 4),
+    kind = deserializeU8(pos + 17);
   return {
     type,
-    value: sourceText.slice(start + 2, end - (type === "Line" ? 0 : 2)),
+    value: sourceText.slice(start + (kind < 3 ? 2 : kind), end - (type === "Line" ? 0 : 2)),
     start,
     end,
   };
@@ -5548,10 +5557,10 @@ function deserializeVecComment(pos) {
   let arr = [],
     pos32 = pos >> 2;
   pos = int32[pos32];
-  let endPos = pos + (int32[pos32 + 2] << 4);
+  let endPos = pos + int32[pos32 + 2] * 24;
   for (; pos !== endPos;) {
     arr.push(deserializeComment(pos));
-    pos += 16;
+    pos += 24;
   }
   return arr;
 }

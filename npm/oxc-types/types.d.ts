@@ -691,7 +691,7 @@ export type FunctionType =
 export interface FormalParameterRest extends Span {
   type: "RestElement";
   argument: BindingPattern;
-  decorators?: [];
+  decorators?: Array<Decorator>;
   optional?: boolean;
   typeAnnotation?: TSTypeAnnotation | null;
   value?: null;

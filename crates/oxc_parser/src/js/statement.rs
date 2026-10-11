@@ -42,7 +42,8 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         if self.source_type.is_ets_static() && (is_top_level || in_ts_namespace_body) {
             self.state.ets_declaration_list_depth = Some(self.state.ets_statement_depth);
         }
-        let stmt_ctx = StatementContext::StatementList;
+        let stmt_ctx =
+            if is_top_level { StatementContext::Program } else { StatementContext::StatementList };
         let is_ambient_block = (is_top_level || in_ts_namespace_body) && self.ctx.has_ambient();
         let mut reported_ambient_statement = false;
 
@@ -163,9 +164,8 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             self.state.ets_declaration_list_depth == Some(self.state.ets_statement_depth);
         self.state.ets_statement_depth += 1;
 
-        let has_no_side_effects_comment =
-            self.lexer.trivia_builder.previous_token_has_no_side_effects_comment();
-        let pure_comment_index = self.lexer.trivia_builder.previous_token_has_pure_comment();
+        let no_side_effects_comments =
+            self.lexer.trivia_builder.previous_token_no_side_effects_comments();
 
         let mut stmt = match self.cur_kind() {
             Kind::LCurly => self.parse_block_statement(),
@@ -213,7 +213,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                         self.cur_token().span(),
                     ));
                 }
-                self.parse_export_declaration(self.cur_start(), ArenaVec::new_in(self))
+                self.parse_export_declaration(self.cur_start(), ArenaVec::new_in(self), stmt_ctx)
             }
             // [+Return] ReturnStatement[?Yield, ?Await]
             Kind::Return => self.parse_return_statement(),
@@ -234,7 +234,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             Kind::At => self.parse_decorated_statement(stmt_ctx),
             Kind::Let if !self.cur_token().escaped() => self.parse_let(stmt_ctx),
             Kind::Async => self.parse_async_statement(self.cur_start(), stmt_ctx),
-            Kind::Import => self.parse_import_statement(),
+            Kind::Import => self.parse_import_statement(stmt_ctx),
             Kind::Const => self.parse_const_statement(stmt_ctx),
             Kind::Using if self.is_using_declaration() => self.parse_using_statement(stmt_ctx),
             Kind::Await if self.is_using_statement() => self.parse_using_statement(stmt_ctx),
@@ -261,16 +261,10 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             _ => self.parse_expression_or_labeled_statement(),
         };
 
-        // `/* #__PURE__ */ function foo() {}` - pure comment before non-expression statements cannot be applied.
-        // Expression statements handle pure comments internally in `parse_assignment_expression_or_higher_impl`.
-        if let Some(index) = pure_comment_index
-            && !matches!(stmt, Statement::ExpressionStatement(_))
+        if let Some(comments) = no_side_effects_comments
+            && Self::set_pure_on_function_stmt(&mut stmt)
         {
-            self.lexer.trivia_builder.mark_pure_comment_not_applied(index);
-        }
-
-        if has_no_side_effects_comment {
-            Self::set_pure_on_function_stmt(&mut stmt);
+            self.lexer.trivia_builder.mark_no_side_effects_comments_applied(comments);
         }
 
         self.state.ets_statement_depth -= 1;
@@ -278,39 +272,47 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         stmt
     }
 
-    fn set_pure_on_function_stmt(stmt: &mut Statement<'a>) {
+    pub(super) fn set_pure_on_function_stmt(stmt: &mut Statement<'a>) -> bool {
         match stmt {
             Statement::FunctionDeclaration(func) => {
                 func.pure = true;
+                true
             }
             Statement::ExportDefaultDeclaration(decl) => match &mut decl.declaration {
                 ExportDefaultDeclarationKind::FunctionExpression(func)
                 | ExportDefaultDeclarationKind::FunctionDeclaration(func) => {
                     func.pure = true;
+                    true
                 }
                 ExportDefaultDeclarationKind::ArrowFunctionExpression(func) => {
                     func.pure = true;
+                    true
                 }
-                _ => {}
+                _ => false,
             },
             Statement::ExportDeclaration(decl) => match &mut decl.declaration {
                 Declaration::FunctionDeclaration(func) => {
                     func.pure = true;
+                    true
                 }
                 Declaration::VariableDeclaration(var_decl) if var_decl.kind.is_const() => {
                     if let Some(Some(expr)) = var_decl.declarations.first_mut().map(|d| &mut d.init)
                     {
-                        Self::set_pure_on_function_expr(expr);
+                        Self::set_pure_on_function_expr(expr)
+                    } else {
+                        false
                     }
                 }
-                _ => {}
+                _ => false,
             },
             Statement::VariableDeclaration(var_decl) if var_decl.kind.is_const() => {
                 if let Some(Some(expr)) = var_decl.declarations.first_mut().map(|d| &mut d.init) {
-                    Self::set_pure_on_function_expr(expr);
+                    Self::set_pure_on_function_expr(expr)
+                } else {
+                    false
                 }
             }
-            _ => {}
+            _ => false,
         }
     }
 
@@ -338,7 +340,6 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                     self.error(diagnostics::ets_label_requires_loop_or_switch(body.span()));
                 }
                 return Statement::new_labeled_statement(self.end_span(start), label, body, self);
-
             }
         }
         self.parse_expression_statement(start, expr)
@@ -429,7 +430,6 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         let body = self.parse_statement_list_item(StatementContext::While);
         self.state.ets_loop_depth -= 1;
         Statement::new_while_statement(self.end_span(start), test, body, self)
-
     }
 
     /// Section 14.7.4 For Statement
@@ -489,7 +489,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                     r#await,
                 );
             }
-            Kind::Let => {
+            Kind::Let if !self.cur_token().escaped() => {
                 // `for (let`
                 let decl_start = self.cur_start();
                 // disallow `for (let in ...`
@@ -508,17 +508,8 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             _ => {}
         }
 
-        // [+Using, +Await] await [no LineTerminator here] using [no LineTerminator here]
-        if self.at(Kind::Await)
-            && self.lookahead(|p| {
-                p.bump_any();
-                if !p.at(Kind::Using) || p.cur_token().is_on_new_line() {
-                    return false;
-                }
-                p.bump_any();
-                !p.cur_token().is_on_new_line()
-            })
-        {
+        // [+Using, +Await] await [no LineTerminator here] using [no LineTerminator here] ForBinding[?Yield, ?Await, ~Pattern]
+        if self.at(Kind::Await) && self.is_using_statement() {
             return self.parse_using_declaration_for_statement(
                 for_start,
                 parenthesis_opening_span,
@@ -555,7 +546,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             return self.parse_for_loop(for_start, parenthesis_opening_span, None, r#await);
         }
 
-        let is_let = self.at(Kind::Let);
+        let is_let = self.at(Kind::Let) && !self.cur_token().escaped();
         // `async` is allowed as `for (async of ...)` if `async` is escaped
         let is_async = self.at(Kind::Async) && !self.cur_token().escaped();
         let expr_start = self.cur_start();
@@ -624,7 +615,8 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         parenthesis_opening_span: Span,
         r#await: bool,
     ) -> Statement<'a> {
-        let using_decl = self.parse_using_declaration(StatementContext::For);
+        let using_decl =
+            self.context_remove(Context::In, |p| p.parse_using_declaration(StatementContext::For));
 
         if matches!(self.cur_kind(), Kind::In) {
             if using_decl.kind.is_await() {
@@ -688,6 +680,20 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                 is_for_in,
                 declaration.span,
             ));
+            return;
+        }
+
+        // Annex B.3.5 only permits `var BindingIdentifier Initializer` in non-strict code:
+        // https://tc39.es/ecma262/#sec-initializers-in-forin-statement-heads
+        // Reject lexical declarations here; semantic analysis checks strict mode and patterns.
+        if is_for_in
+            && matches!(
+                declaration.kind,
+                VariableDeclarationKind::Let | VariableDeclarationKind::Const
+            )
+            && declaration.has_init()
+        {
+            self.error(diagnostics::initializer_in_for_in_lexical_declaration(declaration.span));
         }
     }
 
@@ -723,7 +729,6 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         let body = self.parse_statement_list_item(StatementContext::For);
         self.state.ets_loop_depth -= 1;
         Statement::new_for_statement(self.end_span(start), init, test, update, body, self)
-
     }
 
     fn parse_for_in_loop(
@@ -800,7 +805,6 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             ));
         }
         Statement::new_continue_statement(self.end_span(start), label, self)
-
     }
 
     /// Section 14.9 Break Statement
@@ -821,7 +825,6 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             ));
         }
         Statement::new_break_statement(self.end_span(start), label, self)
-
     }
 
     /// Section 14.10 Return Statement
@@ -888,7 +891,6 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         });
         self.state.ets_switch_depth -= 1;
         Statement::new_switch_statement(self.end_span(start), discriminant, cases, self)
-
     }
 
     pub(crate) fn parse_switch_case(&mut self) -> SwitchCase<'a> {
@@ -1026,7 +1028,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
     }
 
     /// Parse import statement or import expression.
-    fn parse_import_statement(&mut self) -> Statement<'a> {
+    fn parse_import_statement(&mut self, stmt_ctx: StatementContext) -> Statement<'a> {
         let start = self.cur_start();
         if matches!(self.lexer.peek_token().kind(), Kind::Dot | Kind::LParen) {
             // Parse the whole expression `import.meta.url`.
@@ -1040,6 +1042,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                     self.cur_token().span(),
                 ));
             }
+            self.check_module_declaration(stmt_ctx);
             self.bump_any(); // bump `import`
             self.parse_import_declaration(start, self.ctx.has_top_level())
         }
@@ -1056,7 +1059,6 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                 stmt_ctx,
                 ArenaVec::new_in(self),
             );
-
         }
         if self.is_ts && self.at_start_of_ts_declaration() {
             return self.parse_ts_declaration_statement(start, stmt_ctx);
@@ -1081,7 +1083,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         let kind = self.cur_kind();
         if kind == Kind::Export {
             // Export span.start starts after decorators.
-            return self.parse_export_declaration(self.cur_start(), decorators);
+            return self.parse_export_declaration(self.cur_start(), decorators, stmt_ctx);
         }
         let modifiers = self.parse_modifiers(false, false);
         if self.at_arkts_annotation_declaration() {

@@ -6,6 +6,8 @@ use serde_json::Value;
 use oxc_linter::{FixKind, normalize_rule_name};
 use tracing::error;
 
+use crate::config_loader::config_discovery;
+
 #[derive(Debug, Serialize, Deserialize, Default, PartialEq, Eq, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum UnusedDisableDirectives {
@@ -84,14 +86,21 @@ impl Language {
 pub struct LintOptions {
     /// If your editor does not support `textDocument/diagnostic`,
     /// this option handles when diagnostics are sent to the client.
+    ///
+    /// This option only applies to clients which use the push model. Clients which support
+    /// `textDocument/diagnostic` ask for diagnostics themselves (the pull model), so `run`
+    /// currently has no effect for them.
+    /// See [#26613](https://github.com/oxc-project/oxc/issues/26613)
     #[schemars(with = "Option<Run>")]
     pub run: Run,
     /// Path to the config file. Similar to `--config` CLI option.
     /// If set, it disables searching for config files.
+    /// An empty string is treated as unset.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub config_path: Option<String>,
     /// Path to the tsconfig file. Similar to `--tsconfig` CLI option.
     /// If set, it disables auto discovery for tsconfig files.
+    /// An empty string is treated as unset.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub ts_config_path: Option<String>,
     /// How to handle unused disable directives. By default, they are allowed and ignored.
@@ -104,6 +113,7 @@ pub struct LintOptions {
     pub language: Option<Language>,
     /// Whether to disable nested config support. Similar to `--disable-nested-config` CLI option.
     /// It gets automatically enabled when `configPath` is set.
+    /// Nested config support is always disabled in Vite+ mode.
     #[schemars(with = "Option<bool>")]
     pub disable_nested_config: bool,
     /// What kind of fixes to generate for code actions.
@@ -201,8 +211,11 @@ impl From<LintFixKindFlag> for FixKind {
 }
 
 impl LintOptions {
+    /// Nested config search: off with `disableNestedConfig`, an explicit `configPath`, or in Vite+ mode.
     pub fn use_nested_configs(&self) -> bool {
-        !self.disable_nested_config && self.config_path.is_none()
+        !self.disable_nested_config
+            && self.config_path.is_none()
+            && config_discovery().nested_configs()
     }
 }
 
@@ -247,8 +260,16 @@ impl TryFrom<Value> for LintOptions {
             unused_disable_directives: object
                 .get("unusedDisableDirectives")
                 .and_then(|key| UnusedDisableDirectives::deserialize(key).ok()),
-            config_path: object.get("configPath").and_then(Value::as_str).map(str::to_owned),
-            ts_config_path: object.get("tsConfigPath").and_then(Value::as_str).map(str::to_owned),
+            config_path: object
+                .get("configPath")
+                .and_then(Value::as_str)
+                .filter(|s| !s.is_empty())
+                .map(str::to_owned),
+            ts_config_path: object
+                .get("tsConfigPath")
+                .and_then(Value::as_str)
+                .filter(|s| !s.is_empty())
+                .map(str::to_owned),
             type_aware: object.get("typeAware").and_then(Value::as_bool),
             language: object.get("language").and_then(|value| Language::deserialize(value).ok()),
             disable_nested_config: object
@@ -336,6 +357,18 @@ mod test {
 
         let rules_customization = options.rules_customization.unwrap();
         assert!(rules_customization.rules.contains_key("no-unused-vars"));
+    }
+
+    #[test]
+    fn test_empty_path_options_json() {
+        let json = json!({
+            "configPath": "",
+            "tsConfigPath": "",
+        });
+
+        let options = LintOptions::try_from(json).unwrap();
+        assert_eq!(options.config_path, None);
+        assert_eq!(options.ts_config_path, None);
     }
 
     #[test]

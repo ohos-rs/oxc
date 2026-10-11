@@ -665,6 +665,62 @@ mod module_record_tests {
         assert!(module_record.import_entries.is_empty());
     }
 
+    #[test]
+    fn arkui_lazy_imports_record_dependencies() {
+        for (source, bindings) in [
+            ("import lazy { value as local } from 'mod';", vec!["local"]),
+            ("import lazy value from 'mod';", vec!["value"]),
+            ("import lazy value, { other } from 'mod';", vec!["value", "other"]),
+            ("import lazy {} from 'mod';", vec![]),
+        ] {
+            let allocator = Allocator::default();
+            let parsed = Parser::new(&allocator, source, SourceType::ets()).parse();
+            assert!(parsed.diagnostics.is_empty(), "{source}: {:?}", parsed.diagnostics);
+            let record = parsed.module_record;
+            assert!(record.has_module_syntax);
+            let requests = record.requested_modules.get("mod").expect("lazy dependency");
+            assert_eq!(requests.len(), 1);
+            assert!(requests[0].is_import);
+            assert!(!requests[0].is_type);
+            assert_eq!(
+                record
+                    .import_entries
+                    .iter()
+                    .map(|entry| entry.local_name.name.as_str())
+                    .collect::<Vec<_>>(),
+                bindings,
+            );
+            assert!(
+                record
+                    .import_entries
+                    .iter()
+                    .all(|entry| { entry.module_request.name == "mod" && !entry.is_type })
+            );
+        }
+    }
+
+    #[test]
+    fn arkui_lazy_import_reexport_is_indirect() {
+        let allocator = Allocator::default();
+        let source = "import lazy { value as local } from 'mod'; export { local as exposed };";
+        let parsed = Parser::new(&allocator, source, SourceType::ets()).parse();
+        assert!(parsed.diagnostics.is_empty(), "{:?}", parsed.diagnostics);
+        let record = parsed.module_record;
+        assert!(record.local_export_entries.is_empty());
+        assert_eq!(record.indirect_export_entries.len(), 1);
+        let entry = &record.indirect_export_entries[0];
+        assert_eq!(entry.module_request.as_ref().unwrap().name, "mod");
+        let ExportImportName::Name(imported) = &entry.import_name else {
+            panic!("expected the imported binding");
+        };
+        assert_eq!(imported.name, "value");
+        let ExportExportName::Name(exported) = &entry.export_name else {
+            panic!("expected the exported binding");
+        };
+        assert_eq!(exported.name, "exposed");
+        assert!(!entry.is_type);
+    }
+
     // Table 57 gives examples of the ExportEntry record fields used to represent the syntactic export forms
     // `https://tc39.es/ecma262/#table-export-forms-mapping-to-exportentry-records`
 

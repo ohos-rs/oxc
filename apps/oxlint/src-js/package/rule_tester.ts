@@ -94,8 +94,8 @@ function getIt(only?: boolean): ItFn {
 function getItOnly(): ItFn {
   if (itOnly === null) {
     throw new Error(
-      "To use `only`, use `RuleTester` with a test framework that provides `it.only()` like Mocha, " +
-        "or provide a custom `it.only` function by assigning it to `RuleTester.itOnly`",
+      "To use `only`, use `RuleTester` with a test framework that provides `it.only()` like Mocha, "
+        + "or provide a custom `it.only` function by assigning it to `RuleTester.itOnly`",
     );
   }
   return itOnly;
@@ -651,8 +651,8 @@ function assertInvalidTestCasePasses(test: InvalidTestCase, plugin: Plugin, conf
         assertMessageMatches(diagnostic.message, error);
         assert(
           diagnostic.suggestions === null,
-          `Error at index ${errorIndex} has suggestions. Please convert the test error into an object ` +
-            "and specify `suggestions` property on it to test suggestions",
+          `Error at index ${errorIndex} has suggestions. Please convert the test error into an object `
+            + "and specify `suggestions` property on it to test suggestions",
         );
       } else {
         // `error` is an error object
@@ -816,12 +816,12 @@ function assertMessageIdIsCorrect(
   );
   if (unsubstitutedPlaceholders.length !== 0) {
     assert.fail(
-      `${prefix}The reported message has ` +
-        (unsubstitutedPlaceholders.length > 1
+      `${prefix}The reported message has `
+        + (unsubstitutedPlaceholders.length > 1
           ? `unsubstituted placeholders: ${unsubstitutedPlaceholders.map((name) => `'${name}'`).join(", ")}`
-          : `an unsubstituted placeholder '${unsubstitutedPlaceholders[0]}'`) +
-        `. Please provide the missing ${unsubstitutedPlaceholders.length > 1 ? "values" : "value"} ` +
-        "via the `data` property.",
+          : `an unsubstituted placeholder '${unsubstitutedPlaceholders[0]}'`)
+        + `. Please provide the missing ${unsubstitutedPlaceholders.length > 1 ? "values" : "value"} `
+        + "via the `data` property.",
     );
   }
 
@@ -879,9 +879,9 @@ function assertInvalidTestCaseLocationIsCorrect(
   //
   // In ESLint compat mode, deal with this incompatibility.
   const canVoidEndLocation =
-    test.eslintCompat === true &&
-    diagnostic.endLine === diagnostic.line &&
-    diagnostic.endColumn === diagnostic.column;
+    test.eslintCompat === true
+    && diagnostic.endLine === diagnostic.line
+    && diagnostic.endColumn === diagnostic.column;
 
   if (Object.hasOwn(error, "endLine")) {
     if (error.endLine === undefined && canVoidEndLocation) {
@@ -930,8 +930,8 @@ function assertSuggestionsAreCorrect(
   assert.strictEqual(
     actualSuggestions.length,
     expectedSuggestions.length,
-    `Error should have ${expectedSuggestions.length} suggestion${expectedSuggestions.length > 1 ? "s" : ""}. ` +
-      `Instead found ${actualSuggestions.length} suggestion${actualSuggestions.length > 1 ? "s" : ""}.`,
+    `Error should have ${expectedSuggestions.length} suggestion${expectedSuggestions.length > 1 ? "s" : ""}. `
+      + `Instead found ${actualSuggestions.length} suggestion${actualSuggestions.length > 1 ? "s" : ""}.`,
   );
 
   for (let i = 0; i < expectedSuggestions.length; i++) {
@@ -1340,8 +1340,8 @@ function getParseOptions(test: TestCase): ParseOptions {
     // `unambiguous` is disallowed in ESLint compatibility mode
     if (test.eslintCompat === true && sourceType === "unambiguous") {
       throw new Error(
-        "'unambiguous' source type is not supported in ESLint compatibility mode.\n" +
-          "Disable ESLint compatibility mode by setting `eslintCompat` to `false` in the config / test case.",
+        "'unambiguous' source type is not supported in ESLint compatibility mode.\n"
+          + "Disable ESLint compatibility mode by setting `eslintCompat` to `false` in the config / test case.",
       );
     }
 
@@ -1659,8 +1659,8 @@ function assertInvalidTestCaseIsWellFormed(
     );
     assert(
       Array.isArray(errors),
-      `Invalid 'errors' property for invalid test of rule \`${ruleName}\`:` +
-        `expected a number or an array but got ${errors === null ? "null" : typeof errors}`,
+      `Invalid 'errors' property for invalid test of rule \`${ruleName}\`:`
+        + `expected a number or an array but got ${errors === null ? "null" : typeof errors}`,
     );
     assert(errors.length !== 0, "Invalid cases must have at least one error");
   }
@@ -1669,8 +1669,8 @@ function assertInvalidTestCaseIsWellFormed(
   if (Object.hasOwn(test, "output")) {
     assert(
       test.output === null || typeof test.output === "string",
-      "Test property `output`, if specified, must be a string or null. " +
-        "If no autofix is expected, then omit the `output` property or set it to null.",
+      "Test property `output`, if specified, must be a string or null. "
+        + "If no autofix is expected, then omit the `output` property or set it to null.",
     );
   }
 
@@ -1768,11 +1768,11 @@ function isSerializable(value: unknown, seenObjects: Set<object> = new Set()): b
  */
 function isSerializablePrimitiveOrPlainObject(value: unknown): boolean {
   return (
-    value === null ||
-    typeof value === "string" ||
-    typeof value === "boolean" ||
-    typeof value === "number" ||
-    (typeof value === "object" && (value.constructor === Object || Array.isArray(value)))
+    value === null
+    || typeof value === "string"
+    || typeof value === "boolean"
+    || typeof value === "number"
+    || (typeof value === "object" && (value.constructor === Object || Array.isArray(value)))
   );
 }
 

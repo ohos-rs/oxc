@@ -17,7 +17,7 @@ impl FileId {
     }
 }
 
-/// Index of a symbol in [`crate::env::ProgramEnv::symbols`].
+/// Index of a symbol in [`crate::ProgramEnv::symbols`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct SymbolId(pub u32);
 
@@ -28,7 +28,7 @@ impl SymbolId {
     }
 }
 
-/// Index of a type, either into the frozen global [`TypeTable`] or into a
+/// Index of a type, either into the frozen global `TypeTable` or into a
 /// per-file scratch table layered on top of it (ids `>= TypeTable::len`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct TypeId(pub u32);
@@ -238,7 +238,7 @@ pub enum Type {
 
 /// Append-only type storage. The global table is built single-threaded at link
 /// time and frozen; checking threads extend it logically via a local overlay
-/// (see [`crate::check`]).
+/// (see [`mod@crate::check`]).
 #[derive(Debug, Default)]
 pub struct TypeTable {
     types: Vec<Type>,

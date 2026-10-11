@@ -1094,7 +1094,14 @@ pub static STRUCTS: phf::Map<&'static str, StructDetails> = ::phf::Map {
                 is_transparent: false,
             },
         ),
-        ("Comment", StructDetails { field_order: None, is_node: false, is_transparent: false }),
+        (
+            "Comment",
+            StructDetails {
+                field_order: Some(&[0, 2, 1, 3, 4, 5, 6, 7]),
+                is_node: false,
+                is_transparent: false,
+            },
+        ),
         (
             "BooleanLiteral",
             StructDetails { field_order: Some(&[1, 0, 2]), is_node: true, is_transparent: false },

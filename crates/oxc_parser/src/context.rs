@@ -193,6 +193,9 @@ impl Context {
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum StatementContext {
+    /// Direct child of `Program`.
+    /// Unlike `Context::TopLevel`, this excludes blocks and other nested statements.
+    Program,
     StatementList,
     If,
     Label,
@@ -204,6 +207,6 @@ pub enum StatementContext {
 
 impl StatementContext {
     pub(crate) fn is_single_statement(self) -> bool {
-        self != Self::StatementList
+        !matches!(self, Self::Program | Self::StatementList)
     }
 }

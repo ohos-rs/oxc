@@ -38,7 +38,7 @@ fn test_fold_block() {
     // test("for (x of y) {x}", "for(x of y);");
     test("for (let x = 1; x <10; x++ ) {}", "for (let x = 1; x <10; x++ );");
     test("for (var x = 1; x <10; x++ ) {}", "for (var x = 1; x <10; x++ );");
-    test("do { } while (true)", "do;while(!0)");
+    test("do { } while (true)", "do;while(1)");
     test(
         "function z(a) {
           {
@@ -85,7 +85,7 @@ fn test_fold_useless_for() {
     test("for (var se = [1, 2]; false;);", "var se = [1, 2];");
     test("for (var se = [1, 2]; false;) { var a = 0; }", "var se = [1, 2], a;");
 
-    test("for (foo = bar; false;) {}", "for (foo = bar; !1;);");
+    test("for (foo = bar; false;) {}", "for (foo = bar; 0;);");
     // test("l1:for(;false;) {  }", "");
 }
 
@@ -235,28 +235,25 @@ fn remove_unused_expressions_in_sequence() {
     // already-`0` element re-records a mutation every iteration, spinning
     // the fixed-point loop into the 10-iteration debug_assert.
     test_same("(sideEffect(), 0, foo.bar)();");
-    test_same("delete (sideEffect(), 0, foo.bar);");
+    test("delete (sideEffect(), 0, foo.bar);", "sideEffect(), foo.bar;");
 
     test("typeof (0, foo);", "foo");
     test_same("v = typeof (0, foo);");
     test("var foo; typeof (0, foo);", "var foo;");
-    test("var foo; v = typeof (0, foo);", "var foo; v = typeof foo");
+    test("v = function(foo) { return typeof (0, foo) }", "v = function(foo) { return typeof foo }");
     test("typeof 0", "");
 
-    test_same("delete (0, foo);");
-    test_same("delete (0, foo.#bar);");
-    test_same("delete (0, foo.bar);");
-    test_same("delete (0, foo[bar]);");
-    test_same("delete (0, foo?.bar);");
+    test("delete (0, foo);", "foo");
+    test("delete (0, foo.#bar);", "foo.#bar");
+    test("delete (0, foo.bar);", "foo.bar");
+    test("delete (0, foo[bar]);", "foo[bar]");
+    test("delete (0, foo?.bar);", "foo?.bar");
 }
 
 #[test]
 fn remove_unused_expressions_in_for() {
-    test("var i; for (i = 0, 0; i < 10; i++) foo(i);", "var i; for (i = 0; i < 10; i++) foo(i);");
-    test(
-        "var i; for (i = 0; i < 10; 0, i++, 0) foo(i);",
-        "var i; for (i = 0; i < 10; i++) foo(i);",
-    );
+    test("var i; for (i = 0, 0; i < 10; i++) foo(i);", "for (var i = 0; i < 10; i++) foo(i);");
+    test("var i; for (i = 0; i < 10; 0, i++, 0) foo(i);", "for (var i = 0; i < 10; i++) foo(i);");
 }
 
 #[test]

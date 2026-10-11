@@ -75,7 +75,8 @@ impl<'a, C: Config> ParserImpl<'a, C> {
     }
 
     fn is_parenthesized_arrow_function_expression_worker(&mut self) -> Tristate {
-        if self.eat(Kind::Async) {
+        let is_async = self.eat(Kind::Async);
+        if is_async {
             if self.cur_token().is_on_new_line() {
                 return Tristate::False;
             }
@@ -100,7 +101,11 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                         self.bump_any();
                         let third = self.cur_kind();
                         match third {
-                            Kind::Colon if self.is_ts => Tristate::Maybe,
+                            // `async()` can be a call on the true side of a conditional.
+                            Kind::Colon if self.is_ts && is_async => Tristate::Maybe,
+                            // Bare `()` cannot be a parenthesized expression, so the colon
+                            // must start a return type, even inside a conditional expression.
+                            Kind::Colon if self.is_ts => Tristate::True,
                             Kind::Arrow | Kind::LCurly => Tristate::True,
                             _ => Tristate::False,
                         }
@@ -324,16 +329,20 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
         let body = if self.at(Kind::LCurly) {
             let function_body = if is_arkui_dsl_function {
-                self.in_arkui_dsl_context(Self::parse_function_body)
+                self.in_arkui_dsl_context(|p| p.context_add(Context::In, Self::parse_function_body))
             } else {
-                self.without_arkui_dsl_context(Self::parse_function_body)
+                self.without_arkui_dsl_context(|p| {
+                    p.context_add(Context::In, Self::parse_function_body)
+                })
             };
             ArrowFunctionBody::FunctionBody(function_body)
         } else {
             // Remove TopLevel context for arrow function expression body
             let parse = |p: &mut Self| {
                 p.context_remove(Context::TopLevel, |p| {
-                    p.parse_assignment_expression_or_higher_impl(allow_return_type_in_arrow_function)
+                    p.parse_assignment_expression_or_higher_impl(
+                        allow_return_type_in_arrow_function,
+                    )
                 })
             };
             let expr = if is_arkui_dsl_function {

@@ -1,6 +1,7 @@
-use oxc_allocator::{ArenaBox, ArenaVec, Dummy, GetAllocator};
+use oxc_allocator::{ArenaBox, ArenaVec};
 use oxc_ast::ast::*;
-use oxc_span::GetSpan;
+use oxc_span::{GetSpan, SPAN};
+use oxc_str::Ident;
 use oxc_syntax::operator::UnaryOperator;
 
 use crate::{
@@ -72,12 +73,11 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         let return_type = {
             let return_type_start = self.cur_start();
             let return_type = if self.source_type.is_ets_static() && this_param.is_some() {
-                self.context_add(Context::EtsAllowThisType, Self::parse_return_type)
+                self.context_add(Context::EtsAllowThisType, |p| p.parse_return_type(Kind::Arrow))
             } else {
-                self.parse_return_type()
+                self.parse_return_type(Kind::Arrow)
             };
             TSTypeAnnotation::boxed(self.end_span(return_type_start), return_type, self)
-
         };
 
         let span = self.end_span(start);
@@ -151,7 +151,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             self.parse_modifiers(false, false);
         }
         let kind = self.cur_kind();
-        if kind.is_identifier() || kind == Kind::This {
+        if kind.is_binding_identifier() || kind == Kind::This {
             self.bump_any();
             return true;
         }
@@ -965,7 +965,6 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             self.expect(Kind::RAngle);
             let span = self.end_span(start);
             if params.is_empty() && !self.source_type.is_ets_static() {
-
                 self.error(diagnostics::ts_empty_type_argument_list(span));
             }
             if !self.is_ts {
@@ -1013,7 +1012,6 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             }
             let span = self.end_span(start);
             if params.is_empty() && !self.source_type.is_ets_static() {
-
                 self.error(diagnostics::ts_empty_type_argument_list(span));
             }
             return Some(TSTypeParameterInstantiation::boxed(span, params, self));
@@ -1061,7 +1059,6 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         }
         let span = self.end_span(start);
         if params.is_empty() && !self.source_type.is_ets_static() {
-
             self.error(diagnostics::ts_empty_type_argument_list(span));
         }
         Some(TSTypeParameterInstantiation::boxed(span, params, self))
@@ -1106,7 +1103,8 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                 // type C<T extends unknown[]> = [...string[], ...T];
                 // example of invalid code:
                 // type C<T extends unknown[]> = [...string[], ...T[]];
-                if let TSTupleElement::TSRestType(rest) = &tuple
+                if me.source_type.is_ets_static()
+                    && let TSTupleElement::TSRestType(rest) = &tuple
                     && match &rest.type_annotation {
                         TSType::TSArrayType(_) => true,
                         // Check for `Array<...>` type
@@ -1118,7 +1116,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                     }
                 {
                     if let Some(seen_span) = seen_rest_span {
-                        me.error(diagnostics::rest_element_cannot_follow_another_rest_element(
+                        me.error(diagnostics::ets_rest_element_cannot_follow_another_rest_element(
                             seen_span,
                             tuple.span(),
                         ));
@@ -1143,12 +1141,6 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                     TSTupleElement::TSNamedTupleMember(named) => named.optional,
                     _ => false,
                 } {
-                    if let Some(seen_rest_span) = seen_rest_span {
-                        me.error(diagnostics::optional_element_cannot_follow_rest_element(
-                            tuple.span(),
-                            seen_rest_span,
-                        ));
-                    }
                     seen_optional_span = Some(tuple.span());
                 }
 
@@ -1446,12 +1438,12 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             return None;
         }
         let start = self.cur_start();
-        let return_type = self.parse_return_type();
+        let return_type = self.parse_return_type(Kind::Colon);
         Some(TSTypeAnnotation::boxed(self.end_span(start), return_type, self))
     }
 
-    fn parse_return_type(&mut self) -> TSType<'a> {
-        self.bump_any();
+    fn parse_return_type(&mut self, separator: Kind) -> TSType<'a> {
+        self.expect(separator);
         self.context_remove(Context::DisallowConditionalTypes, Self::parse_type_or_type_predicate)
     }
 
@@ -1551,7 +1543,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
         match kind {
             TSMethodSignatureKind::Get => {
-                if !params.items.is_empty() {
+                if params.parameters_count() != 0 {
                     self.error(diagnostics::getter_parameters(params.span));
                 }
             }
@@ -1651,7 +1643,9 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         let mut parameter_count = 0;
         let mut comma_start = None;
         let parameter = if self.at(Kind::RBrack) || self.has_fatal_error() {
-            TSIndexSignatureName::dummy(self.allocator())
+            let ty = TSType::new_ts_any_keyword(SPAN, self);
+            let annotation = TSTypeAnnotation::boxed(SPAN, ty, self);
+            TSIndexSignatureName::new(SPAN, Ident::empty(), annotation, self)
         } else {
             parameter_count = 1;
             let parameter = self.parse_ts_index_signature_name();
@@ -1733,11 +1727,12 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             return;
         }
         // Didn't have a comma.  We must have a (possible ASI) semicolon.
-        self.bump(Kind::Semicolon);
+        self.asi();
     }
 
     fn parse_ts_index_signature_name(&mut self) -> TSIndexSignatureName<'a> {
         let start = self.cur_start();
+        self.check_identifier(self.cur_kind(), self.ctx);
         let name = self.parse_identifier_name().name;
         if self.at(Kind::Question) {
             self.error(diagnostics::index_signature_question_mark(self.cur_token().span()));

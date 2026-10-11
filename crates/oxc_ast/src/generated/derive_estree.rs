@@ -3531,6 +3531,8 @@ impl ESTree for CommentKind {
             Self::Line => JsonSafeString("Line").serialize(serializer),
             Self::SingleLineBlock => JsonSafeString("Block").serialize(serializer),
             Self::MultiLineBlock => JsonSafeString("Block").serialize(serializer),
+            Self::HtmlOpen => JsonSafeString("Line").serialize(serializer),
+            Self::HtmlClose => JsonSafeString("Line").serialize(serializer),
         }
     }
 }

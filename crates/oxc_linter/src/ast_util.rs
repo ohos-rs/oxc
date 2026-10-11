@@ -58,9 +58,7 @@ fn is_logical_identity(op: LogicalOperator, expr: &Expression) -> bool {
             (op == LogicalOperator::Or && boolean_value == Some(true))
                 || (op == LogicalOperator::And && boolean_value == Some(false))
         }
-        Expression::UnaryExpression(unary_expr) => {
-            op == LogicalOperator::And && unary_expr.operator == UnaryOperator::Void
-        }
+        Expression::UnaryExpression(unary_expr) => op.is_and() && unary_expr.operator.is_void(),
         Expression::LogicalExpression(logical_expr) => {
             op == logical_expr.operator
                 && (is_logical_identity(logical_expr.operator, &logical_expr.left)
@@ -933,31 +931,20 @@ pub fn get_function_name_with_kind<'a>(node: &AstNode<'a>, parent_node: &AstNode
     tokens.join(" ")
 }
 
-// get the top iterator
-// example: this.state.a.b.c.d => this.state
+/// Get the innermost static member expression in an assignment target.
+///
+/// For example, both `this.state.a.b.c` and `this.state.a[key].c` return `this.state`.
 pub fn get_outer_member_expression<'a, 'b>(
     assignment: &'b SimpleAssignmentTarget<'a>,
 ) -> Option<&'b StaticMemberExpression<'a>> {
-    match assignment {
-        SimpleAssignmentTarget::StaticMemberExpression(expr) => {
-            let mut node = &**expr;
-            loop {
-                if node.object.is_null() {
-                    return Some(node);
-                }
+    let mut member = assignment.as_member_expression()?;
 
-                if let Some(MemberExpression::StaticMemberExpression(object)) =
-                    node.object.as_member_expression()
-                    && !object.property.name.is_empty()
-                {
-                    node = object;
+    while let Some(object) = member.object().as_member_expression() {
+        member = object;
+    }
 
-                    continue;
-                }
-
-                return Some(node);
-            }
-        }
+    match member {
+        MemberExpression::StaticMemberExpression(expression) => Some(expression),
         _ => None,
     }
 }

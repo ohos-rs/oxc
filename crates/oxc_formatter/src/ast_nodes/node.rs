@@ -68,12 +68,6 @@ impl<T: GetSpan> GetSpan for &AstNode<'_, T> {
 }
 
 impl<'a, T> AstNode<'a, T> {
-    /// Returns the parent node.
-    #[inline]
-    pub fn parent(&self) -> &AstNodes<'a> {
-        &self.parent
-    }
-
     /// Returns an iterator over all ancestor nodes in the AST, starting from self.
     ///
     /// The iteration includes the current node and proceeds upward through the tree,
@@ -105,6 +99,18 @@ impl<'a, T> AstNode<'a, T> {
     /// ```
     pub fn ancestors(&self) -> impl Iterator<Item = &AstNodes<'a>> {
         self.parent().ancestors()
+    }
+
+    /// Returns the parent node.
+    #[inline]
+    pub fn parent(&self) -> &AstNodes<'a> {
+        &self.parent
+    }
+
+    /// The start of the following sibling node (0 if none), the bound of this node's trailing comments.
+    #[inline]
+    pub fn following_span_start(&self) -> u32 {
+        self.following_span_start
     }
 
     /// Returns the grandparent node (parent's parent).
