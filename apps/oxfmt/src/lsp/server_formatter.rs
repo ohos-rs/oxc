@@ -384,6 +384,9 @@ impl ServerFormatter {
 
     /// Resolve config and format a file at the given path.
     /// Returns `None` if the file is unsupported or ignored.
+    ///
+    /// `language` is given for an in-memory document (from its `languageId`),
+    /// which then decides the formatter, see [`crate::core::ConfigResolver::classify`].
     fn resolve_and_format(
         &self,
         scopes: &ConfigScopes,
@@ -407,8 +410,15 @@ impl ServerFormatter {
             return Ok(None);
         }
 
-        let Some(strategy) = classify_file_with_language(path, document_language.or(self.language))
-        else {
+        let explicit_language = document_language.or(self.language);
+        let strategy = if explicit_language.is_some() {
+            classify_file_with_language(path, explicit_language)
+                .or_else(|| resolver.classify(path, None))
+        } else {
+            // Honor config `associations` and file-name based classification.
+            resolver.classify(path, None)
+        };
+        let Some(strategy) = strategy else {
             debug!("Unsupported file type for formatting: {}", path.display());
             return Ok(None);
         };

@@ -415,7 +415,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         import: &ImportDeclaration<'a>,
     ) {
         if !self.source_type.is_ets_static()
-            || import.source.value.as_str() != "@ohos.arkui.component"
+            || import.source.value.as_str() != Some("@ohos.arkui.component")
         {
             return;
         }
@@ -944,7 +944,8 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         let is_arkui_dsl_method = self.supports_arkui_dsl()
             && ((!computed
                 && name.static_name().is_some_and(|name| {
-                    self.is_arkui_render_method_in_current_scope(name.as_ref())
+                    name.as_str()
+                        .is_some_and(|name| self.is_arkui_render_method_in_current_scope(name))
                 }))
                 || self.decorators_enable_arkui_dsl(decorators.as_slice()));
         let mut value =

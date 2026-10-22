@@ -267,7 +267,7 @@ pub fn build_surface(program: &Program<'_>) -> FileSurface {
                     }
                 }
                 surface.imports.push(SurfaceImport {
-                    specifier: import.source.value.as_str().into(),
+                    specifier: import.source.value.as_str().unwrap_or("").into(),
                     bindings,
                 });
             }
@@ -291,14 +291,14 @@ pub fn build_surface(program: &Program<'_>) -> FileSurface {
             Statement::ExportFromDeclaration(export) => {
                 for spec in &export.specifiers {
                     surface.reexports.push(SurfaceReexport::Named {
-                        specifier: export.source.value.as_str().into(),
+                        specifier: export.source.value.as_str().unwrap_or("").into(),
                         imported: spec.local.name().as_str().into(),
                         exported: spec.exported.name().as_str().into(),
                     });
                 }
             }
             Statement::ExportAllDeclaration(export) => {
-                let specifier: Box<str> = export.source.value.as_str().into();
+                let specifier: Box<str> = export.source.value.as_str().unwrap_or("").into();
                 match &export.exported {
                     Some(name) => surface
                         .reexports
@@ -616,7 +616,7 @@ pub fn enum_member_infos(enum_decl: &TSEnumDeclaration<'_>) -> Vec<crate::ir::En
         .iter()
         .map(|member| {
             use oxc_ast::ast::Expression;
-            let name: Box<str> = member.id.static_name().as_str().into();
+            let name: Box<str> = member.id.static_name().as_str().unwrap_or("").into();
             let is_string = matches!(
                 member.initializer,
                 Some(Expression::StringLiteral(_) | Expression::TemplateLiteral(_))
@@ -765,7 +765,7 @@ fn infer_literal_initializer<R: ResolveName>(
 ) -> TypeId {
     match init {
         Expression::StringLiteral(s) => {
-            lowerer.sink.push(Type::StringLiteral(s.value.as_str().into()))
+            lowerer.sink.push(Type::StringLiteral(s.value.as_str().unwrap_or("").into()))
         }
         Expression::NumericLiteral(n) => lowerer.sink.push(Type::NumberLiteral(n.value)),
         Expression::BooleanLiteral(b) => lowerer.sink.push(Type::BooleanLiteral(b.value)),
@@ -773,7 +773,7 @@ fn infer_literal_initializer<R: ResolveName>(
             lowerer.sink.push(Type::BigIntLiteral(b.value.as_str().into()))
         }
         Expression::TemplateLiteral(t) if t.expressions.is_empty() && t.quasis.len() == 1 => {
-            let text = t.quasis[0].value.cooked.as_deref().unwrap_or("");
+            let text = t.quasis[0].value.cooked.and_then(oxc_str::JSStr::as_str).unwrap_or("");
             lowerer.sink.push(Type::StringLiteral(text.into()))
         }
         Expression::UnaryExpression(unary) if unary.operator == UnaryOperator::UnaryNegation => {

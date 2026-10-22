@@ -6,13 +6,13 @@ use oxc_formatter_css::CssVariant;
 use oxc_formatter_json::JsonVariant;
 use oxc_span::{ExplicitLanguage, SourceType};
 
+use super::language::{Language, Route};
 #[cfg(feature = "napi")]
 use super::oxfmtrc::FormatConfig;
 
 /// Classify a file path into a [`FormatStrategy`].
 ///
 /// Returns `None` when the file type is not a formatting target.
-#[cfg(test)]
 pub fn classify_file(path: &Path) -> Option<FormatStrategy> {
     classify_file_with_language(path, None)
 }
@@ -78,8 +78,26 @@ pub fn classify_file_with_language(
     None
 }
 
+/// Classify a file explicitly assigned to `language` (e.g. by `associations`), regardless of its name.
+///
+/// Still `None` for excluded files (lock files), and in the pure Rust build for languages Prettier serves.
+pub fn classify_as(language: Language, path: &Path) -> Option<FormatStrategy> {
+    // Lock files must NEVER be formatted, even when explicitly assigned
+    // (e.g. `pnpm-lock.yaml` matched by a broad `associations` glob).
+    // This bypasses `classify_file`, so the same rule is checked here.
+    if EXCLUDE_FILENAMES.contains(path.file_name()?.to_str()?) {
+        return None;
+    }
+    match language.route() {
+        Route::Native(language) => Some(FormatStrategy::Native(language)),
+        #[cfg(feature = "napi")]
+        Route::Prettier(language) => Some(FormatStrategy::Prettier(language)),
+        _ => None,
+    }
+}
+
 /// How a whole file is formatted: which formatter, with any pre-process.
-/// The whole-file counterpart of [`Route`](super::language::Route) for embedded parts,
+/// The whole-file counterpart of [`Route`] for embedded parts,
 /// with `PackageJson` / `YamlRc` as file-only pre-processes.
 ///
 /// Consumed by the resolver to construct a [`super::FormatPlan`] with the resolved config.

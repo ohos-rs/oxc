@@ -331,9 +331,11 @@ fn test_string_array_splitting() {
 #[test]
 fn test_template_string_to_string() {
     test("x = `abcde`", "x = 'abcde'");
-    // Lone surrogates are stored escaped in the cooked value; converting to a
-    // string literal would materialize the escape encoding as literal text.
-    test_same("x = `\\ud800y`");
+    // A lone surrogate in the cooked value is kept as the same code unit.
+    test("x = `\\ud800y`", "x = '\\ud800y'");
+    test("x = `${'\\ud800'}`", "x = '\\ud800'");
+    test("x = `${'\\ud800'}`.length", "x = 1");
+    test("x = `\\ud83d${'\\ude00'}`", "x = '\u{1F600}'");
     test("x = `ab cd ef`", "x = 'ab cd ef'");
     test_same("x = `hello ${name}`");
     test_same("tag `hello ${name}`");
@@ -720,6 +722,20 @@ fn test_property_key() {
     test(
         "class C { static accessor ['__proto__'] = 0 }",
         "class C { static accessor __proto__ = 0 }",
+    );
+
+    // A key with a lone surrogate keeps its string form without brackets.
+    test("v = { ['\\uD800']: 2 }", "v = { '\\uD800': 2 }");
+    test("v = ({ ['__proto__\\uD800']: 0 })", "v = ({ '__proto__\\uD800': 0 })");
+    test("({ ['\\uD800']: _ } = {})", "({ '\\uD800': _ } = {})");
+    test("var { ['\\uD800']: _ } = {}", "var { '\\uD800': _ } = {}");
+    test(
+        "class C { ['\\uD800'] = 1; static ['prototype\\uD800']() {} }",
+        "class C { '\\uD800' = 1; static 'prototype\\uD800'() {} }",
+    );
+    test(
+        "class C { accessor ['constructor\\uD800'] = 1 }",
+        "class C { accessor 'constructor\\uD800' = 1 }",
     );
 
     // Patch KATAKANA MIDDLE DOT and HALFWIDTH KATAKANA MIDDLE DOT

@@ -1,6 +1,6 @@
 use oxc_allocator::ArenaVec;
 use oxc_ast::ast::*;
-use oxc_formatter_core::{Buffer, Format};
+use oxc_formatter_core::Format;
 use oxc_span::GetSpan;
 
 use crate::print::semicolon::{
@@ -21,7 +21,7 @@ use super::FormatWrite;
 /// terminated by the head itself (the head-vs-body test is by span: a declaration can also be the body).
 /// Everywhere else the declaration terminates itself, including `export const ...`,
 /// whose `ExportDeclaration` prints no semicolon of its own (see its `FormatWrite` implementation).
-fn is_for_head_declaration(decl: &AstNode<'_, VariableDeclaration<'_>>) -> bool {
+fn is_for_head_declaration(decl: &AstNode<'_, '_, VariableDeclaration<'_>>) -> bool {
     match decl.parent() {
         AstNodes::ForStatement(stmt) => {
             stmt.init.as_ref().is_some_and(|init| init.span() == decl.span())
@@ -32,7 +32,7 @@ fn is_for_head_declaration(decl: &AstNode<'_, VariableDeclaration<'_>>) -> bool 
     }
 }
 
-impl<'a> FormatWrite<'a> for AstNode<'a, VariableDeclaration<'a>> {
+impl<'a> FormatWrite<'a> for AstNode<'_, 'a, VariableDeclaration<'a>> {
     fn write(&self, f: &mut JsFormatter<'_, 'a>) {
         if self.decorators.is_some() {
             write!(f, self.decorators());
@@ -62,7 +62,7 @@ impl<'a> FormatWrite<'a> for AstNode<'a, VariableDeclaration<'a>> {
                     });
                 write!(
                     f,
-                    FormatContentWithSemicolon::new(declarations, content_end, self.span().end)
+                    FormatContentWithSemicolon::new(&declarations, content_end, self.span().end)
                 );
             } else {
                 write!(f, declarations);
@@ -72,7 +72,7 @@ impl<'a> FormatWrite<'a> for AstNode<'a, VariableDeclaration<'a>> {
     }
 }
 
-impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, ArenaVec<'a, VariableDeclarator<'a>>> {
+impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'_, 'a, ArenaVec<'a, VariableDeclarator<'a>>> {
     fn fmt(&self, f: &mut JsFormatter<'_, 'a>) {
         let length = self.len();
 
@@ -123,7 +123,7 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, ArenaVec<'a, VariableDe
     }
 }
 
-impl<'a> FormatWrite<'a> for AstNode<'a, VariableDeclarator<'a>> {
+impl<'a> FormatWrite<'a> for AstNode<'_, 'a, VariableDeclarator<'a>> {
     fn write(&self, f: &mut JsFormatter<'_, 'a>) {
         AssignmentLike::VariableDeclarator(self).fmt(f);
     }

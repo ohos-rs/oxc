@@ -519,10 +519,11 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
         let mut keys = FxHashMap::default();
         for e in &with_entries {
-            let key = e.key.as_arena_str().as_str();
+            let key = e.key.as_js_str();
             let span = e.key.span();
             if let Some(old_span) = keys.insert(key, span) {
-                self.error(diagnostics::redeclaration(key, old_span, span));
+                let name = key.as_str().unwrap_or_else(|| span.source_text(self.source_text));
+                self.error(diagnostics::redeclaration(name, old_span, span));
             }
         }
 
@@ -1231,8 +1232,8 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                     ));
                 }
 
-                let local =
-                    BindingIdentifier::new(name.span(), self.ident(name.name().as_str()), self);
+                let local_name = name.name().as_str();
+                let local = BindingIdentifier::new(name.span(), self.ident(local_name), self);
                 let imported = property_name.unwrap_or(name);
                 ImportOrExportSpecifier::Import(ImportSpecifier::new(
                     self.end_span(specifier_start),
@@ -1297,13 +1298,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                 ModuleExportName::new_identifier_reference(ident.span, ident.name, self)
             }
             ModuleExportName::StringLiteral(literal) => {
-                ModuleExportName::new_string_literal_with_lone_surrogates(
-                    literal.span,
-                    literal.value,
-                    literal.raw,
-                    literal.lone_surrogates,
-                    self,
-                )
+                ModuleExportName::new_string_literal(literal.span, literal.value, literal.raw, self)
             }
         }
     }
@@ -1736,7 +1731,7 @@ export declare struct Foo {
             let specifiers = decl.specifiers.as_ref().expect("lazy import specifiers");
             assert_eq!(specifiers.len(), 1);
             assert_eq!(specifiers[0].name(), "Foo");
-            assert_eq!(decl.source.value.as_str(), "./Foo");
+            assert_eq!(decl.source.value.as_str(), Some("./Foo"));
         });
     }
 
@@ -1751,7 +1746,7 @@ export declare struct Foo {
             assert_eq!(specifiers.len(), 1);
             assert!(matches!(specifiers[0], ImportDeclarationSpecifier::ImportDefaultSpecifier(_)));
             assert_eq!(specifiers[0].name(), "Foo");
-            assert_eq!(decl.source.value.as_str(), "./Foo");
+            assert_eq!(decl.source.value.as_str(), Some("./Foo"));
         });
     }
 
@@ -1793,7 +1788,7 @@ export declare struct Foo {
             assert!(matches!(specifiers[1], ImportDeclarationSpecifier::ImportSpecifier(_)));
             assert_eq!(specifiers[0].name(), "Foo");
             assert_eq!(specifiers[1].name(), "Bar");
-            assert_eq!(decl.source.value.as_str(), "./Foo");
+            assert_eq!(decl.source.value.as_str(), Some("./Foo"));
         });
     }
 
@@ -1808,7 +1803,7 @@ export declare struct Foo {
             assert_eq!(specifiers.len(), 1);
             assert!(matches!(specifiers[0], ImportDeclarationSpecifier::ImportDefaultSpecifier(_)));
             assert_eq!(specifiers[0].name(), "lazy");
-            assert_eq!(decl.source.value.as_str(), "./Foo");
+            assert_eq!(decl.source.value.as_str(), Some("./Foo"));
         });
     }
 

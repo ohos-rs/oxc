@@ -2,4 +2,44 @@
 source: crates/oxc_checker/tests/conformance.rs
 expression: header + &report
 ---
-conformance: 154/154 expected diagnostics matched, 0 extra, 37/37 cases perfect
+conformance: 147/154 expected diagnostics matched, 21 extra, 31/37 cases perfect
+
+## basic — matched 12/12, extra 2
++ main.ts(21,7): error TS9010: Variable must have an explicit type annotation with --isolatedDeclarations.
++ main.ts(22,7): error TS9010: Variable must have an explicit type annotation with --isolatedDeclarations.
+
+## declarations-id-1 — matched 3/6, extra 3
+- funcs.ts(18,10): error TS9013: Expression type can't be inferred with --isolatedDeclarations.
+- funcs.ts(22,41): error TS9013: Expression type can't be inferred with --isolatedDeclarations.
+- funcs.ts(25,43): error TS9011: Parameter must have an explicit type annotation with --isolatedDeclarations.
++ funcs.ts(17,17): error TS9007: Function must have an explicit return type annotation with --isolatedDeclarations.
++ funcs.ts(22,26): error TS9007: Function must have an explicit return type annotation with --isolatedDeclarations.
++ funcs.ts(25,35): error TS9011: Parameter must have an explicit type annotation with --isolatedDeclarations.
+
+## modules-1 — matched 2/4, extra 2
+- main.ts(6,8): error TS2613: Module '"/Users/boshen/github/oxc-project/oxc3/crates/oxc_checker/tests/conformance/modules-1/shapes"' has no default export. Did you mean to use 'import { ok_makePoint } from "/Users/boshen/github/oxc-project/oxc3/crates/oxc_checker/tests/conformance/modules-1/shapes"' instead?
+- main.ts(8,8): error TS1192: Module '"/Users/boshen/github/oxc-project/oxc3/crates/oxc_checker/tests/conformance/modules-1/shapes"' has no default export.
++ main.ts(6,8): error TS2613: Module '"/Users/ranger/Desktop/project/southorange/oxc/crates/oxc_checker/tests/conformance/modules-1/shapes"' has no default export. Did you mean to use 'import { ok_makePoint } from "/Users/ranger/Desktop/project/southorange/oxc/crates/oxc_checker/tests/conformance/modules-1/shapes"' instead?
++ main.ts(8,8): error TS1192: Module '"/Users/ranger/Desktop/project/southorange/oxc/crates/oxc_checker/tests/conformance/modules-1/shapes"' has no default export.
+
+## modules-3 — matched 1/3, extra 2
+- main.ts(15,35): error TS2339: Property 'bad_missingValue' does not exist on type 'typeof import("/Users/boshen/github/oxc-project/oxc3/crates/oxc_checker/tests/conformance/modules-3/reexport")'.
+- main.ts(17,29): error TS2694: Namespace '"/Users/boshen/github/oxc-project/oxc3/crates/oxc_checker/tests/conformance/modules-3/reexport"' has no exported member 'MissingType'.
++ main.ts(15,35): error TS2339: Property 'bad_missingValue' does not exist on type 'typeof import("/Users/ranger/Desktop/project/southorange/oxc/crates/oxc_checker/tests/conformance/modules-3/reexport")'.
++ main.ts(17,29): error TS2694: Namespace '"/Users/ranger/Desktop/project/southorange/oxc/crates/oxc_checker/tests/conformance/modules-3/reexport"' has no exported member 'MissingType'.
+
+## satisfies-as-1 — matched 3/3, extra 5
++ main.ts(12,14): error TS9010: Variable must have an explicit type annotation with --isolatedDeclarations.
++ main.ts(17,14): error TS9010: Variable must have an explicit type annotation with --isolatedDeclarations.
++ main.ts(23,14): error TS9010: Variable must have an explicit type annotation with --isolatedDeclarations.
++ main.ts(29,14): error TS9010: Variable must have an explicit type annotation with --isolatedDeclarations.
++ main.ts(3,14): error TS9010: Variable must have an explicit type annotation with --isolatedDeclarations.
+
+## satisfies-as-2 — matched 5/5, extra 7
++ satisfies_union.ts(10,14): error TS9010: Variable must have an explicit type annotation with --isolatedDeclarations.
++ satisfies_union.ts(13,14): error TS9010: Variable must have an explicit type annotation with --isolatedDeclarations.
++ satisfies_union.ts(15,14): error TS9010: Variable must have an explicit type annotation with --isolatedDeclarations.
++ satisfies_union.ts(16,14): error TS9010: Variable must have an explicit type annotation with --isolatedDeclarations.
++ satisfies_union.ts(17,14): error TS9010: Variable must have an explicit type annotation with --isolatedDeclarations.
++ satisfies_union.ts(4,14): error TS9010: Variable must have an explicit type annotation with --isolatedDeclarations.
++ satisfies_union.ts(7,14): error TS9010: Variable must have an explicit type annotation with --isolatedDeclarations.

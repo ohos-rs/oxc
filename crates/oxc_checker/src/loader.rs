@@ -178,13 +178,19 @@ fn load_file(
             use oxc_ast::ast::Statement;
             match stmt {
                 Statement::ImportDeclaration(import) => {
-                    specifiers.insert(import.source.value.as_str());
+                    if let Some(specifier) = import.source.value.as_str() {
+                        specifiers.insert(specifier);
+                    }
                 }
                 Statement::ExportFromDeclaration(export) => {
-                    specifiers.insert(export.source.value.as_str());
+                    if let Some(specifier) = export.source.value.as_str() {
+                        specifiers.insert(specifier);
+                    }
                 }
                 Statement::ExportAllDeclaration(export) => {
-                    specifiers.insert(export.source.value.as_str());
+                    if let Some(specifier) = export.source.value.as_str() {
+                        specifiers.insert(specifier);
+                    }
                 }
                 _ => {}
             }

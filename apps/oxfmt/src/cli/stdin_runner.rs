@@ -116,7 +116,13 @@ impl StdinRunner {
             return CliRunResult::FormatSucceeded;
         }
 
-        let Some(strategy) = classify_file_with_language(&filepath, lang) else {
+        let strategy = if lang.is_some() {
+            classify_file_with_language(&filepath, lang)
+                .or_else(|| config_resolver.classify(&filepath, None))
+        } else {
+            config_resolver.classify(&filepath, None)
+        };
+        let Some(strategy) = strategy else {
             utils::print_and_flush(stderr, "Unsupported file type for stdin-filepath\n");
             return CliRunResult::InvalidOptionConfig;
         };

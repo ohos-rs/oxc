@@ -661,7 +661,11 @@ fn resolve_format_plan(
     cwd: &Path,
     language: Option<ExplicitLanguage>,
 ) -> Option<FormatPlan> {
-    let strategy = classify_file_with_language(path, language)?;
+    let strategy = if language.is_some() {
+        classify_file_with_language(path, language).or_else(|| resolver.classify(path, None))?
+    } else {
+        resolver.classify(path, None)?
+    };
     match resolver.resolve(path, strategy) {
         Ok(ResolveOutcome::Format(plan)) => Some(plan),
         Ok(ResolveOutcome::MissingPlugin(_)) => None,

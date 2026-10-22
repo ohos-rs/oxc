@@ -213,10 +213,8 @@ impl FileChecker<'_> {
                 Statement::ImportDeclaration(import) => self.bind_import(import),
                 Statement::ExportFromDeclaration(export) => self.validate_export_from(export),
                 Statement::ExportAllDeclaration(export) => {
-                    self.validate_specifier_resolves(
-                        export.source.value.as_str(),
-                        export.source.span,
-                    );
+                    let Some(specifier) = export.source.value.as_str() else { return };
+                    self.validate_specifier_resolves(specifier, export.source.span);
                 }
                 _ => {}
             }
@@ -896,7 +894,7 @@ impl FileChecker<'_> {
     }
 
     fn bind_import(&mut self, import: &ImportDeclaration<'_>) {
-        let specifier = import.source.value.as_str();
+        let Some(specifier) = import.source.value.as_str() else { return };
         let resolved = match self.resolution(specifier) {
             None | Some(ModuleResolution::NotFound) => {
                 self.diagnostics.push(diagnostics::module_not_found(specifier, import.source.span));
@@ -997,7 +995,7 @@ impl FileChecker<'_> {
     }
 
     fn validate_export_from(&mut self, export: &ExportFromDeclaration<'_>) {
-        let specifier = export.source.value.as_str();
+        let Some(specifier) = export.source.value.as_str() else { return };
         if !self.validate_specifier_resolves(specifier, export.source.span) {
             return;
         }
@@ -2510,7 +2508,7 @@ fn parse_typeof_guard<'b>(test: &'b Expression<'_>) -> Option<(&'b str, TypeofKi
         return None;
     }
     let Expression::Identifier(ident) = &unary.argument else { return None };
-    let kind = match literal.value.as_str() {
+    let kind = match literal.value.as_str()? {
         "string" => TypeofKind::String,
         "number" => TypeofKind::Number,
         "boolean" => TypeofKind::Boolean,

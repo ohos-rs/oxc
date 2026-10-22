@@ -169,14 +169,15 @@ impl<'a, R: ResolveName> Lowerer<'a, R> {
             TSLiteral::BooleanLiteral(b) => self.sink.push(Type::BooleanLiteral(b.value)),
             TSLiteral::NumericLiteral(n) => self.sink.push(Type::NumberLiteral(n.value)),
             TSLiteral::StringLiteral(s) => {
-                self.sink.push(Type::StringLiteral(s.value.as_str().into()))
+                self.sink.push(Type::StringLiteral(s.value.as_str().unwrap_or("").into()))
             }
             TSLiteral::BigIntLiteral(b) => {
                 self.sink.push(Type::BigIntLiteral(b.value.as_str().into()))
             }
             TSLiteral::TemplateLiteral(t) => {
                 if t.expressions.is_empty() && t.quasis.len() == 1 {
-                    let text = t.quasis[0].value.cooked.as_deref().unwrap_or("");
+                    let text =
+                        t.quasis[0].value.cooked.and_then(oxc_str::JSStr::as_str).unwrap_or("");
                     self.sink.push(Type::StringLiteral(text.into()))
                 } else {
                     TypeTable::UNSUPPORTED
@@ -386,7 +387,7 @@ impl<'a, R: ResolveName> Lowerer<'a, R> {
 pub fn property_key_name(key: &PropertyKey<'_>) -> Option<Box<str>> {
     match key {
         PropertyKey::StaticIdentifier(ident) => Some(ident.name.as_str().into()),
-        PropertyKey::StringLiteral(s) => Some(s.value.as_str().into()),
+        PropertyKey::StringLiteral(s) => Some(s.value.as_str().unwrap_or("").into()),
         PropertyKey::NumericLiteral(n) => Some(n.value.to_string().into_boxed_str()),
         _ => None,
     }

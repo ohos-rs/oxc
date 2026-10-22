@@ -31,11 +31,12 @@ impl FileChecker<'_> {
                 self.fresh(Type::BigIntLiteral(b.value.as_str().into()))
             }
             Expression::StringLiteral(s) => {
-                self.fresh(Type::StringLiteral(s.value.as_str().into()))
+                self.fresh(Type::StringLiteral(s.value.as_str().unwrap_or("").into()))
             }
             Expression::TemplateLiteral(t) => {
                 if t.expressions.is_empty() && t.quasis.len() == 1 {
-                    let text = t.quasis[0].value.cooked.as_deref().unwrap_or("");
+                    let text =
+                        t.quasis[0].value.cooked.and_then(oxc_str::JSStr::as_str).unwrap_or("");
                     return self.fresh(Type::StringLiteral(text.into()));
                 }
                 // tsc folds template expressions whose substitutions are all
@@ -43,7 +44,9 @@ impl FileChecker<'_> {
                 let mut folded = String::new();
                 let mut foldable = true;
                 for (i, quasi) in t.quasis.iter().enumerate() {
-                    folded.push_str(quasi.value.cooked.as_deref().unwrap_or(""));
+                    folded.push_str(
+                        quasi.value.cooked.and_then(oxc_str::JSStr::as_str).unwrap_or(""),
+                    );
                     if let Some(sub) = t.expressions.get(i) {
                         let ty = self.infer(sub);
                         let peeled = self.peel(ty).unwrap_or(ty);

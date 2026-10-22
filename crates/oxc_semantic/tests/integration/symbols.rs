@@ -304,6 +304,20 @@ fn test_ets_static_declarations_and_expressions() {
 }
 
 #[test]
+fn test_ets_static_enum_annotations_and_underlying_type() {
+    // Static ETS enums carry annotations and an explicit underlying type. Both must be
+    // visited by the semantic builder, otherwise node counts diverge (debug assertion) and
+    // references inside the decorator/underlying type are missing.
+    let source = r#"
+        @interface Mark { value: string = "ok" }
+        @Mark("ok")
+        enum Color: int { Red, Green }
+    "#;
+
+    SemanticTester::ets_static(source).has_root_symbol("Color").test();
+}
+
+#[test]
 fn test_multiple_ts_type_alias_declaration() {
     let tester = SemanticTester::ts(
         "
@@ -655,4 +669,19 @@ fn test_import_value_redeclaration_in_module() {
         .has_error("already been declared");
     // TypeScript should NOT report this error (declaration merging)
     SemanticTester::ts("import { Foo } from './foo.js'; var Foo;").has_root_symbol("Foo").test();
+}
+
+#[test]
+fn test_implicit_arguments_unresolved_references() {
+    let tester = SemanticTester::ts(
+        "const arguments = []; function f(value = arguments) { return () => arguments; }",
+    );
+    let semantic = tester.build();
+    let scoping = semantic.scoping();
+    let references = scoping.root_unresolved_references().get("arguments").unwrap();
+    assert_eq!(references.len(), 2);
+    assert_ne!(references[0], references[1]);
+    for &reference_id in references {
+        assert!(scoping.get_reference(reference_id).symbol_id().is_none());
+    }
 }

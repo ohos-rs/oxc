@@ -72,7 +72,6 @@ pub async fn run_lsp(
 mod test {
     use std::str::FromStr;
 
-    use oxc_language_server::LanguageId;
     use tower_lsp_server::gen_lsp_types::Uri;
 
     use crate::lsp::{
