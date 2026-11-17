@@ -21,6 +21,6 @@ pub use support::classify_file_with_language;
 
 #[cfg(feature = "napi")]
 pub use external_services::{
-    ExternalServices, JsFormatEmbeddedCb, JsFormatEmbeddedDocCb, JsFormatFileCb,
-    JsInitExternalServicesCb, JsSortTailwindClassesCb,
+    ExternalServices, JsFormatEmbeddedDocCb, JsFormatFileCb, JsInitExternalServicesCb,
+    JsSortTailwindClassesCb,
 };

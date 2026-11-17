@@ -503,18 +503,19 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         let (extends, implements) = self.parse_heritage_clause(Self::parse_class_extends_clause);
         let mut super_class = None;
         let mut super_type_arguments = None;
-        if let Some(mut extends) = extends
-            && !extends.is_empty()
-        {
-            let (expression, type_arguments) = extends.remove(0);
-            super_class = Some(expression);
-            super_type_arguments = type_arguments;
-            for (expression, type_arguments) in extends {
-                let expression_span = expression.span();
-                let span = type_arguments.map_or(expression_span, |type_arguments| {
-                    expression_span.merge(type_arguments.span)
-                });
-                self.error(diagnostics::classes_can_only_extend_single_class(span));
+        if let Some(extends) = extends {
+            let mut extends = extends.into_vec();
+            if !extends.is_empty() {
+                let (expression, type_arguments) = extends.remove(0);
+                super_class = Some(expression);
+                super_type_arguments = type_arguments;
+                for (expression, type_arguments) in extends {
+                    let expression_span = expression.span();
+                    let span = type_arguments.map_or(expression_span, |type_arguments| {
+                        expression_span.merge(type_arguments.span)
+                    });
+                    self.error(diagnostics::classes_can_only_extend_single_class(span));
+                }
             }
         }
         let is_ets_static_arkui_component =

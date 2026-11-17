@@ -6,9 +6,8 @@ use oxc_napi::OxcError;
 use oxc_span::ExplicitLanguage;
 
 use crate::core::{
-    ExternalServices, FormatResult, JsFormatEmbeddedCb, JsFormatEmbeddedDocCb, JsFormatFileCb,
-    JsSortTailwindClassesCb, ResolveOutcome, SourceFormatter, classify_file_with_language,
-    resolve_for_api, utils,
+    ExternalServices, FormatResult, JsFormatEmbeddedDocCb, JsFormatFileCb, JsSortTailwindClassesCb,
+    ResolveOutcome, SourceFormatter, classify_file_with_language, resolve_for_api, utils,
 };
 
 pub struct ApiFormatResult {
@@ -28,7 +27,6 @@ pub fn run(
     source_text: String,
     options: Option<Value>,
     format_file_cb: JsFormatFileCb,
-    format_embedded_cb: JsFormatEmbeddedCb,
     format_embedded_doc_cb: JsFormatEmbeddedDocCb,
     sort_tailwind_classes_cb: JsSortTailwindClassesCb,
 ) -> ApiFormatResult {
@@ -46,12 +44,8 @@ pub fn run(
     let cwd = env::current_dir().expect("Failed to get current working directory");
     let num_of_threads = 1;
 
-    let external_services = ExternalServices::new(
-        format_file_cb,
-        format_embedded_cb,
-        format_embedded_doc_cb,
-        sort_tailwind_classes_cb,
-    );
+    let external_services =
+        ExternalServices::new(format_file_cb, format_embedded_doc_cb, sort_tailwind_classes_cb);
     let _cleanup = external_services.cleanup_guard();
 
     let language = match options.as_ref().and_then(|value| value.get("lang")) {
@@ -98,7 +92,6 @@ pub fn run(
         }
     };
 
-    // Create formatter and format
     let formatter =
         SourceFormatter::new(num_of_threads).with_external_services(Some(external_services));
 

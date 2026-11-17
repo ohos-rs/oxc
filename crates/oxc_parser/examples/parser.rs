@@ -55,7 +55,11 @@ fn main() -> Result<(), String> {
     let allocator = Allocator::default();
     let ret = Parser::new(&allocator, &source_text, source_type)
         .with_source_path(path)
-        .with_options(ParseOptions { parse_regular_expression: true, ..ParseOptions::default() })
+        .with_options(ParseOptions {
+            parse_regular_expression: true,
+            enable_ident_hashes: false,
+            ..ParseOptions::default()
+        })
         .parse();
     let mut program = ret.program;
 

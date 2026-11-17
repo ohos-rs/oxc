@@ -164,7 +164,7 @@ Arguments:
 - **`    --type-aware`** &mdash; 
   Enable rules that require type information
 - **`    --type-check`** &mdash; 
-  Enable experimental type checking (includes TypeScript compiler diagnostics)
+  Enable type checking (includes TypeScript compiler diagnostics)
 - **`    --lang`**=_`LANG`_ &mdash; 
   Explicitly select a language grammar that cannot be inferred from the file extension. Currently supported: `ets-static`.
 
