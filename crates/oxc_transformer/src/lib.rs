@@ -346,6 +346,16 @@ impl<'a> Traverse<'a, TransformState<'a>> for TransformerImpl<'a> {
         }
     }
 
+    fn enter_struct_statement(
+        &mut self,
+        strukt: &mut StructStatement<'a>,
+        ctx: &mut TraverseCtx<'a>,
+    ) {
+        if let Some(typescript) = self.x0_typescript.as_mut() {
+            typescript.enter_struct_statement(strukt, ctx);
+        }
+    }
+
     fn exit_class(&mut self, class: &mut Class<'a>, ctx: &mut TraverseCtx<'a>) {
         self.decorator.exit_class(class, ctx);
         if let Some(typescript) = self.x0_typescript.as_mut() {

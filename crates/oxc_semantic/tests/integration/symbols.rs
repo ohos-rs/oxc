@@ -481,6 +481,41 @@ fn test_ets_static_enum_annotations_and_underlying_type() {
     "#;
 
     SemanticTester::ets_static(source).has_root_symbol("Color").test();
+    SemanticTester::ets_static(source)
+        .has_root_symbol("Mark")
+        .contains_flags(SymbolFlags::Class)
+        .test();
+}
+
+#[test]
+fn test_ets_struct_declarations_bind_symbols_and_scope_type_parameters() {
+    // `struct` declarations are class-like ArkTS values. Their name must be bound in the
+    // enclosing scope, and their own scope must contain the type parameters.
+    let source = r"
+        interface First {}
+        interface Second {}
+        class Base {}
+        export abstract struct Derived<T> extends Base implements First, Second {
+            static {
+                initialize()
+            }
+            readonly [key: string]: unknown
+            accessor current: T
+            constructor(value: T) {
+                this.current = value
+            }
+            abstract render(): void
+        }
+    ";
+
+    SemanticTester::ets_static(source)
+        .has_root_symbol("Derived")
+        .contains_flags(SymbolFlags::Class)
+        .test();
+    SemanticTester::ets_static(source)
+        .has_symbol("T")
+        .contains_flags(SymbolFlags::TypeParameter)
+        .test();
 }
 
 #[test]

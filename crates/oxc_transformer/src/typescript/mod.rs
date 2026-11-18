@@ -129,6 +129,21 @@ impl<'a> Traverse<'a, TransformState<'a>> for TypeScript<'a> {
         }
     }
 
+    fn enter_struct_statement(
+        &mut self,
+        strukt: &mut StructStatement<'a>,
+        _ctx: &mut TraverseCtx<'a>,
+    ) {
+        // ArkTS/ArkUI `struct` declarations are kept by the TypeScript transform, but
+        // their type parameters, heritage type arguments and `implements` clause are
+        // TypeScript-only syntax. Erase them like a class's so the transformed AST
+        // stays in sync with the scoping that `delete_typescript_bindings` produces.
+        strukt.type_parameters = None;
+        strukt.super_type_arguments = None;
+        strukt.implements.clear();
+        strukt.r#abstract = false;
+    }
+
     fn exit_class(&mut self, class: &mut Class<'a>, ctx: &mut TraverseCtx<'a>) {
         self.annotations.exit_class(class, ctx);
 
