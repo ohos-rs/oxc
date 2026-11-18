@@ -3213,7 +3213,13 @@ impl Gen for StructStatement<'_> {
             type_parameters.print(p, ctx);
         }
         if let Some(super_class) = self.super_class.as_ref() {
-            p.print_soft_space();
+            // Keep the struct header token-separated in minified output too:
+            // `struct Foo extends Bar` must not become `struct Fooextends Bar`.
+            if p.options.minify {
+                p.print_space_before_identifier();
+            } else {
+                p.print_soft_space();
+            }
             p.print_str("extends ");
             super_class.print_expr(p, Precedence::Postfix, Context::empty());
             if let Some(super_type_arguments) = &self.super_type_arguments {
@@ -3221,7 +3227,12 @@ impl Gen for StructStatement<'_> {
             }
         }
         if !self.implements.is_empty() {
-            p.print_soft_space();
+            // `extends Base implements A` must not collapse to `extends Baseimplements A`.
+            if p.options.minify {
+                p.print_space_before_identifier();
+            } else {
+                p.print_soft_space();
+            }
             p.print_str("implements ");
             p.print_list(&self.implements, ctx);
         }
@@ -3393,8 +3404,31 @@ impl GenExpr for ArkUIComponentExpression<'_> {
                 p.print_soft_newline();
                 p.indent += 1;
                 for child in &self.children {
+                    // ArkUI children are normally separated by newlines. Minified output
+                    // removes those newlines, so sibling children need explicit `;`
+                    // separators. Statements may already have left a deferred semicolon
+                    // pending, which is flushed here; expression/component children do not
+                    // arm one, so arm it after every child and clear it before `}`.
+                    if p.options.minify {
+                        p.print_semicolon_if_needed();
+                        // A `;` emitted after a child that ends in `}` (e.g. an `if`
+                        // statement) is reparsed as an `EmptyStatement` child. Drop those
+                        // separator-only statements, otherwise each round trip keeps
+                        // appending semicolons and minification is not idempotent.
+                        if matches!(child, ArkUIChild::Statement(stmt)
+                            if matches!(stmt.as_ref(), Statement::EmptyStatement(_)))
+                        {
+                            continue;
+                        }
+                    }
                     p.print_indent();
                     child.print(p, ctx);
+                    if p.options.minify {
+                        p.print_semicolon_after_statement();
+                    }
+                }
+                if p.options.minify {
+                    p.needs_semicolon = false;
                 }
                 p.indent -= 1;
                 p.print_indent();
