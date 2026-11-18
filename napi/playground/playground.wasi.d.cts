@@ -183,6 +183,11 @@ export interface OxcOptions {
 
 export interface OxcParserOptions {
   extension: string
+  /**
+   * Explicitly parse `.ets` input as static ETS. Without this option, `.ets`
+   * continues to use the ArkUI/ArkTS 1.1 grammar.
+   */
+  lang?: 'ets-static'
   /** Overrides the module kind inferred from the extension. */
   sourceType?: 'script' | 'module' | 'commonjs' | 'unambiguous' | undefined
   allowReturnOutsideFunction: boolean
