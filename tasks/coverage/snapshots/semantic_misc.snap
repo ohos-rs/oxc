@@ -1,6 +1,23 @@
 semantic_misc Summary:
-AST Parsed     : 144/144 (100.00%)
-Positive Passed: 138/144 (95.83%)
+AST Parsed     : 149/149 (100.00%)
+Positive Passed: 139/149 (93.29%)
+semantic Error: tasks/coverage/misc/pass/arkts-annotation-declarations.ets
+Missing SymbolId: "Empty"
+Missing SymbolId: "Exported"
+Missing SymbolId: "Typed"
+Missing SymbolId: "Defaults"
+Missing SymbolId: "await"
+Missing SymbolId: "C2"
+
+semantic Error: tasks/coverage/misc/pass/arkts-component-regressions.ets
+Missing SymbolId: "ComponentRegression"
+
+semantic Error: tasks/coverage/misc/pass/arkts-struct-declarations.ets
+Missing SymbolId: "Derived"
+
+semantic Error: tasks/coverage/misc/pass/arkts-ui-callbacks.ets
+Missing SymbolId: "UICallbacks"
+
 semantic Error: tasks/coverage/misc/pass/declare-let-private.ts
 Bindings mismatch:
 after transform: ScopeId(0): ["private"]

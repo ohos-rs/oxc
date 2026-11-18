@@ -1,3 +1,7 @@
 codegen_misc Summary:
-AST Parsed     : 144/144 (100.00%)
-Positive Passed: 144/144 (100.00%)
+AST Parsed     : 149/149 (100.00%)
+Positive Passed: 147/149 (98.66%)
+Minify: tasks/coverage/misc/pass/arkts-component-regressions.ets
+
+Minify: tasks/coverage/misc/pass/arkts-struct-declarations.ets
+
