@@ -156,13 +156,14 @@ impl ServerLinterBuilder {
         // so the `root_path` fallback is an arbitrary placeholder.
         let base_ignore_root = oxlintrc.dir().unwrap_or(&root_path).to_path_buf();
 
-        let config_builder = match ConfigStoreBuilder::from_oxlintrc(
-            false,
-            oxlintrc,
+        let config_builder = match ConfigLoader::new(
             external_linter,
             &mut external_plugin_store,
+            &[],
             Some(root_uri.as_ref()),
-        ) {
+        )
+        .create_config_builder(oxlintrc)
+        {
             Ok(builder) => builder,
             Err(e) => {
                 client_messages.insert(ClientMessage {
@@ -586,9 +587,12 @@ impl Tool for ServerLinter {
         }
 
         // We only run the lint process when the code action is explicitly invoked and the file is not open in the editor.
-        let is_open = None;
-        let actions =
-            self.get_code_actions_for_uri(&uri, Some(CodeActionTriggerKind::Invoked), is_open);
+        let document_version = None;
+        let actions = self.get_code_actions_for_uri(
+            &uri,
+            Some(CodeActionTriggerKind::Invoked),
+            document_version,
+        );
 
         let Some(actions) = actions else {
             return Ok(None);
@@ -616,7 +620,7 @@ impl Tool for ServerLinter {
         let actions = self.get_code_actions_for_uri(
             &params.uri,
             params.context.trigger_kind,
-            Some(params.is_open_document),
+            params.document_version,
         );
 
         let Some(actions) = actions else {
@@ -766,7 +770,7 @@ impl ServerLinter {
         &self,
         uri: &Uri,
         trigger_kind: Option<CodeActionTriggerKind>,
-        is_open: Option<bool>,
+        document_version: Option<i32>,
     ) -> Option<Vec<LinterCodeAction>> {
         if let Some(cached_code_actions) = self.code_actions.pin().get(uri) {
             Some(cached_code_actions.clone())
@@ -775,7 +779,7 @@ impl ServerLinter {
         // otherwise it will be too heavy to run linting on every file open or cursor move, which will cause performance issues and a bad user experience.
         // It is most likely that the client already sent a request, where we run the lint process and cache the code actions.
         // So we only need to run the lint process when the code action is explicitly invoked and the file is not open in the editor.
-        else if trigger_kind == Some(CodeActionTriggerKind::Invoked) && !is_open.unwrap_or(false)
+        else if trigger_kind == Some(CodeActionTriggerKind::Invoked) && document_version.is_none()
         {
             let _ = self.run_file(uri, None);
             self.code_actions.pin().get(uri).cloned()
@@ -1177,7 +1181,7 @@ mod test {
         range: Range,
         context: CodeActionContext,
     ) -> CodeActionParams {
-        CodeActionParams { uri: uri.clone(), range, context, is_open_document: false }
+        CodeActionParams { uri: uri.clone(), range, context, document_version: None }
     }
 
     #[test]
@@ -1232,6 +1236,7 @@ mod test {
         let _ = linter
             .run_diagnostic(TextDocument {
                 uri: &uri,
+                version: None,
                 language_id: LanguageId::default(),
                 text: Some("let a = 1;".into()),
             })
@@ -1273,6 +1278,7 @@ mod test {
         let _ = linter
             .run_diagnostic(TextDocument {
                 uri: &uri,
+                version: None,
                 language_id: LanguageId::default(),
                 text: Some("if (foo == NaN) {}".into()),
             })
@@ -1357,6 +1363,7 @@ mod test {
         let _ = linter
             .run_diagnostic(TextDocument {
                 uri: &uri,
+                version: None,
                 text: Some("debugger;".into()),
                 language_id: LanguageId::default(),
             })

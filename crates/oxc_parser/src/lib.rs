@@ -74,6 +74,7 @@ pub mod config;
 mod context;
 mod cursor;
 mod error_handler;
+mod list;
 mod modifiers;
 mod module_record;
 mod state;
@@ -885,7 +886,7 @@ impl<'a, C: ParserConfig> ParserImpl<'a, C> {
             fatal_error: None,
             token: Token::default(),
             prev_token_end: 0,
-            state: ParserState::new(),
+            state: ParserState::new(allocator),
             ctx,
             ast: ParserAstBuilder::new(allocator),
             module_record_builder: ModuleRecordBuilder::new(allocator, source_type, source_path),
@@ -973,7 +974,7 @@ impl<'a, C: ParserConfig> ParserImpl<'a, C> {
             self.lexer.finalize_tokens()
         };
 
-        program.comments = self.lexer.trivia_builder.comments;
+        program.comments = self.lexer.trivia_builder.comments.take_vec(&self.ast);
 
         ParserReturn {
             program,
@@ -987,8 +988,8 @@ impl<'a, C: ParserConfig> ParserImpl<'a, C> {
     }
 
     pub fn parse_expression(mut self) -> Result<Expression<'a>, Diagnostics> {
-        // initialize cur_token and prev_token by moving onto the first token
-        self.bump_any();
+        // Initialize by moving onto the first token
+        self.token = self.lexer.first_token_without_hashbang();
         let expr = self.parse_expr();
         if !self.at(Kind::Eof) {
             self.set_unexpected();
@@ -1184,11 +1185,10 @@ impl<'a, C: ParserConfig> ParserImpl<'a, C> {
     }
 
     fn check_unfinished_errors(&mut self) {
-        use oxc_span::GetSpan;
         // PropertyDefinition : cover_initialized_name
         // It is a Syntax Error if any source text is matched by this production.
-        for expr in self.state.cover_initialized_name.values() {
-            self.errors.push(diagnostics::cover_initialized_name(expr.span()));
+        for cover in self.state.cover_initialized_name.values() {
+            self.errors.push(diagnostics::cover_initialized_name(cover.span));
         }
     }
 
@@ -1664,6 +1664,135 @@ mod test {
     }
 
     #[test]
+    fn asserted_exponentiation_preserve_parens() {
+        for preserve_parens in [true, false] {
+            for source in [
+                "(-value) as number ** 2",
+                "(-value as number) ** 2",
+                "(-value) as any satisfies number ** 2",
+                "(<number>value) satisfies number ** 2",
+                "async () => (await value) as number ** 2",
+            ] {
+                let allocator = Allocator::default();
+                let result = Parser::new(&allocator, source, SourceType::ts())
+                    .with_options(ParseOptions { preserve_parens, ..ParseOptions::default() })
+                    .parse_expression();
+                assert!(result.is_ok(), "{source}, preserve_parens={preserve_parens}");
+            }
+
+            for (source, operand) in [
+                ("-value as any satisfies number ** 2", "-value"),
+                ("<number>value as number ** 2", "<number>value"),
+                ("async () => await value as number ** 2", "await value"),
+            ] {
+                let allocator = Allocator::default();
+                let diagnostics = Parser::new(&allocator, source, SourceType::ts())
+                    .with_options(ParseOptions { preserve_parens, ..ParseOptions::default() })
+                    .parse_expression()
+                    .unwrap_err();
+                assert_eq!(diagnostics.len(), 1, "{source}, preserve_parens={preserve_parens}");
+                let label = &diagnostics[0].labels[0];
+                let start = label.offset() as usize;
+                let end = start + label.len() as usize;
+                assert_eq!(&source[start..end], operand);
+            }
+        }
+    }
+
+    /// An unparenthesized instantiation gives its type arguments to the call, `new`, tag or superclass.
+    /// A parenthesized one stays whole as in TypeScript, also when the parentheses are not preserved.
+    #[test]
+    fn parenthesized_instantiation_expression() {
+        for preserve_parens in [true, false] {
+            // (source, keeps instantiation, outer has type arguments)
+            for (source, expected) in [
+                ("a<b>()", (false, true)),
+                ("(a<b>)()", (true, false)),
+                ("new a<b>()", (false, true)),
+                ("new a<b>", (false, true)),
+                ("new (a<b>)()", (true, false)),
+                ("new (a<b>)", (true, false)),
+                ("a<b>``", (false, true)),
+                ("(a<b>)``", (true, false)),
+                ("class extends B<T> {}", (false, true)),
+                ("class extends (B<T>) {}", (true, false)),
+                ("class extends (B<T>)<U> {}", (true, true)),
+            ] {
+                let allocator = Allocator::default();
+                let expr = Parser::new(&allocator, source, SourceType::ts())
+                    .with_options(ParseOptions { preserve_parens, ..ParseOptions::default() })
+                    .parse_expression()
+                    .unwrap_or_else(|_| panic!("{source}, preserve_parens={preserve_parens}"));
+                let (target, type_arguments) = match &expr {
+                    Expression::CallExpression(call) => (&call.callee, &call.type_arguments),
+                    Expression::NewExpression(new) => (&new.callee, &new.type_arguments),
+                    Expression::TaggedTemplateExpression(tagged) => {
+                        (&tagged.tag, &tagged.type_arguments)
+                    }
+                    Expression::ClassExpression(class) => {
+                        let heritage = class.heritage.as_ref().unwrap();
+                        (&heritage.expression, &heritage.type_arguments)
+                    }
+                    _ => unreachable!("{source}"),
+                };
+                let actual = (
+                    matches!(
+                        target.without_parentheses(),
+                        Expression::TSInstantiationExpression(_)
+                    ),
+                    type_arguments.is_some(),
+                );
+                assert_eq!(actual, expected, "{source}, preserve_parens={preserve_parens}");
+            }
+        }
+    }
+
+    #[test]
+    fn simple_arrow_no_side_effects_annotations() {
+        for source in [
+            "/*#__NO_SIDE_EFFECTS__*/ value => value",
+            "/*#__NO_SIDE_EFFECTS__*/ async value => value",
+            "/*#__NO_SIDE_EFFECTS__*/ async of => of",
+        ] {
+            let allocator = Allocator::default();
+            let expr =
+                Parser::new(&allocator, source, SourceType::default()).parse_expression().unwrap();
+            let Expression::ArrowFunctionExpression(arrow) = expr else { panic!("{source}") };
+            assert!(arrow.pure, "{source}");
+        }
+    }
+
+    #[test]
+    fn identifier_continuation_pure_annotations() {
+        for source in [
+            "/*#__PURE__*/ callee()",
+            "/*#__PURE__*/ callee<T>()",
+            "/*#__PURE__*/ callee!.method()",
+        ] {
+            let allocator = Allocator::default();
+            let expr =
+                Parser::new(&allocator, source, SourceType::ts()).parse_expression().unwrap();
+            let Expression::CallExpression(call) = expr else { panic!("{source}") };
+            assert!(call.pure, "{source}");
+        }
+
+        // Check both the assignment-expression entry and a binary RHS continuation.
+        for (source, annotated_left) in [
+            ("/*#__PURE__*/ callee() + other()", true),
+            ("other() + /*#__PURE__*/ callee()", false),
+        ] {
+            let allocator = Allocator::default();
+            let expr =
+                Parser::new(&allocator, source, SourceType::default()).parse_expression().unwrap();
+            let Expression::BinaryExpression(binary) = expr else { panic!("{source}") };
+            let Expression::CallExpression(left) = &binary.left else { panic!("{source}") };
+            let Expression::CallExpression(right) = &binary.right else { panic!("{source}") };
+            assert_eq!(left.pure, annotated_left, "{source}");
+            assert_eq!(right.pure, !annotated_left, "{source}");
+        }
+    }
+
+    #[test]
     fn flow_error() {
         let allocator = Allocator::default();
         let source_type = SourceType::default();
@@ -1753,6 +1882,43 @@ mod test {
     }
 
     #[test]
+    fn template_raw_normalizes_line_terminators() {
+        // `(raw, cooked)` of each quasi, as `strings.raw` and `strings` in a tag function (V8).
+        type Quasis = &'static [(&'static str, Option<&'static str>)];
+        let allocator = Allocator::default();
+        let source_type = SourceType::default();
+        let cases: &[(&str, Quasis)] = &[
+            ("tag`\\unicode\r\n`", &[("\\unicode\n", None)]),
+            ("tag`\\xZ\r`", &[("\\xZ\n", None)]),
+            ("tag`\\xZ\r\r\n`", &[("\\xZ\n\n", None)]),
+            ("tag`a\r\n\\u{}`", &[("a\n\\u{}", None)]),
+            ("tag`\\\r\n\\8`", &[("\\\n\\8", None)]),
+            (
+                "tag`h\\xZ\r\n${0}m\\u{}\r${1}t\\8\r\n`",
+                &[("h\\xZ\n", None), ("m\\u{}\n", None), ("t\\8\n", None)],
+            ),
+            ("tag`\\n\r\n`", &[("\\n\n", Some("\n\n"))]),
+            ("tag`a\\\rb`", &[("a\\\nb", Some("ab"))]),
+            ("tag`ok\r\n`", &[("ok\n", Some("ok\n"))]),
+            ("tag`ok\rx`", &[("ok\nx", Some("ok\nx"))]),
+        ];
+        for &(source, expected) in cases {
+            let expr = Parser::new(&allocator, source, source_type).parse_expression().unwrap();
+            let Expression::TaggedTemplateExpression(tagged) = expr else { panic!("{source:?}") };
+            let values = tagged
+                .quasi
+                .quasis
+                .iter()
+                .map(|quasi| {
+                    let cooked = quasi.value.cooked.map(|cooked| cooked.as_str().unwrap());
+                    (quasi.value.raw.as_str(), cooked)
+                })
+                .collect::<Vec<_>>();
+            assert_eq!(values, expected, "{source:?}");
+        }
+    }
+
+    #[test]
     fn directives() {
         let allocator = Allocator::default();
         let source_type = SourceType::default();
@@ -1760,11 +1926,16 @@ mod test {
             ("import x from 'foo'; 'use strict';", 2),
             ("export {x} from 'foo'; 'use strict';", 2),
             (";'use strict';", 2),
+            ("('use strict'); 'use strict';", 2),
         ];
-        for (source, body_length) in sources {
-            let ret = Parser::new(&allocator, source, source_type).parse();
-            assert!(ret.program.directives.is_empty(), "{source}");
-            assert_eq!(ret.program.body.len(), body_length, "{source}");
+        for preserve_parens in [true, false] {
+            for (source, body_length) in sources {
+                let ret = Parser::new(&allocator, source, source_type)
+                    .with_options(ParseOptions { preserve_parens, ..ParseOptions::default() })
+                    .parse();
+                assert!(ret.program.directives.is_empty(), "{source}");
+                assert_eq!(ret.program.body.len(), body_length, "{source}");
+            }
         }
     }
 

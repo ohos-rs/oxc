@@ -394,14 +394,7 @@ impl<'a> Format<'a, JsFormatContext<'a>> for FormatClass<'a, '_> {
                     let has_trailing_line_comments = comments.iter().any(Comment::is_line);
 
                     let content = format_with(|f| {
-                        if let Some(type_arguments) = type_arguments {
-                            write!(f, [extends]);
-                            if implements.is_empty() {
-                                type_arguments.write(f);
-                            } else {
-                                type_arguments.fmt(f);
-                            }
-                        } else if implements.is_empty() {
+                        if type_arguments.is_none() && implements.is_empty() {
                             FormatNodeWithoutTrailingComments(&extends).fmt(f);
                             // Line comments are handled separately to ensure proper placement
                             if !has_trailing_line_comments {
@@ -427,6 +420,15 @@ impl<'a> Format<'a, JsFormatContext<'a>> for FormatClass<'a, '_> {
                         );
                     } else {
                         content.fmt(f);
+                    }
+
+                    // Outside the parentheses: `extends (B<T>)` would make `B<T>` the superclass
+                    if let Some(type_arguments) = type_arguments {
+                        if implements.is_empty() {
+                            type_arguments.write(f);
+                        } else {
+                            type_arguments.fmt(f);
+                        }
                     }
                 });
 
@@ -591,10 +593,15 @@ impl<'a, 'b> FormatClassElementWithSemicolon<'a, 'b> {
 
         let Some(next_element) = next_element else { return false };
 
+        // When the name starts with `[`, `in` or `instanceof`.
+        // NOTE: These only continue a previous property with a value (`x = a` + `in`, `x = a` + `[b]`),
+        // but kept regardless of it like Prettier, an unneeded `;` is harmless.
+        let starts_with_hazard = next_element.computed()
+            || next_element.property_key().is_some_and(is_binary_keyword_key);
         match next_element.as_ref() {
-            // When the name starts with the generator token or `[`
+            // Or the generator token
             ClassElement::MethodDefinition(def) if !def.value.r#async => {
-                (def.computed
+                (starts_with_hazard
                     && !(def.kind.is_accessor()
                         || def.r#static
                         || def.accessibility.is_some()
@@ -602,7 +609,7 @@ impl<'a, 'b> FormatClassElementWithSemicolon<'a, 'b> {
                     || def.value.generator
             }
             ClassElement::PropertyDefinition(def) => {
-                def.computed
+                starts_with_hazard
                     && !(def.accessibility.is_some()
                         || def.r#static
                         || def.declare
@@ -610,11 +617,25 @@ impl<'a, 'b> FormatClassElementWithSemicolon<'a, 'b> {
                         || def.readonly)
             }
             ClassElement::AccessorProperty(def) => {
-                def.computed && !(def.accessibility.is_some() || def.r#static || def.r#override)
+                starts_with_hazard
+                    && !(def.accessibility.is_some() || def.r#static || def.r#override)
             }
             ClassElement::TSIndexSignature(_) => true,
             _ => false,
         }
+    }
+}
+
+/// `in` or `instanceof` would continue the previous property's value as a binary operator.
+/// A string key may be printed unquoted, so it is checked by its value.
+/// See DIVERGENCES.md#string-binary-keyword-class-key
+fn is_binary_keyword_key(key: &PropertyKey<'_>) -> bool {
+    match key {
+        PropertyKey::StaticIdentifier(ident) => matches!(ident.name.as_str(), "in" | "instanceof"),
+        PropertyKey::StringLiteral(literal) => {
+            literal.value == "in" || literal.value == "instanceof"
+        }
+        _ => false,
     }
 }
 

@@ -281,16 +281,6 @@ impl Kind {
         self.is_identifier_name() && !self.is_reserved_keyword()
     }
 
-    /// TypeScript Identifier
-    ///
-    /// <https://github.com/microsoft/TypeScript/blob/15392346d05045742e653eab5c87538ff2a3c863/src/compiler/parser.ts#L2316-L2335>
-    #[inline]
-    pub const fn is_ts_identifier(self, is_yield_context: bool, is_await_context: bool) -> bool {
-        self.is_identifier_reference(is_yield_context, is_await_context)
-            && !self.is_strict_mode_contextual_keyword()
-            && !self.is_contextual_keyword()
-    }
-
     /// `IdentifierName`
     /// All identifier names are either `Ident` or keywords (Await..=Null in the enum).
     #[inline]
@@ -450,13 +440,15 @@ impl Kind {
     }
 
     #[cold]
-    pub fn match_keyword(s: &str) -> Self {
+    pub fn match_keyword(s: &str, is_ets_static: bool) -> Self {
         let len = s.len();
         // SAFETY: Already checked `len <= 1`.
         if len <= 1 || len >= 12 || !unsafe { s.as_bytes().get_unchecked(0) }.is_ascii_lowercase() {
             return Ident;
         }
-        Self::match_keyword_impl(s)
+        let kind = Self::match_keyword_impl(s);
+        // Static ETS keywords are only keywords in `ets-static` source mode.
+        if !is_ets_static && matches!(kind, Final | Native | Overload) { Ident } else { kind }
     }
 
     fn match_keyword_impl(s: &str) -> Self {
@@ -563,7 +555,7 @@ impl Kind {
         }
     }
 
-    pub fn to_str(self) -> &'static str {
+    pub const fn to_str(self) -> &'static str {
         #[expect(clippy::match_same_arms)]
         match self {
             Undetermined => "Unknown",

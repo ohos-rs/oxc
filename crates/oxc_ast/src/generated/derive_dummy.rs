@@ -92,6 +92,7 @@ impl<'a> Dummy<'a> for LabelIdentifier<'a> {
             node_id: Dummy::dummy(allocator),
             span: Dummy::dummy(allocator),
             name: Dummy::dummy(allocator),
+            label_id: Dummy::dummy(allocator),
         }
     }
 }
