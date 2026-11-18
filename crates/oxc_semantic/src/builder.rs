@@ -1167,6 +1167,49 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
         self.class_table_builder.pop_class();
     }
 
+    fn visit_struct_statement(&mut self, decl: &StructStatement<'a>) {
+        let kind = AstKind::StructStatement(self.alloc(decl));
+        self.enter_node(kind);
+        // Bind the struct in the enclosing scope, like a class declaration. Its own
+        // scope is entered afterwards so the body sees the struct as an outer binding.
+        decl.bind(self);
+        self.enter_ambient_context(decl.declare);
+        self.visit_span(&decl.span);
+        self.visit_decorators(&decl.decorators);
+        self.enter_scope(ScopeFlags::StrictMode, &decl.scope_id);
+        self.visit_binding_identifier(&decl.id);
+        if let Some(type_parameters) = &decl.type_parameters {
+            self.visit_ts_type_parameter_declaration(type_parameters);
+        }
+        if let Some(super_class) = &decl.super_class {
+            self.visit_expression(super_class);
+        }
+        if let Some(super_type_arguments) = &decl.super_type_arguments {
+            self.visit_ts_type_parameter_instantiation(super_type_arguments);
+        }
+        self.visit_ts_class_implements_list(&decl.implements);
+        self.visit_struct_body(&decl.body);
+        self.leave_scope();
+        self.leave_node(kind);
+        self.leave_ambient_context(decl.declare);
+    }
+
+    fn visit_annotation_declaration(&mut self, decl: &AnnotationDeclaration<'a>) {
+        let kind = AstKind::AnnotationDeclaration(self.alloc(decl));
+        self.enter_node(kind);
+        // Bind the annotation in the enclosing scope before entering its body scope.
+        decl.bind(self);
+        self.enter_ambient_context(decl.declare);
+        self.visit_span(&decl.span);
+        self.visit_decorators(&decl.decorators);
+        self.enter_scope(ScopeFlags::StrictMode, &decl.scope_id);
+        self.visit_binding_identifier(&decl.id);
+        self.visit_annotation_body(&decl.body);
+        self.leave_scope();
+        self.leave_node(kind);
+        self.leave_ambient_context(decl.declare);
+    }
+
     fn visit_block_statement(&mut self, it: &BlockStatement<'a>) {
         let kind = AstKind::BlockStatement(self.alloc(it));
         self.enter_node(kind);

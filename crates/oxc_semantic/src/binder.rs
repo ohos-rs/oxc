@@ -166,6 +166,46 @@ impl<'a> Binder<'a> for Class<'a> {
     }
 }
 
+impl<'a> Binder<'a> for StructStatement<'a> {
+    fn bind(&self, builder: &mut SemanticBuilder<'a>) {
+        // An ArkTS `struct` is a class-like declaration: it has a runtime value
+        // (the component constructor) as well as a type. Bind it the same way as
+        // a `class` declaration so references to the struct resolve.
+        let includes = if self.declare {
+            SymbolFlags::Class | SymbolFlags::Ambient
+        } else {
+            SymbolFlags::Class
+        };
+        let symbol_id = builder.declare_symbol(
+            self.id.span,
+            self.id.name,
+            includes,
+            SymbolFlags::ClassExcludes,
+        );
+        self.id.symbol_id.set(Some(symbol_id));
+    }
+}
+
+impl<'a> Binder<'a> for AnnotationDeclaration<'a> {
+    fn bind(&self, builder: &mut SemanticBuilder<'a>) {
+        // ArkTS `@interface` annotations are declaration-like values that can be
+        // referenced from decorators. Treat them as class-like symbols (value and
+        // type) so both decorator value references and type references resolve.
+        let includes = if self.declare {
+            SymbolFlags::Class | SymbolFlags::Ambient
+        } else {
+            SymbolFlags::Class
+        };
+        let symbol_id = builder.declare_symbol(
+            self.id.span,
+            self.id.name,
+            includes,
+            SymbolFlags::ClassExcludes,
+        );
+        self.id.symbol_id.set(Some(symbol_id));
+    }
+}
+
 impl<'a> Binder<'a> for Function<'a> {
     fn bind(&self, builder: &mut SemanticBuilder<'a>) {
         let is_declaration = self.is_declaration();

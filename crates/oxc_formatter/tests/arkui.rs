@@ -69,6 +69,17 @@ consume(character) {
 }
 
 #[test]
+fn empty_annotation_body_is_formatted() {
+    let source = "@interface Empty {}\n";
+
+    for formatted in [format_ets(source), format_ets_static(source)] {
+        assert_eq!(formatted, "@interface Empty {}\n");
+        assert_eq!(format_ets(&formatted), formatted);
+        assert_eq!(format_ets_static(&formatted), formatted);
+    }
+}
+
+#[test]
 fn arkui_component_chain_comment_stays_in_place_after_reformat() {
     let source = r"struct S {
   build() {

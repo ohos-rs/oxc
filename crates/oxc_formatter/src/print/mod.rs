@@ -2347,7 +2347,11 @@ impl<'a> FormatWrite<'a> for AstNode<'_, 'a, AnnotationDeclaration<'a>> {
 
 impl<'a> FormatWrite<'a> for AstNode<'_, 'a, AnnotationBody<'a>> {
     fn write(&self, f: &mut JsFormatter<'_, 'a>) {
-        write!(f, ["{", block_indent(&self.body()), "}"]);
+        if self.body.is_empty() {
+            write!(f, ["{", format_dangling_comments(self.span).with_block_indent(), "}"]);
+        } else {
+            write!(f, ["{", block_indent(&self.body()), "}"]);
+        }
     }
 }
 

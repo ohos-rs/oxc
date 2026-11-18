@@ -576,12 +576,18 @@ fn run_transformer(
     driver.run(code, source_type);
     let transformed1 = std::mem::take(&mut driver.printed);
 
-    // Second pass with only JavaScript syntax
-    let second_pass_source_type = match source_type.module_kind() {
-        ModuleKind::Module => SourceType::mjs(),
-        ModuleKind::Script => SourceType::script(),
-        ModuleKind::Unambiguous => SourceType::unambiguous(),
-        ModuleKind::CommonJS => SourceType::cjs(),
+    // Second pass with only JavaScript syntax, except ETS: ArkTS declarations
+    // (struct, @interface) and the ArkUI DSL are part of the target language and
+    // intentionally survive the transform, so re-parse them as ETS.
+    let second_pass_source_type = if source_type.is_ets() {
+        source_type
+    } else {
+        match source_type.module_kind() {
+            ModuleKind::Module => SourceType::mjs(),
+            ModuleKind::Script => SourceType::script(),
+            ModuleKind::Unambiguous => SourceType::unambiguous(),
+            ModuleKind::CommonJS => SourceType::cjs(),
+        }
     };
     driver.run(&transformed1, second_pass_source_type);
 
